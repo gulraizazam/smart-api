@@ -280,9 +280,13 @@ final class DiscountsController extends Controller
         }
 
         try {
+            // Accept either `location_id` (used by the SPA, the standard
+            // name) or the legacy `id` parameter as a fallback so any
+            // older caller still works.
+            $locationId = (int) ($request->input('location_id') ?? $request->input('id'));
             $data = $this->discountService->getServicesForLocation(
                 (int) $request->input('discount_id'),
-                (int) $request->input('id'),
+                $locationId,
             );
 
             return $this->success('Record found', $data);

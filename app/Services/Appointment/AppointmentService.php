@@ -15,6 +15,8 @@ use App\Models\Appointments;
 use App\Models\AppointmentsDailyStats;
 use App\Models\AppointmentStatuses;
 use App\Models\AuditTrails;
+use App\Models\InvoiceStatuses;
+use App\Models\Invoices;
 use App\Models\Leads;
 use App\Models\LeadsServices;
 use App\Models\LeadStatuses;
@@ -24,7 +26,9 @@ use App\Models\ResourceHasRotaDays;
 use App\Models\Resources;
 use App\Models\Services;
 use App\Models\User;
+use App\Services\Lead\BackfillLeadCategoryAction;
 use App\Services\MetaConversionApiService;
+use App\Services\PatientManagement\PatientSearchService;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
@@ -39,8 +43,14 @@ class AppointmentService
 
     protected ?int $user_id = null;
 
-    public function __construct()
-    {
+    public function __construct(
+        // Container-injected so tests can swap the action; runtime
+        // ALWAYS resolves it (this is the only path that maintains the
+        // single-active-row invariant on `leads_services` with proper
+        // category awareness — the legacy inline code at the old lines
+        // 482-521 has been removed in favour of this action).
+        private readonly BackfillLeadCategoryAction $backfillCategory = new BackfillLeadCategoryAction(),
+    ) {
         // Properties will be set lazily when needed via getAccountId() and getUserId()
     }
 
@@ -66,6 +76,42 @@ class AppointmentService
         }
 
         return $this->user_id;
+    }
+
+    /**
+     * Look up the consultancy `appointment_type_id` for the current
+     * account. Patient creation is allowed only when the appointment
+     * being booked is of this type — no other appointment type may
+     * spawn a patient row. Cached per account.
+     */
+    protected function getConsultancyTypeId(): ?int
+    {
+        $accountId = $this->getAccountId();
+
+        return Cache::remember(
+            "consultancy_type_id_{$accountId}",
+            3600,
+            fn () => \App\Models\AppointmentTypes::where([
+                'account_id' => $accountId,
+                'slug' => 'consultancy',
+            ])->value('id'),
+        );
+    }
+
+    /**
+     * True only when both the supplied id and the resolved consultancy
+     * type id are non-zero AND equal. Defensive against a missing seed
+     * (the cache resolves to null) — without this, `(int) null === 0`
+     * would let a request with `appointment_type_id = 0` silently pass
+     * the gate.
+     */
+    protected function isConsultancyType(int $appointmentTypeId): bool
+    {
+        $consultancyId = $this->getConsultancyTypeId();
+
+        return $consultancyId !== null
+            && $appointmentTypeId > 0
+            && $appointmentTypeId === (int) $consultancyId;
     }
 
     public function getAppointmentsList(array $filters, ?int $appointmentTypeId = null): Builder
@@ -104,6 +150,21 @@ class AppointmentService
 
     protected function applyFilters(Builder $query, array $filters): Builder
     {
+        // Unified patient search — same engine the Plans / Patients /
+        // Vouchers / picker / invoices surfaces use. SPA sends `q`;
+        // PatientSearchService::applyPatientFilter classifies the value
+        // (`C-<id>` / numeric id / phone / FT name) and routes to the
+        // matching index. Routed against `appointments.patient_id` so
+        // the filter applies before the heavier with()/where joins.
+        if (! empty($filters['q'])) {
+            PatientSearchService::applyPatientFilter(
+                $query,
+                (string) $filters['q'],
+                'appointments.patient_id',
+                $this->getAccountId(),
+            );
+        }
+
         if (! empty($filters['patient_id'])) {
             $query->where('patient_id', $filters['patient_id']);
         }
@@ -244,6 +305,14 @@ class AppointmentService
             $shouldCreateNewPatient = (isset($data['new_patient']) && $data['new_patient'] == 1 && ! isset($data['lead_id']))
                 || (! isset($data['lead_id']) && isset($data['phone']) && ! empty($data['phone']));
 
+            // Policy: patient creation is allowed ONLY for consultation
+            // bookings. Any other appointment type that reaches this
+            // point without a patient_id is a misuse — the SPA should
+            // route the user through a consultation first.
+            if ($shouldCreateNewPatient && ! $this->isConsultancyType((int) ($data['appointment_type_id'] ?? 0))) {
+                throw AppointmentException::patientCreationNotAllowed();
+            }
+
             if ($shouldCreateNewPatient) {
                 // Step 1: Create patient/user record
                 $patientData = [
@@ -253,7 +322,7 @@ class AppointmentService
                     'gender' => $data['gender'] ?? 0,
                     'referred_by' => $data['referred_by'] ?? null,
                     'account_id' => $this->getAccountId(),
-                    'user_type_id' => 3, // Patient user type
+                    'user_type_id' => config('constants.patient_id'),
                     'password' => \Hash::make(Str::random(16)),
                     'active' => 1,
                 ];
@@ -292,16 +361,22 @@ class AppointmentService
                     }
                 }
 
-                // Get 'Booked' lead status
-                $bookedStatus = LeadStatuses::where('account_id', $accountId)
-                    ->where('name', 'Booked')
-                    ->first();
+                // Get 'Booked' lead status by FLAG, not name — a tenant
+                // can rename the row but the `is_booked=1` flag is the
+                // canonical contract (matches the existing-lead path
+                // below + WrongConversionService + ConsultancyInvoice-
+                // Service lookups).
+                $bookedStatus = LeadStatuses::where([
+                    'account_id' => $accountId,
+                    'is_booked'  => 1,
+                ])->first();
 
                 if (! $bookedStatus) {
-                    // Fallback to default status if 'Booked' not found
-                    $bookedStatus = LeadStatuses::where('account_id', $accountId)
-                        ->where('is_default', 1)
-                        ->first();
+                    // Fallback to default status if no `is_booked=1` row
+                    $bookedStatus = LeadStatuses::where([
+                        'account_id' => $accountId,
+                        'is_default' => 1,
+                    ])->first();
                 }
 
                 if ($bookedStatus) {
@@ -315,13 +390,16 @@ class AppointmentService
                     throw AppointmentException::invalidData('Failed to create lead for new patient.');
                 }
 
-                // Create lead service entry if service_id is provided
+                // Create lead service entry if service_id is provided.
+                // `account_id` removed — it's not in `LeadsServices::$fillable`
+                // so mass-assignment silently drops it; tenant scope
+                // is preserved via `leads.account_id` (every join from
+                // leads_services back to leads carries the constraint).
                 if (isset($data['service_id'])) {
                     LeadsServices::create([
-                        'lead_id' => $lead->id,
+                        'lead_id'    => $lead->id,
                         'service_id' => $data['service_id'],
-                        'account_id' => $accountId,
-                        'status' => 1,
+                        'status'     => 1,
                     ]);
                 }
 
@@ -348,8 +426,15 @@ class AppointmentService
                     $appointmentData['name'] = $lead->name;
                 }
 
-                // If lead doesn't have patient_id, we need to create a patient
+                // If lead doesn't have patient_id, we need to create a patient.
+                // Same policy gate as the new-patient branch above:
+                // only consultation bookings are allowed to spawn
+                // patient rows.
                 if (! $lead->patient_id) {
+                    if (! $this->isConsultancyType((int) ($data['appointment_type_id'] ?? 0))) {
+                        throw AppointmentException::patientCreationNotAllowed();
+                    }
+
                     $patientData = [
                         'name' => $lead->name ?? $data['name'] ?? null,
                         'phone' => $lead->phone ?? $data['phone'] ?? null,
@@ -357,7 +442,7 @@ class AppointmentService
                         'gender' => $lead->gender ?? $data['gender'] ?? 0,
                         'referred_by' => $lead->referred_by ?? $data['referred_by'] ?? null,
                         'account_id' => $this->getAccountId(),
-                        'user_type_id' => 3, // Patient user type
+                        'user_type_id' => config('constants.patient_id'),
                         'password' => \Hash::make(Str::random(16)),
                         'active' => 1,
                     ];
@@ -462,102 +547,90 @@ class AppointmentService
                 $lead = Leads::find($data['lead_id']);
 
                 if ($lead) {
-                    // Check if consultation service is different from lead service
-                    if (isset($appointment->service_id) && $lead->service_id != $appointment->service_id) {
-                        // Update lead's service_id
+                    // Resolve the Booked status once (used both for the
+                    // lead row update and for the leads_services pivot
+                    // refresh inside `BackfillLeadCategoryAction`).
+                    // Prefer flag (`is_booked=1`) over name match —
+                    // matches the WrongConversionService / Consultancy-
+                    // InvoiceService lookup pattern; the legacy `name =
+                    // 'Booked'` query is brittle (a tenant rename
+                    // silently breaks the cascade).
+                    $bookedStatus = LeadStatuses::where([
+                        'account_id' => $this->getAccountId(),
+                        'is_booked'  => 1,
+                    ])->first();
+
+                    if ($bookedStatus && $lead->lead_status_id != $bookedStatus->id) {
                         $lead->update([
-                            'service_id' => $appointment->service_id,
-                            'updated_by' => $this->getUserId(),
-                            'updated_at' => Carbon::now(),
+                            'lead_status_id' => $bookedStatus->id,
+                            'updated_by'     => $this->getUserId(),
+                            'updated_at'     => Carbon::now(),
                         ]);
+                    }
 
-                        // Create new lead_services record for the new service
-                        $existingLeadService = LeadsServices::where([
-                            'lead_id' => $lead->id,
-                            'service_id' => $appointment->service_id,
-                        ])->first();
-
-                        if (! $existingLeadService) {
-                            // Set all previous lead_services records to inactive before creating new one
-                            LeadsServices::where('lead_id', $lead->id)
-                                ->update([
-                                    'status' => 0,
-                                    'updated_at' => Carbon::now(),
-                                ]);
-
-                            // Get 'Booked' status to set in lead_services
-                            $bookedStatus = LeadStatuses::where('account_id', $this->getAccountId())
-                                ->where('name', 'Booked')
-                                ->first();
-
-                            // Create new active lead_services record
-                            LeadsServices::create([
-                                'lead_id' => $lead->id,
-                                'service_id' => $appointment->service_id,
-                                'account_id' => $this->getAccountId(),
-                                'lead_status_id' => $bookedStatus?->id,
-                                'status' => 1,
-                                'created_at' => Carbon::now(),
-                                'updated_at' => Carbon::now(),
-                            ]);
+                    // Single source of truth for the leads_services
+                    // pivot: `BackfillLeadCategoryAction` handles
+                    // category-aware demote-and-create with correct
+                    // history preservation. Replaces the legacy inline
+                    // demote-everything dance which used raw service_id
+                    // equality (no parent_id grouping).
+                    //
+                    // `consultancy_id` is the FK on leads_services that
+                    // points at the originating CONSULTATION — not at
+                    // any appointment. Only pass the appointment id
+                    // when this booking IS a consultation; otherwise
+                    // (treatment booking with no consultation), leave
+                    // it null to avoid polluting the column with a
+                    // treatment-appointment id.
+                    if (! empty($appointment->service_id)) {
+                        $service = Services::find($appointment->service_id);
+                        if ($service) {
+                            $isConsultation = (int) $appointment->appointment_type_id === AppointmentType::Consultancy->value;
+                            $this->backfillCategory->execute(
+                                $lead,
+                                $service,
+                                $isConsultation ? $appointment->id : null,
+                                $bookedStatus?->id,
+                            );
                         }
                     }
 
-                    // Get 'Booked' lead status
-                    $bookedStatus = LeadStatuses::where('account_id', $this->getAccountId())
-                        ->where('name', 'Booked')
-                        ->first();
-
-                    if ($bookedStatus) {
-                        if ($lead->lead_status_id != $bookedStatus->id) {
-                            // Update lead status to Booked
-                            $lead->update([
-                                'lead_status_id' => $bookedStatus->id,
-                                'updated_by' => $this->getUserId(),
-                                'updated_at' => Carbon::now(),
-                            ]);
-                        }
-
-                        // Update lead_status_id in lead_services for this service
-                        if (isset($appointment->service_id)) {
-                            LeadsServices::where([
+                    // Send Meta CAPI event for booked status — gated on
+                    // per-appointment `meta_booked_sent` so reschedules
+                    // of the same row don't re-fire (Meta would over-
+                    // count Booked → bias Lookalike Audiences + bid
+                    // optimisation). Same shape as the existing
+                    // `meta_purchase_sent` guard for Converted.
+                    if (! $appointment->meta_booked_sent) {
+                        \Log::info('Sending Meta CAPI booked event', [
+                            'lead_id' => $lead->id,
+                            'phone' => $lead->phone,
+                            'meta_lead_id' => $lead->meta_lead_id,
+                            'email' => $lead->email,
+                        ]);
+                        try {
+                            $metaService = new MetaConversionApiService;
+                            $metaService->sendLeadStatus(
+                                $lead->phone,
+                                'booked',
+                                $lead->meta_lead_id,
+                                $lead->email
+                            );
+                            $appointment->update(['meta_booked_sent' => 1]);
+                            \Log::info('Meta CAPI booked event sent successfully', [
                                 'lead_id' => $lead->id,
-                                'service_id' => $appointment->service_id,
-                            ])->update([
-                                'lead_status_id' => $bookedStatus->id,
-                                'updated_at' => Carbon::now(),
+                            ]);
+                        } catch (\Exception $e) {
+                            // Round 4 Crypto-H3 — getTraceAsString() inlines
+                            // argument values (lead phone numbers, emails) into
+                            // the log line. Use file/line instead so PII does
+                            // not land in storage/logs/laravel.log.
+                            \Log::error('Meta CAPI booked event failed: '.$e->getMessage(), [
+                                'lead_id' => $lead->id,
+                                'file' => $e->getFile(),
+                                'line' => $e->getLine(),
                             ]);
                         }
-                    }
-
-                    // Send Meta CAPI event for booked status
-                    \Log::info('Sending Meta CAPI booked event', [
-                        'lead_id' => $lead->id,
-                        'phone' => $lead->phone,
-                        'meta_lead_id' => $lead->meta_lead_id,
-                        'email' => $lead->email,
-                    ]);
-                    try {
-                        $metaService = new MetaConversionApiService;
-                        $metaService->sendLeadStatus(
-                            $lead->phone,
-                            'booked',
-                            $lead->meta_lead_id,
-                            $lead->email
-                        );
-                        \Log::info('Meta CAPI booked event sent successfully', [
-                            'lead_id' => $lead->id,
-                        ]);
-                    } catch (\Exception $e) {
-                        // Round 4 Crypto-H3 — getTraceAsString() inlines
-                        // argument values (lead phone numbers, emails) into
-                        // the log line. Use file/line instead so PII does
-                        // not land in storage/logs/laravel.log.
-                        \Log::error('Meta CAPI booked event failed: '.$e->getMessage(), [
-                            'lead_id' => $lead->id,
-                            'file' => $e->getFile(),
-                            'line' => $e->getLine(),
-                        ]);
                     }
 
                     // Get related data for activity logging
@@ -782,6 +855,55 @@ class AppointmentService
                 throw AppointmentException::invalidStatus();
             }
 
+            // ───────── Manual-status guards ─────────
+            // Mirror the legacy admin path's enforcement
+            // (`AppointmentStatusController::storeAppointmentStatuses`
+            // lines 144-153) so the SPA can't bypass the funnel.
+            //
+            // 1) Auto-only flag rejection — Arrived comes from the
+            //    invoice path, Converted comes from the package
+            //    payment path, Un-Scheduled is derived from missing
+            //    scheduled_date+time. None can be set manually.
+            if ($status->is_arrived ?? false) {
+                throw AppointmentException::invalidStatus(
+                    'Cannot manually set status to Arrived — this happens automatically when the consultation invoice is paid.'
+                );
+            }
+            if ($status->is_converted ?? false) {
+                throw AppointmentException::invalidStatus(
+                    'Cannot manually set status to Converted — this happens automatically on the first package payment.'
+                );
+            }
+            if ($status->is_unscheduled ?? false) {
+                throw AppointmentException::invalidStatus(
+                    'Un-Scheduled is derived from a missing scheduled date/time and cannot be set manually.'
+                );
+            }
+
+            // 2) Paid-invoice lock — once an invoice is paid against
+            //    this appointment the financial record is closed; status
+            //    changes would silently invalidate revenue/conversion
+            //    reports. Reuses the legacy slug='paid' lookup.
+            $paidInvoiceStatusId = InvoiceStatuses::where('slug', '=', 'paid')->value('id');
+            if ($paidInvoiceStatusId) {
+                $hasPaidInvoice = Invoices::where('invoice_status_id', $paidInvoiceStatusId)
+                    ->where('appointment_id', $id)
+                    ->exists();
+                if ($hasPaidInvoice) {
+                    throw AppointmentException::invalidStatus(
+                        'Invoice is paid — status can no longer be changed for this appointment.'
+                    );
+                }
+            }
+
+            // 3) Cancellation reason required when picking a cancelled
+            //    status. Schema has `cancellation_reason_id` nullable,
+            //    so enforcement lives here rather than in the request
+            //    DTO.
+            if (($status->is_cancelled ?? false) && empty($data['cancellation_reason_id'])) {
+                throw AppointmentException::invalidStatus('A cancellation reason is required when cancelling.');
+            }
+
             $updateData = [
                 'appointment_status_id' => $data['appointment_status_id'],
                 'base_appointment_status_id' => $status->base_appointment_status_id ?? $data['appointment_status_id'],
@@ -797,13 +919,26 @@ class AppointmentService
                 $updateData['cancellation_reason_id'] = $data['cancellation_reason_id'];
             }
 
-            if ($status->is_converted ?? false) {
-                $updateData['converted_at'] = Carbon::now();
-                $updateData['converted_by'] = $this->getUserId();
-            }
+            // No `is_converted` write here — guard above rejects it.
 
             $oldData = $appointment->toArray();
             $appointment->update($updateData);
+
+            // Activity feed entry — mirrors the legacy controller
+            // (`AppointmentStatusController.php:272-279`) so the
+            // patient timeline shows status changes regardless of
+            // whether they came from the legacy admin Blade or the
+            // SPA. AuditTrails is the low-level diff log; Activity is
+            // the user-visible feed.
+            $oldStatus = AppointmentStatuses::find($oldData['base_appointment_status_id'] ?? null);
+            if ($oldStatus && $oldData['base_appointment_status_id'] !== $updateData['base_appointment_status_id']) {
+                $patient = $appointment->patient_id ? Patients::find($appointment->patient_id) : null;
+                $location = $appointment->location_id ? Locations::with('city')->find($appointment->location_id) : null;
+                $service = $appointment->service_id ? Services::find($appointment->service_id) : null;
+                if ($patient) {
+                    ActivityLogger::logAppointmentStatusChange($appointment, $patient, $oldStatus, $status, $location, $service);
+                }
+            }
 
             AuditTrails::editEventLogger(
                 Appointments::$_table,

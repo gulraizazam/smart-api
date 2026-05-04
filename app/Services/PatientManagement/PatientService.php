@@ -35,8 +35,6 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Str;
 
 class PatientService
 {
@@ -303,41 +301,10 @@ class PatientService
     |--------------------------------------------------------------------------
     */
 
-    public function getCreateData(): array
-    {
-        return ['gender' => config('constants.gender_array')];
-    }
-
-    public function create(array $data): array
-    {
-        $user = Auth::user();
-        $data['phone'] = PhoneFormattingService::cleanNumber($data['phone']);
-        $data['created_by'] = $user->id;
-        $data['user_type_id'] = Config::get('constants.patient_id');
-        $data['account_id'] = $user->account_id;
-        // Patients never authenticate via password (the field is a NOT NULL
-        // legacy column on users). Stamp a random hash so the row can be
-        // inserted; if a patient ever needs login access, the password
-        // reset flow rotates this value.
-        $data['password'] = Hash::make(Str::random(40));
-
-        $existingPatient = Patients::where([
-            'phone' => $data['phone'],
-            'user_type_id' => Config::get('constants.patient_id'),
-            'account_id' => $user->account_id,
-        ])->first();
-
-        if ($existingPatient) {
-            $patient = $this->updatePatientRecord($existingPatient->id, $data);
-            Appointments::where('patient_id', $existingPatient->id)->update(['name' => $data['name']]);
-        } else {
-            $patient = $this->createPatientRecord($data);
-        }
-
-        return $patient
-            ? ['status' => true, 'message' => 'Record has been created successfully.', 'patient' => $patient]
-            : ['status' => false, 'message' => 'Something went wrong, please try again later.'];
-    }
+    // create() and getCreateData() removed: patients are never created
+    // directly through this service. They appear as a side-effect of
+    // booking flows (AppointmentService::create handles the User::create
+    // with user_type_id=3 and the paired Lead row).
 
     public function getEditData(int $id): ?array
     {
@@ -706,8 +673,10 @@ class PatientService
             'status' => true,
             'message' => 'Picture saved successfully.',
             // Round 4 C3 — point at the authenticated streaming route, not the
-            // bare storage symlink which no longer serves these files.
-            'image' => route('admin.files.patient_image', ['filename' => $fileName]),
+            // bare storage symlink which no longer serves these files. The
+            // `_api` suffix on the route name is the SPA-facing alias (the
+            // legacy /admin/* route stays live until Blade cutover).
+            'image' => route('admin.files.patient_image_api', ['filename' => $fileName]),
         ];
     }
 
@@ -1214,14 +1183,6 @@ class PatientService
         return Patients::where('id', $id)
             ->where('account_id', Auth::user()->account_id)
             ->first();
-    }
-
-    private function createPatientRecord(array $data): ?Patients
-    {
-        $record = Patients::create($data);
-        AuditTrails::addEventLogger('users', 'create', $data, self::AUDIT_FILLABLE, $record);
-
-        return $record;
     }
 
     private function updatePatientRecord(int $id, array $data): ?Patients

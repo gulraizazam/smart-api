@@ -511,6 +511,16 @@ class AppointmentsController extends Controller
                     $patient = Patients::where(['phone' => $appointment_data['phone']])->orderBy('phone', 'desc')->first();
                 }
                 if ($request->new_patient == '1') {
+                    // Policy: patient creation is reserved for the
+                    // consultation booking path (AppointmentService).
+                    // Treatment / drag-drop bookings cannot spawn a
+                    // patient row.
+                    if ($request->appointment_type !== 'consulting' && $request->appointment_type !== 'consultancy') {
+                        return $this->errorResponse(
+                            'No registered patient with this phone. Book a consultation first to register the patient.',
+                            422,
+                        );
+                    }
                     $appointment_data['user_type_id'] = 3;
                     if (! $patient) {
                         $patient = Patients::createRecord($appointment_data, 1);
@@ -539,6 +549,13 @@ class AppointmentsController extends Controller
                 $appointment_data['email'] = $lead->email;
                 $patient = Patients::where(['phone' => $appointment_data['phone']])->orderBy('phone', 'desc')->first();
                 if (! $patient) {
+                    // Same policy gate as above.
+                    if ($request->appointment_type !== 'consulting' && $request->appointment_type !== 'consultancy') {
+                        return $this->errorResponse(
+                            'No registered patient with this phone. Book a consultation first to register the patient.',
+                            422,
+                        );
+                    }
                     $appointment_data['user_type_id'] = 3;
                     $patient = Patients::createRecord($appointment_data, 1);
                 } else {
@@ -612,8 +629,11 @@ class AppointmentsController extends Controller
                             ->update(['patient_id' => $appointment_data['patient_id']]);
                     }
                     
-                    // Send Meta CAPI event for booked status
-                    if ($leadRecord) {
+                    // Send Meta CAPI event for booked status — gated on
+                    // per-appointment `meta_booked_sent` so reschedules
+                    // of the same row don't re-fire (Meta would over-
+                    // count Booked).
+                    if ($leadRecord && $appointment && ! $appointment->meta_booked_sent) {
                         try {
                             $metaService = new MetaConversionApiService();
                             $metaService->sendLeadStatus(
@@ -622,6 +642,7 @@ class AppointmentsController extends Controller
                                 $leadRecord->meta_lead_id,
                                 $leadRecord->email
                             );
+                            $appointment->update(['meta_booked_sent' => 1]);
                         } catch (\Exception $e) {
                             \Log::error('Meta CAPI booked event failed: ' . $e->getMessage());
                         }

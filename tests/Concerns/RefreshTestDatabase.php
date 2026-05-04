@@ -143,6 +143,17 @@ trait RefreshTestDatabase
             // Indexes for the package-vouchers filter shape.
             'ALTER TABLE `package_vouchers` ADD INDEX `package_vouchers_voucher_user_index` (`voucher_id`, `user_id`)',
             'ALTER TABLE `package_vouchers` ADD INDEX `package_vouchers_package_random_id_index` (`package_random_id`)',
+
+            // Unique dedup key on appointments_daily_stats — added by
+            // migration 2026_05_04_120000_dedup_and_index_appointments_daily_stats.
+            // The cron's upsert relies on this for correct dedup.
+            'ALTER TABLE `appointments_daily_stats` ADD UNIQUE INDEX `uniq_ads_appointment_date` (`appointment_id`, `scheduled_date`)',
+
+            // sms_last_attempt_at column on appointments — added by
+            // migration 2026_05_04_140000_add_sms_last_attempt_at_to_appointments.
+            // The booking-SMS cron uses this for retry cadence.
+            'ALTER TABLE `appointments` ADD COLUMN `sms_last_attempt_at` TIMESTAMP NULL DEFAULT NULL',
+            'ALTER TABLE `appointments` ADD INDEX `idx_appointments_sms_last_attempt_at` (`sms_last_attempt_at`)',
         ];
 
         foreach ($statements as $sql) {

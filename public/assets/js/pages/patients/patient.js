@@ -358,40 +358,6 @@ function setEditData(response) {
 }
 
 
-function createPatient(url) {
-
-    $.ajax({
-        headers: {
-            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-        },
-        url: url,
-        type: "GET",
-        cache: false,
-        success: function (response) {
-            setPatientData(response);
-
-        },
-        error: function (xhr, ajaxOptions, thrownError) {
-            errorMessage(xhr);
-            reInitValidation(AddValidation);
-        }
-    });
-
-
-}
-
-function setPatientData(response) {
-
-    let genders = response.data.gender;
-    let gender_option = '<option value="">All</option>';
-
-    Object.entries(genders).forEach(function (gender) {
-        gender_option += '<option value="' + gender[0] + '">' + gender[1] + '</option>';
-    });
-    $("#add_gender_id").html(gender_option);
-
-}
-
 function applyFilters(datatable) {
 
     $('#apply-filters').on('click', function () {

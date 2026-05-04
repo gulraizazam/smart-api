@@ -75,12 +75,19 @@ class Patients extends BaseModel
         );
     }
 
+    /**
+     * Profile-image URL, or null when the patient has no image. The
+     * fallback used to be `asset('images/default-avatar.png')` but the
+     * file does not exist anywhere in `public/`; rendering it produced
+     * a broken-image. The SPA's patient types declare `image_url` as
+     * nullable and the UI shows initials-based avatars when null.
+     */
     protected function profileImageUrl(): Attribute
     {
         return Attribute::make(
-            get: fn (): string => $this->image_src
-                ? route('admin.files.patient_image', ['filename' => $this->image_src])
-                : asset('images/default-avatar.png'),
+            get: fn (): ?string => $this->image_src
+                ? route('admin.files.patient_image_api', ['filename' => $this->image_src])
+                : null,
         );
     }
 

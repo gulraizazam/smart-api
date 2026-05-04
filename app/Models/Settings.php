@@ -14,7 +14,7 @@ class Settings extends BaseModel
 {
     use SoftDeletes;
 
-    protected $fillable = ['name', 'data', 'account_id', 'slug', 'active', 'is_featured', 'sort_no', 'created_at', 'updated_at'];
+    protected $fillable = ['name', 'data', 'account_id', 'slug', 'active', 'created_at', 'updated_at'];
 
     /** @var array Auditable fields for AuditTrails logging */
     public static array $_fillable = ['name', 'data', 'slug', 'active'];
@@ -33,6 +33,30 @@ class Settings extends BaseModel
     public static function getBySlug(string $slug, int $accountId): ?static
     {
         return self::where(['slug' => $slug, 'account_id' => $accountId])->first();
+    }
+
+    /**
+     * Resolve the org-wide tax treatment id for the given account, with a
+     * per-request memo so price-math hot paths (invoices, plan discounts,
+     * package pricing) don't repeatedly hit the settings table.
+     *
+     * Returns the legacy `tax_treatment_type` id (int) so callers can
+     * continue comparing against `config('constants.tax_*')` without
+     * casting. Falls back to `tax_is_inclusive` if the setting row is
+     * missing — safe-by-default for the UAE retail context this app ships
+     * for.
+     */
+    private static array $orgTaxTreatmentCache = [];
+
+    public static function getOrgTaxTreatment(int $accountId): int
+    {
+        if (isset(self::$orgTaxTreatmentCache[$accountId])) {
+            return self::$orgTaxTreatmentCache[$accountId];
+        }
+        $setting = self::getBySlug('sys-tax-treatment', $accountId);
+        $value = (int) ($setting?->data ?? config('constants.tax_is_inclusive'));
+
+        return self::$orgTaxTreatmentCache[$accountId] = $value;
     }
 
     /**

@@ -26,6 +26,7 @@ use App\Models\PlanInvoice;
 use App\Models\Services;
 use App\Models\User;
 use App\Observers\ActivityLogObserver;
+use App\Observers\MembershipObserver;
 use App\Observers\CashFlow\CashTransferObserver;
 use App\Observers\CashFlow\ExpenseObserver;
 use App\Observers\CashFlow\LocationCashflowObserver;
@@ -48,6 +49,7 @@ use Illuminate\Auth\Events\Lockout;
 use Illuminate\Auth\Events\Login;
 use Illuminate\Auth\Events\Logout;
 use Illuminate\Auth\Events\PasswordReset;
+use Illuminate\Auth\Notifications\ResetPassword as ResetPasswordNotification;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
@@ -69,7 +71,15 @@ use Spatie\Permission\PermissionRegistrar;
 
 class AppServiceProvider extends ServiceProvider
 {
-    public const HOME = '/admin/home';
+    /**
+     * Where authenticated users land when they hit a "guest only" route
+     * (login, register, password reset). Was the legacy Blade home page;
+     * now points at the SPA mount inside `public/admin-v2/`. Consumed by
+     * `RedirectIfAuthenticated` and by laravel/ui's auth scaffolding
+     * (`$redirectTo` on the Auth\* controllers — those die with the
+     * legacy frontend in Phase 3, but read the constant until then).
+     */
+    public const HOME = '/admin-v2/';
 
     public function register(): void
     {
@@ -85,6 +95,7 @@ class AppServiceProvider extends ServiceProvider
         $this->configureRateLimiting();
         $this->configureAuthorization();
         $this->configurePassport();
+        $this->configurePasswordResetUrl();
         $this->ensurePermissionCacheHealth();
         $this->registerObservers();
         $this->registerAuditEventListeners();
@@ -137,6 +148,24 @@ class AppServiceProvider extends ServiceProvider
                 'sql' => $query->sql,
                 'bindings' => $query->bindings,
             ]);
+        });
+    }
+
+    /**
+     * Reset-password emails default to `route('password.reset', $token)`
+     * which renders a Blade view — that view dies at cutover. Override
+     * the URL builder so emails link to the SPA's /reset-password/{token}
+     * screen instead. The email parameter rides along so the SPA's reset
+     * form can prefill it (and the backend re-validates it on submit, so
+     * a tampered email simply fails the broker check).
+     */
+    private function configurePasswordResetUrl(): void
+    {
+        ResetPasswordNotification::createUrlUsing(function ($notifiable, string $token): string {
+            $base = rtrim((string) config('app.spa_url'), '/');
+            $email = urlencode((string) $notifiable->getEmailForPasswordReset());
+
+            return "{$base}/reset-password/{$token}?email={$email}";
         });
     }
 
@@ -362,5 +391,9 @@ class AppServiceProvider extends ServiceProvider
         StaffAdvance::observe(StaffAdvanceObserver::class);
         StaffReturn::observe(StaffReturnObserver::class);
         PackageAdvances::observe(PackageAdvanceObserver::class);
+        // Mirrors a parent membership's end_date edits onto its
+        // referrals so the data model stays internally consistent
+        // without requiring every read site to look up the parent.
+        Membership::observe(MembershipObserver::class);
     }
 }

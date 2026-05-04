@@ -285,7 +285,22 @@ class OrdersController extends Controller
         return response()->json($result);
     }
 
-    public function invoicePdf(int $id, ?string $download = null): View|\Illuminate\Http\Response
+    /**
+     * Display the order invoice as PDF.
+     *
+     * Always returns a PDF binary. `$download` truthy → save-as dialog
+     * via `dompdf->download()`. `$download` null/falsy → inline PDF via
+     * `dompdf->stream()` so the browser opens its built-in viewer.
+     *
+     * Was a hybrid HTML/PDF endpoint where the no-download branch
+     * returned a Blade view — that branch was unreachable from the SPA
+     * (orders-api.ts always passes download=true) but stayed live as a
+     * cutover landmine: any caller dropping the flag (direct URL hit,
+     * future SPA refactor, external integration) would get a Blade
+     * page that 500s once the legacy admin views are deleted. Mirrors
+     * the Phase 1A.1 fix to InvoicesController::invoice_pdf.
+     */
+    public function invoicePdf(int $id, ?string $download = null): \Symfony\Component\HttpFoundation\Response
     {
         if (! Gate::allows('order_manage')) {
             abort(401);
@@ -303,15 +318,13 @@ class OrdersController extends Controller
             'download' => $download,
         ];
 
-        if ($download) {
-            $content = view('admin.orders.invoice_pdf', $viewData)->render();
-            $pdf = App::make('dompdf.wrapper');
-            $pdf->loadHTML($content);
+        $content = view('admin.orders.invoice_pdf', $viewData)->render();
+        $pdf = App::make('dompdf.wrapper');
+        $pdf->loadHTML($content);
 
-            return $pdf->download('order-invoice-C-' . $data['invoice_info']->patient_id . '.pdf');
-        }
+        $filename = 'order-invoice-C-' . $data['invoice_info']->patient_id . '.pdf';
 
-        return view('admin.orders.invoice_pdf', $viewData);
+        return $download ? $pdf->download($filename) : $pdf->stream($filename);
     }
 
     public function getEmployees(Request $request): JsonResponse

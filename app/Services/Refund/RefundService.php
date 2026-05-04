@@ -464,6 +464,17 @@ final class RefundService
                 );
             }
 
+            // Conversion-state cascade — single source of truth for
+            // "if net cash hits zero, the conversion is reverted"
+            // (finance policy Q1=B + Q2=strict). Defers to
+            // `ConversionStateService` so RefundService doesn't have
+            // to know about leads_services / Meta CAPI flags / the
+            // appointment status engine.
+            $appointmentId = \App\Services\Conversion\ConversionStateService::appointmentIdForPackage((int) $packageId);
+            if ($appointmentId !== null) {
+                \App\Services\Conversion\ConversionStateService::revertIfNeeded($appointmentId);
+            }
+
             return ['success' => true, 'message' => 'Record has been created successfully.'];
         });
     }

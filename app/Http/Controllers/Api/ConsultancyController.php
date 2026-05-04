@@ -38,9 +38,16 @@ class ConsultancyController extends Controller
             }
 
             $filters = $request->only([
-                'patient_id', 'phone', 'location_id', 'doctor_id',
+                // Unified patient search — SPA sends `q`; the service
+                // delegates to PatientSearchService::applyPatientFilter
+                // (the canonical classifier shared with Plans / Patients /
+                // Treatments / Vouchers / Invoices listings).
+                'q',
+                'patient_id', 'phone', 'location_id', 'doctor_id', 'service_id',
+                'service_parent_id',
                 'appointment_status_id', 'scheduled_date_from', 'scheduled_date_to',
                 'created_date_from', 'created_date_to', 'scheduled',
+                'created_by', 'updated_by', 'rescheduled_by',
             ]);
 
             // Sort shape mirrors the legacy datatable pattern:

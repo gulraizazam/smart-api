@@ -32,6 +32,7 @@ use App\Models\Resources;
 use App\Models\Services;
 use App\Models\User;
 use App\Services\Appointment\AppointmentService;
+use App\Services\Phone\PhoneFormattingService;
 use App\Services\PatientManagement\PatientSearchService;
 use App\Services\Reports\Concerns\ParsesDateRange;
 use Carbon\Carbon;
@@ -118,11 +119,11 @@ final class TreatmentService
         // Resolve or create the patient so the rest of the flow can
         // assume `patient_id` is set. The SPA's slim treatment-create
         // form (Service / Phone / Name / Time only) doesn't send
-        // patient_id — we look up by phone and fall back to creating a
-        // minimal patient + lead pair inline. Parity with the
-        // consultancy create flow that AppointmentService already does.
+        // patient_id — we look up by phone. If no patient exists we
+        // throw: per system policy, patients are created ONLY by the
+        // consultation booking flow, never by treatment booking.
         if (empty($validated['patient_id']) && !empty($validated['phone'])) {
-            $validated['patient_id'] = $this->resolveOrCreatePatient($validated, $accountId);
+            $validated['patient_id'] = $this->resolveExistingPatientOrFail($validated, $accountId);
         }
 
         if (empty($validated['patient_id'])) {
@@ -225,51 +226,34 @@ final class TreatmentService
     }
 
     /**
-     * Look up an existing patient by phone, or create a new one inline.
+     * Look up an existing patient by phone. Never creates.
      *
-     * Cleans the phone of formatting first, scopes the lookup to the
-     * caller's account + patient user_type, and creates a minimal
-     * patient row when no match exists. Mirrors the consultancy create
-     * flow's `shouldCreateNewPatient` branch in AppointmentService.
-     *
-     * Returns the resolved patient id; throws if creation fails.
+     * Patient creation is reserved for the consultation booking flow
+     * (AppointmentService::createAppointment). Treatment booking
+     * requires the patient to already exist; if no match is found,
+     * we throw `patientNotRegistered` so the SPA can offer a
+     * "book a consultation first" CTA.
      */
-    private function resolveOrCreatePatient(array $data, int $accountId): int
+    private function resolveExistingPatientOrFail(array $data, int $accountId): int
     {
-        $cleaned = preg_replace('/[^0-9]/', '', (string) ($data['phone'] ?? ''));
+        // Use the canonical cleaner shared with the load/lead lookup
+        // endpoint (`PhoneFormattingService::cleanNumber`) so the
+        // search key here matches the one the SPA's phone-search ran
+        // against. A divergent cleaner here would surface as
+        // patient-not-registered for phones the SPA already proved
+        // exist.
+        $cleaned = PhoneFormattingService::cleanNumber($data['phone'] ?? null);
         if ($cleaned === '') {
             throw TreatmentException::invalidData('Phone is required to resolve the patient.');
         }
 
-        // Patient lookup: same scoping as the legacy `load/lead` endpoint
-        // — account-bound, restricted to patient user_type, exact phone match
-        // after stripping formatting.
         $patient = User::where('account_id', $accountId)
             ->where('user_type_id', config('constants.patient_id'))
             ->where('phone', $cleaned)
             ->first();
 
-        if ($patient) {
-            return (int) $patient->id;
-        }
-
-        // Inline create. Name is required by the form so it should always
-        // be present here; gender defaults to 0 (matches the consultancy
-        // path) since the leads table has a NOT NULL gender column.
-        $patient = User::create([
-            'name'         => $data['name'] ?? null,
-            'phone'        => $cleaned,
-            'email'        => $data['email'] ?? null,
-            'gender'       => $data['gender'] ?? 0,
-            'referred_by'  => $data['referred_by'] ?? null,
-            'account_id'   => $accountId,
-            'user_type_id' => config('constants.patient_id'),
-            'password'     => \Illuminate\Support\Facades\Hash::make(\Illuminate\Support\Str::random(16)),
-            'active'       => 1,
-        ]);
-
-        if (!$patient) {
-            throw TreatmentException::invalidData('Failed to create patient.');
+        if (! $patient) {
+            throw TreatmentException::patientNotRegistered();
         }
 
         return (int) $patient->id;

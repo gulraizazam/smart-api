@@ -29,7 +29,7 @@ class Appointments extends Model
         'appointment_status_id', 'service_id', 'cancellation_reason_id', 'reason',
         'resource_id', 'resource_has_rota_day_id', 'resource_has_rota_day_id_for_machine',
         'doctor_id', 'region_id', 'city_id', 'location_id', 'created_at', 'updated_at', 'appointment_id', 'counter', 'consultancy_type', 'coming_from', 'deleted_by',
-        'arrived_at', 'converted_at', 'meta_purchase_sent', 'referred_by',
+        'arrived_at', 'converted_at', 'meta_purchase_sent', 'meta_booked_sent', 'meta_arrived_sent', 'referred_by',
     ];
 
     protected $table = 'appointments';
@@ -46,7 +46,7 @@ class Appointments extends Model
         'appointment_status_id', 'service_id', 'cancellation_reason_id', 'reason',
         'resource_id', 'resource_has_rota_day_id', 'resource_has_rota_day_id_for_machine',
         'doctor_id', 'region_id', 'city_id', 'location_id', 'created_at', 'updated_at', 'appointment_id', 'counter', 'consultancy_type', 'coming_from',
-        'arrived_at', 'converted_at', 'meta_purchase_sent', 'referred_by',
+        'arrived_at', 'converted_at', 'meta_purchase_sent', 'meta_booked_sent', 'meta_arrived_sent', 'referred_by',
     ];
 
     /**
@@ -57,7 +57,7 @@ class Appointments extends Model
         'appointment_status_id', 'service_id', 'cancellation_reason_id', 'reason',
         'resource_id', 'resource_has_rota_day_id', 'resource_has_rota_day_id_for_machine',
         'doctor_id', 'region_id', 'city_id', 'location_id', 'created_at', 'updated_at', 'appointment_id', 'counter', 'consultancy_type', 'coming_from',
-        'arrived_at', 'converted_at', 'meta_purchase_sent', 'referred_by',
+        'arrived_at', 'converted_at', 'meta_purchase_sent', 'meta_booked_sent', 'meta_arrived_sent', 'referred_by',
     ];
 
     protected $attributes = [
@@ -75,6 +75,8 @@ class Appointments extends Model
             'appointment_status_allow_message' => 'boolean',
             'active' => 'boolean',
             'meta_purchase_sent' => 'boolean',
+            'meta_booked_sent' => 'boolean',
+            'meta_arrived_sent' => 'boolean',
         ];
     }
 

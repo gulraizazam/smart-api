@@ -1,256 +1,110 @@
 <?php
 
 declare(strict_types=1);
+
 namespace App\Console\Commands;
 
-use Config;
-use Carbon\Carbon;
-use App\Models\SMSLogs;
-use App\Models\Accounts;
-use App\Models\Settings;
-use App\Jobs\SecondSmsJob;
-use App\Helpers\JazzSMSAPI;
-use App\Models\Appointments;
-use App\Enums\AppointmentType;
-use App\Models\SMSTemplates;
-use App\Helpers\TelenorSMSAPI;
-use Illuminate\Console\Command;
 use App\Helpers\GeneralFunctions;
+use App\Models\Appointments;
+use App\Models\SMSLogs;
+use App\Services\SMS\AppointmentSmsDispatcher;
+use Carbon\Carbon;
+use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
 
-use App\Models\UserOperatorSettings;
-use Illuminate\Foundation\Bus\DispatchesJobs;
-
-class SecondMessageOfAppointment extends Command
+/**
+ * Send the day-before reminder SMS to patients whose appointment is
+ * scheduled for tomorrow. Runs at 19:55 PKT.
+ *
+ * Honours the per-appointment `appointment_status_allow_message`
+ * flag — once a status transitions to one that disables outgoing
+ * messages (e.g. cancelled), the reminder is skipped even if the
+ * scheduled date still matches.
+ *
+ * Dedups against same-day SMSLogs so a manual re-run within the
+ * same day doesn't double-send.
+ */
+final class SecondMessageOfAppointment extends Command
 {
-    use DispatchesJobs;
-
-    /**
-     * The name and signature of the console command.
-     *
-     * @var string
-     */
     protected $signature = 'appointment:2nd-message-on-appointment-day';
 
-    /**
-     * The console command description.
-     *
-     * @var string
-     */
-    protected $description = 'Send reminder message to patients with appointments scheduled tomorrow';
+    protected $description = 'Send the day-before reminder SMS to patients with appointments scheduled tomorrow.';
 
-    /**
-     * Create a new command instance.
-     *
-     * @return void
-     */
-    public function __construct()
-    {
+    private const LOG_TYPE = '2nd_sms';
+
+    public function __construct(
+        private readonly AppointmentSmsDispatcher $dispatcher,
+    ) {
         parent::__construct();
     }
 
-    /**
-     * Execute the console command.
-     *
-     * @return mixed
-     */
     public function handle(): int
     {
-        
-        $day = Carbon::now()->format('Y-m-d');
-        $tomorrow = Carbon::parse(Carbon::now())->addDay()->format('Y-m-d');
+        $today = Carbon::now()->toDateString();
+        $tomorrow = Carbon::now()->addDay()->toDateString();
 
-        $where = [];
-
-        $where[] = [
-            'scheduled_date',
-            '=',
-            $tomorrow,  // tomorrow
-        ];
-        $where[] = [
-            'base_appointment_status_id',
-            '=',
-            1,
-        ];
-        $appointments = Appointments::join('users', 'users.id', '=', 'appointments.patient_id')->where($where)
-            ->where(['appointments.appointment_status_allow_message' => 1])
-            ->whereNull('coming_from')
-             
-            ->select('appointments.id as appointment_id', 'appointments.account_id', 'users.phone','appointments.appointment_type_id', 'appointments.consultancy_type')
+        $appointments = Appointments::query()
+            ->join('users', 'users.id', '=', 'appointments.patient_id')
+            ->where('appointments.scheduled_date', $tomorrow)
+            ->where('appointments.base_appointment_status_id', 1)
+            ->where('appointments.appointment_status_allow_message', 1)
+            ->whereNull('appointments.coming_from')
+            ->select(
+                'appointments.id',
+                'appointments.account_id',
+                'appointments.appointment_type_id',
+                'appointments.consultancy_type',
+                'users.phone',
+            )
             ->get();
-           
-            
-        $log_type = '2nd_sms';
 
-        // Operational visibility — previously this command ran silently with
-        // no signal when the query returned zero rows. Log the candidate
-        // count so ops can tell "query found 0" from "SMS API failed".
-        Log::info('SecondMessageOfAppointment candidates', [
+        Log::info('appointment:2nd-message candidates', [
             'tomorrow' => $tomorrow,
             'count' => $appointments->count(),
         ]);
 
-        if ($appointments) {
+        $sent = 0;
 
-            foreach ($appointments as $appointment) {
+        foreach ($appointments as $row) {
+            if ($this->alreadySentToday($row, $today)) {
+                continue;
+            }
 
-                $smsLog = SMSLogs::where([
-                    'to' => GeneralFunctions::prepareNumber(GeneralFunctions::cleanNumber($appointment->phone)),
-                    'log_type' => $log_type,
-                ])
-                    ->where('appointment_id', '=', $appointment->appointment_id)
-                    ->whereDate('created_at', '=', $day)
-                    ->select('id')->first();
-
-                if ($smsLog) {
+            try {
+                // Hydrate a real Appointments instance so the
+                // dispatcher's relationship reads + casts work
+                // (e.g. resolving phone via patient relation).
+                $appointment = Appointments::query()->find($row->id);
+                if (! $appointment) {
                     continue;
                 }
 
-                try {
-                    // Use the appointment's own account — fetching "first"
-                    // account in a multi-tenant system picks the wrong
-                    // templates/settings and causes SMSTemplates::getBySlug()
-                    // to silently return null for tenants whose account
-                    // isn't row #1.
-                    $accountId = (int) $appointment->account_id;
-
-                    // `appointment_type_id` has no cast on the Appointments
-                    // model and PDO can return integer columns as strings
-                    // from raw SELECTs; cast before the strict comparison
-                    // so a string "1" still resolves to Consultancy.
-                    if ((int) $appointment->appointment_type_id === AppointmentType::Consultancy->value) {
-                        if ($appointment->consultancy_type == 'virtual') {
-                            $SMSTemplate = SMSTemplates::getBySlug('virtual-second-sms', $accountId);
-                        } else {
-                            $SMSTemplate = SMSTemplates::getBySlug('second-sms', $accountId);
-                        }
-                    } else {
-                        $SMSTemplate = SMSTemplates::getBySlug('treatment-second-sms', $accountId);
-                    }
-
-                    if (! $SMSTemplate) {
-                        Log::warning('SecondMessageOfAppointment template missing', [
-                            'appointment_id' => $appointment->appointment_id,
-                            'account_id' => $accountId,
-                            'type_id' => $appointment->appointment_type_id,
-                            'consultancy_type' => $appointment->consultancy_type,
-                        ]);
-                        continue;
-                    }
-
-                    $preparedText = Appointments::prepareSMSContent($appointment->appointment_id, $SMSTemplate->content);
-
-                    $setting = Settings::whereSlug('sys-current-sms-operator')->first();
-                    if (! $setting) {
-                        Log::warning('SecondMessageOfAppointment sms-operator setting missing', [
-                            'appointment_id' => $appointment->appointment_id,
-                            'account_id' => $accountId,
-                        ]);
-                        continue;
-                    }
-
-                    $UserOperatorSettings = UserOperatorSettings::getRecord($accountId, (int) $setting->data);
-                    if (! $UserOperatorSettings) {
-                        Log::warning('SecondMessageOfAppointment operator credentials missing', [
-                            'appointment_id' => $appointment->appointment_id,
-                            'account_id' => $accountId,
-                            'operator' => $setting->data,
-                        ]);
-                        continue;
-                    }
-
-                    if ($setting->data == 1) {
-                        $SMSObj = [
-                            'username' => $UserOperatorSettings->username,
-                            'password' => $UserOperatorSettings->password,
-                            'to' => GeneralFunctions::prepareNumber(GeneralFunctions::cleanNumber($appointment->phone)),
-                            'text' => $preparedText,
-                            'mask' => $UserOperatorSettings->mask,
-                            'test_mode' => $UserOperatorSettings->test_mode,
-                        ];
-                        $response = TelenorSMSAPI::SendSMS($SMSObj);
-                    } else {
-                        $SMSObj = [
-                            'username' => $UserOperatorSettings->username,
-                            'password' => $UserOperatorSettings->password,
-                            'from' => $UserOperatorSettings->mask,
-                            'to' => GeneralFunctions::prepareNumber(GeneralFunctions::cleanNumber($appointment->phone)),
-                            'text' => $preparedText,
-                            'test_mode' => $UserOperatorSettings->test_mode,
-                        ];
-                        $response = JazzSMSAPI::SendSMS($SMSObj);
-                    }
-
-                    $SMSLog = array_merge($SMSObj, $response);
-                    $SMSLog['appointment_id'] = $appointment->appointment_id;
-                    $SMSLog['created_by'] = 1;
-                    $SMSLog['log_type'] = $log_type;
-                    if ($setting->data == 2) {
-                        $SMSLog['mask'] = $SMSObj['from'];
-                    }
-                    SMSLogs::create($SMSLog);
-                } catch (\Throwable $e) {
-                    Log::error('SecondMessageOfAppointment SMS failed', [
-                        'appointment_id' => $appointment->appointment_id,
-                        'error' => $e->getMessage(),
-                        'file' => $e->getFile(),
-                        'line' => $e->getLine(),
-                    ]);
+                $result = $this->dispatcher->dispatchReminderMessage($appointment);
+                if ($result['sent']) {
+                    $sent++;
                 }
+            } catch (\Throwable $e) {
+                Log::error('appointment:2nd-message unexpected error', [
+                    'appointment_id' => $row->id,
+                    'error' => $e->getMessage(),
+                    'file' => $e->getFile(),
+                    'line' => $e->getLine(),
+                ]);
             }
         }
+
+        $this->info("Reminder SMS dispatched: {$sent} / {$appointments->count()}");
 
         return self::SUCCESS;
     }
 
-    /*
-     * Send SMS on booking of Appointment
-     *
-     * @param: int $appointmentId
-     * @param: string $patient_phone
-     * @return: array|mixture
-     */
-//    private function sendSMS($appointmentId, $patient_phone, $log_type = 'sms', $account_id) {
-//        // Get Appointment
-//        $appointment = Appointments::find($appointmentId);
-//        if($appointment->appointment_type_id == Config::get('constants.appointment_type_consultancy')) {
-//            // SEND SMS for Appointment Booked
-//            $SMSTemplate = SMSTemplates::getBySlug('second-sms', $account_id); // 'second-sms' for Appointment SMS
-//        } else {
-//            // SEND SMS for Appointment Booked
-//            $SMSTemplate = SMSTemplates::getBySlug('treatment-second-sms', $account_id); // 'second-sms' for Appointment SMS
-//        }
-//
-//        if(!$SMSTemplate) {
-//            // SMS Promotion is disabled
-//            return array(
-//                'status' => true,
-//                'sms_data' => 'SMS Promotion is disabled',
-//                'error_msg' => '',
-//            );
-//        }
-//
-//        $preparedText = Appointments::prepareSMSContent($appointmentId, $SMSTemplate->content);
-//
-//        $UserOperatorSettings = UserOperatorSettings::getRecord($account_id);
-//        $SMSObj = array(
-//            'username' => $UserOperatorSettings->username, // Setting ID 1 for Username
-//            'password' => $UserOperatorSettings->password, // Setting ID 2 for Password
-//            'to' => GeneralFunctions::prepareNumber(GeneralFunctions::cleanNumber($patient_phone)),
-//            'text' => $preparedText,
-//            'mask' => $UserOperatorSettings->mask, // Setting ID 3 for Mask
-//            'test_mode' => $UserOperatorSettings->test_mode, // Setting ID 3 Test Mode
-//        );
-//
-//        $response = TelenorSMSAPI::SendSMS($SMSObj);
-//
-//        $SMSLog = array_merge($SMSObj, $response);
-//        $SMSLog['appointment_id'] = $appointmentId;
-//        $SMSLog['created_by'] = 1;
-//        $SMSLog['log_type'] = $log_type;
-//        SMSLogs::create($SMSLog);
-//        // SEND SMS for Appointment Booked End
-//
-//        return $response;
-//    }
+    private function alreadySentToday(object $row, string $today): bool
+    {
+        return SMSLogs::query()
+            ->where('appointment_id', $row->id)
+            ->where('log_type', self::LOG_TYPE)
+            ->where('to', GeneralFunctions::prepareNumber(GeneralFunctions::cleanNumber($row->phone)))
+            ->whereDate('created_at', $today)
+            ->exists();
+    }
 }

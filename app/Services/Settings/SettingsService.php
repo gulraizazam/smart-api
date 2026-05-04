@@ -59,10 +59,7 @@ class SettingsService
         $data['account_id'] = Auth::user()->account_id;
         $data['slug'] = 'custom';
 
-        $record = Settings::create($data);
-        $record->update(['sort_no' => $record->id]);
-
-        return $record;
+        return Settings::create($data);
     }
 
     /**
@@ -84,10 +81,6 @@ class SettingsService
 
         $data['account_id'] = $accountId;
         $data['data'] = $this->resolveDataValue($record->slug, $data);
-
-        if (! isset($data['is_featured']) || $data['is_featured'] === '') {
-            $data['is_featured'] = 0;
-        }
 
         // Strip leading zeros from min/max
         if (isset($data['min'])) {
@@ -176,6 +169,7 @@ class SettingsService
             'sys-current-sms-operator' => config("constants.operator_array.{$setting->data}") ?? $setting->data,
             'sys-consultancy-invoice-medical-operator' => config("constants.invoice_consultancy_medical_form.{$setting->data}") ?? $setting->data,
             'sys-virtual-consultancy' => config("constants.consultancy_type.{$setting->data}") ?? $setting->data,
+            'sys-tax-treatment' => config("constants.tax_treatment_array.{$setting->data}") ?? $setting->data,
             default => $setting->data,
         };
     }
@@ -215,6 +209,10 @@ class SettingsService
             'sys-virtual-consultancy' => [
                 'field_type' => 'select',
                 'extra' => ['list' => config('constants.consultancy_type')],
+            ],
+            'sys-tax-treatment' => [
+                'field_type' => 'select',
+                'extra' => ['list' => config('constants.tax_treatment_array')],
             ],
             default => [
                 'field_type' => 'text',

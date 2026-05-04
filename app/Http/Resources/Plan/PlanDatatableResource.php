@@ -123,9 +123,24 @@ final class PlanDatatableResource extends JsonResource
             return null;
         }
 
-        $endDate = $membership->end_date ? Carbon::parse($membership->end_date) : null;
-        $isExpired = $endDate?->isPast() ?? true;
-        $status = $isExpired ? 'Expired' : ((bool) $membership->active ? 'Active' : 'Inactive');
+        // Three-way status — was previously two:
+        //   • end_date NULL   → never activated (unpaid, or unpaid student
+        //                       awaiting verification). Status: Inactive.
+        //   • end_date < now  → activated previously, validity window
+        //                       has closed. Status: Expired.
+        //   • end_date >= now → currently within the validity window.
+        //                       Status: Active (gated on `active` flag).
+        // The earlier `$endDate?->isPast() ?? true` collapsed NULL into
+        // "Expired", which read as a card that *had* been valid and
+        // lapsed — wrong for a card that never started.
+        if ($membership->end_date === null) {
+            $status = 'Inactive';
+        } else {
+            $endDate = Carbon::parse($membership->end_date);
+            $status = $endDate->isPast()
+                ? 'Expired'
+                : ((bool) $membership->active ? 'Active' : 'Inactive');
+        }
 
         $typeName = $membership->membershipType?->name ?? 'Gold';
 
@@ -134,6 +149,11 @@ final class PlanDatatableResource extends JsonResource
             'code'        => $membership->code,
             'status'      => $status,
             'is_referral' => (int) ($membership->is_referral ?? 0) === 1,
+            // ISO date so the SPA can localise/format. NULL when the
+            // card has never been activated (`Inactive` status). The
+            // model doesn't cast `end_date`, so it arrives as a raw
+            // string — pass it through directly.
+            'end_date'    => $membership->end_date,
         ];
     }
 }
