@@ -41,6 +41,9 @@ class Activity extends Model
         'deleted_by',
         'rescheduled_by',
         'deleted_date',
+        'amount',
+        'location',
+        'invoice_id',
     ];
 
     public $timestamps = false;
