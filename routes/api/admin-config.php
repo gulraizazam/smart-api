@@ -75,6 +75,17 @@ Route::prefix('users')->name('users.')->middleware('permission:users_manage')->g
     Route::post('status', [ApplicationUserController::class, 'status'])->name('status');
     Route::get('password/{id}', [ApplicationUserController::class, 'changePassword'])->name('change_password');
     Route::patch('password', [ApplicationUserController::class, 'savePassword'])->name('save_password');
+
+    // Path-bound JSON password update — obsoletes the GET-then-PATCH
+    // dance above (the legacy SPA had to GET the Blade modal, scrape
+    // an `encrypt(id)` hidden input, and POST it back). With the user
+    // id pinned in the path the encrypt-id obfuscation is unnecessary;
+    // tenant scoping happens server-side via findByAccountId. The
+    // legacy pair stays live until Blade cutover for legacy admin's
+    // edit form.
+    Route::patch('{id}/password', [ApplicationUserController::class, 'updatePassword'])
+        ->name('update_password')
+        ->whereNumber('id');
 });
 
 // User Types API Routes (Optimized)
@@ -290,6 +301,10 @@ Route::prefix('appointment_statuses')->name('appointment_statuses.api.')->group(
     Route::patch('{appointmentStatus}/status', [ApiAppointmentStatusesController::class, 'status'])->name('status')->whereNumber('appointmentStatus');
 });
 // Appointment Statuses Routes End
+
+// Cancellation Reasons (read-only — used by status-update dialogs)
+Route::get('cancellation-reasons', [\App\Http\Controllers\Api\CancellationReasonsController::class, 'index'])
+    ->name('cancellation_reasons.index');
 
 // Machine Types Routes Start
 Route::post('machine_types/datatable', [MachineTypeController::class, 'datatable'])->name('machine_types.datatable');

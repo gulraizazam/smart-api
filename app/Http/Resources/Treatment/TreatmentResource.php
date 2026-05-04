@@ -4,9 +4,13 @@ declare(strict_types=1);
 
 namespace App\Http\Resources\Treatment;
 
+use App\Helpers\AppointmentHelper;
+use App\Models\InvoiceStatuses;
+use App\Models\Invoices;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 
 /**
@@ -22,6 +26,14 @@ use Illuminate\Support\Facades\Gate;
  */
 final class TreatmentResource extends JsonResource
 {
+    /**
+     * Memoised paid-invoice status id, keyed by account_id. See
+     * ConsultancyResource for the multi-tenant rationale.
+     *
+     * @var array<int, int|null>
+     */
+    private static array $paidInvoiceStatusIdByAccount = [];
+
     /**
      * @return array<string, mixed>
      */
@@ -63,6 +75,15 @@ final class TreatmentResource extends JsonResource
             'appointment_status'    => $this->whenLoaded('appointment_status', fn () => [
                 'id'   => $this->appointment_status->id,
                 'name' => $this->appointment_status->name,
+                // Flag fields so the SPA can distinguish system-managed
+                // statuses (Arrived / Converted / Un-Scheduled / Cancelled)
+                // from manual ones without doing a fragile substring
+                // match on the name. Used by the row-level Schedule
+                // affordance and the status dialog's lock state.
+                'is_arrived'     => (bool) ($this->appointment_status->is_arrived ?? false),
+                'is_converted'   => (bool) ($this->appointment_status->is_converted ?? false),
+                'is_unscheduled' => (bool) ($this->appointment_status->is_unscheduled ?? false),
+                'is_cancelled'   => (bool) ($this->appointment_status->is_cancelled ?? false),
             ]),
             'appointment_type'      => $this->whenLoaded('appointment_type', fn () => [
                 'id'   => $this->appointment_type->id,
@@ -80,6 +101,15 @@ final class TreatmentResource extends JsonResource
                 : null,
             'arrived_at'            => $this->arrived_at,
             'converted_at'          => $this->converted_at,
+            // Backend-computed lock signals — see ConsultancyResource for
+            // the full rationale. has_paid_invoice mirrors
+            // AppointmentService's paid-invoice lock; has_children
+            // mirrors AppointmentHelper::isChildExists.
+            'has_paid_invoice'      => $this->resolveHasPaidInvoice(),
+            'has_children'          => AppointmentHelper::isChildExists(
+                (int) $this->id,
+                (int) (Auth::user()?->account_id ?? 0),
+            ),
             'patient'               => $this->whenLoaded('patient', function () use ($canViewContact): array {
                 $patient = [
                     'id'   => $this->patient->id,
@@ -111,5 +141,33 @@ final class TreatmentResource extends JsonResource
             'created_at'            => $this->created_at?->format('Y-m-d H:i:s'),
             'updated_at'            => $this->updated_at?->format('Y-m-d H:i:s'),
         ];
+    }
+
+    private function resolveHasPaidInvoice(): bool
+    {
+        $accountId = (int) ($this->account_id ?? 0);
+        if ($accountId <= 0) {
+            return false;
+        }
+        $paidId = $this->paidInvoiceStatusIdFor($accountId);
+        if (! $paidId) {
+            return false;
+        }
+
+        return Invoices::where('appointment_id', $this->id)
+            ->where('invoice_status_id', $paidId)
+            ->exists();
+    }
+
+    private function paidInvoiceStatusIdFor(int $accountId): ?int
+    {
+        if (! array_key_exists($accountId, self::$paidInvoiceStatusIdByAccount)) {
+            $id = (int) InvoiceStatuses::where('slug', '=', 'paid')
+                ->where('account_id', $accountId)
+                ->value('id');
+            self::$paidInvoiceStatusIdByAccount[$accountId] = $id > 0 ? $id : null;
+        }
+
+        return self::$paidInvoiceStatusIdByAccount[$accountId];
     }
 }

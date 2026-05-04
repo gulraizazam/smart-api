@@ -241,7 +241,20 @@ class LeadsController extends Controller
 
             return $this->successResponse('Status updated successfully!');
         } catch (LeadException $e) {
-            return $this->errorResponse($e->getMessage(), 500);
+            // LeadException here is a business-rule violation —
+            // statusChangeNotAllowed (lead at Arrived/Converted) or
+            // targetStatusNotAllowed (operator picked a system-managed
+            // target). 422 is the right shape: the SPA's `api.ts` masks
+            // 5xx as a generic "Something went wrong on our end" toast,
+            // which hides the actual reason. With 422 the SPA surfaces
+            // the message verbatim and can wire `setError` against the
+            // field key. Defense-in-depth — the SPA's Option A locked
+            // dropdown already prevents reaching this path under normal
+            // use; this is for races, direct API hits, and future
+            // refactors that drop the locked-state check.
+            return $this->errorResponse($e->getMessage(), 422, [
+                'lead_status_parent_id' => [$e->getMessage()],
+            ]);
         } catch (\Exception $e) {
             return $this->handleException($e, 'LeadsController');
         }
@@ -478,9 +491,23 @@ class LeadsController extends Controller
 
     public function loadLeadStatuses(): JsonResponse
     {
+        // `is_*` flags are surfaced so the SPA's manual-status dropdown
+        // can hide automation-only statuses (Booked → set on appointment
+        // create, Arrived → set on consultation invoice paid, Converted
+        // → set on first package payment, Junk → owned by the dedicated
+        // Move-to-junk action). Without these flags the SPA filter
+        // `!s.is_booked && !s.is_arrived && …` evaluates `!undefined`
+        // = true for every row and hides nothing.
         return response()->json(
             LeadStatuses::getActiveOnly()
-                ->map(fn ($status): array => ['value' => $status->id, 'text' => $status->name])
+                ->map(fn ($status): array => [
+                    'value'        => $status->id,
+                    'text'         => $status->name,
+                    'is_booked'    => (bool) $status->is_booked,
+                    'is_arrived'   => (bool) $status->is_arrived,
+                    'is_converted' => (bool) $status->is_converted,
+                    'is_junk'      => (bool) $status->is_junk,
+                ])
                 ->toArray()
         );
     }

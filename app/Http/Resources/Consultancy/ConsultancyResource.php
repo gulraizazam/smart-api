@@ -5,13 +5,28 @@ declare(strict_types=1);
 namespace App\Http\Resources\Consultancy;
 
 use App\Enums\ConsultancyType;
+use App\Helpers\AppointmentHelper;
+use App\Models\InvoiceStatuses;
+use App\Models\Invoices;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 
 class ConsultancyResource extends JsonResource
 {
+    /**
+     * Memoised paid-invoice status id, keyed by account_id. The
+     * `invoice_statuses` table is account-scoped so the slug='paid' row
+     * has a different id per tenant; a single static would leak between
+     * accounts when the same FPM worker handles requests for multiple
+     * tenants. The map keeps each account's lookup isolated.
+     *
+     * @var array<int, int|null>
+     */
+    private static array $paidInvoiceStatusIdByAccount = [];
+
     public function toArray(Request $request): array
     {
         $canViewContact = Gate::allows('contact');
@@ -40,6 +55,14 @@ class ConsultancyResource extends JsonResource
             'appointment_status' => $this->whenLoaded('appointment_status', fn () => [
                 'id' => $this->appointment_status->id,
                 'name' => $this->appointment_status->name,
+                // Flag fields so the SPA can distinguish system-managed
+                // statuses without doing a substring match on the name.
+                // Used by the row-level Schedule affordance and the
+                // status dialog's lock state.
+                'is_arrived'     => (bool) ($this->appointment_status->is_arrived ?? false),
+                'is_converted'   => (bool) ($this->appointment_status->is_converted ?? false),
+                'is_unscheduled' => (bool) ($this->appointment_status->is_unscheduled ?? false),
+                'is_cancelled'   => (bool) ($this->appointment_status->is_cancelled ?? false),
             ]),
             'appointment_type' => $this->whenLoaded('appointment_type', fn () => [
                 'id' => $this->appointment_type->id,
@@ -57,6 +80,19 @@ class ConsultancyResource extends JsonResource
                 : null,
             'arrived_at' => $this->arrived_at,
             'converted_at' => $this->converted_at,
+            // Surfaced so the SPA's status dialog can lock the dropdown
+            // up-front instead of letting the user pick a value the
+            // backend would 422 on. Mirrors AppointmentService's own
+            // paid-invoice lock at updateAppointmentStatus.
+            'has_paid_invoice' => $this->resolveHasPaidInvoice(),
+            // Same for the row-level Delete affordance — backend rejects
+            // delete when invoices/advances/measurements/images exist
+            // (AppointmentHelper::isChildExists). Surfacing the flag lets
+            // the SPA grey the icon out before the click.
+            'has_children' => AppointmentHelper::isChildExists(
+                (int) $this->id,
+                (int) (Auth::user()?->account_id ?? 0),
+            ),
             'patient' => $this->whenLoaded('patient', function () use ($canViewContact): array {
                 $patient = [
                     'id' => $this->patient->id,
@@ -92,5 +128,33 @@ class ConsultancyResource extends JsonResource
             'created_at' => $this->created_at?->format('Y-m-d H:i:s'),
             'updated_at' => $this->updated_at?->format('Y-m-d H:i:s'),
         ];
+    }
+
+    private function resolveHasPaidInvoice(): bool
+    {
+        $accountId = (int) ($this->account_id ?? 0);
+        if ($accountId <= 0) {
+            return false;
+        }
+        $paidId = $this->paidInvoiceStatusIdFor($accountId);
+        if (! $paidId) {
+            return false;
+        }
+
+        return Invoices::where('appointment_id', $this->id)
+            ->where('invoice_status_id', $paidId)
+            ->exists();
+    }
+
+    private function paidInvoiceStatusIdFor(int $accountId): ?int
+    {
+        if (! array_key_exists($accountId, self::$paidInvoiceStatusIdByAccount)) {
+            $id = (int) InvoiceStatuses::where('slug', '=', 'paid')
+                ->where('account_id', $accountId)
+                ->value('id');
+            self::$paidInvoiceStatusIdByAccount[$accountId] = $id > 0 ? $id : null;
+        }
+
+        return self::$paidInvoiceStatusIdByAccount[$accountId];
     }
 }
