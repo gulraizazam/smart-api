@@ -19,6 +19,7 @@ use App\Http\Requests\Treatment\UpdateTreatmentRequest;
 use App\Http\Resources\Treatment\TreatmentEditResource;
 use App\Http\Resources\Treatment\TreatmentResource;
 use App\Models\Appointments;
+use App\Models\Settings;
 use App\Models\SMSTemplates;
 use App\Services\Appointment\AppointmentService;
 use App\Services\Appointment\TreatmentUpdateService;
@@ -213,6 +214,11 @@ final class TreatmentController extends Controller
             }
 
             $filters = $request->only([
+                // Unified patient search — SPA sends `q`; the service
+                // delegates to PatientSearchService::applyPatientFilter
+                // (the canonical classifier shared with Plans / Patients /
+                // Vouchers / Invoices / Consultancy listings).
+                'q',
                 'patient_id', 'phone', 'location_id', 'doctor_id', 'service_id',
                 // `service_parent_id` lets the SPA's tree picker filter
                 // by a service category — expands to every active
@@ -606,8 +612,9 @@ final class TreatmentController extends Controller
                     $taxPercent = (float) ($location->tax_percentage ?? 0);
                     $taxBoth = (int) Config::get('constants.tax_both');
                     $taxExclusive = (int) Config::get('constants.tax_is_exclusive');
+                    $orgTaxTreatment = Settings::getOrgTaxTreatment(Auth::user()->account_id);
 
-                    if (in_array((int) ($service->tax_treatment_type_id ?? 0), [$taxBoth, $taxExclusive], true)) {
+                    if (in_array($orgTaxTreatment, [$taxBoth, $taxExclusive], true)) {
                         // Service price is tax-exclusive → add tax on top.
                         $amountCreate = $servicePrice;
                         $taxCreate    = ceil($servicePrice * ($taxPercent / 100));

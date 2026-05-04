@@ -163,18 +163,20 @@ class Order extends BaseModel
     public static function createRecord($request, $account_id, $products)
     {
         $data = $request->all();
+        // Policy: orders cannot create patients. If a phone is provided
+        // it must already match an existing patient — otherwise the
+        // caller must book a consultation first to register them.
+        // Patient creation is owned exclusively by the consultation
+        // booking flow (AppointmentService::createAppointment).
         if (isset($data['name']) && isset($data['phone']) && $data['phone'] != '') {
             $patient = Patients::where(['phone' => $data['phone']])->first();
             if (! $patient) {
-                $newPatient = Patients::create([
-                    'name' => $data['name'],
-                    'phone' => $data['phone'],
-                ]);
-                $data['patient_id'] = $newPatient->id;
-            } else {
-                $data['patient_id'] = $patient->id;
+                throw new \Symfony\Component\HttpKernel\Exception\HttpException(
+                    422,
+                    'No registered patient with this phone. Book a consultation first to register the patient.',
+                );
             }
-
+            $data['patient_id'] = $patient->id;
         }
         $productTotals = [];
         // Iterate through the arrays

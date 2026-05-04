@@ -7,6 +7,7 @@ namespace App\Services\Plan;
 use App\Exceptions\PlanException;
 use App\Models\Membership;
 use App\Models\MembershipType;
+use Illuminate\Support\Facades\DB;
 
 final class PlanMembershipService
 {
@@ -23,23 +24,7 @@ final class PlanMembershipService
      */
     public function getMembershipTypes(int $locationId, ?int $patientId = null): array
     {
-        $expiredMembershipTypeId = null;
-
-        // Check if patient's latest membership is expired and get its type
-        if ($patientId) {
-            $latestMembership = Membership::where('patient_id', $patientId)
-                ->orderBy('created_at', 'desc')
-                ->first();
-
-            if ($latestMembership && $latestMembership->end_date < now()->format('Y-m-d')) {
-                $expiredType = MembershipType::find($latestMembership->membership_type_id);
-                if ($expiredType) {
-                    $expiredMembershipTypeId = $expiredType->parent_id ?? $expiredType->id;
-                }
-            }
-        }
-
-        // Get all parent membership types (always show these)
+        // Always-visible base set: every active parent membership type.
         $parentMemberships = MembershipType::where('active', 1)
             ->whereNull('parent_id')
             ->select('id', 'name', 'amount as price', 'parent_id')
@@ -47,16 +32,64 @@ final class PlanMembershipService
             ->get();
 
         $memberships = $parentMemberships;
+        $expiredMembershipTypeId = null;
 
-        // If patient has an expired membership, add ONLY the renewal for that specific type
-        if ($expiredMembershipTypeId) {
-            $renewalMembership = MembershipType::where('active', 1)
-                ->where('parent_id', $expiredMembershipTypeId)
-                ->select('id', 'name', 'amount as price', 'parent_id')
-                ->first();
+        if ($patientId) {
+            // Two corrections vs. the legacy logic:
+            //
+            //   1. EXPIRED requires a real past `end_date`. The previous
+            //      "$latestMembership->end_date < now()" check evaluated
+            //      true when `end_date` was NULL — which is the state
+            //      every never-activated card lives in (unpaid student
+            //      memberships, half-finished assignments). Treating
+            //      those as expired surfaced renewal pricing for cards
+            //      that never even started, letting the operator hand
+            //      out a discount without the patient ever having paid
+            //      the regular price. `whereNotNull` + strict `<` closes
+            //      that.
+            //
+            //   2. Look at EVERY expired parent type, not just "the
+            //      most recent membership row". A patient who held a
+            //      Gold (now expired) and later a Student (also expired)
+            //      should see both renewals — the legacy code surfaced
+            //      only the latest type's renewal and silently
+            //      suppressed the other. `DISTINCT
+            //      COALESCE(parent_id, id)` collapses every expired row
+            //      to its parent-type id; the IN query then returns
+            //      every renewal child for those parents.
+            $expiredParentTypeIds = DB::table('memberships')
+                ->join('membership_types', 'membership_types.id', '=', 'memberships.membership_type_id')
+                ->where('memberships.patient_id', $patientId)
+                ->whereNotNull('memberships.end_date')
+                ->where('memberships.end_date', '<', now()->format('Y-m-d'))
+                ->select(DB::raw('DISTINCT COALESCE(membership_types.parent_id, membership_types.id) AS parent_type_id'))
+                ->pluck('parent_type_id')
+                ->all();
 
-            if ($renewalMembership) {
-                $memberships = $parentMemberships->push($renewalMembership)->sortBy('name')->values();
+            if (! empty($expiredParentTypeIds)) {
+                $renewalMemberships = MembershipType::where('active', 1)
+                    ->whereIn('parent_id', $expiredParentTypeIds)
+                    ->select('id', 'name', 'amount as price', 'parent_id')
+                    ->get();
+
+                if ($renewalMemberships->isNotEmpty()) {
+                    $memberships = $parentMemberships
+                        ->concat($renewalMemberships)
+                        ->sortBy('name')
+                        ->values();
+                }
+
+                // Legacy callers (e.g. legacy create-membership.js)
+                // read this flat field and pre-select the renewal that
+                // matches their state. "Most recent expired type" is
+                // the closest single-value semantic.
+                $expiredMembershipTypeId = DB::table('memberships')
+                    ->join('membership_types', 'membership_types.id', '=', 'memberships.membership_type_id')
+                    ->where('memberships.patient_id', $patientId)
+                    ->whereNotNull('memberships.end_date')
+                    ->where('memberships.end_date', '<', now()->format('Y-m-d'))
+                    ->orderByDesc('memberships.created_at')
+                    ->value(DB::raw('COALESCE(membership_types.parent_id, membership_types.id)'));
             }
         }
 

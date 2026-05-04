@@ -295,8 +295,23 @@ class PackageAdvances extends BaseModel
     }
 
     /**
-     * Update lead status to Converted when payment is received.
-     * Flow: package_advances -> packages (appointment_id) -> appointments (lead_id) -> leads
+     * Update lead + leads_services status to Converted when a package
+     * payment is received. Wired to every `cash_flow='in'` write path
+     * (createRecord, createRecord_forinvoice, updateRecord, etc.).
+     *
+     * Gated on the **appointment** already being Arrived or Converted —
+     * the Plan-side conversion writer (`PlanService::markAppointment-
+     * AsConvertedOptimized`) is the single source of truth for the
+     * "should this conversion fire?" decision; we simply look at the
+     * post-state it produced. Without this gate a pre-payment (cash-in
+     * before the consultation invoice exists) would silently leak
+     * Converted into the lead row even though the appointment-side
+     * gate refused to convert. See agent reports + `WrongConversion-
+     * Service` for the historical data tail this prevents.
+     *
+     * Failures are caught and logged — this is a best-effort cascade
+     * inside a parent payment transaction; a write failure here must
+     * not roll back the parent.
      */
     public static function updateLeadStatusToConverted(int|string $packageId, int|string $accountId): void
     {
@@ -314,6 +329,16 @@ class PackageAdvances extends BaseModel
                 return;
             }
 
+            // Conversion gate — defer the "should we convert?" decision
+            // to the appointment's current status, which `PlanService::
+            // markAppointmentAsConvertedOptimized` (the canonical gate)
+            // sets only when its full preconditions are met.
+            $apptStatus = AppointmentStatuses::find($appointment->appointment_status_id);
+            $shouldConvert = ($apptStatus?->is_arrived ?? false) || ($apptStatus?->is_converted ?? false);
+            if (! $shouldConvert) {
+                return;
+            }
+
             $convertedStatus = LeadStatuses::where([
                 'account_id' => $accountId,
                 'is_converted' => 1,
@@ -323,12 +348,14 @@ class PackageAdvances extends BaseModel
                 return;
             }
 
-            Leads::where('id', $appointment->lead_id)
-                ->update(['lead_status_id' => $convertedStatus->id]);
+            DB::transaction(function () use ($appointment, $convertedStatus): void {
+                Leads::where('id', $appointment->lead_id)
+                    ->update(['lead_status_id' => $convertedStatus->id]);
 
-            LeadsServices::where('lead_id', $appointment->lead_id)
-                ->where('service_id', $appointment->service_id)
-                ->update(['lead_status_id' => $convertedStatus->id]);
+                LeadsServices::where('lead_id', $appointment->lead_id)
+                    ->where('service_id', $appointment->service_id)
+                    ->update(['lead_status_id' => $convertedStatus->id]);
+            });
         } catch (\Throwable $e) {
             Log::error('Failed to update lead status to converted: '.$e->getMessage());
         }

@@ -259,7 +259,7 @@ class LeadService
             $lead = Leads::findOrFail($id);
 
             if (isset($data['lead_status_id']) && $data['lead_status_id'] != $lead->lead_status_id) {
-                $this->validateStatusChange($lead);
+                $this->validateStatusChange($lead, (int) $data['lead_status_id']);
             }
 
             if (! empty($data['service_id'])) {
@@ -299,9 +299,18 @@ class LeadService
         return DB::transaction(function () use ($leadId, $data): Leads {
             $lead = Leads::findOrFail($leadId);
 
-            $this->validateStatusChange($lead);
-
             $statusId = $data['lead_status_chalid_id'] ?? $data['lead_status_parent_id'];
+
+            // `validateStatusChange` enforces both directions:
+            //   - outbound: cannot leave Arrived/Converted (locks once
+            //     the lead has actually arrived or paid)
+            //   - inbound: cannot manually pick Booked/Arrived/Converted
+            //     — those are auto-set when the matching action fires
+            //     (booking → Booked, invoice paid → Arrived, payment →
+            //     Converted). Operators see only Open / Call Again /
+            //     Not Interested / Junk in the dropdown anyway, but
+            //     this is the API-level guard.
+            $this->validateStatusChange($lead, (int) $statusId);
 
             $lead->update([
                 'lead_status_id' => $statusId,
@@ -330,16 +339,29 @@ class LeadService
         return $lead;
     }
 
-    protected function validateStatusChange(Leads $lead): void
+    protected function validateStatusChange(Leads $lead, ?int $targetStatusId = null): void
     {
-        if (! $lead->lead_status_id) {
-            return;
+        // Outbound guard — once a lead is Arrived or Converted it is
+        // locked. The only way out is the wrong-conversion admin tool
+        // (`WrongConversionService`), which doesn't go through this
+        // path.
+        if ($lead->lead_status_id) {
+            $currentStatus = LeadStatuses::find($lead->lead_status_id);
+            if ($currentStatus?->is_arrived || $currentStatus?->is_converted) {
+                throw LeadException::statusChangeNotAllowed($currentStatus->name);
+            }
         }
 
-        $currentStatus = LeadStatuses::find($lead->lead_status_id);
-
-        if ($currentStatus?->is_arrived || $currentStatus?->is_converted) {
-            throw LeadException::statusChangeNotAllowed($currentStatus->name);
+        // Inbound guard — auto-only flagged statuses cannot be set
+        // manually. Booked/Arrived/Converted are cascaded from
+        // appointment events; any direct API call to set them is
+        // either an SPA bug or an operator trying to bypass the
+        // funnel. Junk has its own dedicated route.
+        if ($targetStatusId !== null) {
+            $targetStatus = LeadStatuses::find($targetStatusId);
+            if ($targetStatus?->is_booked || $targetStatus?->is_arrived || $targetStatus?->is_converted) {
+                throw LeadException::targetStatusNotAllowed($targetStatus->name);
+            }
         }
     }
 

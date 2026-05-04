@@ -37,6 +37,11 @@ class LeadException extends Exception
         return new self("Cannot change status. Lead is already marked as {$currentStatus}.", 422, ['current_status' => $currentStatus]);
     }
 
+    public static function targetStatusNotAllowed(string $targetStatus): self
+    {
+        return new self("Cannot manually set lead status to '{$targetStatus}' — it is set automatically when the corresponding action happens (booking, arrival, or payment).", 422, ['target_status' => $targetStatus]);
+    }
+
     public static function unauthorized(string $action = 'perform this action'): self
     {
         return new self("You are not authorized to {$action}.", 403, ['action' => $action]);

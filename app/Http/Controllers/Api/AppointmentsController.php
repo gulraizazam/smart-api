@@ -11,19 +11,14 @@ use App\Http\Requests\Appointment\UpdateAppointmentStatusRequest;
 use App\Http\Requests\Appointment\ScheduleAppointmentRequest;
 use App\Models\Appointments;
 use App\Services\Appointment\AppointmentService;
-use App\Services\Appointment\ConsultancyService;
-use App\Services\Appointment\TreatmentService;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
 
 class AppointmentsController extends Controller
 {
     public function __construct(
         protected readonly AppointmentService $appointmentService,
-        protected readonly ConsultancyService $consultancyService,
-        protected readonly TreatmentService $treatmentService,
     ) {}
 
     public function index(Request $request): \Illuminate\Http\JsonResponse

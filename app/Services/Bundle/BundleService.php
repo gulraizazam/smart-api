@@ -410,6 +410,12 @@ final class BundleService
         $bundleData = [
             'name'                 => $data['name'],
             'price'                => $data['price'],
+            // Persist the input mode the operator used to set `price`
+            // ('discount' = entered % off, 'net' = typed final price).
+            // The DB only stores the final number, so without this the
+            // edit form had to guess and consistently surfaced the wrong
+            // mode for net-priced bundles.
+            'pricing_mode'         => $data['pricing_mode'] ?? null,
             'start'                => $data['start'] ?? null,
             'end'                  => $data['end'] ?? null,
             'apply_discount'       => $data['apply_discount'] ?? 0,

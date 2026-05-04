@@ -14,6 +14,17 @@ use Spatie\Permission\Models\Permission;
 class HrNotificationService
 {
     /**
+     * Where to send the notification's recipient when they click — points
+     * at the SPA's HR Leaves page (mounted under `/admin-v2/`). Was
+     * `route('admin.hr.leave-applications.index')` and `route('admin.hr.
+     * my.leaves')` — both legacy Blade routes that die at cutover. Kept
+     * as a single SPA path for both HR-side and self-service flows since
+     * the SPA hasn't shipped a dedicated "my leaves" view yet; the HR
+     * Leaves page covers both surfaces in the meantime.
+     */
+    private const SPA_HR_LEAVE_APPLICATIONS_URL = '/admin-v2/hr/leave-applications';
+
+    /**
      * Create a notification for a specific user.
      */
     public function notify(
@@ -96,7 +107,7 @@ class HrNotificationService
             "{$empName} applied for {$leaveType} ({$application->total_days} days).",
             $application->id,
             LeaveApplication::class,
-            route('admin.hr.leave-applications.index'),
+            self::SPA_HR_LEAVE_APPLICATIONS_URL,
         );
     }
 
@@ -115,7 +126,7 @@ class HrNotificationService
             $application->account_id,
             $application->id,
             LeaveApplication::class,
-            route('admin.hr.my.leaves'),
+            self::SPA_HR_LEAVE_APPLICATIONS_URL,
         );
     }
 
@@ -134,7 +145,7 @@ class HrNotificationService
             $application->account_id,
             $application->id,
             LeaveApplication::class,
-            route('admin.hr.my.leaves'),
+            self::SPA_HR_LEAVE_APPLICATIONS_URL,
         );
     }
 
@@ -154,7 +165,7 @@ class HrNotificationService
             "{$empName} cancelled their {$application->leaveType->name} leave request.",
             $application->id,
             LeaveApplication::class,
-            route('admin.hr.leave-applications.index'),
+            self::SPA_HR_LEAVE_APPLICATIONS_URL,
         );
     }
 

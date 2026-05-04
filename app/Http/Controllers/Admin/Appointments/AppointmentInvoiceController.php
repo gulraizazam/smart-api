@@ -123,7 +123,8 @@ class AppointmentInvoiceController extends AppointmentBaseController
                         }
                     }
 
-                    if ($serviceinfo->tax_treatment_type_id == Config::get('constants.tax_both') || $serviceinfo->tax_treatment_type_id == Config::get('constants.tax_is_exclusive')) {
+                    $orgTaxTreatment = Settings::getOrgTaxTreatment(Auth::user()->account_id);
+                    if ($orgTaxTreatment == Config::get('constants.tax_both') || $orgTaxTreatment == Config::get('constants.tax_is_exclusive')) {
                         $amount_create = $amount_create_is_inclusive = $service_price;
                         $tax_create = ceil($service_price * ($location_information->tax_percentage / 100));
                         $price = ceil($amount_create + (($amount_create * $location_information->tax_percentage) / 100));
@@ -274,9 +275,10 @@ class AppointmentInvoiceController extends AppointmentBaseController
             $is_exclusive = $package_service_info->is_exclusive;
         } else {
             if ($appointmentinfo->appointment_type->name == Config::get('constants.Service')) {
-                if ($request->tax_treatment_type_id == Config::get('constants.tax_both')) {
+                $orgTaxTreatment = Settings::getOrgTaxTreatment(Auth::user()->account_id);
+                if ($orgTaxTreatment == Config::get('constants.tax_both')) {
                     $is_exclusive = $request->exclusive_or_bundle;
-                } elseif ($request->tax_treatment_type_id == Config::get('constants.tax_is_exclusive')) {
+                } elseif ($orgTaxTreatment == Config::get('constants.tax_is_exclusive')) {
                     $is_exclusive = 1;
                 } else {
                     $is_exclusive = 0;
@@ -407,9 +409,20 @@ class AppointmentInvoiceController extends AppointmentBaseController
 
         $data_package['created_at'] = Filters::getCurrentTimeStamp();
         $data_package['updated_at'] = Filters::getCurrentTimeStamp();
-        $package_advances = PackageAdvances::createRecord_forinvoice($data_package);
-        if ($request->package_id && $request->cash > 0) {
-            Invoice_Plan_Refund_Sms_Functions::PlanCashReceived_SMS($request->package_id, $package_advances);
+        // Skip writing a 0-amount cash-in row when consuming a session that
+        // was already paid for. The legacy code wrote one regardless of
+        // whether new cash was tendered, leaving placeholder rows in the
+        // ledger that carried no information — every aggregator already
+        // filters them out via `cash_amount > 0`, and the cash_out settle
+        // pair below carries the actual ledger entry plus the invoice link.
+        // Real cash collections (cash > 0) and non-plan consultancy invoices
+        // (no package_id) still record their cash-in row as before.
+        $shouldRecordCashIn = ! ($invoice_detail->package_id != null && (float) $request->cash <= 0);
+        if ($shouldRecordCashIn) {
+            $package_advances = PackageAdvances::createRecord_forinvoice($data_package);
+            if ($request->package_id && $request->cash > 0) {
+                Invoice_Plan_Refund_Sms_Functions::PlanCashReceived_SMS($request->package_id, $package_advances);
+            }
         }
         if ($request->remaining != 0) {
             $out_transcation = $request->remaining;
@@ -485,7 +498,12 @@ class AppointmentInvoiceController extends AppointmentBaseController
             Invoice_Plan_Refund_Sms_Functions::InvoiceCashReceived_SMS($invoice, $invoice_detail, false);
         }
         $arrivedStatus = AppointmentStatuses::where('is_arrived', '=', 1)->select('id')->first();
-        if (Appointments::where('id', '=', $request->appointment_id)->where('appointment_type_id', '=', Config::get('constants.appointment_type_service'))->where('base_appointment_status_id', '!=', Config::get('constants.appointment_type_service'))->exists()) {
+        // Pre-fix: the second `->where('base_appointment_status_id', '!=', ...)`
+        // condition compared a *status* id to the
+        // `appointment_type_service` constant — copy-paste bug. Real
+        // intent: only auto-arrive treatments that aren't already
+        // Arrived. Now compares against `$arrivedStatus->id`.
+        if ($arrivedStatus && Appointments::where('id', '=', $request->appointment_id)->where('appointment_type_id', '=', Config::get('constants.appointment_type_service'))->where('base_appointment_status_id', '!=', $arrivedStatus->id)->exists()) {
             if (AppointmentStatuses::where('parent_id', '=', $arrivedStatus->id)->exists()) {
                 $appointmentStatus = AppointmentStatuses::where('parent_id', '=', $arrivedStatus->id)->where('active', '=', 1)->first();
                 if ($appointmentStatus) {
@@ -921,7 +939,8 @@ class AppointmentInvoiceController extends AppointmentBaseController
     public function getcalculatedPriceExclusicecheck(Request $request): JsonResponse
     {
         $location_info = Locations::find($request->location_id);
-        if ($request->tax_treatment_type_id == Config::get('constants.tax_both')) {
+        $orgTaxTreatment = Settings::getOrgTaxTreatment(Auth::user()->account_id);
+        if ($orgTaxTreatment == Config::get('constants.tax_both')) {
             if ($request->is_exclusive == '1') {
                 $amount_create = $request->price_orignal;
                 $tax_create = ceil($request->price_orignal * ($location_info->tax_percentage / 100));
@@ -931,7 +950,7 @@ class AppointmentInvoiceController extends AppointmentBaseController
                 $amount_create = ceil((100 * $price) / ($location_info->tax_percentage + 100));
                 $tax_create = ceil($price - $amount_create);
             }
-        } elseif ($request->tax_treatment_type_id == Config::get('constants.tax_is_exclusive')) {
+        } elseif ($orgTaxTreatment == Config::get('constants.tax_is_exclusive')) {
             $amount_create = $request->price_orignal;
             $tax_create = ceil($request->price_orignal * ($location_info->tax_percentage / 100));
             $price = ceil($amount_create + (($amount_create * $location_info->tax_percentage) / 100));
