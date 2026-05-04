@@ -39,6 +39,11 @@ return [
 
     'max_age' => 0,
 
-    'supports_credentials' => false,
+    // The SPA at crm2.cutera.pk sends `credentials: 'include'` on every
+    // fetch (api.ts), so the response must echo
+    // `Access-Control-Allow-Credentials: true` or modern browsers reject
+    // the response. Required for both Passport bearer flows and any
+    // future Sanctum cookie flow on a different origin.
+    'supports_credentials' => true,
 
 ];
