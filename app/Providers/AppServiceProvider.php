@@ -52,8 +52,10 @@ use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
@@ -88,6 +90,54 @@ class AppServiceProvider extends ServiceProvider
         $this->registerAuditEventListeners();
         $this->registerAuthEventListeners();
         $this->registerObservedModels();
+        $this->registerSlowQueryLogger();
+    }
+
+    /**
+     * Phase 0 of the listing-API perf optimization: log queries slower than
+     * 250ms to storage/logs/slow-queries.log so we have a baseline to
+     * measure each per-module fix against. Off by default; opt in via
+     * `LOG_SLOW_QUERIES=true` in .env. Cheap when off (no DB::listen
+     * registration), no impact in production unless explicitly enabled.
+     *
+     * Pair with App\Http\Middleware\LogSlowRequests, which records the
+     * per-request totals (route, total ms, query count) into the same file
+     * so we catch death-by-many-fast-queries cases too.
+     */
+    private function registerSlowQueryLogger(): void
+    {
+        if (! (bool) env('LOG_SLOW_QUERIES', false)) {
+            return;
+        }
+
+        // Default 50ms in dev — high enough to skip trivially fast lookups
+        // but low enough that real list endpoints with joins routinely cross
+        // it. The original 250ms default was tuned for production and never
+        // tripped on a developer laptop with a small dataset.
+        $threshold = (float) env('LOG_SLOW_QUERIES_THRESHOLD_MS', 50);
+        $channel = Log::build([
+            'driver' => 'single',
+            'path' => storage_path('logs/slow-queries.log'),
+            'level' => 'debug',
+        ]);
+
+        DB::listen(static function ($query) use ($threshold, $channel): void {
+            if ($query->time < $threshold) {
+                return;
+            }
+
+            $route = request()->route();
+            $routeName = $route ? ($route->getName() ?: $route->uri()) : 'cli/no-route';
+
+            $channel->warning('slow-query', [
+                'ms' => round($query->time, 1),
+                'route' => $routeName,
+                'method' => request()->getMethod(),
+                'path' => request()->path(),
+                'sql' => $query->sql,
+                'bindings' => $query->bindings,
+            ]);
+        });
     }
 
     /**

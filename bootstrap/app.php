@@ -8,6 +8,7 @@ use App\Http\Middleware\AuthenticateApiWeb;
 use App\Http\Middleware\CheckAccountStatus;
 use App\Http\Middleware\CheckIpRestriction;
 use App\Http\Middleware\CheckPermission;
+use App\Http\Middleware\LogSlowRequests;
 use App\Http\Middleware\RedirectIfAuthenticated;
 use App\Http\Middleware\VerifyCsrfToken;
 use App\Jobs\SendCashflowDailyDigest;
@@ -59,6 +60,13 @@ return Application::configure(basePath: dirname(__DIR__))
             StartSession::class,
             ShareErrorsFromSession::class,
             VerifyCsrfToken::class,
+        ]);
+
+        // Phase 0 perf instrumentation. Adds X-Response-Time-Ms and writes a
+        // summary line for slow requests when LOG_SLOW_QUERIES=true. Cheap
+        // when disabled. Removed in Phase 2 cleanup of the optimization plan.
+        $middleware->api(append: [
+            LogSlowRequests::class,
         ]);
 
         // Custom middleware aliases
