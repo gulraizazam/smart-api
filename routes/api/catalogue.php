@@ -281,4 +281,5 @@ Route::post('schedule/get-time-off', [ScheduleController::class, 'getTimeOff'])-
 Route::post('schedule/update-time-off', [ScheduleController::class, 'updateTimeOff'])->name('schedule.update-time-off');
 Route::post('schedule/delete-time-off', [ScheduleController::class, 'deleteTimeOff'])->name('schedule.delete-time-off');
 Route::post('schedule/store-repeating-shifts', [ScheduleController::class, 'storeRepeatingShifts'])->name('schedule.store-repeating-shifts');
+Route::post('schedule/get-resources', [ScheduleController::class, 'getResources'])->name('schedule.get-resources');
 Route::post('schedule/bulk-delete-shifts', [ScheduleController::class, 'bulkDeleteShifts'])->name('schedule.bulk-delete-shifts');
