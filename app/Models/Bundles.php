@@ -19,6 +19,7 @@ class Bundles extends BaseModel
     protected $fillable = [
         'name',
         'price',
+        'pricing_mode',
         'services_price',
         'type',
         'start',
@@ -36,6 +37,7 @@ class Bundles extends BaseModel
     protected static array $_fillable = [
         'name',
         'price',
+        'pricing_mode',
         'services_price',
         'type',
         'start',

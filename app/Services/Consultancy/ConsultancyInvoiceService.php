@@ -530,7 +530,19 @@ class ConsultancyInvoiceService
             ->update(['lead_status_id' => $arrivedLeadStatus->id]);
 
         if ($leadRecord) {
-            $this->sendMetaCapiEvent($leadRecord);
+            // Per-appointment idempotency for the Meta CAPI `arrived`
+            // event — without this, paying the same invoice twice
+            // (e.g. retry after a transient failure) re-sends the
+            // event and inflates Meta's Arrived count. Activity log
+            // still fires every time so the audit trail is unaffected.
+            // Flag is only set when the Meta call actually succeeded
+            // (sendMetaCapiEvent returns false on failure) so a
+            // transient Meta error retries on the next call.
+            if (! $appointment->meta_arrived_sent) {
+                if ($this->sendMetaCapiEvent($leadRecord)) {
+                    $appointment->update(['meta_arrived_sent' => 1]);
+                }
+            }
 
             // Log lead arrived activity
             $location = Locations::with('city')->find($appointment->location_id);
@@ -547,7 +559,13 @@ class ConsultancyInvoiceService
         }
     }
 
-    private function sendMetaCapiEvent(Leads $lead): void
+    /**
+     * Returns `true` only when the Meta CAPI call succeeded — caller
+     * uses this to gate the `meta_arrived_sent=1` flag write so a
+     * transient Meta failure can retry on the next invoice payment
+     * for the same appointment.
+     */
+    private function sendMetaCapiEvent(Leads $lead): bool
     {
         try {
             $metaService = new MetaConversionApiService();
@@ -557,10 +575,12 @@ class ConsultancyInvoiceService
                 $lead->meta_lead_id,
                 $lead->email,
             );
+            return true;
         } catch (\Exception $e) {
             Log::error('Meta CAPI arrived event failed: ' . $e->getMessage(), [
                 'lead_id' => $lead->id,
             ]);
+            return false;
         }
     }
 

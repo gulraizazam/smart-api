@@ -17,6 +17,7 @@ use App\Helpers\JazzSMSAPI;
 use App\Helpers\TelenorSMSAPI;
 use App\Helpers\Widgets\DiscountWidget;
 use App\Helpers\Widgets\PlanAppointmentCalculation;
+use App\Models\Accounts;
 use App\Models\Activity;
 use App\Models\Appointments;
 use App\Models\AppointmentStatuses;
@@ -47,6 +48,7 @@ use App\Models\User;
 use App\Models\UserHasLocations;
 use App\Models\UserOperatorSettings;
 use App\Models\UserVouchers;
+use App\Services\Conversion\ConversionStateService;
 use App\Services\Membership\StudentVerificationService;
 use App\Services\MetaConversionApiService;
 use App\Services\PatientManagement\PatientSearchService;
@@ -500,6 +502,10 @@ final class PlanService
                 continue;
             }
 
+            // Membership cleanup mirrors single-delete; safe no-op
+            // for plan/bundle subtypes (no membership_code_id rows).
+            $this->releaseMembershipFromPlan($package->id);
+
             $package->delete();
             $deleted++;
         }
@@ -633,7 +639,52 @@ final class PlanService
             }
         }
 
-        return $query->get(['id', 'name']);
+        // Hydrate `service_ids` so the SPA can filter the dropdown to
+        // only the discounts that actually apply to the operator's
+        // selected service. The `discounts` table itself doesn't carry
+        // a service column — service linkage lives in two tables, one
+        // per discount kind:
+        //   • Configurable Buy/Get → `base_discount_services` lists the
+        //     BUY anchors. We surface ONLY the BUY services so the
+        //     operator picks the configurable on the BUY service; the
+        //     backend auto-adds the GETs at save time.
+        //   • Simple (Fixed/Percentage) → `discount_has_locations`
+        //     tracks the (location, service) allocations. Any service
+        //     the discount was allocated to is eligible.
+        $discounts = $query->get(['discounts.id', 'discounts.name', 'discounts.type']);
+
+        if ($discounts->isEmpty()) {
+            return $discounts;
+        }
+
+        $discountIds = $discounts->pluck('id');
+
+        $configurableServices = DB::table('base_discount_services')
+            ->whereIn('discount_id', $discountIds)
+            ->select('discount_id', 'service_id')
+            ->get()
+            ->groupBy('discount_id');
+
+        $simpleServices = DB::table('discount_has_locations')
+            ->whereIn('discount_id', $discountIds)
+            ->select('discount_id', 'service_id')
+            ->get()
+            ->groupBy('discount_id');
+
+        return $discounts->map(function ($d) use ($configurableServices, $simpleServices) {
+            $rows = $d->type === 'Configurable'
+                ? ($configurableServices->get($d->id) ?? collect())
+                : ($simpleServices->get($d->id) ?? collect());
+
+            $d->service_ids = $rows
+                ->pluck('service_id')
+                ->map(fn ($v) => (int) $v)
+                ->unique()
+                ->values()
+                ->all();
+
+            return $d;
+        });
     }
 
     /**
@@ -808,20 +859,27 @@ final class PlanService
 
             $membershipTypeName = $this->getMembershipForLocation($patientId);
 
-            $doctorIds = DB::table('doctor_has_locations')
-                ->where('is_allocated', 1)
-                ->where('location_id', $locationId)
-                ->pluck('user_id')
-                ->toArray();
-
-            $allDoctors = DB::table('users')->whereIn('id', $doctorIds)->pluck('name', 'id')->toArray();
-
+            // Sold-by eligibility — patient-context ONLY. The previous
+            // implementation intersected this with the centre's
+            // allocated-doctors list, which broadened the dropdown to
+            // anyone working at the centre even if they had no clinical
+            // involvement with this patient. The correct rule (per
+            // 2026-05-02 product clarification) is purely about who has
+            // touched this patient at this centre:
+            //
+            //   • Doctor on the patient's most-recent arrived/converted
+            //     consultancy at this centre (the auto-pick), AND
+            //   • Doctors who treated this patient at this centre in
+            //     the last 30 days.
+            //
+            // We resolve names directly from the `users` table for the
+            // resulting id set — no allocation filter, no centre
+            // membership filter beyond what the appointments themselves
+            // already imply (their `location_id` IS the centre).
             $selectedUserId = null;
             if (! empty($appointmentArray)) {
                 $firstAppointment = reset($appointmentArray);
-                if (array_key_exists($firstAppointment['doctor_id'], $allDoctors)) {
-                    $selectedUserId = $firstAppointment['doctor_id'];
-                }
+                $selectedUserId = $firstAppointment['doctor_id'];
             }
 
             $recentTreatmentDoctorIds = DB::table('appointments')
@@ -839,7 +897,12 @@ final class PlanService
                 $recentTreatmentDoctorIds,
             ));
 
-            $usersToShow = array_intersect_key($allDoctors, array_flip($userIdsToShow));
+            $usersToShow = empty($userIdsToShow)
+                ? []
+                : DB::table('users')
+                    ->whereIn('id', $userIdsToShow)
+                    ->pluck('name', 'id')
+                    ->toArray();
 
             return [
                 'appointments' => $appointmentArray,
@@ -1223,8 +1286,18 @@ final class PlanService
     public function getEditFormData(int|string $packageId): array
     {
         try {
-            $package = Packages::with('user', 'location')->find($packageId)
+            $package = Packages::with('user', 'location', 'appointment')->find($packageId)
                 ?? throw PlanException::notFound($packageId);
+
+            // Doctor on the consultation that anchors this plan. Surfaced
+            // alongside `appointmentArray` so the SPA's add-row flow can
+            // fall back here when the appointment isn't (or hasn't yet)
+            // shown up in `appointmentArray` — the previous lookup
+            // `appointmentArray.find(a.id === appointmentId).doctor_id`
+            // silently resolved to null in that gap, leaving every newly
+            // staged `package_services.sold_by` NULL and dropping the row
+            // from upsell reports.
+            $appointmentDoctorId = $package->appointment?->doctor_id ?? null;
 
             // Cast to float — Eloquent `sum()` on a decimal column returns a
             // string, which would break the JS `total_price.toFixed(...)` call
@@ -1246,15 +1319,66 @@ final class PlanService
             // `sold_by_name` mirrors the same logic for the operator
             // attribution the staged-row type carries.
             foreach ($packageBundles as $pb) {
-                if (! $pb->service_name) {
-                    $pb->service_name = $pb->service?->name
-                        ?? $pb->bundle?->name
+                // `package_bundles.bundle_id` points at different
+                // catalogs depending on the row flavour:
+                //   - source_type ∈ {bundle, service_bundle, membership}
+                //     → resolves against `bundles` / `service_bundles` /
+                //     `membership_types` (the `bundle` / `membershipType`
+                //     relation gives the right display name).
+                //   - source_type 'service', or empty with 0–1 children
+                //     → resolves against `services` (configurable BUY/GET
+                //     rows live here too — `bundle_id` IS a service id
+                //     even though the column name suggests otherwise).
+                //   - source_type empty with 2+ children → legacy
+                //     multi-session bundles that pre-date the
+                //     `source_type` column. Structural signature
+                //     (multiple package_services children) outs them.
+                //
+                // The earlier "if bundle_id then bundle.name" path
+                // misfired on the configurable BUY/GET case: rows where
+                // bundle_id happened to also exist as a `bundles.id`
+                // showed the catalog bundle name ("CoolGlide - Front of
+                // Neck") instead of the actual service ("CoolGlide -
+                // Chin"). The child-count tiebreaker for legacy empty
+                // source_type rows preserves the bundle-name display on
+                // the ~79 rows that are real bundles without the column
+                // populated.
+                $childCount = $pb->packageservice?->count() ?? 0;
+                $useBundleName = in_array($pb->source_type, ['bundle', 'service_bundle', 'membership'], true)
+                    || (empty($pb->source_type) && $childCount > 1);
+
+                if ($useBundleName) {
+                    $pb->service_name = $pb->bundle?->name
                         ?? $pb->packageservice?->first()?->service?->name
+                        ?? $pb->service_name
+                        ?? '';
+                } else {
+                    $pb->service_name = $pb->service?->name
+                        ?? $pb->packageservice?->first()?->service?->name
+                        ?? $pb->service_name
                         ?? '';
                 }
                 $firstSold = $pb->packageservice?->first()?->soldBy ?? null;
                 $pb->sold_by = $firstSold?->id ?? null;
                 $pb->sold_by_name = $firstSold?->name ?? null;
+
+                // Membership rows: surface the membership type name and
+                // the assigned code as flat fields so the SPA edit
+                // dialog can render them without an extra fetch. The
+                // `membershipType` relation is already eager-loaded;
+                // looking up the code by id is cheap (one row per
+                // membership plan) and avoids adding a new relation
+                // on `PackageBundles`. Detection is on the
+                // `membership_type_id` column rather than `source_type`
+                // because the legacy create-membership flow doesn't
+                // populate `source_type` (left NULL on those rows).
+                if ($pb->membership_type_id) {
+                    $pb->membership_type_name = $pb->membershipType?->name ?? null;
+                    if ($pb->membership_code_id) {
+                        $pb->membership_code = Membership::where('id', $pb->membership_code_id)
+                            ->value('code');
+                    }
+                }
             }
 
             $packageServices = PackageService::with('service', 'soldBy')
@@ -1429,6 +1553,7 @@ final class PlanService
                 'selectedUserId' => $appointmentInfo['selected_doctor_id'],
                 'selectedAppointmentId' => $selectedAppointmentId,
                 'selectedAppointmentLabel' => $selectedAppointmentLabel,
+                'appointment_doctor_id' => $appointmentDoctorId,
                 'packageadvances' => $packageAdvances,
                 'paymentmodes' => $paymentModes,
                 'grand_total' => $remainingAmount,
@@ -1539,6 +1664,61 @@ final class PlanService
         }
     }
 
+    /**
+     * Bundles getDisplayData() with the org-level header info the printable
+     * invoice needs (centre address/NTN/STN, account name/email, head-office
+     * phone). Returned shape is the display payload plus a `print_meta` key
+     * so the SPA print route can render the legacy invoice 1:1 without a
+     * second round-trip.
+     *
+     * @throws PlanException
+     */
+    public function getPrintData(int|string $packageId): array
+    {
+        $data = $this->getDisplayData($packageId);
+
+        /** @var Packages $package */
+        $package = $data['package'];
+
+        $location = $package->location_id
+            ? Locations::find($package->location_id)
+            : null;
+        $account = $package->account_id
+            ? Accounts::find($package->account_id)
+            : null;
+
+        // sys-headoffice is the org-wide "company phone" shown at the top
+        // of every printable. Settings rows are account-scoped (`getBySlug`
+        // requires an account_id) so multi-account installs don't leak the
+        // wrong tenant's phone — the legacy Blade query missed this. Cached
+        // briefly since the value is the same for every print this hour.
+        $accountId = (int) ($account?->id ?? 0);
+        $headOfficePhone = $accountId > 0
+            ? Cache::remember(
+                'settings_sys_headoffice_'.$accountId,
+                self::CACHE_TTL,
+                fn () => Settings::getBySlug('sys-headoffice', $accountId)?->data,
+            )
+            : null;
+
+        $data['print_meta'] = [
+            'location_info' => $location ? [
+                'name'      => $location->name,
+                'address'   => $location->address,
+                'fdo_phone' => $location->fdo_phone,
+                'ntn'       => $location->ntn,
+                'stn'       => $location->stn,
+            ] : null,
+            'account_info' => $account ? [
+                'name'  => $account->name,
+                'email' => $account->email,
+            ] : null,
+            'company_phone' => $headOfficePhone,
+        ];
+
+        return $data;
+    }
+
     // ──────────────────────────────────────────────────
     //  Delete Plan
     // ──────────────────────────────────────────────────
@@ -1565,6 +1745,16 @@ final class PlanService
             throw PlanException::hasChildRecords(implode(', ', $childRecords));
         }
 
+        // Membership cleanup BEFORE the soft-delete so the
+        // package_bundles → memberships lookup still resolves.
+        $this->releaseMembershipFromPlan($packageId);
+
+        // Snapshot the appointment id before delete — after the
+        // package is soft-deleted, the netCashForAppointment lookup
+        // would return 0 (its only package is gone), which is the
+        // correct trigger condition for the revert.
+        $appointmentId = $package->appointment_id ? (int) $package->appointment_id : null;
+
         $package->delete();
 
         AuditTrails::deleteEventLogger(
@@ -1574,7 +1764,73 @@ final class PlanService
             $packageId,
         );
 
+        // Conversion-state cascade — single source of truth. After
+        // plan delete the appointment may have no live packages left,
+        // in which case net cash hits 0 and the conversion needs to
+        // revert.
+        if ($appointmentId !== null) {
+            ConversionStateService::revertIfNeeded($appointmentId);
+        }
+
         return ['status' => true, 'message' => 'Record has been deleted successfully.'];
+    }
+
+    /**
+     * Detach any assigned membership codes + cleanup verification
+     * artefacts when a plan is being deleted. Called by both
+     * `deletePlan` and `bulkDeletePlans` *before* the package itself is
+     * soft-deleted (so the `package_bundles → memberships` resolution
+     * still works at this point).
+     *
+     * Without this, a deleted membership plan left behind:
+     *   • `memberships.patient_id` still pointing at the patient
+     *     → patient profile / plans datatable still rendered the
+     *       "Student Member · CA0443" badge for a card they no
+     *       longer hold
+     *   • `student_verifications` row + files orphaned on disk
+     *
+     * Safe to run unconditionally: skips the work when the plan has
+     * no membership-bearing bundles. The caller (`deletePlan`) has
+     * already gated against `hasChildRecords` (no payments, no
+     * invoices) so there's no scenario where we're "releasing" a code
+     * the patient legitimately paid for — the delete itself would
+     * have been blocked.
+     *
+     * The membership row's `active` flag stays `1` — the code is
+     * back in the catalog of unassigned codes, ready to be picked by
+     * a future create-membership.
+     */
+    private function releaseMembershipFromPlan(int|string $packageId): void
+    {
+        $codeIds = DB::table('package_bundles')
+            ->where('package_id', $packageId)
+            ->whereNotNull('membership_code_id')
+            ->whereNull('deleted_at')
+            ->pluck('membership_code_id')
+            ->all();
+
+        if (empty($codeIds) && ! StudentVerification::where('package_id', $packageId)->exists()) {
+            return;
+        }
+
+        DB::transaction(function () use ($codeIds, $packageId) {
+            if (! empty($codeIds)) {
+                Membership::whereIn('id', $codeIds)->update([
+                    'patient_id'  => null,
+                    'start_date'  => null,
+                    'end_date'    => null,
+                    'assigned_at' => null,
+                    'updated_by'  => Auth::id(),
+                ]);
+            }
+
+            $verification = StudentVerification::where('package_id', $packageId)->first();
+            if ($verification) {
+                app(\App\Services\Membership\StudentVerificationService::class)
+                    ->deleteDocuments($verification);
+                $verification->delete();
+            }
+        });
     }
 
     // ══════════════════════════════════════════════════
@@ -2145,7 +2401,7 @@ final class PlanService
         $packageBundleData['is_exclusive'] = $isExclusive;
         $packageBundleData['tax_percentage'] = $location->tax_percentage;
 
-        $taxData = $this->calculateTax($service->tax_treatment_type_id, (float) $data['net_amount'], (float) $location->tax_percentage, $isExclusive);
+        $taxData = $this->calculateTax(Settings::getOrgTaxTreatment(Auth::user()->account_id), (float) $data['net_amount'], (float) $location->tax_percentage, $isExclusive);
         $packageBundleData = array_merge($packageBundleData, $taxData);
 
         $packageBundleData['id'] = str_pad((string) random_int(1000, 9999), 4, '0', STR_PAD_LEFT);
@@ -2172,7 +2428,7 @@ final class PlanService
 
             $isExclusive = ($data['is_exclusive'] ?? '0') == '1';
             $taxData = $this->calculateServiceTax(
-                $service->tax_treatment_type_id,
+                Settings::getOrgTaxTreatment(Auth::user()->account_id),
                 (float) $detail['calculated_price'],
                 (float) $location->tax_percentage,
                 $isExclusive,
@@ -2463,8 +2719,19 @@ final class PlanService
             $packageBundleRecord = PackageBundles::create($packageBundleData);
 
             $bundleServices = $allBundleServices->get($bundleId, collect());
+            // `service_price` here MUST be the catalog regular per-row
+            // price (`bundle_has_services.service_price`), NOT the
+            // pre-distributed sold-share in `calculated_price`. Passing
+            // the latter with a regular/sold ratio at the bundle level
+            // leaves the function doing a second proportional split on
+            // already-discounted values, which then triggers the
+            // last-row absorption to swallow the gap — operators saw
+            // identical sessions land at, e.g., 11,696.95 vs 8,298.05
+            // for an Aqualyx 2-session bundle. With the right
+            // per-service base, the absorption only handles
+            // sub-cent rounding, not thousand-rupee asymmetry.
             $calculableServices = $bundleServices->map(fn ($bs) => [
-                'service_price' => $bs->calculated_price,
+                'service_price' => $bs->service_price,
                 'calculated_price' => $bs->calculated_price,
                 'service_id' => $bs->service_id,
             ])->toArray();
@@ -3507,6 +3774,20 @@ final class PlanService
 
         // All checks passed — proceed with deletion
         $packageService = PackageBundles::find($id);
+
+        // Idempotent: if the row is already gone (e.g. concurrent delete from
+        // a configurable-discount group teardown that hit two requests at
+        // once), treat as success so the caller doesn't see a 500. Without
+        // this guard the next line throws "Attempt to read property
+        // 'package_id' on null" because find() can't see soft-deleted rows.
+        if (! $packageService) {
+            return [
+                'success' => true,
+                'message' => 'Already removed',
+                'data' => ['id' => $id, 'total' => 0, 'old_total' => 0],
+            ];
+        }
+
         $findPackage = Packages::find($packageService->package_id);
         if ($findPackage) {
             $packageVoucher = PackageVouchers::where('package_random_id', $packageService->random_id)->where('main_service_id', $packageService->bundle_id)->first();
@@ -3520,33 +3801,34 @@ final class PlanService
             }
         }
 
-        $packageTotal = $data['package_total'] ?? '';
-        if ($packageTotal == '') {
-            $packageTotal = 0;
-        }
-        $packageTotal = str_replace(',', '', (string) $packageTotal);
-
-        $total = number_format(round(($packageTotal - $packageService->tax_including_price)));
-
         PackageService::where('package_bundle_id', '=', $id)->delete();
         PackageBundles::find($id)?->forcedelete();
 
-        $oldTotal = PackageService::where('random_id', $packageService->random_id)->sum('tax_including_price');
+        // Recompute the package total from the ledger after the delete, not
+        // from the caller's pre-delete `package_total` field. The legacy
+        // admin's plan-form.js passed the displayed total; the SPA's
+        // configurable-group teardown can't supply a meaningful value
+        // mid-batch (it's tearing down multiple rows in sequence), so it
+        // sends 0. Using the live sum gives the right answer in both
+        // cases AND avoids the `number_format()` round-trip that was
+        // re-introducing thousand-separator commas into the UPDATE
+        // statement (MySQL rejected `-2,995` as an invalid decimal).
+        $newTotal = (float) PackageService::where('random_id', $packageService->random_id)
+            ->sum('tax_including_price');
 
         $updateStatus = $data['update_status'] ?? 0;
-        if ($updateStatus == 1) {
-            if ($packageService->package_id) {
-                Packages::where('id', $packageService->package_id)->update(['total_price' => $total]);
-            }
+        if ($updateStatus == 1 && $packageService->package_id) {
+            Packages::where('id', $packageService->package_id)
+                ->update(['total_price' => $newTotal]);
         }
 
         return [
             'success' => true,
             'message' => 'Record found',
             'data' => [
-                'total' => $total,
+                'total' => $newTotal,
                 'id' => $id,
-                'old_total' => $oldTotal,
+                'old_total' => $newTotal,
             ],
         ];
     }
@@ -3559,6 +3841,109 @@ final class PlanService
     public function deleteConfigurablePackageService(array $data): array
     {
         return $this->discountService->deleteConfigurablePackageService($data);
+    }
+
+    /**
+     * Atomic cascade delete for a configurable Buy/Get group (or any
+     * batch of package_bundles rows that should rise/fall together).
+     *
+     * Wraps voucher refunds + per-row deletes in a single DB
+     * transaction so a mid-batch failure rolls back EVERYTHING — no
+     * more "voucher refunded but row still here" or "rows 1–3 gone,
+     * row 4 fails" half-state. Closes SPA gap G6.
+     *
+     * The previous SPA flow was: refund all vouchers (best-effort,
+     * errors swallowed) → loop sequentially through ids calling
+     * `deletePackageService`. If any step failed, earlier work was
+     * committed and the operator had to manually reconcile.
+     *
+     * @param  array{
+     *   ids: int[],
+     *   random_id?: string,
+     *   patient_id?: int,
+     *   vouchers?: array<int, array{voucher_id: int, amount: float}>
+     * }  $data
+     * @return array{success: bool, message: string, data?: array, status_code?: int}
+     */
+    public function cascadeDeleteGroup(array $data): array
+    {
+        $ids = array_values(array_unique(array_map('intval', $data['ids'] ?? [])));
+        if (empty($ids)) {
+            return ['success' => false, 'message' => 'No ids supplied for cascade delete.', 'status_code' => 422];
+        }
+
+        $vouchers = $data['vouchers'] ?? [];
+        $patientId = isset($data['patient_id']) ? (int) $data['patient_id'] : null;
+
+        try {
+            return DB::transaction(function () use ($ids, $vouchers, $patientId, $data) {
+                // Step 1 — voucher refunds. If any fails, the
+                // transaction rolls back the entire batch (and the
+                // already-applied refunds are reverted). The previous
+                // SPA loop swallowed these errors silently; here a
+                // partial failure is loud and fully recoverable.
+                foreach ($vouchers as $v) {
+                    if (! $patientId) {
+                        throw new \RuntimeException('patient_id required when refunding vouchers in cascade delete.');
+                    }
+                    $voucherResult = $this->refundVoucherAmount(
+                        (int) $v['voucher_id'],
+                        $patientId,
+                        (float) $v['amount'],
+                    );
+                    if (empty($voucherResult['success'])) {
+                        throw new \RuntimeException(
+                            'Voucher refund failed for voucher_id='.(int) $v['voucher_id']
+                            .': '.($voucherResult['message'] ?? 'unknown error'),
+                        );
+                    }
+                }
+
+                // Step 2 — per-row delete. We dispatch each id
+                // through the existing single-row delete so the
+                // consumed-session guards + total recompute stay
+                // exactly what they were. A 'success: false' from
+                // any row throws, rolling back EVERYTHING.
+                $removed = [];
+                foreach ($ids as $id) {
+                    $rowResult = $this->deletePackageService([
+                        'id' => $id,
+                        'random_id' => $data['random_id'] ?? null,
+                        'package_total' => $data['package_total'] ?? 0,
+                        'update_status' => 1,
+                    ]);
+                    if (empty($rowResult['success'])) {
+                        throw new \RuntimeException(
+                            'Row delete failed for id='.$id
+                            .': '.($rowResult['message'] ?? 'unknown error'),
+                        );
+                    }
+                    $removed[] = $id;
+                }
+
+                return [
+                    'success' => true,
+                    'message' => 'Cascade delete committed',
+                    'data' => [
+                        'removed_ids' => $removed,
+                        'voucher_refunds' => count($vouchers),
+                    ],
+                ];
+            });
+        } catch (\Throwable $e) {
+            \Log::error('cascadeDeleteGroup failed — transaction rolled back', [
+                'ids' => $ids,
+                'voucher_count' => count($vouchers),
+                'error' => $e->getMessage(),
+            ]);
+
+            return [
+                'success' => false,
+                'message' => 'Cascade delete rolled back: '.$e->getMessage(),
+                'status_code' => 500,
+                'data' => ['removed_ids' => [], 'voucher_refunds' => 0],
+            ];
+        }
     }
 
     /**
@@ -3647,6 +4032,39 @@ final class PlanService
      */
     public function addBundleService(array $data): array
     {
+        // Strict one-bundle-per-plan rule (matches legacy
+        // `create-bundle.js` which guarded with a toastr). Applies to
+        // both `bundle` and `service_bundle` source types — the legacy
+        // dropdown listed both in the same picker and the guard didn't
+        // discriminate. Defense-in-depth — the SPA already disables
+        // the Add button, but a programmatic POST would slip past it.
+        // Membership rows live in their own slot (membership_type_id
+        // is NOT NULL) and are excluded from this count.
+        $randomId = $data['random_id'] ?? null;
+        $existingPackage = $randomId
+            ? Packages::where('random_id', $randomId)->first()
+            : null;
+        if ($existingPackage) {
+            $existingBundleCount = PackageBundles::where('package_id', $existingPackage->id)
+                ->whereNull('membership_type_id')
+                ->count();
+            if ($existingBundleCount > 0 && (string) $existingPackage->plan_type === 'bundle') {
+                throw new PlanException(
+                    'A plan can have only one bundle. Remove the current bundle to add a different one.'
+                );
+            }
+        } elseif ($randomId) {
+            $stagedBundleCount = PackageBundles::where('random_id', $randomId)
+                ->whereNull('package_id')
+                ->whereNull('membership_type_id')
+                ->count();
+            if ($stagedBundleCount > 0) {
+                throw new PlanException(
+                    'A plan can have only one bundle. Remove the current bundle to add a different one.'
+                );
+            }
+        }
+
         // Route to service bundle handler if source_type is 'service_bundle'
         if (($data['source_type'] ?? 'bundle') === 'service_bundle') {
             return $this->addServiceBundleToPlan($data);
@@ -3680,8 +4098,8 @@ final class PlanService
             'tax_percentage' => $taxPct,
         ];
 
-        // Calculate tax based on bundle's tax treatment type
-        if ($bundle->tax_treatment_type_id == Config::get('constants.tax_both')) {
+        // Org-wide tax treatment from sys-tax-treatment (replaces bundle's per-row col).
+        if (Settings::getOrgTaxTreatment(Auth::user()->account_id) == Config::get('constants.tax_both')) {
             $bundleData['tax_exclusive_net_amount'] = $netAmount;
             $bundleData['tax_price'] = ceil($netAmount * ($taxPct / 100));
             $bundleData['tax_including_price'] = ceil($netAmount + $bundleData['tax_price']);
@@ -3697,31 +4115,58 @@ final class PlanService
         $findPackage = Packages::where('random_id', $data['random_id'])->first();
         $isEditMode = $findPackage !== null;
 
+        // Stage-draft mode (SPA opt-in): when no package exists yet but the
+        // caller asks for draft persistence, create the PackageBundles +
+        // PackageService rows with `random_id` set and `package_id = null`
+        // — symmetric to `savepackages_service_for_plan` for plan/services.
+        // The final `savepackages` call's simple-id branch then binds them
+        // by random_id. Legacy bundle save (no flag) keeps the old return-
+        // calculations-only behaviour, since legacy ships the structured
+        // array on save.
+        $stageDraft = ! $isEditMode && ($data['stage_draft'] ?? false);
+        $shouldPersist = $isEditMode || $stageDraft;
+
         // Get bundle services and calculate proportional prices
         $bundleServices = BundleHasServices::with('service')
             ->where('bundle_id', $bundle->id)
             ->get();
 
+        // Same fix as the final-save path (search "Aqualyx" comment).
+        // `service_price` is the catalog regular per-row price, NOT
+        // the pre-distributed sold-share. The `Bundles::calculatePrices`
+        // contract is "scale per-service regulars down to the bundle's
+        // sold price" — passing already-discounted values here was
+        // double-counting the discount, then absorbing the
+        // disagreement into the last row.
         $calculableServices = $bundleServices->map(fn ($bs) => [
-            'service_price' => $bs->calculated_price,
+            'service_price' => $bs->service_price,
             'calculated_price' => $bs->calculated_price,
             'service_id' => $bs->service_id,
         ])->toArray();
 
+        // The 2nd/3rd args are "regular total vs sold total" of the
+        // bundle (NOT pre-tax vs post-tax of the same price). Earlier
+        // this passed `tax_exclusive_net_amount` + `tax_including_price`,
+        // which are two tax stages of the SAME number — the function
+        // then computed a fake "markup" between them and asymmetric
+        // per-row prices were the visible symptom.
         $calculatedServicesPrices = Bundles::calculatePrices(
             $calculableServices,
-            $bundleData['tax_exclusive_net_amount'],
+            $bundle->services_price,
             $bundleData['tax_including_price']
         );
 
         $serviceIds = array_column($calculatedServicesPrices, 'service_id');
         $servicesInfo = Services::whereIn('id', $serviceIds)->get()->keyBy('id');
 
-        // In edit mode: persist to DB immediately since package already exists
-        // In create mode: only return calculated data — persistence happens in savepackages via storeBundleTypeServices
+        // Edit mode  → bind directly to the existing package (package_id set, is_allocate=1).
+        // Stage mode → draft rows (package_id=null, is_allocate=0); final save binds by random_id.
+        // Legacy ADD → no persistence; bundlesData.id falls back to catalog id.
         $packageBundleRecordId = $bundle->id;
+        $persistPackageId = $isEditMode ? $findPackage->id : null;
+        $persistIsAllocate = $isEditMode ? 1 : 0;
 
-        if ($isEditMode) {
+        if ($shouldPersist) {
             $packageBundleRecord = PackageBundles::create([
                 'random_id' => $data['random_id'],
                 'qty' => 1,
@@ -3738,8 +4183,8 @@ final class PlanService
                 'tax_price' => $bundleData['tax_price'],
                 'tax_including_price' => $bundleData['tax_including_price'],
                 'location_id' => $data['location_id'],
-                'package_id' => $findPackage->id,
-                'is_allocate' => 1,
+                'package_id' => $persistPackageId,
+                'is_allocate' => $persistIsAllocate,
             ]);
             $packageBundleRecordId = $packageBundleRecord->id;
         }
@@ -3770,11 +4215,11 @@ final class PlanService
                 $taxPrice = ceil($taxIncludingPrice - $taxExclusivePrice);
             }
 
-            // Only persist PackageService records in edit mode
-            if ($isEditMode) {
+            // Persist PackageService in edit mode (linked) or stage mode (draft).
+            if ($shouldPersist) {
                 PackageService::create([
                     'random_id' => $data['random_id'],
-                    'package_id' => $findPackage->id,
+                    'package_id' => $persistPackageId,
                     'package_bundle_id' => $packageBundleRecordId,
                     'service_id' => $calculatedService['service_id'],
                     'price' => $calculatedService['calculated_price'],
@@ -3802,11 +4247,15 @@ final class PlanService
             ];
         }
 
-        // Update plan name and total only in edit mode
+        // Refresh the plan total only in edit mode — the package name is
+        // the zero-padded `packages.id` (set once at create time) and
+        // doesn't track bundle composition, so there's nothing to
+        // regenerate here on bundle add. The earlier call to
+        // `updatePlanNameForPackage` was orphaned when the helper was
+        // removed; calling it now hits "Call to undefined method".
         if ($isEditMode) {
             $newTotal = PackageBundles::where('package_id', $findPackage->id)->sum('tax_including_price');
             $findPackage->update(['total_price' => $newTotal]);
-            $this->updatePlanNameForPackage($findPackage);
         }
 
         return [
@@ -3966,11 +4415,13 @@ final class PlanService
             ];
         }
 
-        // Update plan total in edit mode
+        // Refresh plan total in edit mode. The orphaned
+        // `updatePlanNameForPackage` call here was removed alongside the
+        // helper itself — the package name is just the zero-padded id
+        // and doesn't need regenerating when bundles change.
         if ($isEditMode) {
             $newTotal = PackageBundles::where('package_id', $findPackage->id)->sum('tax_including_price');
             $findPackage->update(['total_price' => $newTotal]);
-            $this->updatePlanNameForPackage($findPackage);
         }
 
         return [
@@ -4261,6 +4712,16 @@ final class PlanService
                 ActivityLogger::logPaymentDeleted($packageadvanceinfo->cash_amount, $package, $patient, $location);
             }
 
+            // Conversion-state cascade — finance policy Q4: deleting
+            // payments to the point where net cash ≤ 0 reverts the
+            // appointment from Converted, even if the plan itself
+            // still exists as a zero-money shell. Defers to the
+            // single-source-of-truth helper.
+            $appointmentId = ConversionStateService::appointmentIdForPackage((int) $packageadvanceinfo->package_id);
+            if ($appointmentId !== null) {
+                ConversionStateService::revertIfNeeded($appointmentId);
+            }
+
             return [
                 'success' => true,
                 'message' => 'Record deleted successfully.',
@@ -4320,56 +4781,90 @@ final class PlanService
             return ['success' => false, 'message' => 'Package service or bundle ID required'];
         }
 
-        // Get all active doctors from the location
-        $doctorsIds = DoctorHasLocations::where('is_allocated', 1)->where('location_id', $locationId)->pluck('user_id')->toArray();
+        // Sold-by eligibility — patient-context ONLY. Mirrors the
+        // create-time rule in `getAppointmentInfo`: doctors who have
+        // actually touched this patient at this centre, NOT every
+        // active doctor + FDM allocated to the centre. The previous
+        // implementation broadened the pool so an admin could
+        // attribute a sale to anyone at the centre — that contradicts
+        // the auto-pick policy (which only picks the consulting
+        // doctor) and was clarified as wrong on 2026-05-02.
+        //
+        //   ELIGIBLE = (most-recent arrived/converted consultancy
+        //               doctor at this centre, for THIS patient)
+        //            ∪ (doctors who treated this patient at this
+        //               centre in the last 30 days)
+        //            ∪ (current sold_by, always — for audit
+        //               continuity on legacy plans)
+        //
+        // No allocation filter, no FDM bypass. The auto-pick and the
+        // reassign dropdown now offer the same set of names.
+        $package = Packages::find($packageServiceId > 0
+            ? PackageService::find($packageServiceId)?->package_id
+            : PackageBundles::find($bundleId)?->package_id);
+        $patientId = $package?->patient_id;
 
-        $allDoctors = User::whereIn('id', $doctorsIds)
-            ->where('active', 1)
-            ->pluck('name', 'id')
-            ->toArray();
-
-        // Get FDM users by getting the user_ids associated with the center (location_id)
-        $findFDM = UserHasLocations::where('location_id', $locationId)->pluck('user_id')->toArray();
-
-        $findRole = DB::table('roles')->where('name', 'FDM')->first();
-        $fdmUserIds = [];
-        if ($findRole) {
-            $roleId = $findRole->id;
-            $roleHasUser = RoleHasUsers::where('role_id', $roleId)->pluck('user_id')->toArray();
-            $fdmUserIds = array_intersect($findFDM, $roleHasUser);
-        }
-
-        $selectedUserId = $currentSoldBy;
         $usersToShow = [];
 
-        // Ensure the currently selected user (sold_by) is ALWAYS included, even if inactive
-        if ($selectedUserId) {
-            $currentSoldByUser = User::find($selectedUserId);
+        // Always include the current sold_by — preserves attribution
+        // on legacy/transferred plans even if the user has since
+        // changed roles or left the centre.
+        if ($currentSoldBy) {
+            $currentSoldByUser = User::find($currentSoldBy);
             if ($currentSoldByUser) {
                 $usersToShow[$currentSoldByUser->id] = $currentSoldByUser->name;
             }
         }
 
-        // Add all active doctors from the location
-        foreach ($allDoctors as $doctorId => $doctorName) {
-            if (! array_key_exists($doctorId, $usersToShow)) {
-                $usersToShow[$doctorId] = $doctorName;
-            }
-        }
+        if ($patientId) {
+            // Most-recent arrived/converted consultancy doctor at the
+            // centre for this patient (the auto-pick anchor).
+            $arrivedStatus = DB::table('appointment_statuses')->where('is_arrived', 1)->first();
+            $convertedStatus = DB::table('appointment_statuses')->where('is_converted', 1)->first();
+            $validStatusIds = array_filter([$arrivedStatus?->id, $convertedStatus?->id]);
+            $consultancyType = DB::table('appointment_types')->where('slug', 'consultancy')->first();
 
-        // Add all active FDM users from the location
-        if (! empty($fdmUserIds)) {
-            $FDMUsers = User::whereIn('id', $fdmUserIds)
-                ->where('active', 1)
-                ->pluck('name', 'id')
+            $consultancyDoctorId = DB::table('appointments')
+                ->where('patient_id', $patientId)
+                ->where('location_id', $locationId)
+                ->where('appointment_type_id', $consultancyType?->id)
+                ->whereIn('appointment_status_id', $validStatusIds)
+                ->whereNull('deleted_at')
+                ->orderByDesc('scheduled_date')
+                ->orderByDesc('scheduled_time')
+                ->value('doctor_id');
+
+            // Doctors who treated this patient at this centre in the
+            // last 30 days (status_id=2 / type_id=2 mirror the
+            // create-time recent-treatment filter).
+            $recentTreatmentDoctorIds = DB::table('appointments')
+                ->where('patient_id', $patientId)
+                ->where('location_id', $locationId)
+                ->where('appointment_status_id', 2)
+                ->where('appointment_type_id', 2)
+                ->where('scheduled_date', '>=', now()->subDays(30)->format('Y-m-d'))
+                ->pluck('doctor_id')
+                ->unique()
                 ->toArray();
 
-            foreach ($FDMUsers as $fdmId => $fdmName) {
-                if (! array_key_exists($fdmId, $usersToShow)) {
-                    $usersToShow[$fdmId] = $fdmName;
+            $userIdsToShow = array_unique(array_merge(
+                $consultancyDoctorId ? [$consultancyDoctorId] : [],
+                $recentTreatmentDoctorIds,
+            ));
+
+            if (! empty($userIdsToShow)) {
+                $contextUsers = User::whereIn('id', $userIdsToShow)
+                    ->pluck('name', 'id')
+                    ->toArray();
+                foreach ($contextUsers as $uId => $uName) {
+                    if (! array_key_exists($uId, $usersToShow)) {
+                        $usersToShow[$uId] = $uName;
+                    }
                 }
             }
         }
+
+        $selectedUserId = $currentSoldBy;
 
         return [
             'success' => true,

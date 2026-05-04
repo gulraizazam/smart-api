@@ -179,16 +179,29 @@ final class BranchLeaderboardMetric implements Metric
             $ensure($id);
             $byDoctor[$id]['total_sales'] = (float) $r->sales;
         }
+        // Override every doctor's converted count with the validated
+        // count from ConversionService so the numerator + denominator
+        // of conversion_rate / avg_value come from the same pipeline
+        // (matches admin/reports/conversion + Avg Conversion Value
+        // sparkline). Crucially: doctors WITHOUT a conversionByDoctor
+        // entry must have their `appts_converted` zeroed out — pre-fix
+        // they kept the raw `converted_at IS NOT NULL` count from the
+        // appointments query, which is gross of refunds and includes
+        // appointments whose payments were later deleted. That left
+        // phantom converted counts on doctors with no validated
+        // conversions.
+        foreach ($byDoctor as $id => $_) {
+            $byDoctor[$id]['conversion_sales'] = (float) ($conversionByDoctor[$id]['spend'] ?? 0);
+            $byDoctor[$id]['appts_converted'] = (int) ($conversionByDoctor[$id]['count'] ?? 0);
+        }
+        // Ensure any doctor that had ONLY conversion data (no raw
+        // appointment row) still gets a row.
         foreach ($conversionByDoctor as $id => $v) {
-            if ($id === 0) {
+            if ($id === 0 || isset($byDoctor[$id])) {
                 continue;
             }
             $ensure($id);
             $byDoctor[$id]['conversion_sales'] = (float) ($v['spend'] ?? 0);
-            // Override the converted count with the validated count from
-            // ConversionService so avg_value numerator and denominator
-            // come from the same pipeline (matches admin/reports/conversion
-            // and the Avg Conversion Value sparkline).
             $byDoctor[$id]['appts_converted'] = (int) ($v['count'] ?? 0);
         }
 

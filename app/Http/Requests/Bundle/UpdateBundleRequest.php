@@ -24,6 +24,7 @@ class UpdateBundleRequest extends FormRequest
         return [
             'name'                 => 'required|string|max:255',
             'price'                => 'required|numeric|min:0',
+            'pricing_mode'         => 'nullable|in:discount,net',
             'start'                => 'nullable|date',
             'end'                  => 'nullable|date|after_or_equal:start',
             'apply_discount'       => 'nullable|boolean',

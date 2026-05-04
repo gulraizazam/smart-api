@@ -21,6 +21,7 @@ use App\Models\Settings;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 final class PlanRefundService
 {
@@ -175,9 +176,17 @@ final class PlanRefundService
 
     /**
      * Process a refund update for a package.
+     *
+     * Wrapped in a single `DB::transaction` so the refund-edit
+     * writes (settlement records, plan_invoices cleanup, activity log)
+     * and the conversion-state cascade fired at the end (via
+     * `ConversionStateService::revertIfNeeded`) are atomic. Pre-fix
+     * this method ran without a transaction; a revert failure could
+     * silently fail while the refund-edit committed.
      */
     public function processRefund(array $data): array
     {
+        return DB::transaction(function () use ($data): array {
         $latestRefund = PackageAdvances::where([
             ['package_id', '=', $data['package_id']],
             ['is_refund', '=', 1],
@@ -355,6 +364,16 @@ final class PlanRefundService
         $activity->updated_at = Filters::getCurrentTimeStamp();
         $activity->save();
 
+        // Conversion-state cascade — single source of truth.
+        // If the updated refund pushes net cash ≤ 0, revert the
+        // associated appointment from Converted (cascades to lead +
+        // leads_services + Meta CAPI flags via WrongConversionService).
+        $appointmentId = \App\Services\Conversion\ConversionStateService::appointmentIdForPackage((int) $data['package_id']);
+        if ($appointmentId !== null) {
+            \App\Services\Conversion\ConversionStateService::revertIfNeeded($appointmentId);
+        }
+
         return ['success' => true, 'message' => 'Record updated', 'data' => []];
+        });
     }
 }

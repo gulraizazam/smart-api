@@ -24,6 +24,7 @@ use App\Models\PackageVouchers;
 use App\Models\Patients;
 use App\Models\ServiceBundle;
 use App\Models\Services;
+use App\Models\Settings;
 use App\Models\User;
 use App\Models\UserVouchers;
 use Carbon\Carbon;
@@ -32,6 +33,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 final class PlanDiscountService
 {
@@ -1445,6 +1447,15 @@ final class PlanDiscountService
             $selectedService = Services::find($data['service_id']);
             $mergedServices = $baseServices->merge($getServices);
 
+            // One config_group_id per Buy/Get save call so the SPA can
+            // render the resulting bundles together (parent/child layout)
+            // and tear the whole group down on a single delete. Without
+            // this tag the rows render as flat siblings and the operator
+            // can delete the GET while the BUY stays — which is the
+            // exact UX bug we hit. Format mirrors the legacy admin's
+            // 'cfg_<random>' convention; the column is varchar(100).
+            $configGroupId = 'cfg_' . Str::random(12);
+
             $myarray = [];
             $running_total = str_replace(',', '', $data['package_total'] ?? '0');
             if ($running_total === '') {
@@ -1494,8 +1505,9 @@ final class PlanDiscountService
                 }
 
                 $tax_pct = $location_information->tax_percentage ?? 0;
-                if ($svc->tax_treatment_type_id == Config::get('constants.tax_is_exclusive') ||
-                    ($svc->tax_treatment_type_id == Config::get('constants.tax_both') && ($bundle_data['is_exclusive'] ?? 1) == 1)) {
+                $orgTaxTreatment = Settings::getOrgTaxTreatment(Auth::user()->account_id);
+                if ($orgTaxTreatment == Config::get('constants.tax_is_exclusive') ||
+                    ($orgTaxTreatment == Config::get('constants.tax_both') && ($bundle_data['is_exclusive'] ?? 1) == 1)) {
                     $bundle_data['tax_exclusive_net_amount'] = $row_net_amount;
                     $bundle_data['tax_percentage'] = $tax_pct;
                     $bundle_data['tax_price'] = ceil($row_net_amount * ($tax_pct / 100));
@@ -1513,6 +1525,11 @@ final class PlanDiscountService
                     $bundle_data['discount_id'] = null;
                 }
 
+                // Tag every bundle in this Buy/Get save with the same
+                // config_group_id. Edit-dialog grouping + per-row
+                // can_remove gating keys off this column.
+                $bundle_data['config_group_id'] = $configGroupId;
+
                 $bundle_data['created_at'] = Filters::getCurrentTimeStamp();
                 $bundle_data['updated_at'] = Filters::getCurrentTimeStamp();
 
@@ -1522,6 +1539,14 @@ final class PlanDiscountService
                     'random_id' => $data['random_id'],
                     'package_bundle_id' => $packagebundle->id,
                     'service_id' => $svc->id,
+                    // Carry sold_by through to the package_services row.
+                    // The non-configurable plan path already does this in
+                    // `PlanService::buildServiceDataWithTaxFromService`,
+                    // but every BUY/GET row inserted from this method
+                    // dropped it on the floor — so configurable discount
+                    // groups always landed with sold_by NULL and never
+                    // showed up in any upsell report.
+                    'sold_by' => $data['sold_by'] ?? null,
                     'price' => $row_net_amount,
                     'orignal_price' => $svc->price,
                     'tax_including_price' => $bundle_data['tax_including_price'],
@@ -1599,8 +1624,9 @@ final class PlanDiscountService
 
         $tax_pct = $location_information->tax_percentage ?? 0;
         $net_amount = $data['net_amount'] ?? $service_data->price;
-        if ($service_data->tax_treatment_type_id == Config::get('constants.tax_is_exclusive') ||
-            ($service_data->tax_treatment_type_id == Config::get('constants.tax_both') && $is_exclusive == '1')) {
+        $orgTaxTreatment = Settings::getOrgTaxTreatment(Auth::user()->account_id);
+        if ($orgTaxTreatment == Config::get('constants.tax_is_exclusive') ||
+            ($orgTaxTreatment == Config::get('constants.tax_both') && $is_exclusive == '1')) {
             $bundle_data['tax_exclusive_net_amount'] = $net_amount;
             $bundle_data['tax_percentage'] = $tax_pct;
             $bundle_data['tax_price'] = ceil($net_amount * ($tax_pct / 100));
@@ -1641,6 +1667,11 @@ final class PlanDiscountService
             'random_id' => $data['random_id'],
             'package_bundle_id' => $packagebundle->id,
             'service_id' => $service_data->id,
+            // Carry sold_by — same fix applied to the configurable
+            // BUY/GET path above. Without it, simple-discount rows
+            // (single service + non-configurable discount) also
+            // landed with sold_by NULL.
+            'sold_by' => $data['sold_by'] ?? null,
             'price' => $net_amount,
             'orignal_price' => $service_data->price,
             'tax_including_price' => $bundle_data['tax_including_price'],
@@ -1760,7 +1791,8 @@ final class PlanDiscountService
                     if ($discount_info) {
                         $data['discount_name'] = $discount_info->name;
                     }
-                    if ($service_data1->tax_treatment_type_id == Config::get('constants.tax_both')) {
+                    $orgTaxTreatment = Settings::getOrgTaxTreatment(Auth::user()->account_id);
+                    if ($orgTaxTreatment == Config::get('constants.tax_both')) {
                         if ($data['is_exclusive'] == '1') {
                             $data['tax_exclusive_net_amount'] = $ds->discount_type == 'complimentory' ? 0 : $data['net_amount'];
                             $data['tax_percentage'] = $ds->discount_type == 'complimentory' ? 0 : $location_information->tax_percentage;
@@ -1775,7 +1807,7 @@ final class PlanDiscountService
 
                             $data['is_exclusive'] = 0;
                         }
-                    } elseif ($service_data1->tax_treatment_type_id == Config::get('constants.tax_is_exclusive')) {
+                    } elseif ($orgTaxTreatment == Config::get('constants.tax_is_exclusive')) {
                         $data['tax_exclusive_net_amount'] = $ds->discount_type == 'complimentory' ? 0 : $data['net_amount'];
                         $data['tax_percentage'] = $ds->discount_type == 'complimentory' ? 0 : $location_information->tax_percentage;
                         $data['tax_price'] = $ds->discount_type == 'complimentory' ? 0 : ceil($data['tax_exclusive_net_amount'] * ($location_information->tax_percentage / 100));
@@ -1826,29 +1858,28 @@ final class PlanDiscountService
                     ]];
 
                     foreach ($calculated_services as $detail) {
+                        // Common identity fields applied to every branch —
+                        // the per-discount-type branches below adjust prices
+                        // only, not row attribution.
+                        $data_service['random_id'] = $data['random_id'];
+                        $data_service['package_bundle_id'] = $packagesbundly->id;
+                        $data_service['service_id'] = $detail['service_id'];
+                        $data_service['sold_by'] = $data['sold_by'] ?? null;
+
                         if ($ds->discount_type == 'complimentory') {
-                            $data_service['random_id'] = $data['random_id'];
-                            $data_service['package_bundle_id'] = $packagesbundly->id;
-                            $data_service['service_id'] = $detail['service_id'];
                             $data_service['price'] = 0;
                             $data_service['orignal_price'] = 0;
                         } elseif ($ds->discount_type == 'custom') {
-
                             $amount_after_discount = ($ds->discount_amount / 100) * $service_data1->price;
-                            $data_service['random_id'] = $data['random_id'];
-                            $data_service['package_bundle_id'] = $packagesbundly->id;
-                            $data_service['service_id'] = $detail['service_id'];
                             $data_service['price'] = $service_data1->price - $amount_after_discount;
                             $data_service['orignal_price'] = $service_data1->price;
                         } else {
-                            $data_service['random_id'] = $data['random_id'];
-                            $data_service['package_bundle_id'] = $packagesbundly->id;
-                            $data_service['service_id'] = $detail['service_id'];
                             $data_service['price'] = $detail['calculated_price'];
                             $data_service['orignal_price'] = $detail['service_price'];
                         }
 
-                        if ($service_data1->tax_treatment_type_id == Config::get('constants.tax_both')) {
+                        // Org-wide tax treatment already resolved earlier in this scope ($orgTaxTreatment).
+                        if ($orgTaxTreatment == Config::get('constants.tax_both')) {
                             if ($data['is_exclusive'] == '1') {
                                 $data_service['tax_exclusive_price'] = $ds->discount_type == 'complimentory' ? 0 : $detail['calculated_price'];
                                 $data_service['tax_percentage'] = $location_information->tax_percentage;
@@ -1863,7 +1894,7 @@ final class PlanDiscountService
 
                                 $data_service['is_exclusive'] = 0;
                             }
-                        } elseif ($service_data1->tax_treatment_type_id == Config::get('constants.tax_is_exclusive')) {
+                        } elseif ($orgTaxTreatment == Config::get('constants.tax_is_exclusive')) {
                             $data_service['tax_exclusive_price'] = $ds->discount_type == 'complimentory' ? 0 : $detail['calculated_price'];
                             $data_service['tax_percentage'] = $location_information->tax_percentage;
                             $data_service['tax_price'] = $ds->discount_type == 'complimentory' ? 0 : ceil($detail['calculated_price'] * ($location_information->tax_percentage / 100));
@@ -1987,7 +2018,8 @@ final class PlanDiscountService
                 if ($discount_info) {
                     $data['discount_name'] = $discount_info->name;
                 }
-                if ($service_data->tax_treatment_type_id == Config::get('constants.tax_both')) {
+                $orgTaxTreatment = Settings::getOrgTaxTreatment(Auth::user()->account_id);
+                if ($orgTaxTreatment == Config::get('constants.tax_both')) {
                     if ($data['is_exclusive'] == '1') {
                         $data['tax_exclusive_net_amount'] = $data['net_amount'];
                         $data['tax_percentage'] = $location_information->tax_percentage;
@@ -2003,7 +2035,7 @@ final class PlanDiscountService
 
                         $data['is_exclusive'] = 0;
                     }
-                } elseif ($service_data->tax_treatment_type_id == Config::get('constants.tax_is_exclusive')) {
+                } elseif ($orgTaxTreatment == Config::get('constants.tax_is_exclusive')) {
                     $data['tax_exclusive_net_amount'] = $data['net_amount'];
                     $data['tax_percentage'] = $location_information->tax_percentage;
                     $data['tax_price'] = ceil($data['tax_exclusive_net_amount'] * ($location_information->tax_percentage / 100));
@@ -2040,8 +2072,14 @@ final class PlanDiscountService
                 $calculable_servcies = [];
 
                 foreach ($bundle_details as $detail) {
+                    // `service_price` MUST be the catalog regular per-row
+                    // price, not the pre-distributed sold-share. Same
+                    // root cause as the addBundleService paths in
+                    // PlanService — see those comments. Without this
+                    // fix, the per-row split here lands asymmetric on
+                    // identical sessions.
                     $calculable_servcies[] = [
-                        'service_price' => $detail->calculated_price,
+                        'service_price' => $detail->service_price,
                         'calculated_price' => $detail->calculated_price,
                         'service_id' => $detail->service_id,
                     ];
@@ -2053,10 +2091,12 @@ final class PlanDiscountService
                     $data_service['random_id'] = $data['random_id'];
                     $data_service['package_bundle_id'] = $packagesbundly->id;
                     $data_service['service_id'] = $detail['service_id'];
+                    $data_service['sold_by'] = $data['sold_by'] ?? null;
                     $data_service['price'] = $detail['calculated_price'];
                     $data_service['orignal_price'] = $detail['service_price'];
 
-                    if ($service_data->tax_treatment_type_id == Config::get('constants.tax_both')) {
+                    // Org-wide tax treatment already resolved earlier in this scope ($orgTaxTreatment).
+                    if ($orgTaxTreatment == Config::get('constants.tax_both')) {
                         if ($data['is_exclusive'] == '1') {
                             $data_service['tax_exclusive_price'] = $detail['calculated_price'];
                             $data_service['tax_percentage'] = $location_information->tax_percentage;
@@ -2072,7 +2112,7 @@ final class PlanDiscountService
 
                             $data_service['is_exclusive'] = 0;
                         }
-                    } elseif ($service_data->tax_treatment_type_id == Config::get('constants.tax_is_exclusive')) {
+                    } elseif ($orgTaxTreatment == Config::get('constants.tax_is_exclusive')) {
                         $data_service['tax_exclusive_price'] = $detail['calculated_price'];
                         $data_service['tax_percentage'] = $location_information->tax_percentage;
                         $data_service['tax_price'] = ceil($detail['calculated_price'] * ($location_information->tax_percentage / 100));

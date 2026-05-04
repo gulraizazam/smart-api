@@ -547,25 +547,49 @@ final class LeadGenderDeepDiveMetric implements Metric
             return 0.0;
         }
 
-        $query = DB::table('package_advances as pa')
+        // Net cash = cash_in − refund_out. Finance policy Q3
+        // (2026-05-03): Marketing-side "revenue per lead" reports
+        // must reflect actual money received, not gross billed
+        // amounts. Refunds during the same period subtract from the
+        // patient's contribution. Pre-fix this query summed only
+        // `cash_flow='in'` and never deducted refunds, inflating
+        // marketing revenue by the full refund volume.
+        $base = DB::table('package_advances as pa')
             ->join('packages as pk', 'pk.id', '=', 'pa.package_id')
             ->join('appointments as a', 'a.id', '=', 'pk.appointment_id')
             ->where('pa.account_id', $scope->accountId)
-            ->where('pa.cash_flow', 'in')
-            ->where('pa.is_adjustment', '0')
-            ->where('pa.is_tax', '0')
-            ->where('pa.is_cancel', '0')
-            ->where('pa.cash_amount', '>', 0)
+            ->whereNull('pa.deleted_at')
             ->whereBetween('pa.created_at', [$start, $end])
             ->whereIn('a.patient_id', $patientIds);
 
         if ($scope->isBranchScoped() && $scope->branchIds !== null && $scope->branchIds !== []) {
-            $query->whereIn('pk.location_id', $scope->branchIds);
+            $base->whereIn('pk.location_id', $scope->branchIds);
         }
 
-        $sum = (float) $query->sum('pa.cash_amount');
+        $row = (clone $base)
+            ->selectRaw("
+                COALESCE(SUM(CASE
+                    WHEN pa.cash_flow = 'in'
+                        AND pa.is_adjustment = 0
+                        AND pa.is_tax = 0
+                        AND pa.is_cancel = 0
+                        AND pa.cash_amount > 0
+                    THEN pa.cash_amount ELSE 0 END), 0) AS cash_in,
+                COALESCE(SUM(CASE
+                    WHEN pa.cash_flow = 'out'
+                        AND pa.is_refund = 1
+                    THEN pa.cash_amount ELSE 0 END), 0) AS cash_out_refund
+            ")
+            ->first();
 
-        return round($sum, 2);
+        $cashIn = (float) ($row->cash_in ?? 0);
+        $cashOut = (float) ($row->cash_out_refund ?? 0);
+
+        // Floor at 0 — Marketing surfaces shouldn't show negative
+        // revenue (would happen if refunds in this window exceed the
+        // window's inflows; the missing inflows landed in a prior
+        // window).
+        return round(max(0.0, $cashIn - $cashOut), 2);
     }
 
     /**

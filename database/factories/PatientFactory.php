@@ -21,6 +21,12 @@ class PatientFactory extends Factory
 
     public function definition(): array
     {
+        // The `users` table (where patients live) does NOT have an
+        // `address` column — patient addresses live on the patient
+        // detail / profile relations, not directly on the user row.
+        // Writing it here used to silently swallow into a since-dropped
+        // column; now MySQL surfaces "Unknown column 'address'" and
+        // breaks the whole feature suite.
         return [
             'name' => $this->faker->name(),
             'email' => $this->faker->unique()->safeEmail(),
@@ -30,7 +36,6 @@ class PatientFactory extends Factory
             'gender' => $this->faker->randomElement([0, 1]),
             'cnic' => $this->faker->numerify('#####-#######-#'),
             'dob' => $this->faker->date('Y-m-d', '-25 years'),
-            'address' => $this->faker->address(),
             'active' => 1,
             'user_type_id' => 3,
             'account_id' => 1,
