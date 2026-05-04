@@ -19,6 +19,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rules\Password;
 
 class ApplicationUserController extends Controller
 {
@@ -205,6 +207,64 @@ class ApplicationUserController extends Controller
             }
 
             $result = $this->userService->changePassword((int) $id, $request->validated('password'));
+
+            return $result
+                ? $this->successResponse('Password has been changed successfully.')
+                : $this->errorResponse('Something went wrong, please try again.', 500);
+        } catch (\Exception $e) {
+            return $this->handleException($e, 'ApplicationUserController');
+        }
+    }
+
+    /**
+     * Path-bound JSON password update.
+     *
+     * Replaces the legacy GET (returns a Blade modal whose hidden
+     * `<input name="id" value="{encrypt($user->id)}">` the SPA had to
+     * scrape) + PATCH (decrypt the scraped id) two-step flow. The
+     * encryption was never a security boundary — `findByAccountId`
+     * is what actually prevents cross-tenant edits, and pinning the
+     * user id in the route path is just as authorisation-safe.
+     *
+     * Validation rules mirror the SPA's zod schema:
+     * min 8, mixed case, at least one number, at least one symbol,
+     * confirmed against `password_confirmation` (Laravel's standard
+     * `confirmed` rule looks for `<field>_confirmation`).
+     */
+    public function updatePassword(Request $request, int $id): JsonResponse
+    {
+        try {
+            if (!Gate::allows('users_change_password')) {
+                return $this->errorResponse('You are not authorized to access this resource.', 401);
+            }
+
+            // Tenant-scoped existence check. Returns null if the target
+            // user belongs to a different account, which we surface as
+            // 404 — indistinguishable from "no such user" so cross-tenant
+            // probing can't enumerate.
+            $user = $this->userService->findByAccountId($id);
+            if (!$user) {
+                return $this->errorResponse('User not found.', 404);
+            }
+
+            $validator = Validator::make($request->all(), [
+                'password' => [
+                    'required',
+                    'string',
+                    Password::min(8)->mixedCase()->numbers()->symbols(),
+                    'confirmed',
+                ],
+            ]);
+
+            if ($validator->fails()) {
+                return $this->errorResponse(
+                    $validator->errors()->first(),
+                    422,
+                    $validator->errors()->all(),
+                );
+            }
+
+            $result = $this->userService->changePassword($id, (string) $request->input('password'));
 
             return $result
                 ? $this->successResponse('Password has been changed successfully.')

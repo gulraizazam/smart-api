@@ -84,16 +84,44 @@ class AppointmentStatusController extends AppointmentBaseController
         if (! $appointment) {
             return $this->errorResponse('No record found', 200);
         }
-        $base_appointments = AppointmentStatuses::where(['account_id' => 1])->select('id', 'parent_id', 'is_comment')->get()->keyBy('id');
-        /*
-         * If Un-scheduled status is present then exclude this status from drop-down
-         */
-        $unscheduled_appointment_status = AppointmentStatuses::getUnScheduledStatusOnly(Auth::user()->account_id);
-        if ($unscheduled_appointment_status) {
-            $base_appointment_statuses = AppointmentStatuses::getBaseActiveSorted(Auth::user()->account_id/*, $unscheduled_appointment_status->id*/);
-        } else {
-            $base_appointment_statuses = AppointmentStatuses::getBaseActiveSorted(Auth::user()->account_id);
-        }
+        // Fix: was hardcoded to account_id=1 — would return an empty
+        // map for every other tenant and silently break the SPA's
+        // is_comment lookup. Now scopes to the caller's account.
+        $base_appointments = AppointmentStatuses::where(['account_id' => Auth::user()->account_id])->select('id', 'parent_id', 'is_comment')->get()->keyBy('id');
+
+        // Base status dropdown for the SPA's status-change dialog.
+        //
+        // Hides system-managed (auto-only) statuses — `is_arrived`,
+        // `is_converted`, `is_unscheduled` — because the operator
+        // cannot set them manually:
+        //   • Arrived       → fired when the consultancy/treatment
+        //                     invoice is paid (or a session is
+        //                     consumed against a plan).
+        //   • Converted     → fired on the first package payment.
+        //   • Un-Scheduled  → derived from a missing scheduled
+        //                     date/time, recovered automatically.
+        //
+        // The legacy `AppointmentStatuses::getBaseActiveSorted` filter
+        // achieved the same intent with a `name != 'Arrived'` substring
+        // match — brittle to renames and missed Un-Scheduled. The
+        // flag-based predicates here are the robust replacement.
+        // `is_cancelled` rows stay (Cancelled is a manual choice).
+        $base_appointment_statuses = AppointmentStatuses::where('account_id', Auth::user()->account_id)
+            ->where('active', 1)
+            ->where(function ($q) {
+                $q->whereNull('parent_id')->orWhere('parent_id', 0);
+            })
+            ->where(function ($q) {
+                $q->where('is_arrived', '!=', 1)->orWhereNull('is_arrived');
+            })
+            ->where(function ($q) {
+                $q->where('is_converted', '!=', 1)->orWhereNull('is_converted');
+            })
+            ->where(function ($q) {
+                $q->where('is_unscheduled', '!=', 1)->orWhereNull('is_unscheduled');
+            })
+            ->orderBy('sort_no', 'asc')
+            ->pluck('name', 'id');
 
         // Root statuses store parent_id as NULL. If the current status has a
         // parent, return that parent's children so the child-status dropdown
@@ -174,33 +202,30 @@ class AppointmentStatusController extends AppointmentBaseController
         // $data['converted_by'] = Auth::user()->id;
         $data['updated_by'] = Auth::user()->id;
         $data['updated_at'] = Filters::getCurrentTimeStamp();
-        if ($appointment_type->id == $appointment->appointment_type_id) {
-            if ($data['base_appointment_status_id'] == Config::get('constants.appointment_status_not_show')) {
-                if ($appointment->counter == $counterglobal->data) {
-                    $data['base_appointment_status_id'] = Config::get('constants.appointment_status_not_interested');
-                    $appointment_childstatus_not_interested = AppointmentStatuses::where('parent_id', '=', Config::get('constants.appointment_status_not_interested'))->first();
-                    if ($appointment_childstatus_not_interested) {
-                        $data['appointment_status_id'] = $appointment_childstatus_not_interested->id;
-                    } else {
-                        $data['appointment_status_id'] = Config::get('constants.appointment_status_not_interested');
-                    }
+        // No-show counter handling: when the operator marks an
+        // appointment "Didn't show up" (`appointment_status_not_show`)
+        // for the Nth time (where N matches the
+        // `sys-appointmentrescheduledcounter` setting), automatically
+        // promote the row to "Not Interested" — operators stop
+        // chasing patients who never come. Below the threshold we just
+        // bump the counter and keep the No-show status.
+        //
+        // Pre-fix this block was duplicated (two if/update pairs back-to
+        // back); the second pass re-evaluated against stale
+        // `$appointment->counter` and silently fired a second update
+        // that rewrote the activity log entry. Collapsed to one pass.
+        if ($appointment_type->id == $appointment->appointment_type_id
+            && $data['base_appointment_status_id'] == Config::get('constants.appointment_status_not_show')) {
+            if ($appointment->counter == $counterglobal->data) {
+                $data['base_appointment_status_id'] = Config::get('constants.appointment_status_not_interested');
+                $appointment_childstatus_not_interested = AppointmentStatuses::where('parent_id', '=', Config::get('constants.appointment_status_not_interested'))->first();
+                if ($appointment_childstatus_not_interested) {
+                    $data['appointment_status_id'] = $appointment_childstatus_not_interested->id;
                 } else {
-                    $data['counter'] = $appointment->counter + 1;
+                    $data['appointment_status_id'] = Config::get('constants.appointment_status_not_interested');
                 }
-            }
-        }
-        $appointment->update($data);
-        if ($appointment_type->id == $appointment->appointment_type_id) {
-            if ($data['base_appointment_status_id'] == Config::get('constants.appointment_status_not_show')) {
-                if ($appointment->counter == $counterglobal->data) {
-                    $data['base_appointment_status_id'] = Config::get('constants.appointment_status_not_interested');
-                    $appointment_childstatus_not_interested = AppointmentStatuses::where('parent_id', '=', Config::get('constants.appointment_status_not_interested'))->first();
-                    if ($appointment_childstatus_not_interested) {
-                        $data['appointment_status_id'] = $appointment_childstatus_not_interested->id;
-                    } else {
-                        $data['appointment_status_id'] = Config::get('constants.appointment_status_not_interested');
-                    }
-                }
+            } else {
+                $data['counter'] = $appointment->counter + 1;
             }
         }
         $appointment->update($data);

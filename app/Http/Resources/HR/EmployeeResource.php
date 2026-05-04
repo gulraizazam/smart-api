@@ -52,7 +52,18 @@ class EmployeeResource extends JsonResource
         $genderRaw = $user->getAttributes()['gender'] ?? null;
 
         return [
-            'avatar_url' => $user->image_src ? asset($user->image_src) : null,
+            // Avatar files live at storage/app/patient_image/<filename>
+            // (Round 4 C3 — outside the public/ symlink so they're not
+            // web-readable without auth). PatientFileController::patientImage
+            // streams them with account_id scoping; the route name's
+            // `patient_image_api` is misleading because the lookup is
+            // by users.image_src regardless of user_type, so it serves
+            // employee avatars too. Was previously `asset($user->image_src)`
+            // which resolved to ${APP_URL}/<filename> — wrong directory,
+            // produced broken images on the HR detail page.
+            'avatar_url' => $user->image_src
+                ? route('admin.files.patient_image_api', ['filename' => $user->image_src])
+                : null,
             'name' => $user->name,
             'email' => $user->email,
             'phone' => $user->phone,
@@ -143,8 +154,8 @@ class EmployeeResource extends JsonResource
                 'uploaded_at' => $doc->created_at?->toIso8601String(),
                 'drive_upload_status' => $doc->drive_upload_status?->value,
                 'google_drive_url' => $doc->google_drive_url,
-                'preview_url' => route('admin.hr.documents.preview', $doc),
-                'download_url' => route('admin.hr.documents.download', $doc),
+                'preview_url' => route('admin.hr.documents.preview_api', $doc),
+                'download_url' => route('admin.hr.documents.download_api', $doc),
             ])
             ->values()
             ->all();

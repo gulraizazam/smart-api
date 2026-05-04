@@ -13,6 +13,11 @@ use App\Http\Controllers\Api\ApplicationUserController;
 use App\Http\Controllers\Api\PackagesController as ApiPackagesController;
 use App\Http\Controllers\Api\LeadsController;
 use App\Http\Controllers\FeedbackController;
+use App\Http\Controllers\Api\WrongConversionsController;
+use App\Http\Controllers\Admin\ServicesController as AdminServicesController;
+use App\Http\Controllers\Admin\PatientsController as AdminPatientsController;
+use App\Http\Controllers\Admin\HR\EmployeeDocumentController;
+use App\Http\Controllers\PatientFileController;
 use Illuminate\Support\Facades\Route;
 
     //Invoice Management route start
@@ -236,3 +241,57 @@ Route::get('packages/deleteplanrowtem', [PackagesController::class, 'deleteplanr
     Route::post('feedbacks/datatable', [FeedbackController::class, 'datatable'])->name('feedbacks.datatable');
     // Legacy route for popup (keeping for backward compatibility)
     Route::get('lead_Create_popup', [AdminLeadsController::class, 'make_pop'])->name('leads.create_popup');
+
+    // Wrong-conversions safety net (SPA replacement for the legacy
+    // /admin/wrong-conversions Blade page). Auto-revert via
+    // ConversionStateService::revertIfNeeded covers the canonical
+    // refund/payment-delete/plan-delete paths; this list catches the
+    // rest (historical rows, direct DB edits, validation criteria
+    // beyond net cash).
+    Route::prefix('wrong-conversions')->name('wrong_conversions.')->group(function (): void {
+        Route::get('/', [WrongConversionsController::class, 'index'])->name('index');
+        Route::post('reset-all', [WrongConversionsController::class, 'resetAll'])->name('reset_all');
+        Route::post('{id}/reset', [WrongConversionsController::class, 'reset'])->name('reset')->whereNumber('id');
+    });
+
+    // Migration of the last 5 SPA → Blade-route dependencies. Each
+    // points at the SAME controller method as the legacy /admin/* route
+    // so behaviour is identical; only the URL changes. The legacy
+    // /admin/* routes stay live until cutover (legacy frontend still
+    // uses them); this group is what the SPA hits going forward.
+    //   #1 invoice PDF (returns View — the legacy printable invoice)
+    Route::get('invoices/{id}/pdf/{download?}/{flag?}', [InvoicesController::class, 'invoice_pdf'])
+        ->name('invoices.pdf')->whereNumber('id');
+    //   #2 services tree PDF export (returns BinaryFileResponse)
+    Route::get('services/export-pdf', [AdminServicesController::class, 'exportPdf'])
+        ->name('services.export_pdf');
+    //   #3 plan finance log Excel export (streams XLSX via packagelog)
+    Route::get('plans/log/{id}/{type}', [PackagesController::class, 'packagelog'])
+        ->name('plans.log_export')->whereNumber('id');
+    // (#4 patient card Blade view removed — SPA's patient-detail page
+    //  covers every section the legacy card showed; the "Open in legacy
+    //  admin" Quick action that hit this route was deleted at the same
+    //  time. The cardV2 method on AdminPatientsController and the
+    //  resources/views/admin/patients/card-v2/ blade folder are
+    //  unreferenced now and sweep with the legacy admin tree at cutover.)
+    //   #5 student-verification document stream (returns StreamedResponse)
+    Route::get('files/student-verification/{filename}', [PatientFileController::class, 'studentVerification'])
+        ->name('files.student_verification');
+
+    // Round-2 migration: backend serializers (PatientDetailResource,
+    // EmployeeResource) build URLs via `route('admin.*')` against
+    // routes registered under `routes/web/*`. The SPA reads these as
+    // payload fields (`image_url`, `preview_url`, `download_url`) and
+    // opens them via <a href> / <img src> — same cutover risk as the
+    // raw /admin/* hardcoded URLs. Distinct route names (suffix `_api`)
+    // so the Resource updates target the API URLs explicitly without
+    // colliding with the legacy `route()` callers.
+    //   #6 patient image stream (avatar / profile pic)
+    Route::get('files/patient-image/{filename}', [PatientFileController::class, 'patientImage'])
+        ->name('files.patient_image_api');
+    //   #7 HR employee document preview (image inline / PDF inline)
+    Route::get('hr/documents/{document}/preview', [EmployeeDocumentController::class, 'preview'])
+        ->name('hr.documents.preview_api');
+    //   #8 HR employee document download (force-download)
+    Route::get('hr/documents/{document}/download', [EmployeeDocumentController::class, 'download'])
+        ->name('hr.documents.download_api');
