@@ -333,6 +333,12 @@ class VendorService
             'opening_balance' => round($openingBalance, 2),
             'date_from' => $dateFrom,
             'date_to' => $dateTo,
+            // Flat fields the SPA's vendor-detail KPI cards read directly.
+            // The nested period_stats stays for any older consumer until
+            // we confirm nothing else relies on it.
+            'period_purchases' => round((float) $periodPurchases, 2),
+            'period_payments' => round((float) $periodPayments, 2),
+            'closing_balance' => round((float) $closingBalance, 2),
             'period_stats' => [
                 'total_purchases' => round((float) $periodPurchases, 2),
                 'total_payments' => round((float) $periodPayments, 2),

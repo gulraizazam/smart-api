@@ -7,13 +7,16 @@ namespace App\Http\Controllers\Api;
 use App\Exports\ExportMembership;
 use App\Exports\StudentMembershipPatientsExport;
 use App\Http\Controllers\Controller;
+use App\Exceptions\MembershipCodeException;
 use App\Http\Requests\Membership\CancelMembershipRequest;
+use App\Http\Requests\Membership\GenerateCodesRequest;
 use App\Http\Requests\Membership\MembershipDatatableRequest;
 use App\Http\Requests\Membership\StoreMembershipRequest;
 use App\Http\Requests\Membership\ToggleMembershipStatusRequest;
 use App\Http\Requests\Membership\UpdateMembershipRequest;
 use App\Http\Requests\Membership\UploadMembershipsRequest;
 use App\Http\Resources\MembershipResource;
+use App\Services\Membership\MembershipCodeService;
 use App\Services\Membership\MembershipService;
 use App\Traits\SimpleApiResponse;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -31,6 +34,7 @@ final class MembershipsController extends Controller
 
     public function __construct(
         private readonly MembershipService $membershipService,
+        private readonly MembershipCodeService $membershipCodeService,
     ) {}
 
     // ── Datatable ───────────────────────────────────────
@@ -117,6 +121,66 @@ final class MembershipsController extends Controller
             return $this->success('Record has been created successfully.');
         } catch (\Throwable $e) {
             Log::error('Membership store error', ['message' => $e->getMessage()]);
+
+            return $this->error('Something went wrong, please try again later.');
+        }
+    }
+
+    /**
+     * Dry-run preview for the bulk-codes UI. Validates the type + range
+     * and reports total / existing / will-create counts plus the lists
+     * themselves. No DB writes — this is what powers the "Preview" button
+     * in the SPA's bulk-codes dialog.
+     */
+    public function bulkCodesPreview(GenerateCodesRequest $request): JsonResponse
+    {
+        if (Gate::denies('memberships_create')) {
+            return $this->unauthorized();
+        }
+
+        try {
+            $data = $request->validated();
+            $result = $this->membershipCodeService->previewCodeRange(
+                (int) $data['membership_type_id'],
+                (string) $data['start_code'],
+                (string) $data['end_code'],
+            );
+
+            return $this->success('Preview generated.', $result);
+        } catch (MembershipCodeException $e) {
+            return $this->error($e->getMessage());
+        } catch (\Throwable $e) {
+            Log::error('Membership bulk-codes preview error', ['message' => $e->getMessage()]);
+
+            return $this->error('Something went wrong, please try again later.');
+        }
+    }
+
+    /**
+     * Bulk-create membership codes for a range, silently skipping codes
+     * that already exist. Created codes are stamped active + unassigned.
+     * Mirrors the legacy import behavior so re-running the same range is
+     * idempotent.
+     */
+    public function bulkCodesStore(GenerateCodesRequest $request): JsonResponse
+    {
+        if (Gate::denies('memberships_create')) {
+            return $this->unauthorized();
+        }
+
+        try {
+            $data = $request->validated();
+            $result = $this->membershipCodeService->bulkCreateRangeSkippingExisting(
+                (int) $data['membership_type_id'],
+                (string) $data['start_code'],
+                (string) $data['end_code'],
+            );
+
+            return $this->success('Codes generated successfully.', $result);
+        } catch (MembershipCodeException $e) {
+            return $this->error($e->getMessage());
+        } catch (\Throwable $e) {
+            Log::error('Membership bulk-codes store error', ['message' => $e->getMessage()]);
 
             return $this->error('Something went wrong, please try again later.');
         }

@@ -26,6 +26,7 @@ final class MembershipResource extends JsonResource
             'patient'                 => $this->whenLoaded('patient', fn () => $this->patient?->name, 'N/A'),
             'patient_id'              => $this->whenLoaded('patient', fn () => $this->patient?->id, 'N/A'),
             'patient_unique_id'       => $this->whenLoaded('patient', fn () => $this->patient?->unique_id),
+            'patient_phone'           => $this->whenLoaded('patient', fn () => $this->patient?->phone),
             'is_referral'             => (bool) $this->is_referral,
             'parent_membership_code'  => $this->parent_membership_code,
             'assigned_at'             => $this->assigned_at,

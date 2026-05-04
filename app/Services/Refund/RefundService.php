@@ -111,17 +111,17 @@ final class RefundService
                 continue;
             }
 
-            $latestRefund = PackageAdvances::where([
-                'package_id' => $pkgId,
-                'cash_flow' => CashFlow::Out->value,
-                'is_cancel' => '0',
-                'is_refund' => '1',
-            ])->latest()->first();
-
             $planTotal = ($planTypes[$pkgId] ?? null) === 'membership'
                 ? (float) ($bundleTotals[$pkgId] ?? 0)
                 : (float) ($serviceTotals[$pkgId] ?? 0);
 
+            // The latest-refund timestamp now comes from the batched
+            // aggregate query (one round-trip for the whole page) instead
+            // of a separate `where(...)->latest()->first()` per row.
+            // Falls back to the GROUP BY's MAX(created_at) on the package
+            // (which getRefundedRecords already exposes as `created_at`)
+            // when the batched aggregate had no refund row matching the
+            // narrower `is_cancel = 0 AND cash_flow = out` filter.
             $rows[] = [
                 'id' => $pkgId,
                 'patient_id' => $package->user ? GeneralFunctions::patientSearchStringAdd($package->user->id) : '-',
@@ -136,9 +136,8 @@ final class RefundService
                 'settle_amount' => number_format($agg['settle_amount_with_tax']),
                 'refunded' => $agg['refunded_amount'],
                 'case_setteled' => $agg['is_case_settled'] ? 'Yes' : 'No',
-                'created_at' => $latestRefund
-                    ? Carbon::parse($latestRefund->created_at)->format('F j,Y h:i A')
-                    : Carbon::parse($package->created_at)->format('F j,Y h:i A'),
+                'created_at' => Carbon::parse($agg['last_refund_at'] ?? $package->created_at)
+                    ->format('F j,Y h:i A'),
             ];
         }
 
@@ -217,13 +216,6 @@ final class RefundService
                 continue;
             }
 
-            $latestRefund = PackageAdvances::where([
-                'package_id' => $pkgId,
-                'cash_flow' => CashFlow::Out->value,
-                'is_cancel' => '0',
-                'is_refund' => '1',
-            ])->latest()->first();
-
             $planTotal = ($planTypes[$pkgId] ?? null) === 'membership'
                 ? (float) ($bundleTotals[$pkgId] ?? 0)
                 : (float) ($serviceTotals[$pkgId] ?? 0);
@@ -237,9 +229,8 @@ final class RefundService
                 'cash_out' => number_format($agg['cash_out']),
                 'refunded_amount' => number_format($agg['refunded_amount']),
                 'case_setteled' => $agg['is_case_settled'] ? 'Yes' : 'No',
-                'created_at' => $latestRefund
-                    ? Carbon::parse($latestRefund->created_at)->format('F j,Y h:i A')
-                    : Carbon::parse($package->created_at)->format('F j,Y h:i A'),
+                'created_at' => Carbon::parse($agg['last_refund_at'] ?? $package->created_at)
+                    ->format('F j,Y h:i A'),
                 'location' => $this->formatLocation($package),
             ];
         }
@@ -541,6 +532,11 @@ final class RefundService
                 DB::raw("SUM(CASE WHEN cash_flow = 'out' AND is_refund = 0 AND is_setteled = 1 THEN cash_amount ELSE 0 END) as refund_settle_amount"),
                 DB::raw("SUM(CASE WHEN cash_flow = 'out' AND is_refund = 0 THEN cash_amount ELSE 0 END) as cash_out"),
                 DB::raw("MAX(CASE WHEN cash_flow = 'out' AND is_setteled = 1 THEN 1 ELSE 0 END) as is_case_settled"),
+                // Latest refund timestamp per package, computed in the same
+                // GROUP BY pass that already produces the other aggregates.
+                // This replaces a per-row `PackageAdvances::where(...)->latest()->first()`
+                // lookup that fired N times for an N-row datatable page.
+                DB::raw("MAX(CASE WHEN cash_flow = 'out' AND is_refund = 1 THEN created_at ELSE NULL END) as last_refund_at"),
             ])
             ->get();
 
@@ -553,6 +549,7 @@ final class RefundService
                 'settle_amount_with_tax' => $settleTotal,
                 'cash_out' => (float) $row->cash_out,
                 'is_case_settled' => (bool) $row->is_case_settled,
+                'last_refund_at' => $row->last_refund_at,
             ];
         }
 
@@ -567,6 +564,7 @@ final class RefundService
             'settle_amount_with_tax' => 0.0,
             'cash_out' => 0.0,
             'is_case_settled' => false,
+            'last_refund_at' => null,
         ];
     }
 

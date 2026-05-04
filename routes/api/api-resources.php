@@ -147,8 +147,16 @@ use Illuminate\Support\Facades\Route;
     Route::post('membershiptypes/status', [MembershipTypesController::class, 'status'])->name('membershiptypes.status');
     Route::resource('membershiptypes', MembershipTypesController::class)->except('index');
     Route::get('memberships/getsoldbyusers', [MembershipsController::class, 'getSoldByUsers'])->name('memberships.getsoldbyusers');
+    // Export endpoints must be registered before Route::resource so the
+    // GET /memberships/{id} show route doesn't swallow `/export/pdf` as
+    // an id param. Both reuse the existing controller methods that the
+    // legacy /admin/* web routes already point at.
+    Route::get('memberships/export/pdf', [MembershipsController::class, 'exportPdf'])->name('memberships.export.pdf');
+    Route::get('memberships/export/excel', [MembershipsController::class, 'exportDocs'])->name('memberships.export.excel');
     Route::resource('memberships', MembershipsController::class)->except('index');
     Route::post('memberships/datatable', [MembershipsController::class, 'datatable'])->name('memberships.datatable');
     Route::post('memberships/status', [MembershipsController::class, 'status'])->name('memberships.status');
     Route::post('memberships/cancel', [MembershipsController::class, 'cancelMembership'])->name('memberships.cancel');
+    Route::post('memberships/bulk-codes/preview', [MembershipsController::class, 'bulkCodesPreview'])->name('memberships.bulk_codes.preview');
+    Route::post('memberships/bulk-codes', [MembershipsController::class, 'bulkCodesStore'])->name('memberships.bulk_codes.store');
     Route::get('memberships/{id}/student-verification', [MembershipsController::class, 'getStudentVerificationDetails'])->name('memberships.student_verification');
