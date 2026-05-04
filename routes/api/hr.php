@@ -18,6 +18,7 @@ use App\Http\Controllers\Api\HR\MyHrmController;
 use App\Http\Controllers\Api\HR\RecruitmentController;
 use App\Http\Controllers\Api\HR\RecruitmentDatatableController;
 use App\Http\Controllers\Api\HR\RecruitmentInterviewController;
+use App\Http\Controllers\Api\Reports\HR\CelebrationsApiController;
 use Illuminate\Support\Facades\Route;
 
 // Name prefix is `api.hr.` (full names become `admin.api.hr.*`) to avoid
@@ -149,5 +150,14 @@ Route::prefix('hr')->name('api.hr.')->group(function () {
         Route::post('/', [LeaveTypeController::class, 'store'])->name('store');
         Route::patch('{leaveType}', [LeaveTypeController::class, 'update'])->name('update');
         Route::delete('{leaveType}', [LeaveTypeController::class, 'destroy'])->name('destroy');
+    });
+
+    // ── Reports (read-only) ──
+    Route::prefix('reports')->name('reports.')->group(function () {
+        Route::get('celebrations', CelebrationsApiController::class)->name('celebrations');
+        Route::get('celebrations/birthdays/export', [CelebrationsApiController::class, 'exportBirthdays'])
+            ->name('celebrations.birthdays.export');
+        Route::get('celebrations/anniversaries/export', [CelebrationsApiController::class, 'exportAnniversaries'])
+            ->name('celebrations.anniversaries.export');
     });
 });
