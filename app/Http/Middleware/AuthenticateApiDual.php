@@ -31,7 +31,17 @@ class AuthenticateApiDual
         }
 
         if (! $request->hasHeader('Authorization')) {
-            return redirect()->route('login');
+            // Cookie-mode SPA: missing or expired session. The SPA's
+            // `auth:expired` listener watches for 401 on `/api/*` and
+            // bounces to its own login screen. Redirecting to a Blade
+            // `route('login')` here would 500 once the legacy admin
+            // frontend is retired and 302 to a dead Blade page today.
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthenticated.',
+                'data' => null,
+                'errors' => [],
+            ], 401);
         }
 
         foreach (['api_passport', 'sanctum'] as $guard) {

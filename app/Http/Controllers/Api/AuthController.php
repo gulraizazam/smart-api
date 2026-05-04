@@ -145,4 +145,41 @@ class AuthController extends Controller
             return $this->errorResponse('An error occurred. Please try again.', 500);
         }
     }
+
+    /**
+     * Logout for the cookie- and bearer-mode SPA. Passport-mode tokens are
+     * revoked by /api/v2/auth/logout, so this endpoint is a no-op for them.
+     *
+     * The endpoint is intentionally unauthenticated and idempotent: an
+     * expired-session caller still gets a clean 200 with the session and
+     * CSRF token rotated, so the client can't be wedged in a "logged-out
+     * locally, still alive on the server" state. The framework-emitted
+     * Logout event is captured by AuthActivityListener::onLogout for audit.
+     */
+    public function logout(Request $request): \Illuminate\Http\JsonResponse
+    {
+        // Cookie mode: terminate the web session, rotate the session ID
+        // and CSRF token. Safe to call when no session exists — the
+        // guard's logout() short-circuits and session()->invalidate()
+        // simply seeds a fresh empty session.
+        Auth::guard('web')->logout();
+        if ($request->hasSession()) {
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+        }
+
+        // Bearer mode: revoke ONLY the personal access token used for
+        // this request — multi-device users keep their other sessions
+        // alive. Cookie- and passport-mode requests don't authenticate
+        // via Sanctum tokens, so this branch is a no-op for them.
+        $tokenUser = Auth::guard('sanctum')->user();
+        if ($tokenUser) {
+            $token = $tokenUser->currentAccessToken();
+            if ($token instanceof \Laravel\Sanctum\PersonalAccessToken) {
+                $token->delete();
+            }
+        }
+
+        return $this->successResponse('Logged out.', null);
+    }
 }
