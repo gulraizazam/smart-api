@@ -106,8 +106,15 @@ class LeadConversionToPatientTest extends TestCase
         $this->assertTrue((bool) $status->is_converted);
     }
 
-    public function test_update_lead_status_to_converted_stamps_converted_by_field(): void
+    public function test_manually_setting_lead_status_to_converted_is_rejected(): void
     {
+        // Business rule: Converted is set automatically by the package
+        // payment cascade (`PackageAdvances::updateLeadStatusToConverted`
+        // + `PlanService::markAppointmentAsConvertedOptimized`) — never
+        // by an operator picking "Converted" from a dropdown. Same rule
+        // for Booked (set by appointment create) and Arrived (set by
+        // invoice paid). `LeadService::validateStatusChange` enforces
+        // this inbound guard.
         $lead = $this->service->createLead([
             'new_lead' => true,
             'name' => 'Iris',
@@ -116,14 +123,12 @@ class LeadConversionToPatientTest extends TestCase
             'service_id' => 1,
         ]);
 
-        // The convert modal posts lead_status_parent_id = the
-        // "Converted" status row id.
-        $updated = $this->service->updateLeadStatus($lead->id, [
+        $this->expectException(LeadException::class);
+        $this->expectExceptionMessageMatches('/cannot manually set|automatically/i');
+
+        $this->service->updateLeadStatus($lead->id, [
             'lead_status_parent_id' => $this->convertedStatus->id,
         ]);
-
-        $this->assertSame($this->convertedStatus->id, $updated->lead_status_id);
-        $this->assertSame((int) Auth::id(), (int) $updated->converted_by);
     }
 
     public function test_a_lead_in_converted_state_cannot_be_moved_back_to_open(): void
@@ -136,12 +141,13 @@ class LeadConversionToPatientTest extends TestCase
             'service_id' => 1,
         ]);
 
-        // First move: legal — open → converted.
-        $this->service->updateLeadStatus($lead->id, [
-            'lead_status_parent_id' => $this->convertedStatus->id,
-        ]);
+        // Bypass the service to plant a Converted lead — production
+        // sets this via the package-payment cascade (`PackageAdvances`
+        // / `PlanService`), not via `LeadService::updateLeadStatus`,
+        // so direct DB write here mirrors the post-cascade state.
+        $lead->update(['lead_status_id' => $this->convertedStatus->id]);
 
-        // Second move: illegal — converted → open (refuses).
+        // Outbound guard: converted → open refuses.
         $this->expectException(LeadException::class);
         $this->expectExceptionMessageMatches('/not allowed|Converted/i');
 

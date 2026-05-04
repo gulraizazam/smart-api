@@ -10,16 +10,18 @@ use Tests\Concerns\UsesFinancialFixtures;
 use Tests\TestCase;
 
 /**
- * Smoke coverage for the `bundles:inactive` command — the nightly
- * cron that flips the `active` flag to 0 on any bundle whose
- * `end` date has already passed.
+ * Smoke coverage for the `packages:expire` command — the nightly
+ * cron that flips the `active` flag to 0 on any package whose end
+ * date has passed. Note: the SPA "Packages" page persists into the
+ * `bundles` table (UI label vs. DB-table inversion), so we seed
+ * `bundles` rows even though the command is named for the Packages UI.
  *
  * Pins:
  *   1. Command runs cleanly against an empty fixture.
- *   2. A bundle whose end date is yesterday gets deactivated.
- *   3. A bundle whose end date is in the future is left alone.
+ *   2. A package whose end date is yesterday gets deactivated.
+ *   3. A package whose end date is in the future is left alone.
  */
-class InactivePackagesCommandTest extends TestCase
+class ExpirePackagesCommandTest extends TestCase
 {
     use RefreshDatabase;
     use UsesFinancialFixtures;
@@ -52,14 +54,14 @@ class InactivePackagesCommandTest extends TestCase
 
     public function test_command_runs_clean_on_empty_fixture(): void
     {
-        $this->artisan('bundles:inactive')->assertExitCode(0);
+        $this->artisan('packages:expire')->assertExitCode(0);
     }
 
     public function test_command_deactivates_bundles_past_end_date(): void
     {
         $expiredId = $this->seedBundle(now()->subDays(3)->format('Y-m-d'), 1);
 
-        $this->artisan('bundles:inactive')->assertExitCode(0);
+        $this->artisan('packages:expire')->assertExitCode(0);
 
         $this->assertSame(
             0,
@@ -71,7 +73,7 @@ class InactivePackagesCommandTest extends TestCase
     {
         $futureId = $this->seedBundle(now()->addWeek()->format('Y-m-d'), 1);
 
-        $this->artisan('bundles:inactive')->assertExitCode(0);
+        $this->artisan('packages:expire')->assertExitCode(0);
 
         $this->assertSame(
             1,

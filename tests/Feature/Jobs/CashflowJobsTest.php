@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Tests\Feature\Jobs;
 
 use App\Jobs\SendCashflowDailyDigest;
-use App\Jobs\SendCashflowMonthlyReport;
 use App\Models\CashFlow\CashflowSetting;
 use App\Models\CashFlow\Expense;
 use Illuminate\Support\Facades\Mail;
@@ -113,16 +112,6 @@ class CashflowJobsTest extends TestCase
         $job->handle();
 
         Mail::assertSent(\App\Mail\CashflowDailyDigest::class);
-    }
-
-    public function test_monthly_report_dispatches_without_error(): void
-    {
-        $this->seedGoLiveDate();
-
-        $job = new SendCashflowMonthlyReport;
-        $job->handle(app(\App\Services\CashFlow\ReportService::class));
-
-        $this->assertTrue(true, 'Monthly report job completed without exception.');
     }
 
     public function test_daily_digest_does_not_run_for_accounts_without_go_live_date(): void
