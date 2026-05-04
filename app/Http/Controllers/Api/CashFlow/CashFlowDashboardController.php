@@ -101,6 +101,43 @@ class CashFlowDashboardController extends Controller
     }
 
     /**
+     * Widgets endpoint — every dashboard slice except the four sections
+     * served by `dashboardSnapshot` (summary, pools, daily_trend, vendors).
+     * Splitting the load this way lets the top half of the page paint as
+     * soon as the snapshot lands, while these heavier aggregations stream
+     * in below. All slices reuse the same DashboardService methods that
+     * the legacy `dashboardData` endpoint already calls — no new business
+     * logic, just a focused projection.
+     */
+    public function dashboardWidgets(Request $request): JsonResponse
+    {
+        try {
+            $accountId = Auth::user()->account_id;
+
+            $filters = $request->only(['date_from', 'date_to', 'branch_id']);
+            [$dateFrom, $dateTo] = CashflowHelper::defaultDateRange($filters);
+            $branchId = isset($filters['branch_id']) ? (int) $filters['branch_id'] : null;
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'pending_actions'    => $this->dashboardService->getPendingActions($accountId),
+                    'pending_expenses'   => $this->dashboardService->getPendingExpensesList($accountId),
+                    'category_breakdown' => $this->dashboardService->getCategoryBreakdown($accountId, $dateFrom, $dateTo, $branchId),
+                    'vendor_due_soon'    => $this->dashboardService->getVendorPaymentsDueSoon($accountId),
+                    'staff_advances'     => $this->dashboardService->getStaffAdvancesOutstanding($accountId),
+                    'staff_expenses'     => $this->dashboardService->getRecentStaffExpenses($accountId),
+                    'flagged_entries'    => $this->dashboardService->getFlaggedEntries($accountId),
+                    'recent_entries'     => $this->dashboardService->getRecentEntries($accountId),
+                ],
+            ]);
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error($e->getMessage(), ['file' => $e->getFile(), 'line' => $e->getLine()]);
+            return response()->json(['success' => false, 'message' => 'An error occurred. Please try again.'], 500);
+        }
+    }
+
+    /**
      * Reconciliation check (admin only).
      */
     public function dashboardReconciliation(): JsonResponse
