@@ -74,9 +74,9 @@ Route::get('memberships/export', [MembershipReportsController::class, 'export'])
 Route::get('/admin/doctor/consultant/breakdown/{sellerId}', [UpsellingReportController::class, 'doctorConsultantBreakdown'])->name('doctor.consultant.breakdown');
 Route::get('/admin/consultant/seller/detail/{consultantId}/{sellerId}', [UpsellingReportController::class, 'doctorConsultantBreakdown'])->name('consultant.seller.detail');
 Route::get('reports/conversion', [ConversionReportController::class, 'index'])->name('reports.conversion')->middleware('permission:conversion_report_manage');
-Route::get('reports/activity_logs', [ActivitylogsReportController::class, 'index'])->name('reports.activity_logs');
-Route::post('reports/activity_logs', [ActivitylogsReportController::class, 'fetchActivityReport'])->name('reports.load_activity_report');
-Route::post('reports/activity_logs/export', [ActivitylogsReportController::class, 'exportCsv'])->name('reports.activity_logs_export');
+Route::get('reports/activity_logs', [ActivitylogsReportController::class, 'index'])->name('reports.activity_logs')->middleware('permission:activity_logs_manage');
+Route::post('reports/activity_logs', [ActivitylogsReportController::class, 'fetchActivityReport'])->name('reports.load_activity_report')->middleware('permission:activity_logs_manage');
+Route::post('reports/activity_logs/export', [ActivitylogsReportController::class, 'exportCsv'])->name('reports.activity_logs_export')->middleware('permission:activity_logs_manage');
 Route::post('reports/load_conversion_report', [ConversionReportController::class, 'LoadConversionReport'])->name('reports.load_conversion_report');
 Route::get('reports/staff_wise_arrival', [FinanceArrivalReportController::class, 'staffWiseArrival'])->name('reports.staff_wise_arrival')->middleware('permission:staff_wise_arrival_manage');
 Route::post('reports/staff_wise_arrival_report', [FinanceArrivalReportController::class, 'staffWiseArrivalReport'])->name('reports.staff_wise_arrival_report');
