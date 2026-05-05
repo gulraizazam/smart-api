@@ -197,7 +197,7 @@ class CashFlowCategoriesController extends Controller
 
             $status = $request->input('status');
 
-            $requests = $this->categoryService->getCategoryRequests($accountId, $status, (int) $request->input('per_page', 25));
+            $requests = $this->categoryService->getCategoryRequests($accountId, $status, $request->input('per_page', 25));
 
 
 

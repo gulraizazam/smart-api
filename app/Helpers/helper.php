@@ -118,15 +118,7 @@ function getPaginationElement(\Illuminate\Http\Request $request, int $iTotalReco
     $iDisplayLength = $iDisplayLength < 0 ? $iTotalRecords : $iDisplayLength;
     $iDisplayStart = (int) (isset($request->pagination['page']) ? (($request->pagination['page'] - 1) * $iDisplayLength) : 0);
     $page = (int) ($request->pagination['page'] ?? 1);
-
-    // Real page count, not the hardcoded `7` it used to return. Several
-    // SPA screens (and the legacy admin's pagination footer) consume
-    // this value to gate the Next button — with the constant, the
-    // patient datatable's "Next" went disabled at page 7 even though
-    // 174k patients ÷ 25 per page = ~6,969 real pages.
-    $pages = $iDisplayLength > 0
-        ? max(1, (int) ceil($iTotalRecords / $iDisplayLength))
-        : 1;
+    $pages = 7;
 
     if ($iDisplayLength >= $iTotalRecords) {
         $iDisplayStart = 0;

@@ -116,21 +116,6 @@ class User extends Authenticatable
         ];
     }
 
-    protected static function booted(): void
-    {
-        // Keep `phone_normalized` in lockstep with `phone` so the indexed
-        // search path (WHERE phone_normalized LIKE '302%') never diverges
-        // from the canonical column. Strips every non-digit. Cheap regex
-        // — runs only on save, only when phone changed.
-        static::saving(function (User $user): void {
-            if ($user->isDirty('phone')) {
-                $raw = (string) ($user->phone ?? '');
-                $digits = preg_replace('/\D+/', '', $raw) ?? '';
-                $user->phone_normalized = $digits === '' ? null : $digits;
-            }
-        });
-    }
-
     /*
     |--------------------------------------------------------------------------
     | H2 — Lockout helpers
@@ -251,6 +236,16 @@ class User extends Authenticatable
     public function doctorhaslocation(): HasMany
     {
         return $this->hasMany(DoctorHasLocations::class, 'user_id');
+    }
+
+    /**
+     * Branches this user can see in the Management Dashboard.
+     * Empty collection = company-wide visibility (per ResourceScopeResolver).
+     */
+    public function branches(): BelongsToMany
+    {
+        return $this->belongsToMany(Locations::class, 'user_branches', 'user_id', 'location_id')
+            ->withTimestamps();
     }
 
     public function leads(): HasMany

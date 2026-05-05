@@ -144,10 +144,7 @@ class MembershipCodeService
         
         $codes = [];
         for ($i = $startNumber; $i <= $endNumber; $i++) {
-            // Cast to string for PHP 8.1+ under strict_types — str_pad
-            // refuses int args even though it'd happily coerce them in
-            // older PHP. Not optional under this file's declare(strict_types=1).
-            $codes[] = $prefix . str_pad((string) $i, $numberLength, '0', STR_PAD_LEFT);
+            $codes[] = $prefix . str_pad($i, $numberLength, '0', STR_PAD_LEFT);
         }
 
         return $codes;
@@ -235,80 +232,6 @@ class MembershipCodeService
             ]);
             throw new MembershipCodeException("Failed to import codes: " . $e->getMessage());
         }
-    }
-
-    /**
-     * Dry-run preview for the bulk-codes UI: validates the type + range,
-     * expands the range, and reports which codes already exist (would be
-     * skipped) and which would be created. Does NOT write anything — pair
-     * with `bulkCreateRangeSkippingExisting` for the actual create step.
-     *
-     * Capped at 10,000 codes per call to match the create path.
-     */
-    public function previewCodeRange(int $membershipTypeId, string $startCode, string $endCode): array
-    {
-        $membershipType = MembershipType::find($membershipTypeId);
-        if (!$membershipType) {
-            throw new MembershipCodeException("Membership type not found.");
-        }
-
-        if (!$membershipType->active) {
-            throw new MembershipCodeException("Cannot generate codes for inactive membership type.");
-        }
-
-        $this->validateCodeFormat($startCode, $endCode);
-        $codes = $this->extractCodesFromRange($startCode, $endCode);
-
-        if (count($codes) > 10000) {
-            throw new MembershipCodeException("Cannot preview more than 10,000 codes at once.");
-        }
-
-        $existingCodes = $this->checkExistingCodes($codes);
-        $newCodes = array_values(array_diff($codes, $existingCodes));
-
-        return [
-            'membership_type_id' => $membershipTypeId,
-            'membership_type_name' => $membershipType->name,
-            'start_code' => $startCode,
-            'end_code' => $endCode,
-            'total' => count($codes),
-            'existing_count' => count($existingCodes),
-            'to_create_count' => count($newCodes),
-            'codes' => $codes,
-            'existing_codes' => array_values($existingCodes),
-            'to_create_codes' => $newCodes,
-        ];
-    }
-
-    /**
-     * Generate every code in the [start, end] range that does NOT already
-     * exist; existing ones are silently skipped (versus
-     * `generateCodeRange`, which aborts on the first duplicate). Created
-     * codes are stamped active + unassigned, matching the bulk-codes UX
-     * the SPA exposes.
-     */
-    public function bulkCreateRangeSkippingExisting(int $membershipTypeId, string $startCode, string $endCode): array
-    {
-        $membershipType = MembershipType::find($membershipTypeId);
-        if (!$membershipType) {
-            throw new MembershipCodeException("Membership type not found.");
-        }
-
-        if (!$membershipType->active) {
-            throw new MembershipCodeException("Cannot generate codes for inactive membership type.");
-        }
-
-        $this->validateCodeFormat($startCode, $endCode);
-        $codes = $this->extractCodesFromRange($startCode, $endCode);
-
-        if (count($codes) > 10000) {
-            throw new MembershipCodeException("Cannot generate more than 10,000 codes at once.");
-        }
-
-        // Reuse importCodes' skip-existing semantics — it owns the
-        // transaction, the create loop, the cache bust, and the audit log,
-        // so we don't reimplement any of it here.
-        return $this->importCodes($membershipTypeId, $codes);
     }
 
     /**

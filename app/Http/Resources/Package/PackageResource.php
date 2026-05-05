@@ -29,6 +29,7 @@ class PackageResource extends JsonResource
             'id' => (int) $package->id,
             'random_id' => $package->random_id,
             'name' => $package->name,
+            'plan_name' => $package->plan_name,
             'plan_type' => $planType,
             'session_count' => $package->sessioncount !== null ? (int) $package->sessioncount : null,
             'total_price' => (float) $package->total_price,

@@ -260,20 +260,19 @@ class InvoicesController extends Controller
             }
         }
 
-        try {
-            return DB::transaction(function () use ($id) {
-                $invoice = Invoices::CancelRecord($id, Auth::user()->account_id);
+        return DB::transaction(function () use ($id) {
+            $invoice = Invoices::CancelRecord($id, Auth::user()->account_id);
 
-                $invocies = Invoices::find($id);
-                if (!$invocies) {
-                    return $this->errorResponse('Invoice not found.', 404);
-                }
+            $invocies = Invoices::find($id);
+            if (!$invocies) {
+                return $this->errorResponse('Invoice not found.', 404);
+            }
 
-                $invoice_detail = InvoiceDetails::where('invoice_id', '=', $id)->first();
+            $invoice_detail = InvoiceDetails::where('invoice_id', '=', $id)->first();
 
-                if ($invoice_detail?->package_id) {
-                    $packageservice = PackageService::InvoiceCancel($invoice_detail, Auth::user()->account_id);
-                }
+            if ($invoice_detail?->package_id) {
+                $packageservice = PackageService::InvoiceCancel($invoice_detail, Auth::user()->account_id);
+            }
 
             $appintment = Appointments::find($invocies->appointment_id);
             if (!$appintment) {
@@ -336,13 +335,7 @@ class InvoicesController extends Controller
             }
 
             return $this->errorResponse('Record not found.', 200);
-            });
-        } catch (\App\Exceptions\PlanException $e) {
-            // Configurable-discount cancel-order rule fired (or any other
-            // plan-side guard). Surface the friendly message — don't 500
-            // and bury it in the generic handler.
-            return $this->errorResponse($e->getMessage(), $e->getCode() ?: 400);
-        }
+        });
     }
 
     /*display invoice
@@ -418,22 +411,9 @@ class InvoicesController extends Controller
     }
 
     /*
-     * Display the invoice as PDF.
-     *
-     * Return values are always PDF binaries:
-     *   - `$download` truthy (any string except 'print', non-zero int) →
-     *     `dompdf->download()` triggers a save-as dialog.
-     *   - `$download` null or 'print' → `dompdf->stream()` returns the
-     *     PDF inline (Content-Disposition: inline) so the browser opens
-     *     its built-in PDF viewer; the user clicks Print there.
-     *
-     * Was previously a hybrid HTML/PDF endpoint (returned a Blade view
-     * for the no-download case, with `window.print()` inline) — kept
-     * the SPA tied to the legacy admin Blade view files. Now the SPA
-     * gets a real PDF every time and Blade view files can be deleted at
-     * cutover without breaking the SPA's invoice-print flow.
+     * Display the pdf file
      * */
-    public function invoice_pdf(int $id, mixed $download = null, int $flag = 0): \Symfony\Component\HttpFoundation\Response
+    public function invoice_pdf(int $id, mixed $download = null, int $flag = 0): \Illuminate\View\View
     {
         if (! Gate::allows('invoices_manage') && ! Gate::allows('appointments_invoice_display')) {
             return abort(401);
@@ -516,35 +496,35 @@ class InvoicesController extends Controller
                     return $pdf->download('consultancy-medical-history-form-C-'.$Invoiceinfo->patient_id.'.pdf');
                 }
 
-                $content = view('admin.invoices.InvoiceMedicalHistorypdf', compact('Invoiceinfo', 'patient', 'account', 'service', 'discount', 'invoicestatus', 'company_phone_number', 'location_info', 'appointment_info', 'bundle', 'download'))->render();
-                $pdf = App::make('dompdf.wrapper');
-                $pdf->loadHTML($content);
-
-                return $pdf->stream('consultancy-medical-history-form-C-'.$Invoiceinfo->patient_id.'.pdf');
+                return view('admin.invoices.InvoiceMedicalHistorypdf', compact('Invoiceinfo', 'patient', 'account', 'service', 'discount', 'invoicestatus', 'company_phone_number', 'location_info', 'appointment_info', 'bundle', 'download'));
 
             } else {
 
-                $content = view('admin.invoices.invoice_pdf', compact('appointment_info', 'Invoiceinfo', 'patient', 'account', 'service', 'discount', 'invoicestatus', 'company_phone_number', 'location_info', 'bundle', 'download'))->render();
-                $pdf = App::make('dompdf.wrapper');
-                $pdf->loadHTML($content);
+                if ($download) {
 
-                $filename = $download
-                    ? 'admin.invoices.invoice_pdf.pdf'
-                    : 'consultancy-invoice-C-'.$Invoiceinfo->patient_id.'.pdf';
+                    $content = view('admin.invoices.invoice_pdf', compact('Invoiceinfo', 'patient', 'account', 'service', 'discount', 'invoicestatus', 'company_phone_number', 'location_info', 'bundle', 'download'))->render();
+                    $pdf = App::make('dompdf.wrapper');
+                    $pdf->loadHTML($content);
 
-                return $download ? $pdf->download($filename) : $pdf->stream($filename);
+                    return $pdf->download('admin.invoices.invoice_pdf.pdf');
+                }
+
+                return view('admin.invoices.invoice_pdf', compact('appointment_info', 'Invoiceinfo', 'patient', 'account', 'service', 'discount', 'invoicestatus', 'company_phone_number', 'location_info', 'bundle', 'download'));
             }
         } else {
 
             $content = view('admin.invoices.invoice_pdf', compact('Invoiceinfo', 'patient', 'account', 'service', 'discount', 'invoicestatus', 'company_phone_number', 'location_info', 'appointment_info', 'bundle', 'download', 'service_price_display'))->render();
             $pdf = App::make('dompdf.wrapper');
             $pdf->loadHTML($content);
+            if ($download) {
+                if ($flag == 1) {
+                    return $pdf->download('consultancy-invoice-C-'.$Invoiceinfo->patient_id.'.pdf');
+                }
 
-            $filename = $flag == 1
-                ? 'consultancy-invoice-C-'.$Invoiceinfo->patient_id.'.pdf'
-                : 'treatment-invoice-C-'.$Invoiceinfo->patient_id.'.pdf';
+                return $pdf->download('treatment-invoice-C-'.$Invoiceinfo->patient_id.'.pdf');
+            }
 
-            return $download ? $pdf->download($filename) : $pdf->stream($filename);
+            return view('admin.invoices.invoice_pdf', compact('Invoiceinfo', 'patient', 'account', 'service', 'discount', 'invoicestatus', 'company_phone_number', 'location_info', 'appointment_info', 'bundle', 'download', 'service_price_display'));
         }
     }
 

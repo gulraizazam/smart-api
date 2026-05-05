@@ -52,25 +52,13 @@ class LeadDetailResource extends JsonResource
             ),
             'lead_status' => $this->when(
                 $this->relationLoaded('lead_status') || $this->relationLoaded('leadStatus'),
-                function (): ?array {
-                    $s = $this->leadStatus ?? $this->lead_status;
-                    if (! $s) {
-                        return null;
-                    }
-                    return [
-                        'id'           => $s->id,
-                        'name'         => $s->name,
-                        'parent_id'    => $s->parent_id,
-                        // Flag fields so the SPA's lead-detail dropdown can
-                        // derive its lock state directly off the row instead
-                        // of cross-referencing /api/leads/lead_statuses
-                        // (which is its own permission-gated query).
-                        'is_booked'    => (bool) ($s->is_booked ?? false),
-                        'is_arrived'   => (bool) ($s->is_arrived ?? false),
-                        'is_converted' => (bool) ($s->is_converted ?? false),
-                        'is_junk'      => (bool) ($s->is_junk ?? false),
-                    ];
-                },
+                fn(): ?array => ($this->leadStatus ?? $this->lead_status)
+                    ? [
+                        'id' => ($this->leadStatus ?? $this->lead_status)->id,
+                        'name' => ($this->leadStatus ?? $this->lead_status)->name,
+                        'parent_id' => ($this->leadStatus ?? $this->lead_status)->parent_id,
+                    ]
+                    : null,
             ),
             'lead_source' => $this->when(
                 $this->relationLoaded('lead_source') || $this->relationLoaded('leadSource'),

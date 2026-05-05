@@ -253,28 +253,6 @@ class ConversionService
             }
 
             $actual = $revenue_in - $out;
-
-            // Finance policy Q1=B + Q2=strict (2026-05-03): a
-            // conversion with net cash ≤ 0 is no longer counted as a
-            // conversion. Without this guard, a fully-refunded
-            // conversion stayed in the count with $0 spend, dragging
-            // Average Conversion Value toward zero.
-            //
-            // The trigger paths (RefundService, deletePayment,
-            // deletePlan) call `ConversionStateService::revertIfNeeded`
-            // synchronously after their writes, which clears
-            // `appointments.converted_at` + `appointment_status_id`
-            // and reverts the lead — so refunded rows would normally
-            // not even reach this report's candidate set. This
-            // defence-in-depth guard catches anything the triggers
-            // missed (legacy data, manual SQL, etc).
-            if ($actual <= 0) {
-                if ($includeDetails) {
-                    $conversions[$appointment->id] = $detailInfo;
-                }
-                continue;
-            }
-
             $totalSpend += $actual;
 
             // Track by doctor
@@ -511,16 +489,6 @@ class ConversionService
             }
 
             $actual = $revenueIn - $refundOut;
-
-            // Finance policy Q1=B (2026-05-03): drop net-negative
-            // conversions from bucket counts and spend. Without this
-            // an Avg Conversion Value sparkline shows historical months
-            // dragged toward zero by later refunds. See sibling
-            // guard in `getValidatedConversions` Step 6.
-            if ($actual <= 0) {
-                continue;
-            }
-
             if (! isset($buckets[$bucketKey])) {
                 $buckets[$bucketKey] = ['converted' => 0, 'spend' => 0.0];
             }

@@ -28,14 +28,9 @@ class PatientDetailResource extends JsonResource
             'dob' => $this->dob?->format('Y-m-d'),
             'referred_by' => $this->referred_by,
             'active' => $this->active,
-            // Null when no image — was `asset('images/default-avatar.png')`,
-            // but `public/images/default-avatar.png` does not exist on
-            // disk; the fallback resolved to a broken URL. SPA's patient
-            // types already declare image_url as nullable and render an
-            // initials-based AvatarFallback for the null case.
             'image_url' => $this->image_src
-                ? route('admin.files.patient_image_api', ['filename' => $this->image_src])
-                : null,
+                ? route('admin.files.patient_image', ['filename' => $this->image_src])
+                : asset('images/default-avatar.png'),
             'created_at' => $this->created_at
                 ? Carbon::parse($this->created_at)->format('F j, Y h:i A')
                 : null,

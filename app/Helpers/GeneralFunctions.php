@@ -801,13 +801,6 @@ class GeneralFunctions
         $sevenDaysAgo = Carbon::now()->subDays(7)->format('Y-m-d H:i:s');
         $today = Carbon::now()->format('Y-m-d');
 
-        // Optional caller-supplied filters layered on top of the hard
-        // 7-days-ago cutoff: a search term (name / phone partial match)
-        // and a date range narrowing conversion_date.
-        $search = isset($data['search']) ? trim((string) $data['search']) : '';
-        $startDate = $data['start_date'] ?? null;
-        $endDate = $data['end_date'] ?? null;
-
         // Get arrived and converted appointment status IDs
         $arrivedStatus = \App\Models\AppointmentStatuses::where(['account_id' => Auth::user()->account_id, 'is_arrived' => 1])->first();
         $convertedStatus = \App\Models\AppointmentStatuses::where(['account_id' => Auth::user()->account_id, 'is_converted' => 1])->first();
@@ -822,18 +815,7 @@ class GeneralFunctions
             $statusBindings = [$arrivedStatusId];
         }
 
-        // Narrow the package_advances aggregation to only patients that have
-        // a qualifying consultation in the selected centres. Without this
-        // the `bal` subquery groups over every row in package_advances and
-        // dominates the runtime.
-        $patientIdSubquery = "
-            SELECT DISTINCT patient_id
-            FROM appointments
-            WHERE appointment_type_id = 1
-                AND {$statusCondition}
-                AND location_id IN ({$centerPlaceholders})
-        ";
-
+        // Optimized single query approach - patients with NO treatment appointments
         $sqlNoTreatment = "
             SELECT
                 u.id as patient_id,
@@ -845,7 +827,13 @@ class GeneralFunctions
                 bal.location_id,
                 0 as is_treatment
             FROM users u
-            INNER JOIN ({$patientIdSubquery}) apt ON u.id = apt.patient_id
+            INNER JOIN (
+                SELECT DISTINCT patient_id
+                FROM appointments
+                WHERE appointment_type_id = 1
+                    AND {$statusCondition}
+                    AND location_id IN ({$centerPlaceholders})
+            ) apt ON u.id = apt.patient_id
             INNER JOIN (
                 SELECT
                     patient_id,
@@ -854,15 +842,12 @@ class GeneralFunctions
                     MIN(CASE WHEN cash_flow = 'in' AND cash_amount > 0 AND is_tax = 0 THEN created_at END) as conversion_date,
                     MIN(location_id) as location_id
                 FROM package_advances
-                WHERE patient_id IN ({$patientIdSubquery})
                 GROUP BY patient_id
                 HAVING (cash_in - cash_out) > 100
             ) bal ON u.id = bal.patient_id
             WHERE u.user_type_id = 3 AND u.active = 1
                 AND bal.conversion_date IS NOT NULL
                 AND bal.conversion_date <= ?
-                __SEARCH_CLAUSE__
-                __DATE_CLAUSE__
                 AND NOT EXISTS (
                     SELECT 1 FROM appointments t
                     WHERE t.patient_id = u.id
@@ -870,37 +855,9 @@ class GeneralFunctions
                     AND t.location_id IN ({$centerPlaceholders})
                 )
             ORDER BY bal.conversion_date DESC
-            LIMIT 5000
         ";
 
-        // Bindings repeat the apt-subquery args twice (apt INNER JOIN + bal WHERE IN),
-        // then date, then centres for the NOT EXISTS treatment lookup.
-        $aptBindings = array_merge($statusBindings, $centerIds);
-        $bindings = array_merge($aptBindings, $aptBindings, [$sevenDaysAgo]);
-
-        $searchClause = '';
-        if ($search !== '') {
-            $searchClause = "AND (u.name LIKE ? OR u.phone LIKE ?)";
-            $like = '%'.$search.'%';
-            $bindings[] = $like;
-            $bindings[] = $like;
-        }
-        $dateClause = '';
-        if ($startDate) {
-            $dateClause .= ' AND bal.conversion_date >= ?';
-            $bindings[] = $startDate.' 00:00:00';
-        }
-        if ($endDate) {
-            $dateClause .= ' AND bal.conversion_date <= ?';
-            $bindings[] = $endDate.' 23:59:59';
-        }
-
-        $sqlNoTreatment = strtr($sqlNoTreatment, [
-            '__SEARCH_CLAUSE__' => $searchClause,
-            '__DATE_CLAUSE__' => $dateClause,
-        ]);
-
-        $bindings = array_merge($bindings, $centerIds);
+        $bindings = array_merge($statusBindings, $centerIds, [$sevenDaysAgo], $centerIds);
         $patientsNoTreatment = DB::select($sqlNoTreatment, $bindings);
         
         $patient_data = [];
@@ -931,22 +888,12 @@ class GeneralFunctions
         $thirtyOneDaysAgo = Carbon::now()->subDays(31)->format('Y-m-d');
         $today = Carbon::now()->format('Y-m-d');
 
-        $search = isset($data['search']) ? trim((string) $data['search']) : '';
-        $startDate = $data['start_date'] ?? null;
-        $endDate = $data['end_date'] ?? null;
-
-        // Same optimisation as PatientFollowUpReport — restrict the
-        // package_advances aggregation to only patients with qualifying
-        // treatments in the selected centres. Without this `bal` groups
-        // the entire table.
-        $patientIdSubquery = "
-            SELECT DISTINCT patient_id
-            FROM appointments
-            WHERE appointment_type_id = 2
-                AND base_appointment_status_id = 2
-                AND location_id IN ({$centerPlaceholders})
-        ";
-
+        // Optimized single query approach - patients with overdue treatments
+        // Criteria:
+        // 1. Has treatment appointments (appointment_type_id = 2) that arrived (status = 2)
+        // 2. Last treatment >= 31 days ago
+        // 3. No future treatments scheduled
+        // 4. Balance > 500
         $sql = "
             SELECT
                 u.id as patient_id,
@@ -974,13 +921,10 @@ class GeneralFunctions
                     COALESCE(SUM(CASE WHEN cash_flow = 'out' AND is_cancel = 0 AND is_adjustment = 0 AND is_refund = 0 THEN cash_amount ELSE 0 END), 0) as cash_out,
                     MIN(location_id) as location_id
                 FROM package_advances
-                WHERE patient_id IN ({$patientIdSubquery})
                 GROUP BY patient_id
                 HAVING (cash_in - cash_out) > 100
             ) bal ON u.id = bal.patient_id
             WHERE u.user_type_id = 3 AND u.active = 1
-                __SEARCH_CLAUSE__
-                __DATE_CLAUSE__
                 AND NOT EXISTS (
                     SELECT 1 FROM appointments f
                     WHERE f.patient_id = u.id
@@ -989,33 +933,9 @@ class GeneralFunctions
                     AND f.location_id IN ({$centerPlaceholders})
                 )
             ORDER BY apt.last_arrived DESC
-            LIMIT 5000
         ";
 
-        $bindings = array_merge($centerIds, [$thirtyOneDaysAgo], $centerIds);
-
-        $searchClause = '';
-        if ($search !== '') {
-            $searchClause = "AND (u.name LIKE ? OR u.phone LIKE ?)";
-            $like = '%'.$search.'%';
-            $bindings[] = $like;
-            $bindings[] = $like;
-        }
-        $dateClause = '';
-        if ($startDate) {
-            $dateClause .= ' AND apt.last_arrived >= ?';
-            $bindings[] = $startDate;
-        }
-        if ($endDate) {
-            $dateClause .= ' AND apt.last_arrived <= ?';
-            $bindings[] = $endDate;
-        }
-        $sql = strtr($sql, [
-            '__SEARCH_CLAUSE__' => $searchClause,
-            '__DATE_CLAUSE__' => $dateClause,
-        ]);
-
-        $bindings = array_merge($bindings, [$today], $centerIds);
+        $bindings = array_merge($centerIds, [$thirtyOneDaysAgo], [$today], $centerIds);
         $patients = DB::select($sql, $bindings);
         
         $patient_data = [];

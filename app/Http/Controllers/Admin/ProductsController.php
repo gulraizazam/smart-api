@@ -6,7 +6,6 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\Product\StoreProductRequest;
-use App\Http\Requests\Admin\Product\UpdateProductRequest;
 use App\Models\Brand;
 use App\Models\Inventory;
 use App\Models\Product;
@@ -157,7 +156,7 @@ class ProductsController extends Controller
         }
     }
 
-    public function update(UpdateProductRequest $request, int $id, int $detail): JsonResponse
+    public function update(Request $request, int $id, int $detail): JsonResponse
     {
         try {
             if (! Gate::allows('product_edit')) {

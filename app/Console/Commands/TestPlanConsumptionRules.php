@@ -43,7 +43,7 @@ class TestPlanConsumptionRules extends Command
 
     private function inspectPackage(Packages $package): void
     {
-        $this->info("=== Plan #{$package->id} ===");
+        $this->info("=== Plan #{$package->id}: {$package->plan_name} ===");
         $this->info("Total Price: {$package->total_price}");
 
         // Payment info

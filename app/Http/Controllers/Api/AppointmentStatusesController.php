@@ -126,17 +126,7 @@ class AppointmentStatusesController extends Controller
                 );
             }
 
-            // `is_*` flags are surfaced so SPA filter pills can hide
-            // automation-only statuses (Arrived → comes from invoice
-            // payment, Converted → comes from package payment,
-            // Un-Scheduled → derived from missing scheduled_date+time).
-            // Same flag shape `AppointmentStatusApiResource` already
-            // uses everywhere else — keeps the SPA's dropdown vs row
-            // sources aligned.
-            $statuses = $query->orderBy('sort_no')->get([
-                'id', 'name', 'parent_id',
-                'is_arrived', 'is_converted', 'is_unscheduled', 'is_cancelled',
-            ]);
+            $statuses = $query->orderBy('sort_no')->get(['id', 'name', 'parent_id']);
 
             return $this->successResponse(
                 'Appointment statuses dropdown retrieved successfully.',
@@ -144,10 +134,6 @@ class AppointmentStatusesController extends Controller
                     'id' => (int) $s->id,
                     'name' => (string) $s->name,
                     'parent_id' => $s->parent_id ? (int) $s->parent_id : null,
-                    'is_arrived' => (bool) $s->is_arrived,
-                    'is_converted' => (bool) $s->is_converted,
-                    'is_unscheduled' => (bool) $s->is_unscheduled,
-                    'is_cancelled' => (bool) $s->is_cancelled,
                 ])->values(),
             );
         } catch (ValidationException $e) {

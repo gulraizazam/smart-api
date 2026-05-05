@@ -26,7 +26,7 @@ final class BranchResolver
     /**
      * Physical branch IDs for the scope. If the scope explicitly pins a
      * branch subset, returns those (trusts the scope-resolver which already
-     * enforces per-user_has_locations authorization). Otherwise returns every
+     * enforces per-user_branches authorization). Otherwise returns every
      * non-deleted, non-virtual location on the account.
      *
      * @return list<int>

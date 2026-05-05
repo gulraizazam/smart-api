@@ -4,13 +4,10 @@ declare(strict_types=1);
 
 namespace App\Http\Resources\Treatment;
 
-use App\Helpers\AppointmentHelper;
 use App\Helpers\GeneralFunctions;
-use App\Models\InvoiceStatuses;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
-use Illuminate\Support\Facades\Auth;
 
 /**
  * Transforms a single appointment row for the treatments datatable.
@@ -26,12 +23,6 @@ final class TreatmentDatatableResource extends JsonResource
     private array $appointmentStatuses;
     private mixed $unscheduledStatus;
     private mixed $cancelledStatus;
-
-    /**
-     * Memoised paid-invoice status id (slug='paid'). One lookup per
-     * request, reused across every row of the datatable response.
-     */
-    private static ?int $paidInvoiceStatusId = null;
 
     /**
      * Inject lookup data needed for transformation.
@@ -110,45 +101,7 @@ final class TreatmentDatatableResource extends JsonResource
             'appointment_status'              => $appointment->appointment_status_id,
             'invoice_id'                      => $appointment->invoice->id ?? 0,
             'invoice'                         => $appointment->invoice,
-            // Surfaced so the SPA's status dialog can lock the dropdown
-            // up-front instead of letting the user pick a value the
-            // backend would 422 on. Mirrors AppointmentService's
-            // paid-invoice lock at updateAppointmentStatus. Reads the
-            // eager-loaded `invoice` relation so no extra query.
-            'has_paid_invoice'                => $this->resolveHasPaidInvoice($appointment),
-            // Same for the Delete row-action — backend rejects delete
-            // when invoices/advances/measurements/images exist
-            // (AppointmentHelper::isChildExists).
-            'has_children'                    => AppointmentHelper::isChildExists(
-                (int) $appointment->app_id,
-                (int) (Auth::user()?->account_id ?? 0),
-            ),
         ];
-    }
-
-    private function resolveHasPaidInvoice(mixed $appointment): bool
-    {
-        $invoice = $appointment->invoice ?? null;
-        if ($invoice === null) {
-            return false;
-        }
-
-        $paidId = $this->paidInvoiceStatusId();
-        if (! $paidId) {
-            return false;
-        }
-
-        return (int) ($invoice->invoice_status_id ?? 0) === $paidId;
-    }
-
-    private function paidInvoiceStatusId(): ?int
-    {
-        if (self::$paidInvoiceStatusId === null) {
-            $id = (int) InvoiceStatuses::where('slug', '=', 'paid')->value('id');
-            self::$paidInvoiceStatusId = $id > 0 ? $id : 0;
-        }
-
-        return self::$paidInvoiceStatusId > 0 ? self::$paidInvoiceStatusId : null;
     }
 
     private function resolveStatusName(mixed $appointment): string

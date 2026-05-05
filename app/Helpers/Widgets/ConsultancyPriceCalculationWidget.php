@@ -3,8 +3,6 @@
 declare(strict_types=1);
 namespace App\Helpers\Widgets;
 
-use App\Models\Settings;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Config;
 
 class ConsultancyPriceCalculationWidget
@@ -18,8 +16,7 @@ class ConsultancyPriceCalculationWidget
 
     public static function ConsultancyPriceCalculation($request, $price_for_calculation, $location_info, $cash, $balance)
     {
-        $orgTaxTreatment = Settings::getOrgTaxTreatment(Auth::user()->account_id);
-        if ($orgTaxTreatment == Config::get('constants.tax_both')) {
+        if ($request->tax_treatment_type_id == Config::get('constants.tax_both')) {
             if ($request->is_exclusive_consultancy == '1') {
                 $price = $price_for_calculation;
                 $tax = ceil(($price * ($location_info->tax_percentage / 100)));
@@ -29,7 +26,7 @@ class ConsultancyPriceCalculationWidget
                 $price = ceil(((100 * $tax_amt) / ($location_info->tax_percentage + 100)));
                 $tax = ceil(($tax_amt - $price));
             }
-        } elseif ($orgTaxTreatment == Config::get('constants.tax_is_exclusive')) {
+        } elseif ($request->tax_treatment_type_id == Config::get('constants.tax_is_exclusive')) {
             $price = $price_for_calculation;
             $tax = ceil(($price * ($location_info->tax_percentage / 100)));
             $tax_amt = ceil(($price + (($price * $location_info->tax_percentage) / 100)));

@@ -17,7 +17,6 @@ use App\Models\InvoiceStatuses;
 use App\Models\Leads;
 use App\Models\Membership;
 use App\Models\MembershipType;
-use App\Models\PackageBundles;
 use App\Models\Packages;
 use App\Models\PackageVouchers;
 use App\Models\PatientNote;
@@ -35,18 +34,12 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 
 class PatientService
 {
     use ParsesDateRange;
-
-    public function __construct(
-        // Tier-1 list-enrichment metrics. Composes AtRiskPatientsMetric for
-        // the at-risk badge so the dashboard's signal definition stays the
-        // single source of truth — no duplicate rule logic on the patient
-        // datatable.
-        private readonly PatientLifecycleMetric $lifecycleMetric,
-    ) {}
 
     private const FILTER_KEY = 'patients';
 
@@ -117,29 +110,6 @@ class PatientService
             ->limit($iDisplayLength)
             ->get();
 
-        // Tier-1 enrichment — at-risk + last visit + LTV + outstanding +
-        // active-packages-count + next-appointment, all batched per page
-        // (not per-patient) so the cost stays bounded against the 174k
-        // total patient set. At-risk composes AtRiskPatientsMetric so the
-        // dashboard's signal definition stays the canonical source.
-        if ($patients->isNotEmpty()) {
-            $pageIds = $patients->pluck('id')->all();
-            $metrics = $this->lifecycleMetric->batch($pageIds);
-            foreach ($patients as $p) {
-                $m = $metrics[(int) $p->id] ?? null;
-                if (! $m) {
-                    continue;
-                }
-                $p->is_at_risk            = $m['is_at_risk'];
-                $p->last_visit_at         = $m['last_visit_at'];
-                $p->last_visit_days_ago   = $m['last_visit_days_ago'];
-                $p->lifetime_value        = $m['lifetime_value'];
-                $p->outstanding_balance   = $m['outstanding_balance'];
-                $p->active_packages_count = $m['active_packages_count'];
-                $p->next_appointment_at   = $m['next_appointment_at'];
-            }
-        }
-
         $records = $this->getFiltersDataCached($records, $userId);
 
         if ($patients->isNotEmpty()) {
@@ -206,16 +176,6 @@ class PatientService
 
     private function applyOptimizedFilters(Builder $query, array $filters, bool $applyFilter, int $userId): void
     {
-        // Unified search field — same engine the Plans datatable, picker
-        // typeahead, and invoices typeahead use. The SPA sends a single
-        // `q` value; PatientSearchService::applyPatientFilter classifies
-        // and routes it (id / phone / FT name). The legacy `patient_id`
-        // / `name` / `phone` keys below are kept for any caller that
-        // still sends them.
-        $this->applyFilter($query, $filters, $applyFilter, $userId, 'q', function ($builder, $value): void {
-            PatientSearchService::applyPatientFilter($builder, (string) $value, 'id', Auth::user()->account_id);
-        });
-
         $this->applyFilter($query, $filters, $applyFilter, $userId, 'patient_id', function ($q, $value): void {
             $q->where('id', 'like', '%'.PatientSearchService::patientSearch($value).'%');
         });
@@ -301,10 +261,41 @@ class PatientService
     |--------------------------------------------------------------------------
     */
 
-    // create() and getCreateData() removed: patients are never created
-    // directly through this service. They appear as a side-effect of
-    // booking flows (AppointmentService::create handles the User::create
-    // with user_type_id=3 and the paired Lead row).
+    public function getCreateData(): array
+    {
+        return ['gender' => config('constants.gender_array')];
+    }
+
+    public function create(array $data): array
+    {
+        $user = Auth::user();
+        $data['phone'] = PhoneFormattingService::cleanNumber($data['phone']);
+        $data['created_by'] = $user->id;
+        $data['user_type_id'] = Config::get('constants.patient_id');
+        $data['account_id'] = $user->account_id;
+        // Patients never authenticate via password (the field is a NOT NULL
+        // legacy column on users). Stamp a random hash so the row can be
+        // inserted; if a patient ever needs login access, the password
+        // reset flow rotates this value.
+        $data['password'] = Hash::make(Str::random(40));
+
+        $existingPatient = Patients::where([
+            'phone' => $data['phone'],
+            'user_type_id' => Config::get('constants.patient_id'),
+            'account_id' => $user->account_id,
+        ])->first();
+
+        if ($existingPatient) {
+            $patient = $this->updatePatientRecord($existingPatient->id, $data);
+            Appointments::where('patient_id', $existingPatient->id)->update(['name' => $data['name']]);
+        } else {
+            $patient = $this->createPatientRecord($data);
+        }
+
+        return $patient
+            ? ['status' => true, 'message' => 'Record has been created successfully.', 'patient' => $patient]
+            : ['status' => false, 'message' => 'Something went wrong, please try again later.'];
+    }
 
     public function getEditData(int $id): ?array
     {
@@ -673,25 +664,16 @@ class PatientService
             'status' => true,
             'message' => 'Picture saved successfully.',
             // Round 4 C3 — point at the authenticated streaming route, not the
-            // bare storage symlink which no longer serves these files. The
-            // `_api` suffix on the route name is the SPA-facing alias (the
-            // legacy /admin/* route stays live until Blade cutover).
-            'image' => route('admin.files.patient_image_api', ['filename' => $fileName]),
+            // bare storage symlink which no longer serves these files.
+            'image' => route('admin.files.patient_image', ['filename' => $fileName]),
         ];
     }
 
     public function searchPatients(string $search, int $accountId): array
     {
-        $search = trim($search);
-        if ($search === '') {
-            return [];
-        }
-
-        // Single classifier shared with PlanService::applyUnifiedSearch and
-        // Patients::getPatientSearchOptimized. `short_id` is treated as a
-        // patient id here (this endpoint serves the invoices typeahead and
-        // similar non-Plans pickers — there's no plan-id ambiguity).
-        $shape = PatientSearchService::classifySearchInput($search);
+        $originalSearch = $search;
+        $search = PatientSearchService::patientSearch($search);
+        $cleanedSearch = PhoneFormattingService::clearnString($search);
 
         $baseQuery = Patients::where('user_type_id', Config::get('constants.patient_id'))
             ->where('active', 1)
@@ -703,31 +685,27 @@ class PatientService
         // query so every cloned branch (id, phone, name) inherits it.
         PatientAccessScope::applyTo($baseQuery);
 
-        if ($shape['type'] === 'patient_code' || $shape['type'] === 'short_id') {
-            $row = (clone $baseQuery)
-                ->where('id', (int) $shape['digits'])
+        if (is_numeric($cleanedSearch)) {
+            $numericValue = (int) $cleanedSearch;
+
+            $exactMatch = (clone $baseQuery)->where('id', $numericValue)->select('name', 'id', 'phone')->first();
+            if ($exactMatch) {
+                return [$exactMatch->toArray()];
+            }
+
+            $phone = PhoneFormattingService::cleanNumber($originalSearch);
+
+            return (clone $baseQuery)
+                ->where(fn ($q) => $q->where('id', 'LIKE', "%{$numericValue}%")->orWhere('phone', 'LIKE', "%{$phone}%"))
                 ->select('name', 'id', 'phone')
-                ->first();
-
-            return $row ? [$row->toArray()] : [];
+                ->limit(20)
+                ->get()
+                ->toArray();
         }
-
-        $candidateIds = $shape['type'] === 'phone'
-            ? PatientSearchService::resolvePatientIdsByPhone($shape['digits'], $accountId)
-            : PatientSearchService::resolvePatientIdsByText($search, $accountId);
-
-        if ($candidateIds === []) {
-            return [];
-        }
-
-        // Preserve resolver order: MATCH relevance for text, prefix-match for
-        // phone. Without FIELD() MySQL would re-order by primary key.
-        $orderExpr = 'FIELD(id, '.implode(',', array_fill(0, count($candidateIds), '?')).')';
 
         return (clone $baseQuery)
-            ->whereIn('id', $candidateIds)
+            ->where('name', 'LIKE', "%{$search}%")
             ->select('name', 'id', 'phone')
-            ->orderByRaw($orderExpr, $candidateIds)
             ->limit(20)
             ->get()
             ->toArray();
@@ -940,11 +918,6 @@ class PatientService
             return ['status' => false, 'message' => 'Voucher does not belong to this patient.'];
         }
 
-        // Pull every redemption tied to this patient + voucher type. The
-        // `package_vouchers.amount` column has occasionally been left null on
-        // older rows, so when it's missing we cross-reference the matching
-        // package_bundles row (same key the legacy `view_content.blade.php`
-        // uses) and read `discount_price` as the deducted amount.
         $rawHistory = PackageVouchers::where('user_id', $patientId)
             ->where('voucher_id', $userVoucher->voucher_id)
             ->orderByDesc('created_at')
@@ -960,51 +933,19 @@ class PatientService
             ? DB::table('bundles')->whereIn('id', $serviceIds)->pluck('name', 'id')
             : collect();
 
-        // Fallback amount lookup: PackageBundles keyed by (random_id, bundle_id)
-        // for the rows where `package_vouchers.amount` is null/0.
-        $voucherName = $userVoucher->voucher?->name;
-        $allRandomIds = $rawHistory->pluck('package_random_id')->filter()->unique();
-        $bundleAmountByKey = ($voucherName && $allRandomIds->isNotEmpty() && $serviceIds->isNotEmpty())
-            ? PackageBundles::whereIn('random_id', $allRandomIds)
-                ->whereIn('bundle_id', $serviceIds)
-                ->where('discount_name', $voucherName)
-                ->get()
-                ->mapWithKeys(fn ($b): array => [
-                    $b->random_id.'|'.$b->bundle_id => (float) ($b->discount_price ?? 0),
-                ])
-            : collect();
-
-        $usageHistory = $rawHistory->map(function ($item) use ($packageIdMap, $serviceNameMap, $bundleAmountByKey): array {
+        $usageHistory = $rawHistory->map(function ($item) use ($packageIdMap, $serviceNameMap): array {
             $packageId = $item->package_id ?: ($packageIdMap[$item->package_random_id] ?? null);
-            $amount = (float) ($item->amount ?? 0);
-
-            if ($amount <= 0) {
-                $key = $item->package_random_id.'|'.$item->main_service_id;
-                $amount = (float) ($bundleAmountByKey[$key] ?? 0);
-            }
 
             return [
-                'kind' => 'used',
                 'package_id' => $packageId,
                 'service_name' => $serviceNameMap[$item->main_service_id] ?? 'N/A',
-                'amount_deducted' => $amount,
+                'amount_deducted' => $item->amount ?? 0,
                 'applied_date' => $item->created_at?->format('M d, Y h:i A') ?? '-',
             ];
-        })->values()->all();
+        });
 
-        // Append the assignment itself as a synthetic "issued" entry so the
-        // dialog always has at least one line of context, even before the
-        // voucher has been redeemed against any package.
-        $usageHistory[] = [
-            'kind' => 'issued',
-            'package_id' => null,
-            'service_name' => 'Voucher issued',
-            'amount_deducted' => (float) ($userVoucher->total_amount ?? 0),
-            'applied_date' => $userVoucher->created_at?->format('M d, Y h:i A') ?? '-',
-        ];
-
-        $totalAmount = (float) ($userVoucher->total_amount ?? 0);
-        $currentBalance = (float) ($userVoucher->amount ?? 0);
+        $totalAmount = $userVoucher->total_amount ?? 0;
+        $currentBalance = $userVoucher->amount ?? 0;
 
         return [
             'status' => true,
@@ -1183,6 +1124,14 @@ class PatientService
         return Patients::where('id', $id)
             ->where('account_id', Auth::user()->account_id)
             ->first();
+    }
+
+    private function createPatientRecord(array $data): ?Patients
+    {
+        $record = Patients::create($data);
+        AuditTrails::addEventLogger('users', 'create', $data, self::AUDIT_FILLABLE, $record);
+
+        return $record;
     }
 
     private function updatePatientRecord(int $id, array $data): ?Patients

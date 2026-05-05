@@ -16,14 +16,15 @@ use Tests\TestCase;
 
 /**
  * Patient CRUD via PatientService — pins the contracts the audit
- * called out as load-bearing for the patient domain.
+ * called out as load-bearing for the patient domain:
  *
- * NOTE: PatientService::create was removed in 2026-05. Patients are
- * never created directly; they appear as a side-effect of booking a
- * consultation, appointment, or treatment (AppointmentService::create
- * handles the User::create with user_type_id=3 plus the paired Lead).
- * The remaining tests pin update + delete + scope contracts:
- *
+ *   - create() de-duplicates by phone within an account: a second
+ *     create() with the same phone updates the existing patient
+ *     instead of inserting a duplicate. Without this, marketing
+ *     imports double-up the patient list.
+ *   - create() normalises phone numbers via PhoneFormattingService
+ *     (strips spaces, dashes, leading 0/92) so search-by-phone keeps
+ *     working regardless of how the number was typed.
  *   - update() propagates name changes to ALL related Appointments
  *     rows. The dashboard joins appointments with patient names by
  *     copy, not by FK lookup, so a stale patient name leaks into
@@ -58,37 +59,111 @@ class PatientCrudTest extends TestCase
         $this->service = app(PatientService::class);
     }
 
-    public function test_direct_create_method_is_gone(): void
+    public function test_create_inserts_a_new_patient_with_user_type_and_account_stamped(): void
     {
-        // Patients are created only as a side-effect of booking flows
-        // (AppointmentService::create). PatientService must NOT expose a
-        // direct create() — re-introducing it would re-open the duplicate
-        // path that the marketing imports kept tripping over.
-        $this->assertFalse(
-            method_exists($this->service, 'create'),
-            'PatientService::create() must stay removed. If you need to '
-            . 'create a patient, do it through AppointmentService when a '
-            . 'consultation/appointment/treatment is booked.'
-        );
-        $this->assertFalse(
-            method_exists($this->service, 'getCreateData'),
-            'PatientService::getCreateData() must stay removed alongside create().'
+        $result = $this->service->create([
+            'name' => 'Alice Test',
+            'email' => 'alice.test@example.com',
+            'phone' => '+92 300-1234567',
+            'gender' => 0,
+        ]);
+
+        $this->assertTrue($result['status']);
+        $this->assertArrayHasKey('patient', $result);
+
+        $patient = Patients::query()->where('email', 'alice.test@example.com')->first();
+        $this->assertNotNull($patient, 'A new patient row must exist after create().');
+        $this->assertSame(3, (int) $patient->user_type_id, 'Patients must be stamped user_type_id=3.');
+        $this->assertSame(1, (int) $patient->account_id, 'account_id must come from the authed admin.');
+        $this->assertSame('Alice Test', $patient->name);
+    }
+
+    public function test_create_normalises_phone_numbers_via_phone_formatting_service(): void
+    {
+        // PhoneFormattingService::cleanNumber strips spaces, dashes,
+        // and leading "0" or "92". The same human number entered three
+        // different ways must collapse to the same stored phone.
+        $r1 = $this->service->create([
+            'name' => 'Phone One',
+            'email' => 'phone1@example.com',
+            'phone' => '+92 300-1112222',
+            'gender' => 0,
+        ]);
+
+        $patient = Patients::query()->where('email', 'phone1@example.com')->first();
+        $this->assertNotNull($patient);
+        $this->assertSame(
+            '3001112222',
+            $patient->phone,
+            'cleanNumber must strip the +, spaces, dashes, and the 92 country code.'
         );
     }
 
-    public function test_post_patients_endpoint_is_gone(): void
+    public function test_create_with_an_existing_phone_updates_the_existing_patient_instead_of_duplicating(): void
     {
-        // The SPA must not have a path back to direct creation.
-        // POST /api/patients used to map to PatientController::store,
-        // which the route file no longer registers.
-        $hasStoreRoute = collect(\Illuminate\Support\Facades\Route::getRoutes())
-            ->contains(fn ($route) => $route->uri() === 'api/patients'
-                && in_array('POST', $route->methods(), true));
+        // The dedupe key is (phone, user_type_id=3, account_id) — pin it.
+        // First create lays down a patient. Second create with the same
+        // phone (any spacing) must NOT add a second row, it must update
+        // the original.
+        $first = $this->service->create([
+            'name' => 'Original Name',
+            'email' => 'dup-original@example.com',
+            'phone' => '03001234567',
+            'gender' => 0,
+        ]);
 
-        $this->assertFalse(
-            $hasStoreRoute,
-            'POST /api/patients must stay deregistered. Re-adding it brings '
-            . 'back the direct-create path the team explicitly removed.'
+        $countAfterFirst = Patients::query()->where('phone', '3001234567')->count();
+        $this->assertSame(1, $countAfterFirst);
+
+        $second = $this->service->create([
+            'name' => 'Updated Name',
+            'email' => 'dup-second@example.com',
+            'phone' => '+92-300 1234567',
+            'gender' => 1,
+        ]);
+
+        $countAfterSecond = Patients::query()->where('phone', '3001234567')->count();
+        $this->assertSame(
+            1,
+            $countAfterSecond,
+            'A second create() with a duplicate phone must update — never insert.'
+        );
+
+        $patient = Patients::query()->where('phone', '3001234567')->first();
+        $this->assertSame('Updated Name', $patient->name, 'The dedupe path must apply the new name.');
+    }
+
+    public function test_create_with_duplicate_phone_propagates_new_name_to_existing_appointments(): void
+    {
+        // The dedupe path also runs an Appointments::where(...)->update(['name' => ...])
+        // so existing appointment rows pick up the corrected name.
+        $location = Locations::factory()->create();
+
+        $this->service->create([
+            'name' => 'Old Name',
+            'email' => 'aprop1@example.com',
+            'phone' => '03009998888',
+            'gender' => 0,
+        ]);
+        $patient = Patients::query()->where('phone', '3009998888')->firstOrFail();
+
+        $appointment = Appointments::factory()->create([
+            'patient_id' => $patient->id,
+            'location_id' => $location->id,
+            'name' => 'Old Name',
+        ]);
+
+        $this->service->create([
+            'name' => 'New Name',
+            'email' => 'aprop2@example.com',
+            'phone' => '03009998888',
+            'gender' => 0,
+        ]);
+
+        $this->assertSame(
+            'New Name',
+            $appointment->fresh()->name,
+            'Existing appointments must inherit the new name through the dedupe-path update.'
         );
     }
 

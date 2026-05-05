@@ -58,21 +58,6 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | SPA URL
-    |--------------------------------------------------------------------------
-    |
-    | Origin (or root path) the React SPA is served from. Used by backend
-    | code to deep-link into the SPA: notifications, password-reset emails,
-    | invoice receipts, etc. Defaults to APP_URL with the SPA's mount path
-    | inside the Laravel public/ folder. Override APP_SPA_URL when the SPA
-    | is hosted on a separate origin.
-    |
-    */
-
-    'spa_url' => env('APP_SPA_URL', rtrim(env('APP_URL', 'http://localhost'), '/').'/admin-v2'),
-
-    /*
-    |--------------------------------------------------------------------------
     | Application Timezone
     |--------------------------------------------------------------------------
     |

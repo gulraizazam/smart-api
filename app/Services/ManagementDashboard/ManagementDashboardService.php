@@ -13,7 +13,6 @@ use App\Services\Dashboard\Metrics\AvgConversionValueMetric;
 use App\Services\Dashboard\Metrics\AvgTransactionValueMetric;
 use App\Services\Dashboard\Metrics\BranchDoctorFeedbackMetric;
 use App\Services\Dashboard\Metrics\BranchFeedbackMetric;
-use App\Services\Dashboard\Metrics\BranchFeedbackTrendMetric;
 use App\Services\Dashboard\Metrics\BranchLeaderboardMetric;
 use App\Services\Dashboard\Metrics\GenderRevenueMetric;
 use App\Services\Dashboard\Metrics\LeadGenderDeepDiveMetric;
@@ -63,7 +62,6 @@ final class ManagementDashboardService
         private readonly LeadServiceInterestMetric $leadServiceInterest,
         private readonly BranchFeedbackMetric $branchFeedback,
         private readonly BranchDoctorFeedbackMetric $branchDoctorFeedback,
-        private readonly BranchFeedbackTrendMetric $branchFeedbackTrend,
         private readonly UtilizationMetric $utilization,
         private readonly ArrivalRateMetric $arrivalRate,
         private readonly AtRiskPatientsMetric $atRiskPatients,
@@ -310,19 +308,6 @@ final class ManagementDashboardService
     }
 
     /**
-     * Per-doctor monthly retention trend for a single branch. Used by
-     * the FDM dashboard's Trend tab so the operator sees how each
-     * doctor's retention has been moving over the last N months,
-     * alongside the branch-level pool.
-     *
-     * @return array<string, mixed>
-     */
-    public function branchDoctorRetentionTrend(MetricScope $scope, int $branchId, int $monthsBack = 6): array
-    {
-        return $this->newReturning->branchDoctorRetentionTrend($scope, $branchId, $monthsBack);
-    }
-
-    /**
      * Monthly retention-rate trend per branch + pool over the last N
      * months. Each month gets its own matured 30-60 day cohort anchored
      * at the month-end so the points are comparable.
@@ -377,20 +362,6 @@ final class ManagementDashboardService
     }
 
     /**
-     * At-risk pool aggregated by owning doctor across the user's accessible
-     * branches. Used by the management Practitioner-tab dashboard to surface
-     * "whose patients are at risk" + recoverable PKR per doctor. Reuses the
-     * same per-branch pool cache as the named-patient drill, so warm path is
-     * one cache read per branch.
-     *
-     * @return array{rows: list<array<string, mixed>>}
-     */
-    public function atRiskByDoctor(MetricScope $scope): array
-    {
-        return ['rows' => $this->atRiskPatients->patientCountsByDoctor($scope)];
-    }
-
-    /**
      * @return array<string, mixed>
      */
     public function branches(MetricScope $scope, DateRange $range): array
@@ -433,32 +404,6 @@ final class ManagementDashboardService
     public function branchDoctorFeedback(MetricScope $scope, DateRange $range, int $branchId): array
     {
         return $this->branchDoctorFeedback->compute($scope, $range, $branchId);
-    }
-
-    /**
-     * Per-branch monthly feedback-rating trend over the last N months.
-     * Mirrors retentionTrend: one row per branch, each point is that
-     * month's avg rating + total_feedback, plus a feedback-weighted
-     * pool row for the "all branches" comparator.
-     *
-     * @return array<string, mixed>
-     */
-    public function branchFeedbackTrend(MetricScope $scope, int $monthsBack = 6): array
-    {
-        return $this->branchFeedbackTrend->branchTrend($scope, $monthsBack);
-    }
-
-    /**
-     * Per-doctor monthly feedback-rating trend for a single branch.
-     * Filters out inactive doctors (active=0) so the row list reflects
-     * the current roster, with the branch-level pool (all doctors,
-     * including inactive) as the footer comparator.
-     *
-     * @return array<string, mixed>
-     */
-    public function branchDoctorFeedbackTrend(MetricScope $scope, int $branchId, int $monthsBack = 6): array
-    {
-        return $this->branchFeedbackTrend->branchDoctorTrend($scope, $branchId, $monthsBack);
     }
 
     /**
@@ -510,17 +455,6 @@ final class ManagementDashboardService
     public function utilizationTrendByBranch(MetricScope $scope, int $monthsBack = 6): array
     {
         return $this->utilization->trendByBranch($scope, $monthsBack);
-    }
-
-    /**
-     * Per-doctor monthly utilization trend for a single branch — powers
-     * the FDM dashboard's Trend tab when scope is single-branch.
-     *
-     * @return array<string, mixed>
-     */
-    public function branchDoctorUtilizationTrend(MetricScope $scope, int $branchId, int $monthsBack = 6): array
-    {
-        return $this->utilization->branchDoctorTrend($scope, $branchId, $monthsBack);
     }
 
     /**

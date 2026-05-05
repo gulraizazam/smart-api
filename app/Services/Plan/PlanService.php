@@ -17,7 +17,6 @@ use App\Helpers\JazzSMSAPI;
 use App\Helpers\TelenorSMSAPI;
 use App\Helpers\Widgets\DiscountWidget;
 use App\Helpers\Widgets\PlanAppointmentCalculation;
-use App\Models\Accounts;
 use App\Models\Activity;
 use App\Models\Appointments;
 use App\Models\AppointmentStatuses;
@@ -48,10 +47,8 @@ use App\Models\User;
 use App\Models\UserHasLocations;
 use App\Models\UserOperatorSettings;
 use App\Models\UserVouchers;
-use App\Services\Conversion\ConversionStateService;
 use App\Services\Membership\StudentVerificationService;
 use App\Services\MetaConversionApiService;
-use App\Services\PatientManagement\PatientSearchService;
 use App\Services\Reports\Concerns\ParsesDateRange;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
@@ -138,10 +135,14 @@ final class PlanService
             $total = $countQuery->count();
         }
 
-        // Debug logging removed from the hot path: the array context was
-        // serialised even when LOG_LEVEL filtered the entry out, costing a
-        // few ms per request at scale. Re-add behind a config flag if you
-        // need to triage a specific tenant.
+        Log::debug('Global Plans Datatable Debug', [
+            'filters' => $filters,
+            'whereConditions' => $whereConditions,
+            'userCentres' => $userCentres,
+            'accountId' => $accountId,
+            'total' => $total,
+            'has_presets' => $hasPresets,
+        ]);
 
         return [
             'total' => $total,
@@ -149,179 +150,7 @@ final class PlanService
             'orderBy' => $orderBy,
             'order' => $order,
             'filter_values' => ['locations' => $locations],
-            'where' => $whereConditions,
         ];
-    }
-
-    /**
-     * Fetch the visible page of rows for the global plans datatable.
-     *
-     * The default path (`buildOptimizedResultQuery` + ORDER + LIMIT) materialises
-     * three aggregate sub-joins over the entire scoped package set (47k+ rows ×
-     * package_advances/bundles/services ≈ 1.2M rows) just to render 25 rows —
-     * measured at ~2–3s per page load. When the active sort references a
-     * `packages.*` column and no preset filters are active, we can do the same
-     * work two orders of magnitude cheaper:
-     *
-     *   1. Pluck the 25 page IDs with a covered query on `packages` alone (no
-     *      join sub-aggregates, no GROUP BY) — ~15ms.
-     *   2. Run the full aggregate query but scoped to those 25 IDs — the join
-     *      subqueries now aggregate ~25 × ~10 child rows each, not the full set.
-     *
-     * Aggregate-keyed sorts (total / cash_receive / session_count /
-     * consumed_count / latest_advance_updated_at) and preset chips
-     * (has_balance / stale_90d / unused_inventory / mostly_done) require
-     * filtering or ordering by aggregate values *before* pagination, so
-     * those cases keep the original behaviour.
-     */
-    public function fetchGlobalPageRows(
-        array $filters,
-        array $datatableData,
-        int $offset,
-        int $limit,
-    ): Collection {
-        $orderBy = $datatableData['orderBy'];
-        $order = $datatableData['order'];
-
-        $canFastPath = str_starts_with($orderBy, 'packages.')
-            && ! $this->hasAnyPresetFilter($filters);
-
-        if (! $canFastPath) {
-            return $datatableData['query']
-                ->orderBy($orderBy, $order)
-                ->offset($offset)
-                ->limit($limit)
-                ->get();
-        }
-
-        $accountId = Auth::user()->account_id;
-        $where = $datatableData['where'] ?? [];
-
-        $pageIds = $this->fetchPageIds($where, $orderBy, $order, $offset, $limit, $accountId);
-        if ($pageIds === []) {
-            // Return-type-hint demands Eloquent\Collection — the bare
-            // `collect()` helper returns Support\Collection and triggers a
-            // TypeError under PHP 8 when no rows match the fast-path query
-            // (e.g. a search like "umair" or "c-34" with no hits).
-            return new Collection();
-        }
-
-        return $this->buildOptimizedResultQueryForIds($pageIds)
-            ->orderBy($orderBy, $order)
-            ->get();
-    }
-
-    /**
-     * Cheap, covered query that returns just the package IDs for the visible
-     * page. Mirrors the ACL/active scoping of `buildCountQuery` so the result
-     * set matches what the count + aggregate-row query would have produced.
-     */
-    private function fetchPageIds(
-        array $where,
-        string $orderBy,
-        string $order,
-        int $offset,
-        int $limit,
-        int|string $accountId,
-    ): array {
-        $userCentres = ACL::getUserCentres();
-        $canViewInactive = Gate::allows('view_inactive_plans');
-
-        $query = DB::table('packages')
-            ->where('account_id', $accountId)
-            ->whereIn('location_id', $userCentres)
-            ->whereNull('deleted_at');
-
-        if (! $canViewInactive) {
-            $query->where('active', 1);
-        }
-
-        $this->applyWhereConditions($query, $where);
-
-        return $query->orderBy($orderBy, $order)
-            ->offset($offset)
-            ->limit($limit)
-            ->pluck('id')
-            ->all();
-    }
-
-    /**
-     * Same shape as `buildOptimizedResultQuery` but with the three aggregate
-     * sub-joins scoped to a fixed list of package IDs (the visible page) so
-     * MySQL aggregates ~25 child-row groups instead of 47k. The inner
-     * `IN (…)` literals are integer-cast at the call site.
-     */
-    private function buildOptimizedResultQueryForIds(array $pageIds): Builder
-    {
-        $idsSql = '(' . implode(',', array_map('intval', $pageIds)) . ')';
-
-        return Packages::query()
-            ->select([
-                'packages.*',
-                DB::raw('CASE
-                    WHEN packages.plan_type = "membership" THEN COALESCE(pb_agg.bundle_total, 0)
-                    ELSE COALESCE(ps_agg.service_total, 0)
-                END as total_price'),
-                DB::raw('COALESCE(pa_agg.cash_receive, 0) as cash_receive'),
-                DB::raw('COALESCE(pa_agg.settle_amount, 0) as settle_amount'),
-                DB::raw('COALESCE(pa_agg.refund_amount_calculated, 0) as refund_amount_calculated'),
-                DB::raw('COALESCE(ps_agg.session_count, 0) as session_count'),
-                DB::raw('COALESCE(ps_agg.consumed_count, 0) as consumed_count'),
-                DB::raw('GREATEST(
-                    COALESCE(pa_agg.max_updated, "1970-01-01"),
-                    COALESCE(pb_agg.max_updated, "1970-01-01"),
-                    COALESCE(ps_agg.max_updated, "1970-01-01")
-                ) as latest_advance_updated_at'),
-                // Pre-computed delete-blockers so the SPA can disable the
-                // row trash icon ahead of time and surface the reason in
-                // a tooltip — no need for a per-row probe round-trip.
-                DB::raw('CASE WHEN pa_agg.package_id IS NOT NULL THEN 1 ELSE 0 END as has_advances'),
-                DB::raw('COALESCE(id_agg.invoice_count, 0) as invoice_count'),
-            ])
-            ->leftJoin(DB::raw('(
-                SELECT package_id,
-                    SUM(CASE WHEN cash_flow = "in" AND is_cancel = 0 THEN cash_amount ELSE 0 END) as cash_receive,
-                    SUM(CASE WHEN cash_flow = "out" AND is_refund = 0 THEN cash_amount ELSE 0 END) as settle_amount,
-                    SUM(CASE WHEN is_refund = 1 THEN cash_amount ELSE 0 END) as refund_amount_calculated,
-                    MAX(updated_at) as max_updated
-                FROM package_advances
-                WHERE deleted_at IS NULL
-                  AND package_id IN '.$idsSql.'
-                GROUP BY package_id
-            ) as pa_agg'), fn ($join) => $join->on('pa_agg.package_id', '=', 'packages.id'))
-            ->leftJoin(DB::raw('(
-                SELECT package_id,
-                    SUM(tax_including_price) as bundle_total,
-                    MAX(updated_at) as max_updated
-                FROM package_bundles
-                WHERE package_id IN '.$idsSql.'
-                GROUP BY package_id
-            ) as pb_agg'), fn ($join) => $join->on('pb_agg.package_id', '=', 'packages.id'))
-            ->leftJoin(DB::raw('(
-                SELECT package_id,
-                    SUM(tax_including_price) as service_total,
-                    COUNT(*) as session_count,
-                    SUM(CASE WHEN is_consumed = 1 THEN 1 ELSE 0 END) as consumed_count,
-                    MAX(updated_at) as max_updated
-                FROM package_services
-                WHERE package_id IN '.$idsSql.'
-                GROUP BY package_id
-            ) as ps_agg'), fn ($join) => $join->on('ps_agg.package_id', '=', 'packages.id'))
-            ->leftJoin(DB::raw('(
-                SELECT package_id, COUNT(*) as invoice_count
-                FROM invoice_details
-                WHERE deleted_at IS NULL
-                  AND package_id IN '.$idsSql.'
-                GROUP BY package_id
-            ) as id_agg'), fn ($join) => $join->on('id_agg.package_id', '=', 'packages.id'))
-            ->with([
-                'user:id,name,phone,account_id',
-                'user.membership:id,patient_id,membership_type_id,code,active,end_date,is_referral',
-                'user.membership.membershipType:id,name',
-                'location:id,name,city_id',
-                'location.city:id,name',
-            ])
-            ->whereIn('packages.id', $pageIds);
     }
 
     /**
@@ -502,10 +331,6 @@ final class PlanService
                 continue;
             }
 
-            // Membership cleanup mirrors single-delete; safe no-op
-            // for plan/bundle subtypes (no membership_code_id rows).
-            $this->releaseMembershipFromPlan($package->id);
-
             $package->delete();
             $deleted++;
         }
@@ -536,12 +361,7 @@ final class PlanService
         $customDiscountRange = Settings::where('slug', 'sys-discounts')->first();
         $range = $customDiscountRange ? explode(':', $customDiscountRange->data) : [0, 100];
 
-        // No-patient-context payload — surface only "All Patients"
-        // discounts (customer_type_id IS NULL). Tier-specific entries
-        // can't safely render before we know who the patient is, so
-        // they're held back until `getCreateFormDataForPatient`
-        // overwrites this list with the tier-aware variant.
-        $discounts = $this->buildEligibleDiscounts(null);
+        $discounts = Discounts::where('active', 1)->get(['id', 'name']);
 
         return [
             'locations' => $locations,
@@ -559,171 +379,6 @@ final class PlanService
         ];
     }
 
-    /**
-     * Build the eligible-discounts list for the plan-create dialog.
-     *
-     * A discount qualifies for the operator's account when:
-     *   - active = 1
-     *   - account_id matches the authed operator's account
-     *   - today is within [start, end] (inclusive)
-     *
-     * It then filters by `customer_type_id`:
-     *   - patientId === null  → only NULL (general / "All Patients") discounts
-     *   - patientId !== null  → general OR tied to a membership tier the
-     *     patient currently holds (with the parent_id chain expanded so
-     *     a Renewal-Gold member also qualifies for parent Gold-tier
-     *     discounts; this matches the legacy admin's behaviour).
-     */
-    private function buildEligibleDiscounts(?int $patientId): \Illuminate\Database\Eloquent\Collection
-    {
-        $userId = (int) (Auth::id() ?? 0);
-        $accountId = (int) (Auth::user()?->account_id ?? 0);
-
-        if ($accountId <= 0) {
-            // No account context — nothing safe to return.
-            return Discounts::query()->whereRaw('1 = 0')->get(['id', 'name']);
-        }
-
-        // Base filter (active + date window + account scope) is owned by
-        // Discounts::applicableNow() — kept in the model so the legacy
-        // PDF / plan-edit cache paths share the same definition.
-        $query = Discounts::applicableNow($accountId)->orderBy('name');
-
-        // Exclude orphaned discounts — those with zero rows in
-        // discount_has_locations. They pass active+date checks but have
-        // no centre/service they actually apply to, so the operator
-        // cannot save a plan with them. Keeping them in the dropdown
-        // just invites a save-time error.
-        $query->whereExists(function ($sub) {
-            $sub->select(DB::raw(1))
-                ->from('discount_has_locations')
-                ->whereColumn('discount_has_locations.discount_id', 'discounts.id');
-        });
-
-        if ($patientId === null) {
-            $query->whereNull('customer_type_id');
-        } else {
-            $tierIds = $this->patientActiveMembershipTypeIds($patientId);
-            $query->where(fn ($q) => $q
-                ->whereNull('customer_type_id')
-                ->orWhereIn('customer_type_id', $tierIds === [] ? [-1] : $tierIds));
-        }
-
-        // Staff-role gate. Each discount is associated with a set of
-        // roles via the `discount_role` pivot — only operators in one of
-        // those roles can apply it. Filter the dropdown to match so the
-        // operator never picks something the save endpoint will reject.
-        //
-        // Administrator (role 1) and Super-Admin (role 21) bypass the
-        // gate and see every discount, mirroring how those roles
-        // typically operate above the per-role permission matrix.
-        if ($userId > 0) {
-            // model_type appears as both `App\User` (legacy) and
-            // `App\Models\User` (post-namespace-move) in this DB. Match
-            // both so older user records still resolve their roles.
-            $operatorRoleIds = DB::table('model_has_roles')
-                ->where('model_id', $userId)
-                ->whereIn('model_type', ['App\\Models\\User', 'App\\User'])
-                ->pluck('role_id')
-                ->map(static fn ($v): int => (int) $v)
-                ->all();
-
-            $isPrivileged = ! empty(array_intersect($operatorRoleIds, [1, 21]));
-
-            if (! $isPrivileged) {
-                $query->whereIn('id', function ($sub) use ($operatorRoleIds) {
-                    $sub->select('discount_id')
-                        ->from('discount_role')
-                        ->whereIn('role_id', $operatorRoleIds === [] ? [-1] : $operatorRoleIds);
-                });
-            }
-        }
-
-        // Hydrate `service_ids` so the SPA can filter the dropdown to
-        // only the discounts that actually apply to the operator's
-        // selected service. The `discounts` table itself doesn't carry
-        // a service column — service linkage lives in two tables, one
-        // per discount kind:
-        //   • Configurable Buy/Get → `base_discount_services` lists the
-        //     BUY anchors. We surface ONLY the BUY services so the
-        //     operator picks the configurable on the BUY service; the
-        //     backend auto-adds the GETs at save time.
-        //   • Simple (Fixed/Percentage) → `discount_has_locations`
-        //     tracks the (location, service) allocations. Any service
-        //     the discount was allocated to is eligible.
-        $discounts = $query->get(['discounts.id', 'discounts.name', 'discounts.type']);
-
-        if ($discounts->isEmpty()) {
-            return $discounts;
-        }
-
-        $discountIds = $discounts->pluck('id');
-
-        $configurableServices = DB::table('base_discount_services')
-            ->whereIn('discount_id', $discountIds)
-            ->select('discount_id', 'service_id')
-            ->get()
-            ->groupBy('discount_id');
-
-        $simpleServices = DB::table('discount_has_locations')
-            ->whereIn('discount_id', $discountIds)
-            ->select('discount_id', 'service_id')
-            ->get()
-            ->groupBy('discount_id');
-
-        return $discounts->map(function ($d) use ($configurableServices, $simpleServices) {
-            $rows = $d->type === 'Configurable'
-                ? ($configurableServices->get($d->id) ?? collect())
-                : ($simpleServices->get($d->id) ?? collect());
-
-            $d->service_ids = $rows
-                ->pluck('service_id')
-                ->map(fn ($v) => (int) $v)
-                ->unique()
-                ->values()
-                ->all();
-
-            return $d;
-        });
-    }
-
-    /**
-     * IDs of the membership tiers the patient is currently entitled to,
-     * expanded along the `parent_id` chain so a child tier (e.g.
-     * Renewal-Gold, parent_id=Gold) also includes its parent. The
-     * expansion mirrors the legacy admin: holding a renewal of Gold
-     * means you still qualify for whatever Gold qualifies for.
-     *
-     * Returns an integer list with no duplicates. Empty list when the
-     * patient has no active memberships in the valid date window.
-     */
-    private function patientActiveMembershipTypeIds(int $patientId): array
-    {
-        $today = now()->toDateString();
-
-        $directIds = DB::table('memberships')
-            ->where('patient_id', $patientId)
-            ->where('active', 1)
-            ->whereDate('start_date', '<=', $today)
-            ->whereDate('end_date', '>=', $today)
-            ->pluck('membership_type_id')
-            ->map(static fn ($v): int => (int) $v)
-            ->all();
-
-        if ($directIds === []) {
-            return [];
-        }
-
-        $parentIds = DB::table('membership_types')
-            ->whereIn('id', $directIds)
-            ->whereNotNull('parent_id')
-            ->pluck('parent_id')
-            ->map(static fn ($v): int => (int) $v)
-            ->all();
-
-        return array_values(array_unique(array_merge($directIds, $parentIds)));
-    }
-
     public function getCreateFormDataForPatient(array $userCentres, int $patientId): array
     {
         $data = $this->getCreateFormData($userCentres);
@@ -731,41 +386,6 @@ final class PlanService
 
         $patientUser = DB::table('users')->where('id', $patientId)->first(['name']);
         $data['patient_name'] = $patientUser?->name ?? 'Unknown';
-
-        // Scope the centres dropdown to locations where the patient has at
-        // least one Arrived (status_id=2) or Converted (status_id=16)
-        // consultation, intersected with the operator's accessible centres
-        // (so an FDM can't see / pick branches outside their permission set).
-        // Without this filter, a multi-branch admin saw every centre they
-        // managed even though most weren't valid anchors for this specific
-        // patient. Plans require an arrived consultation as their anchor —
-        // showing irrelevant centres just slows the operator down and
-        // invites mistakes.
-        //
-        // When the intersection is empty the frontend renders a "no arrived
-        // consultation" blocker (see plan-create-dialog.tsx). The dropdown
-        // is left empty rather than falling back to all-centres.
-        $patientLocationIds = DB::table('appointments')
-            ->where('patient_id', $patientId)
-            ->where('appointment_type_id', 1)
-            ->whereIn('appointment_status_id', [2, 16])
-            ->whereIn('location_id', $userCentres)
-            ->distinct()
-            ->pluck('location_id')
-            ->all();
-
-        $data['locations'] = Locations::whereIn('id', $patientLocationIds)
-            ->where('active', 1)
-            ->with('city:id,name')
-            ->orderBy('name')
-            ->get(['id', 'name', 'city_id'])
-            ->mapWithKeys(fn ($loc) => [$loc->id => ($loc->city?->name ?? '').'-'.$loc->name]);
-
-        // Replace the no-patient discount list with the tier-aware
-        // variant: general discounts plus any tied to a membership tier
-        // this patient currently holds (parent chain expanded). See
-        // `buildEligibleDiscounts`.
-        $data['discounts'] = $this->buildEligibleDiscounts($patientId);
 
         try {
             $lastConsultation = DB::table('appointments')
@@ -787,11 +407,7 @@ final class PlanService
                     ? $location->city->name.'-'.$location->name
                     : ($location?->name ?? 'Unknown Location');
 
-                // Span every branch the patient has been arrived/converted
-                // at (already filtered against the operator's accessible
-                // centres above) so the consultation dropdown is the single
-                // anchor — no separate Centre field needed in the dialog.
-                $data['appointmentArray'] = $this->buildPatientAppointments($patientId, $patientLocationIds);
+                $data['appointmentArray'] = $this->buildPatientAppointments($patientId, $lastConsultation->location_id);
                 $data['patient_membership'] = $this->getPatientMembershipDisplay($patientId);
             }
 
@@ -859,27 +475,20 @@ final class PlanService
 
             $membershipTypeName = $this->getMembershipForLocation($patientId);
 
-            // Sold-by eligibility — patient-context ONLY. The previous
-            // implementation intersected this with the centre's
-            // allocated-doctors list, which broadened the dropdown to
-            // anyone working at the centre even if they had no clinical
-            // involvement with this patient. The correct rule (per
-            // 2026-05-02 product clarification) is purely about who has
-            // touched this patient at this centre:
-            //
-            //   • Doctor on the patient's most-recent arrived/converted
-            //     consultancy at this centre (the auto-pick), AND
-            //   • Doctors who treated this patient at this centre in
-            //     the last 30 days.
-            //
-            // We resolve names directly from the `users` table for the
-            // resulting id set — no allocation filter, no centre
-            // membership filter beyond what the appointments themselves
-            // already imply (their `location_id` IS the centre).
+            $doctorIds = DB::table('doctor_has_locations')
+                ->where('is_allocated', 1)
+                ->where('location_id', $locationId)
+                ->pluck('user_id')
+                ->toArray();
+
+            $allDoctors = DB::table('users')->whereIn('id', $doctorIds)->pluck('name', 'id')->toArray();
+
             $selectedUserId = null;
             if (! empty($appointmentArray)) {
                 $firstAppointment = reset($appointmentArray);
-                $selectedUserId = $firstAppointment['doctor_id'];
+                if (array_key_exists($firstAppointment['doctor_id'], $allDoctors)) {
+                    $selectedUserId = $firstAppointment['doctor_id'];
+                }
             }
 
             $recentTreatmentDoctorIds = DB::table('appointments')
@@ -897,12 +506,7 @@ final class PlanService
                 $recentTreatmentDoctorIds,
             ));
 
-            $usersToShow = empty($userIdsToShow)
-                ? []
-                : DB::table('users')
-                    ->whereIn('id', $userIdsToShow)
-                    ->pluck('name', 'id')
-                    ->toArray();
+            $usersToShow = array_intersect_key($allDoctors, array_flip($userIdsToShow));
 
             return [
                 'appointments' => $appointmentArray,
@@ -1117,6 +721,7 @@ final class PlanService
                 $this->processMembershipPlan($package, $data, $appointmentId, $request);
             } else {
                 $this->storePackageBundlesOptimized($package, $data);
+                $this->updatePlanName($package);
 
                 if ($this->hasPayment($data)) {
                     $this->handlePackagePayment($package, $data, $appointmentId);
@@ -1196,6 +801,8 @@ final class PlanService
             if ($hasPayment) {
                 $this->handlePackagePayment($package, $data, $appointmentId);
             }
+
+            $this->updatePlanName($package);
 
             DB::commit();
 
@@ -1286,18 +893,8 @@ final class PlanService
     public function getEditFormData(int|string $packageId): array
     {
         try {
-            $package = Packages::with('user', 'location', 'appointment')->find($packageId)
+            $package = Packages::with('user', 'location')->find($packageId)
                 ?? throw PlanException::notFound($packageId);
-
-            // Doctor on the consultation that anchors this plan. Surfaced
-            // alongside `appointmentArray` so the SPA's add-row flow can
-            // fall back here when the appointment isn't (or hasn't yet)
-            // shown up in `appointmentArray` — the previous lookup
-            // `appointmentArray.find(a.id === appointmentId).doctor_id`
-            // silently resolved to null in that gap, leaving every newly
-            // staged `package_services.sold_by` NULL and dropping the row
-            // from upsell reports.
-            $appointmentDoctorId = $package->appointment?->doctor_id ?? null;
 
             // Cast to float — Eloquent `sum()` on a decimal column returns a
             // string, which would break the JS `total_price.toFixed(...)` call
@@ -1310,77 +907,6 @@ final class PlanService
 
             $this->normalizeBundleDisplayRelations($packageBundles);
 
-            // Hydrate the staged-row shape the SPA's edit dialog reuses
-            // (StagedPlanRow). The legacy create flow leaves
-            // package_bundles.service_name NULL — the visible name lives
-            // on the eager-loaded `service` / `bundle` relation. Without
-            // this normalisation the edit dialog rendered an empty
-            // Service column on rows hydrated from the saved plan.
-            // `sold_by_name` mirrors the same logic for the operator
-            // attribution the staged-row type carries.
-            foreach ($packageBundles as $pb) {
-                // `package_bundles.bundle_id` points at different
-                // catalogs depending on the row flavour:
-                //   - source_type ∈ {bundle, service_bundle, membership}
-                //     → resolves against `bundles` / `service_bundles` /
-                //     `membership_types` (the `bundle` / `membershipType`
-                //     relation gives the right display name).
-                //   - source_type 'service', or empty with 0–1 children
-                //     → resolves against `services` (configurable BUY/GET
-                //     rows live here too — `bundle_id` IS a service id
-                //     even though the column name suggests otherwise).
-                //   - source_type empty with 2+ children → legacy
-                //     multi-session bundles that pre-date the
-                //     `source_type` column. Structural signature
-                //     (multiple package_services children) outs them.
-                //
-                // The earlier "if bundle_id then bundle.name" path
-                // misfired on the configurable BUY/GET case: rows where
-                // bundle_id happened to also exist as a `bundles.id`
-                // showed the catalog bundle name ("CoolGlide - Front of
-                // Neck") instead of the actual service ("CoolGlide -
-                // Chin"). The child-count tiebreaker for legacy empty
-                // source_type rows preserves the bundle-name display on
-                // the ~79 rows that are real bundles without the column
-                // populated.
-                $childCount = $pb->packageservice?->count() ?? 0;
-                $useBundleName = in_array($pb->source_type, ['bundle', 'service_bundle', 'membership'], true)
-                    || (empty($pb->source_type) && $childCount > 1);
-
-                if ($useBundleName) {
-                    $pb->service_name = $pb->bundle?->name
-                        ?? $pb->packageservice?->first()?->service?->name
-                        ?? $pb->service_name
-                        ?? '';
-                } else {
-                    $pb->service_name = $pb->service?->name
-                        ?? $pb->packageservice?->first()?->service?->name
-                        ?? $pb->service_name
-                        ?? '';
-                }
-                $firstSold = $pb->packageservice?->first()?->soldBy ?? null;
-                $pb->sold_by = $firstSold?->id ?? null;
-                $pb->sold_by_name = $firstSold?->name ?? null;
-
-                // Membership rows: surface the membership type name and
-                // the assigned code as flat fields so the SPA edit
-                // dialog can render them without an extra fetch. The
-                // `membershipType` relation is already eager-loaded;
-                // looking up the code by id is cheap (one row per
-                // membership plan) and avoids adding a new relation
-                // on `PackageBundles`. Detection is on the
-                // `membership_type_id` column rather than `source_type`
-                // because the legacy create-membership flow doesn't
-                // populate `source_type` (left NULL on those rows).
-                if ($pb->membership_type_id) {
-                    $pb->membership_type_name = $pb->membershipType?->name ?? null;
-                    if ($pb->membership_code_id) {
-                        $pb->membership_code = Membership::where('id', $pb->membership_code_id)
-                            ->value('code');
-                    }
-                }
-            }
-
             $packageServices = PackageService::with('service', 'soldBy')
                 ->where('package_id', $packageId)
                 ->get();
@@ -1392,16 +918,6 @@ final class PlanService
                     ['is_adjustment', '=', '0'],
                 ])
                 ->get();
-
-            // Mirror the detail-dialog payload shape so the same component
-            // can render this list. The accessor lives on the controller's
-            // refund index path, not on the model — formatting here keeps
-            // the frontend free of date-formatting branches.
-            foreach ($packageAdvances as $advance) {
-                $advance->created_at_formated = $advance->created_at
-                    ? Carbon::parse($advance->created_at)->format('F j,Y H:i A')
-                    : null;
-            }
 
             $advancesSummary = DB::table('package_advances')
                 ->where('package_id', $packageId)
@@ -1443,18 +959,6 @@ final class PlanService
                 ? $package->appointment_id.'.A'
                 : null;
 
-            // Pre-format the selected consultation's display label so the
-            // SPA can render it as static info in the edit header without a
-            // second lookup. Falls back to null when the package has no
-            // appointment (older rows) or the consultation no longer
-            // appears in the patient's eligible list (status changed to
-            // non-arrived/non-converted).
-            $selectedAppointmentLabel = null;
-            if ($package->appointment_id) {
-                $apt = $appointmentInfo['appointments'][$package->appointment_id] ?? null;
-                $selectedAppointmentLabel = $apt['name'] ?? null;
-            }
-
             $studentDocuments = [];
             $studentVerification = StudentVerification::where('package_id', $packageId)->first();
             if ($studentVerification && ! empty($studentVerification->document_paths)) {
@@ -1465,85 +969,6 @@ final class PlanService
                 ->where('is_consumed', 1)
                 ->exists();
 
-            // Session counts feed the edit-mode summary strip. Single
-            // pre-aggregated query is cheaper than walking the eager-loaded
-            // packagebundles → packageservice tree on the SPA side.
-            $sessionAggregates = DB::table('package_services')
-                ->where('package_id', $packageId)
-                ->selectRaw('COUNT(*) as total, SUM(CASE WHEN is_consumed = 1 THEN 1 ELSE 0 END) as consumed')
-                ->first();
-
-            // ── Configurable-discount rule pre-checks for the SPA ──
-            //
-            // The backend already enforces all of these on update/delete,
-            // but we surface pre-computed flags so the SPA can disable the
-            // Add row + per-row Trash icons ahead of time, with an
-            // actionable reason in the tooltip — instead of letting the
-            // operator click into a 400.
-            //
-            // 1) `add_locked` mirrors `PlanService::validateConsumptionOrder`:
-            //    a config group is mid-consumption-out-of-order anywhere on
-            //    this plan → adding new services is blocked.
-            // 2) Per-bundle `can_remove` mirrors
-            //    `PlanDiscountService::deleteConfigurablePackageService`:
-            //    own bundle's services consumed OR any sibling in the same
-            //    config_group consumed → bundle delete blocked.
-            $addLocked = PackageService::where('package_services.package_id', $packageId)
-                ->join('package_bundles', 'package_services.package_bundle_id', '=', 'package_bundles.id')
-                ->whereNotNull('package_bundles.config_group_id')
-                ->where('package_services.is_consumed', '1')
-                ->whereExists(function ($q) use ($packageId) {
-                    $q->select(DB::raw(1))
-                        ->from('package_services as ps2')
-                        ->join('package_bundles as pb2', 'ps2.package_bundle_id', '=', 'pb2.id')
-                        ->whereColumn('pb2.config_group_id', 'package_bundles.config_group_id')
-                        ->where('ps2.package_id', $packageId)
-                        ->where('ps2.is_consumed', '0')
-                        ->whereColumn('ps2.consumption_order', '<', 'package_services.consumption_order');
-                })
-                ->exists();
-
-            $addLockReason = $addLocked
-                ? 'A configurable discount group on this plan was consumed out of order. Consume the paid (BUY) sessions first, or start a new plan.'
-                : null;
-
-            // Per-bundle delete-eligibility — single pass over already-loaded
-            // bundles + a small targeted query for config-group consumption.
-            $configGroupConsumedSet = collect();
-            $groupedConfigBundles = $packageBundles->whereNotNull('config_group_id');
-            if ($groupedConfigBundles->isNotEmpty()) {
-                $configGroupConsumedSet = DB::table('package_bundles')
-                    ->join('package_services', 'package_services.package_bundle_id', '=', 'package_bundles.id')
-                    ->where('package_bundles.package_id', $packageId)
-                    ->whereNotNull('package_bundles.config_group_id')
-                    ->where('package_services.is_consumed', '1')
-                    ->pluck('package_bundles.config_group_id')
-                    ->unique();
-            }
-
-            foreach ($packageBundles as $pb) {
-                $bundleSessionCount    = (int) ($pb->packageservice?->count() ?? 0);
-                $bundleConsumedCount   = (int) ($pb->packageservice?->where('is_consumed', 1)->count() ?? 0);
-
-                $ownConsumed   = $bundleConsumedCount > 0;
-                $groupConsumed = $pb->config_group_id && $configGroupConsumedSet->contains($pb->config_group_id);
-
-                $pb->can_remove = ! ($ownConsumed || $groupConsumed);
-                $pb->remove_blocked_reason = $ownConsumed
-                    ? 'Cannot remove — a session on this row is already consumed.'
-                    : ($groupConsumed
-                        ? 'Cannot remove — another service in this discount group is already consumed.'
-                        : null);
-
-                // Per-bundle session counts so the SPA edit dialog can render
-                // "X / N consumed" alongside the existing per-session display
-                // on the detail dialog. Single source of truth — frontend
-                // doesn't have to walk the eager-loaded packageservice
-                // relation client-side.
-                $pb->session_count   = $bundleSessionCount;
-                $pb->consumed_count  = $bundleConsumedCount;
-            }
-
             return [
                 'package' => $package,
                 'locations' => $userLocations,
@@ -1552,8 +977,6 @@ final class PlanService
                 'users' => $appointmentInfo['users'],
                 'selectedUserId' => $appointmentInfo['selected_doctor_id'],
                 'selectedAppointmentId' => $selectedAppointmentId,
-                'selectedAppointmentLabel' => $selectedAppointmentLabel,
-                'appointment_doctor_id' => $appointmentDoctorId,
                 'packageadvances' => $packageAdvances,
                 'paymentmodes' => $paymentModes,
                 'grand_total' => $remainingAmount,
@@ -1567,20 +990,6 @@ final class PlanService
                 'membership' => $membershipDisplay,
                 'student_documents' => $studentDocuments,
                 'is_membership_consumed' => $isMembershipConsumed,
-                'session_count' => (int) ($sessionAggregates->total ?? 0),
-                'consumed_count' => (int) ($sessionAggregates->consumed ?? 0),
-                // Plan is "settled" once any package_advances row carries
-                // is_setteled=1 — that flag locks the plan against further
-                // mutation and triggers a settlement invoice on the legacy
-                // refund flow. The SPA gates the form into read-only on this.
-                'is_settled' => PackageAdvances::where('package_id', $packageId)
-                    ->where('is_setteled', 1)
-                    ->exists(),
-                // SPA reads these to disable the Add row button + render
-                // a banner. Server-side enforcement is unchanged
-                // (`validateConsumptionOrder` still throws on update).
-                'add_locked'      => $addLocked,
-                'add_lock_reason' => $addLockReason,
             ];
         } catch (PlanException $e) {
             throw $e;
@@ -1664,61 +1073,6 @@ final class PlanService
         }
     }
 
-    /**
-     * Bundles getDisplayData() with the org-level header info the printable
-     * invoice needs (centre address/NTN/STN, account name/email, head-office
-     * phone). Returned shape is the display payload plus a `print_meta` key
-     * so the SPA print route can render the legacy invoice 1:1 without a
-     * second round-trip.
-     *
-     * @throws PlanException
-     */
-    public function getPrintData(int|string $packageId): array
-    {
-        $data = $this->getDisplayData($packageId);
-
-        /** @var Packages $package */
-        $package = $data['package'];
-
-        $location = $package->location_id
-            ? Locations::find($package->location_id)
-            : null;
-        $account = $package->account_id
-            ? Accounts::find($package->account_id)
-            : null;
-
-        // sys-headoffice is the org-wide "company phone" shown at the top
-        // of every printable. Settings rows are account-scoped (`getBySlug`
-        // requires an account_id) so multi-account installs don't leak the
-        // wrong tenant's phone — the legacy Blade query missed this. Cached
-        // briefly since the value is the same for every print this hour.
-        $accountId = (int) ($account?->id ?? 0);
-        $headOfficePhone = $accountId > 0
-            ? Cache::remember(
-                'settings_sys_headoffice_'.$accountId,
-                self::CACHE_TTL,
-                fn () => Settings::getBySlug('sys-headoffice', $accountId)?->data,
-            )
-            : null;
-
-        $data['print_meta'] = [
-            'location_info' => $location ? [
-                'name'      => $location->name,
-                'address'   => $location->address,
-                'fdo_phone' => $location->fdo_phone,
-                'ntn'       => $location->ntn,
-                'stn'       => $location->stn,
-            ] : null,
-            'account_info' => $account ? [
-                'name'  => $account->name,
-                'email' => $account->email,
-            ] : null,
-            'company_phone' => $headOfficePhone,
-        ];
-
-        return $data;
-    }
-
     // ──────────────────────────────────────────────────
     //  Delete Plan
     // ──────────────────────────────────────────────────
@@ -1745,16 +1099,6 @@ final class PlanService
             throw PlanException::hasChildRecords(implode(', ', $childRecords));
         }
 
-        // Membership cleanup BEFORE the soft-delete so the
-        // package_bundles → memberships lookup still resolves.
-        $this->releaseMembershipFromPlan($packageId);
-
-        // Snapshot the appointment id before delete — after the
-        // package is soft-deleted, the netCashForAppointment lookup
-        // would return 0 (its only package is gone), which is the
-        // correct trigger condition for the revert.
-        $appointmentId = $package->appointment_id ? (int) $package->appointment_id : null;
-
         $package->delete();
 
         AuditTrails::deleteEventLogger(
@@ -1764,73 +1108,7 @@ final class PlanService
             $packageId,
         );
 
-        // Conversion-state cascade — single source of truth. After
-        // plan delete the appointment may have no live packages left,
-        // in which case net cash hits 0 and the conversion needs to
-        // revert.
-        if ($appointmentId !== null) {
-            ConversionStateService::revertIfNeeded($appointmentId);
-        }
-
         return ['status' => true, 'message' => 'Record has been deleted successfully.'];
-    }
-
-    /**
-     * Detach any assigned membership codes + cleanup verification
-     * artefacts when a plan is being deleted. Called by both
-     * `deletePlan` and `bulkDeletePlans` *before* the package itself is
-     * soft-deleted (so the `package_bundles → memberships` resolution
-     * still works at this point).
-     *
-     * Without this, a deleted membership plan left behind:
-     *   • `memberships.patient_id` still pointing at the patient
-     *     → patient profile / plans datatable still rendered the
-     *       "Student Member · CA0443" badge for a card they no
-     *       longer hold
-     *   • `student_verifications` row + files orphaned on disk
-     *
-     * Safe to run unconditionally: skips the work when the plan has
-     * no membership-bearing bundles. The caller (`deletePlan`) has
-     * already gated against `hasChildRecords` (no payments, no
-     * invoices) so there's no scenario where we're "releasing" a code
-     * the patient legitimately paid for — the delete itself would
-     * have been blocked.
-     *
-     * The membership row's `active` flag stays `1` — the code is
-     * back in the catalog of unassigned codes, ready to be picked by
-     * a future create-membership.
-     */
-    private function releaseMembershipFromPlan(int|string $packageId): void
-    {
-        $codeIds = DB::table('package_bundles')
-            ->where('package_id', $packageId)
-            ->whereNotNull('membership_code_id')
-            ->whereNull('deleted_at')
-            ->pluck('membership_code_id')
-            ->all();
-
-        if (empty($codeIds) && ! StudentVerification::where('package_id', $packageId)->exists()) {
-            return;
-        }
-
-        DB::transaction(function () use ($codeIds, $packageId) {
-            if (! empty($codeIds)) {
-                Membership::whereIn('id', $codeIds)->update([
-                    'patient_id'  => null,
-                    'start_date'  => null,
-                    'end_date'    => null,
-                    'assigned_at' => null,
-                    'updated_by'  => Auth::id(),
-                ]);
-            }
-
-            $verification = StudentVerification::where('package_id', $packageId)->first();
-            if ($verification) {
-                app(\App\Services\Membership\StudentVerificationService::class)
-                    ->deleteDocuments($verification);
-                $verification->delete();
-            }
-        });
     }
 
     // ══════════════════════════════════════════════════
@@ -1843,7 +1121,9 @@ final class PlanService
     {
         $query = Packages::query();
 
-        $this->applyWhereConditions($query, $where);
+        if (! empty($where)) {
+            $query->where($where);
+        }
 
         $query->whereIn('location_id', ACL::getUserCentres());
 
@@ -1852,27 +1132,6 @@ final class PlanService
         }
 
         return $query;
-    }
-
-    /**
-     * Apply the heterogeneous `$where` array to a query builder. Each entry
-     * is either a `[column, op?, value]` tuple (Laravel's array-where form)
-     * or a closure that receives the query — the latter lets callers stash
-     * `whereIn` / nested-where scopes that the array form can't express.
-     *
-     * Untyped builder param so this works for both Eloquent\Builder
-     * (count + result queries) and Query\Builder (the lightweight
-     * `fetchPageIds` covered query). Their `where()` shapes are identical.
-     */
-    private function applyWhereConditions(mixed $query, array $where): void
-    {
-        foreach ($where as $cond) {
-            if ($cond instanceof \Closure) {
-                $query->where($cond);
-            } else {
-                $query->where([$cond]);
-            }
-        }
     }
 
     private function buildOptimizedResultQuery(array $where, int|string $accountId): Builder
@@ -1911,14 +1170,29 @@ final class PlanService
                 DB::raw('COALESCE(pa_agg.refund_amount_calculated, 0) as refund_amount_calculated'),
                 DB::raw('COALESCE(ps_agg.session_count, 0) as session_count'),
                 DB::raw('COALESCE(ps_agg.consumed_count, 0) as consumed_count'),
+                // At-risk flag — plan has unused sessions AND the
+                // patient has NO future booking at the same branch.
+                // Same definition as AtRiskPatientsMetric uses for the
+                // abandoned-package bucket; computed in SQL so the row
+                // ships with a ready-to-render flag.
+                DB::raw('CASE
+                    WHEN COALESCE(ps_agg.session_count, 0) > COALESCE(ps_agg.consumed_count, 0)
+                     AND packages.active = 1
+                     AND packages.is_refund = 0
+                     AND NOT EXISTS (
+                        SELECT 1 FROM appointments af_atrisk
+                        WHERE af_atrisk.patient_id = packages.patient_id
+                          AND af_atrisk.location_id = packages.location_id
+                          AND af_atrisk.scheduled_date > CURDATE()
+                          AND af_atrisk.deleted_at IS NULL
+                     )
+                    THEN 1 ELSE 0
+                END as is_at_risk'),
                 DB::raw('GREATEST(
                     COALESCE(pa_agg.max_updated, "1970-01-01"),
                     COALESCE(pb_agg.max_updated, "1970-01-01"),
                     COALESCE(ps_agg.max_updated, "1970-01-01")
                 ) as latest_advance_updated_at'),
-                // Pre-computed delete-blockers — see buildOptimizedResultQueryForIds.
-                DB::raw('CASE WHEN pa_agg.package_id IS NOT NULL THEN 1 ELSE 0 END as has_advances'),
-                DB::raw('COALESCE(id_agg.invoice_count, 0) as invoice_count'),
             ])
             ->leftJoin(DB::raw('(
                 SELECT package_id,
@@ -1949,25 +1223,19 @@ final class PlanService
                 WHERE package_id IN ('.$scopedSql.')
                 GROUP BY package_id
             ) as ps_agg'), fn ($join) => $join->on('ps_agg.package_id', '=', 'packages.id'))
-            ->leftJoin(DB::raw('(
-                SELECT package_id, COUNT(*) as invoice_count
-                FROM invoice_details
-                WHERE deleted_at IS NULL
-                  AND package_id IN ('.$scopedSql.')
-                GROUP BY package_id
-            ) as id_agg'), fn ($join) => $join->on('id_agg.package_id', '=', 'packages.id'))
             ->with([
                 'user:id,name,phone,account_id',
-                'user.membership:id,patient_id,membership_type_id,code,active,end_date,is_referral',
-                'user.membership.membershipType:id,name',
+                'user.membership:id,patient_id,code,active,end_date,is_referral',
                 'location:id,name,city_id',
                 'location.city:id,name',
             ]);
 
-        // Inject bindings (4x for the 4 subqueries)
-        $query->addBinding(array_merge($scopedBindings, $scopedBindings, $scopedBindings, $scopedBindings), 'join');
+        // Inject bindings (3x for the 3 subqueries)
+        $query->addBinding(array_merge($scopedBindings, $scopedBindings, $scopedBindings), 'join');
 
-        $this->applyWhereConditions($query, $where);
+        if (! empty($where)) {
+            $query->where($where);
+        }
 
         $query->whereIn('packages.location_id', $userCentres);
 
@@ -2001,15 +1269,11 @@ final class PlanService
         if ($patientId !== null) {
             $where[] = ['packages.patient_id', '=', $patientId];
             Filters::put($userId, $filename, 'patient_id', $patientId);
-        } elseif ($this->hasFilter($filters, 'q')) {
-            // Unified search owns patient_id / patient_name / package_id
-            // dispatch when present — see applyUnifiedSearch for routing.
-            $this->applyUnifiedSearch($where, (string) $filters['q'], $userId, $filename);
         } else {
             $this->addPatientFilter($where, $filters, $userId, $filename, $applyFilter);
-            $this->addFilterCondition($where, $filters, 'package_id', 'packages.id', $userId, $filename, $applyFilter);
         }
 
+        $this->addFilterCondition($where, $filters, 'package_id', 'packages.id', $userId, $filename, $applyFilter);
         $this->addFilterCondition($where, $filters, 'location_id', 'packages.location_id', $userId, $filename, $applyFilter);
         $this->addStatusFilter($where, $filters, $userId, $filename, $applyFilter);
         $this->addDateRangeFilter($where, $filters, $userId, $filename, $applyFilter);
@@ -2017,101 +1281,6 @@ final class PlanService
         $this->validateLocationFilter($where, $userId, $filename);
 
         return $where;
-    }
-
-    /**
-     * Unified search router for the plans datatable's single search box.
-     * Supports four input shapes — frontend sends raw `q`; the server
-     * decides which column to filter on based on the input shape:
-     *
-     *   `C-<digits>` / `P-<digits>`  → exact `packages.patient_id`
-     *   ≥ 7 digit numeric            → phone (indexed `phone_normalized`
-     *                                  prefix match against patients)
-     *   1–6 digit numeric            → ambiguous; matches both
-     *                                  `packages.id` AND
-     *                                  `packages.patient_id` (operator
-     *                                  gets the union — usually only one
-     *                                  yields rows)
-     *   anything else                → name token search, FULLTEXT
-     *                                  MATCH AGAINST in BOOLEAN MODE
-     *                                  with per-token prefix wildcards.
-     *                                  Tokens shorter than the FT
-     *                                  min-word length fall back to a
-     *                                  prefix LIKE on `users.name`.
-     *
-     * All branches push a closure-scope into `$where` so the existing
-     * `applyWhereConditions` consumer applies them via `$query->where(fn)`.
-     */
-    private function applyUnifiedSearch(array &$where, string $q, int|string $userId, string $filename): void
-    {
-        $q = trim($q);
-        if ($q === '') {
-            return;
-        }
-
-        // Classifier + phone/text resolvers live in PatientSearchService so
-        // every patient-search surface (Plans, picker, invoices) shares one
-        // engine. The only Plans-specific behaviour is the `short_id` branch
-        // below: ≤ 6 digit input is ambiguous between a package id and a
-        // patient id, so the where clause matches both.
-        $shape = PatientSearchService::classifySearchInput($q);
-
-        // Pre-scope the resolver to the caller's account — a user and their
-        // packages share an account_id, so this is a pure tightening of the
-        // candidate set, not a behavioural change. Falls back to null when
-        // no auth context (queue / artisan), in which case the resolver
-        // returns the global candidate set as before.
-        $accountId = Auth::user()?->account_id;
-
-        if ($shape['type'] === 'patient_code') {
-            $patientId = (int) $shape['digits'];
-            $where[] = ['packages.patient_id', '=', $patientId];
-            Filters::put($userId, $filename, 'patient_id', $patientId);
-
-            return;
-        }
-
-        if ($shape['type'] === 'phone') {
-            // Indexed prefix match against patients.phone_normalized.
-            // Resolve to patient ids first (cap at 200) so the outer
-            // query stays a single B-tree IN scan against
-            // packages.patient_id rather than a JOIN per-row.
-            $patientIds = PatientSearchService::resolvePatientIdsByPhone($shape['digits'], $accountId);
-            $where[] = function ($qb) use ($patientIds): void {
-                if ($patientIds === []) {
-                    $qb->whereRaw('0 = 1');
-                } else {
-                    $qb->whereIn('packages.patient_id', $patientIds);
-                }
-            };
-
-            return;
-        }
-
-        if ($shape['type'] === 'short_id') {
-            // ≤ 6 digits — short and ambiguous. Match both id columns;
-            // whichever has the row wins. Cheap because both columns are
-            // indexed B-trees and the OR is two single-row lookups.
-            $idVal = (int) $shape['digits'];
-            $where[] = function ($qb) use ($idVal): void {
-                $qb->where(function ($inner) use ($idVal): void {
-                    $inner->where('packages.id', $idVal)
-                        ->orWhere('packages.patient_id', $idVal);
-                });
-            };
-
-            return;
-        }
-
-        // Text branch — FULLTEXT name search via the resolved-id pattern.
-        $patientIds = PatientSearchService::resolvePatientIdsByText($q, $accountId);
-        $where[] = function ($qb) use ($patientIds): void {
-            if ($patientIds === []) {
-                $qb->whereRaw('0 = 1');
-            } else {
-                $qb->whereIn('packages.patient_id', $patientIds);
-            }
-        };
     }
 
     private function validateLocationFilter(array &$where, int|string $userId, string $filename): void
@@ -2138,11 +1307,7 @@ final class PlanService
     {
         if ($this->hasFilter($filters, 'patient_id')) {
             $patientId = $filters['patient_id'];
-            // Accept either the legacy `P-<id>` prefix or the canonical
-            // `C-<id>` (used by exports, PDFs, the patient_code accessor,
-            // and the plans-list patient cell). `patientSearch` already
-            // handles both (and is a no-op for numeric input).
-            if (is_string($patientId)) {
+            if (is_string($patientId) && str_starts_with($patientId, 'P-')) {
                 $patientId = GeneralFunctions::patientSearch($patientId);
             }
             $where[] = ['packages.patient_id', '=', $patientId];
@@ -2158,23 +1323,9 @@ final class PlanService
         if ($this->hasFilter($filters, 'patient_name')) {
             $matched = $this->resolvePatientIdsByName($filters['patient_name']);
             if (! empty($matched)) {
-                if (count($matched) === 1) {
-                    $where[] = ['packages.patient_id', '=', $matched[0]];
-                    Filters::put($userId, $filename, 'patient_id', $matched[0]);
-                } else {
-                    // Multiple namesakes (e.g. several "shahid"s) — match
-                    // ALL of them via WHERE IN, not just the first.
-                    // Earlier this took `$matched[0]` and silently hid the
-                    // other patients' plans. Pushed as a closure-scope
-                    // because the array `$query->where(array)` form only
-                    // supports `[col, op, val]` tuples, not IN. The cache
-                    // skip is intentional — `Filters::put` stores a
-                    // single id and the resume path can't replay an IN.
-                    $where[] = function ($q) use ($matched): void {
-                        $q->whereIn('packages.patient_id', $matched);
-                    };
-                    Filters::forget($userId, $filename, 'patient_id');
-                }
+                $patientId = $matched[0];
+                $where[] = ['packages.patient_id', '=', $patientId];
+                Filters::put($userId, $filename, 'patient_id', $patientId);
             } else {
                 $where[] = ['packages.patient_id', '=', 0];
             }
@@ -2401,7 +1552,7 @@ final class PlanService
         $packageBundleData['is_exclusive'] = $isExclusive;
         $packageBundleData['tax_percentage'] = $location->tax_percentage;
 
-        $taxData = $this->calculateTax(Settings::getOrgTaxTreatment(Auth::user()->account_id), (float) $data['net_amount'], (float) $location->tax_percentage, $isExclusive);
+        $taxData = $this->calculateTax($service->tax_treatment_type_id, (float) $data['net_amount'], (float) $location->tax_percentage, $isExclusive);
         $packageBundleData = array_merge($packageBundleData, $taxData);
 
         $packageBundleData['id'] = str_pad((string) random_int(1000, 9999), 4, '0', STR_PAD_LEFT);
@@ -2428,7 +1579,7 @@ final class PlanService
 
             $isExclusive = ($data['is_exclusive'] ?? '0') == '1';
             $taxData = $this->calculateServiceTax(
-                Settings::getOrgTaxTreatment(Auth::user()->account_id),
+                $service->tax_treatment_type_id,
                 (float) $detail['calculated_price'],
                 (float) $location->tax_percentage,
                 $isExclusive,
@@ -2719,19 +1870,8 @@ final class PlanService
             $packageBundleRecord = PackageBundles::create($packageBundleData);
 
             $bundleServices = $allBundleServices->get($bundleId, collect());
-            // `service_price` here MUST be the catalog regular per-row
-            // price (`bundle_has_services.service_price`), NOT the
-            // pre-distributed sold-share in `calculated_price`. Passing
-            // the latter with a regular/sold ratio at the bundle level
-            // leaves the function doing a second proportional split on
-            // already-discounted values, which then triggers the
-            // last-row absorption to swallow the gap — operators saw
-            // identical sessions land at, e.g., 11,696.95 vs 8,298.05
-            // for an Aqualyx 2-session bundle. With the right
-            // per-service base, the absorption only handles
-            // sub-cent rounding, not thousand-rupee asymmetry.
             $calculableServices = $bundleServices->map(fn ($bs) => [
-                'service_price' => $bs->service_price,
+                'service_price' => $bs->calculated_price,
                 'calculated_price' => $bs->calculated_price,
                 'service_id' => $bs->service_id,
             ])->toArray();
@@ -2927,6 +2067,8 @@ final class PlanService
         } else {
             $this->storeMembershipData($package, $data, $isFullyPaid);
         }
+
+        $this->updatePlanName($package);
 
         if ($this->hasPayment($data)) {
             $shouldUseFullPaymentFlow = $isStudentMembership
@@ -3230,6 +2372,61 @@ final class PlanService
             'created_at' => Filters::getCurrentTimeStamp(),
             'updated_at' => Filters::getCurrentTimeStamp(),
         ]);
+    }
+
+    // ── Plan Name Generation ────────────────────────────
+
+    private function updatePlanName(Packages $package): void
+    {
+        if ($package->plan_type === PlanType::Membership) {
+            $membershipNames = PackageBundles::where('package_bundles.package_id', $package->id)
+                ->join('membership_types', 'package_bundles.membership_type_id', '=', 'membership_types.id')
+                ->orderBy('package_bundles.id')
+                ->limit(2)
+                ->pluck('membership_types.name')
+                ->toArray();
+
+            if (! empty($membershipNames)) {
+                $planName = implode(', ', $membershipNames);
+                Packages::where('id', $package->id)->update(['plan_name' => $planName]);
+                $package->plan_name = $planName;
+            }
+
+            return;
+        }
+
+        $totalBundleCount = PackageBundles::where('package_id', $package->id)->count();
+
+        $names = PackageBundles::where('package_bundles.package_id', $package->id)
+            ->leftJoin('services', function ($join) {
+                $join->on('package_bundles.bundle_id', '=', 'services.id')
+                    ->where('package_bundles.source_type', '=', 'service');
+            })
+            ->leftJoin('bundles', function ($join) {
+                $join->on('package_bundles.bundle_id', '=', 'bundles.id')
+                    ->where('package_bundles.source_type', '=', 'bundle');
+            })
+            ->leftJoin('service_bundles', function ($join) {
+                $join->on('package_bundles.bundle_id', '=', 'service_bundles.id')
+                    ->where('package_bundles.source_type', '=', 'service_bundle');
+            })
+            ->leftJoin('services as sb_services', 'service_bundles.service_id', '=', 'sb_services.id')
+            ->orderBy('package_bundles.id')
+            ->limit(2)
+            ->selectRaw("COALESCE(services.name, bundles.name, CONCAT(package_bundles.qty, 'x ', sb_services.name)) as name")
+            ->pluck('name')
+            ->filter()
+            ->values()
+            ->toArray();
+
+        $planName = ! empty($names) ? implode(', ', $names) : '-';
+
+        if ($totalBundleCount > 2) {
+            $planName .= '...';
+        }
+
+        Packages::where('id', $package->id)->update(['plan_name' => $planName]);
+        $package->plan_name = $planName;
     }
 
     // ── Voucher Handling ────────────────────────────────
@@ -3600,56 +2797,28 @@ final class PlanService
 
     private function hasChildRecords(int|string $packageId): bool
     {
-        // Match `deletePlan`'s scoping: only non-soft-deleted children block.
-        // Without `deleted_at IS NULL`, bulk-delete is stricter than single-
-        // delete and silently skips plans the operator can otherwise delete
-        // one-by-one (an inconsistency that surfaced as "no records were
-        // deleted" with no clear reason).
-        return DB::table('invoice_details')->where('package_id', $packageId)->whereNull('deleted_at')->exists()
-            || DB::table('package_advances')->where('package_id', $packageId)->whereNull('deleted_at')->exists();
+        return DB::table('invoice_details')->where('package_id', $packageId)->exists()
+            || DB::table('package_advances')->where('package_id', $packageId)->exists();
     }
 
     // ── Patient Appointments Builder ────────────────────
 
-    /**
-     * Build the patient's arrived/converted consultations into the
-     * dropdown-ready shape consumed by the create-plan dialog. Accepts
-     * a list of location IDs so the dialog can show consultations across
-     * every branch the patient has visited (and the operator can access)
-     * — needed when the SPA dropped the standalone Centre field and now
-     * derives the branch from the chosen consultation.
-     *
-     * Each entry carries:
-     *   id            — composite "<appt_id>.A" key (legacy convention)
-     *   name          — "<service> - <date> - Dr X · <city>-<branch>"
-     *   doctor_id     — selected-doctor hint
-     *   location_id   — frontend reads this to set its locationId after pick
-     */
-    private function buildPatientAppointments(int|string $patientId, array $locationIds): array
+    private function buildPatientAppointments(int|string $patientId, int|string $locationId): array
     {
-        if (empty($locationIds)) {
-            return [];
-        }
-
         $appointments = DB::table('appointments')
             ->leftJoin('services', 'appointments.service_id', '=', 'services.id')
             ->leftJoin('users as doctors', 'appointments.doctor_id', '=', 'doctors.id')
-            ->leftJoin('locations', 'appointments.location_id', '=', 'locations.id')
-            ->leftJoin('cities', 'locations.city_id', '=', 'cities.id')
             ->where('appointments.patient_id', $patientId)
-            ->whereIn('appointments.location_id', $locationIds)
+            ->where('appointments.location_id', $locationId)
             ->where('appointments.appointment_type_id', 1)
             ->whereIn('appointments.appointment_status_id', [2, 16])
             ->orderByDesc('appointments.created_at')
             ->select([
                 'appointments.id',
                 'appointments.created_at',
-                'appointments.location_id',
                 'appointments.doctor_id',
                 'services.name as service_name',
                 'doctors.name as doctor_name',
-                'locations.name as location_name',
-                'cities.name as city_name',
             ])
             ->get();
 
@@ -3659,56 +2828,26 @@ final class PlanService
                 continue;
             }
 
-            // Date only — the time of day adds noise and pushes the
-            // dropdown label past its truncation point. Operators pick
-            // by service + day + doctor, not by the hour:minute stamp.
-            $formattedDate = Carbon::parse($apt->created_at)->format('M j, Y');
+            $formattedDate = Carbon::parse($apt->created_at)->format('F d,Y h:i A');
+            $serviceName = $apt->service_name ?? 'Consultation';
 
             $doctorName = $apt->doctor_name ?? '';
             if ($doctorName && ! str_starts_with($doctorName, 'Dr ') && ! str_starts_with($doctorName, 'Dr.')) {
                 $doctorName = 'Dr '.$doctorName;
             }
 
-            // Cosmetic strip — branch labels arrive as "CUTERA <area>
-            // <city>" (e.g. "CUTERA DHA Karachi"). Drop the "CUTERA "
-            // brand prefix and the trailing city; the area on its own is
-            // both unambiguous and tighter for dropdown rendering.
-            $rawLocation = $apt->location_name ?? '';
-            $cityName = $apt->city_name ?? '';
-
-            $branchLabel = trim((string) preg_replace('/^\s*CUTERA\s+/i', '', $rawLocation));
-            if ($cityName !== ''
-                && strlen($branchLabel) > strlen($cityName)
-                && substr_compare($branchLabel, $cityName, -strlen($cityName), strlen($cityName), true) === 0
-            ) {
-                $branchLabel = trim(substr($branchLabel, 0, -strlen($cityName)));
-            }
-            if ($branchLabel === '') {
-                $branchLabel = $rawLocation;
-            }
-
-            // Service name (category) intentionally dropped — operators
-            // identify the consultation by date + doctor + branch and the
-            // service category was eating dropdown width without adding
-            // disambiguation power inside a single patient's history.
-            $displayName = $formattedDate;
+            $displayName = $serviceName.' - '.$formattedDate;
             if ($doctorName) {
-                $displayName .= ' · '.$doctorName;
-            }
-            if ($branchLabel) {
-                $displayName .= ' · '.$branchLabel;
+                $displayName .= ' - '.$doctorName;
             }
 
-            $result[] = [
+            $result[$apt->id] = [
                 'id' => $apt->id.'.A',
                 'name' => $displayName,
                 'doctor_id' => $apt->doctor_id,
-                'location_id' => (int) $apt->location_id,
             ];
         }
 
-        // Sequential numeric keys so the response is a JSON array (not an
-        // object) — frontend uses Array.prototype.map on this list.
         return $result;
     }
 
@@ -3774,20 +2913,6 @@ final class PlanService
 
         // All checks passed — proceed with deletion
         $packageService = PackageBundles::find($id);
-
-        // Idempotent: if the row is already gone (e.g. concurrent delete from
-        // a configurable-discount group teardown that hit two requests at
-        // once), treat as success so the caller doesn't see a 500. Without
-        // this guard the next line throws "Attempt to read property
-        // 'package_id' on null" because find() can't see soft-deleted rows.
-        if (! $packageService) {
-            return [
-                'success' => true,
-                'message' => 'Already removed',
-                'data' => ['id' => $id, 'total' => 0, 'old_total' => 0],
-            ];
-        }
-
         $findPackage = Packages::find($packageService->package_id);
         if ($findPackage) {
             $packageVoucher = PackageVouchers::where('package_random_id', $packageService->random_id)->where('main_service_id', $packageService->bundle_id)->first();
@@ -3801,34 +2926,41 @@ final class PlanService
             }
         }
 
+        $packageTotal = $data['package_total'] ?? '';
+        if ($packageTotal == '') {
+            $packageTotal = 0;
+        }
+        $packageTotal = str_replace(',', '', (string) $packageTotal);
+
+        $total = number_format(round(($packageTotal - $packageService->tax_including_price)));
+
         PackageService::where('package_bundle_id', '=', $id)->delete();
         PackageBundles::find($id)?->forcedelete();
 
-        // Recompute the package total from the ledger after the delete, not
-        // from the caller's pre-delete `package_total` field. The legacy
-        // admin's plan-form.js passed the displayed total; the SPA's
-        // configurable-group teardown can't supply a meaningful value
-        // mid-batch (it's tearing down multiple rows in sequence), so it
-        // sends 0. Using the live sum gives the right answer in both
-        // cases AND avoids the `number_format()` round-trip that was
-        // re-introducing thousand-separator commas into the UPDATE
-        // statement (MySQL rejected `-2,995` as an invalid decimal).
-        $newTotal = (float) PackageService::where('random_id', $packageService->random_id)
-            ->sum('tax_including_price');
+        $oldTotal = PackageService::where('random_id', $packageService->random_id)->sum('tax_including_price');
 
         $updateStatus = $data['update_status'] ?? 0;
-        if ($updateStatus == 1 && $packageService->package_id) {
-            Packages::where('id', $packageService->package_id)
-                ->update(['total_price' => $newTotal]);
+        if ($updateStatus == 1) {
+            if ($packageService->package_id) {
+                Packages::where('id', $packageService->package_id)->update(['total_price' => $total]);
+            }
+        }
+
+        // Update plan_name after service removal
+        if ($packageService->package_id) {
+            $pkg = Packages::find($packageService->package_id);
+            if ($pkg) {
+                $this->updatePlanNameForPackage($pkg);
+            }
         }
 
         return [
             'success' => true,
             'message' => 'Record found',
             'data' => [
-                'total' => $newTotal,
+                'total' => $total,
                 'id' => $id,
-                'old_total' => $newTotal,
+                'old_total' => $oldTotal,
             ],
         ];
     }
@@ -3841,109 +2973,6 @@ final class PlanService
     public function deleteConfigurablePackageService(array $data): array
     {
         return $this->discountService->deleteConfigurablePackageService($data);
-    }
-
-    /**
-     * Atomic cascade delete for a configurable Buy/Get group (or any
-     * batch of package_bundles rows that should rise/fall together).
-     *
-     * Wraps voucher refunds + per-row deletes in a single DB
-     * transaction so a mid-batch failure rolls back EVERYTHING — no
-     * more "voucher refunded but row still here" or "rows 1–3 gone,
-     * row 4 fails" half-state. Closes SPA gap G6.
-     *
-     * The previous SPA flow was: refund all vouchers (best-effort,
-     * errors swallowed) → loop sequentially through ids calling
-     * `deletePackageService`. If any step failed, earlier work was
-     * committed and the operator had to manually reconcile.
-     *
-     * @param  array{
-     *   ids: int[],
-     *   random_id?: string,
-     *   patient_id?: int,
-     *   vouchers?: array<int, array{voucher_id: int, amount: float}>
-     * }  $data
-     * @return array{success: bool, message: string, data?: array, status_code?: int}
-     */
-    public function cascadeDeleteGroup(array $data): array
-    {
-        $ids = array_values(array_unique(array_map('intval', $data['ids'] ?? [])));
-        if (empty($ids)) {
-            return ['success' => false, 'message' => 'No ids supplied for cascade delete.', 'status_code' => 422];
-        }
-
-        $vouchers = $data['vouchers'] ?? [];
-        $patientId = isset($data['patient_id']) ? (int) $data['patient_id'] : null;
-
-        try {
-            return DB::transaction(function () use ($ids, $vouchers, $patientId, $data) {
-                // Step 1 — voucher refunds. If any fails, the
-                // transaction rolls back the entire batch (and the
-                // already-applied refunds are reverted). The previous
-                // SPA loop swallowed these errors silently; here a
-                // partial failure is loud and fully recoverable.
-                foreach ($vouchers as $v) {
-                    if (! $patientId) {
-                        throw new \RuntimeException('patient_id required when refunding vouchers in cascade delete.');
-                    }
-                    $voucherResult = $this->refundVoucherAmount(
-                        (int) $v['voucher_id'],
-                        $patientId,
-                        (float) $v['amount'],
-                    );
-                    if (empty($voucherResult['success'])) {
-                        throw new \RuntimeException(
-                            'Voucher refund failed for voucher_id='.(int) $v['voucher_id']
-                            .': '.($voucherResult['message'] ?? 'unknown error'),
-                        );
-                    }
-                }
-
-                // Step 2 — per-row delete. We dispatch each id
-                // through the existing single-row delete so the
-                // consumed-session guards + total recompute stay
-                // exactly what they were. A 'success: false' from
-                // any row throws, rolling back EVERYTHING.
-                $removed = [];
-                foreach ($ids as $id) {
-                    $rowResult = $this->deletePackageService([
-                        'id' => $id,
-                        'random_id' => $data['random_id'] ?? null,
-                        'package_total' => $data['package_total'] ?? 0,
-                        'update_status' => 1,
-                    ]);
-                    if (empty($rowResult['success'])) {
-                        throw new \RuntimeException(
-                            'Row delete failed for id='.$id
-                            .': '.($rowResult['message'] ?? 'unknown error'),
-                        );
-                    }
-                    $removed[] = $id;
-                }
-
-                return [
-                    'success' => true,
-                    'message' => 'Cascade delete committed',
-                    'data' => [
-                        'removed_ids' => $removed,
-                        'voucher_refunds' => count($vouchers),
-                    ],
-                ];
-            });
-        } catch (\Throwable $e) {
-            \Log::error('cascadeDeleteGroup failed — transaction rolled back', [
-                'ids' => $ids,
-                'voucher_count' => count($vouchers),
-                'error' => $e->getMessage(),
-            ]);
-
-            return [
-                'success' => false,
-                'message' => 'Cascade delete rolled back: '.$e->getMessage(),
-                'status_code' => 500,
-                'data' => ['removed_ids' => [], 'voucher_refunds' => 0],
-            ];
-        }
     }
 
     /**
@@ -3985,6 +3014,9 @@ final class PlanService
             $packageAdvance->account_id = Auth::user()->account_id;
             $packageAdvance->created_by = Auth::id();
             $packageAdvance->save();
+
+            // Always regenerate plan_name from services/bundles
+            $this->updatePlanNameForPackage($package);
         }
 
         return ['success' => true, 'message' => 'Bundle plan updated successfully'];
@@ -4021,6 +3053,58 @@ final class PlanService
     }
 
     // ──────────────────────────────────────────────────
+    //  Plan Name Helper
+    // ──────────────────────────────────────────────────
+
+    /**
+     * Update plan name for a package based on its bundles/memberships.
+     */
+    public function updatePlanNameForPackage(Packages $package): void
+    {
+        if ($package->plan_type === 'membership') {
+            $membershipNames = PackageBundles::where('package_bundles.package_id', $package->id)
+                ->join('membership_types', 'package_bundles.membership_type_id', '=', 'membership_types.id')
+                ->orderBy('package_bundles.id', 'asc')
+                ->limit(2)
+                ->pluck('membership_types.name')
+                ->toArray();
+
+            if (! empty($membershipNames)) {
+                $planName = implode(', ', $membershipNames);
+                Packages::where('id', $package->id)->update(['plan_name' => $planName]);
+            }
+
+            return;
+        }
+
+        $totalBundleCount = PackageBundles::where('package_id', $package->id)->count();
+
+        if ($package->plan_type === 'plan') {
+            $names = PackageBundles::where('package_bundles.package_id', $package->id)
+                ->join('services', 'package_bundles.bundle_id', '=', 'services.id')
+                ->orderBy('package_bundles.id', 'asc')
+                ->limit(2)
+                ->pluck('services.name')
+                ->toArray();
+        } else {
+            $names = PackageBundles::where('package_bundles.package_id', $package->id)
+                ->join('bundles', 'package_bundles.bundle_id', '=', 'bundles.id')
+                ->orderBy('package_bundles.id', 'asc')
+                ->limit(2)
+                ->pluck('bundles.name')
+                ->toArray();
+        }
+
+        $planName = ! empty($names) ? implode(', ', $names) : '-';
+
+        if ($package->plan_type === 'plan' && $totalBundleCount > 2) {
+            $planName .= '...';
+        }
+
+        Packages::where('id', $package->id)->update(['plan_name' => $planName]);
+    }
+
+    // ──────────────────────────────────────────────────
     //  Bundle & Membership Service Methods
     // ──────────────────────────────────────────────────
 
@@ -4032,39 +3116,6 @@ final class PlanService
      */
     public function addBundleService(array $data): array
     {
-        // Strict one-bundle-per-plan rule (matches legacy
-        // `create-bundle.js` which guarded with a toastr). Applies to
-        // both `bundle` and `service_bundle` source types — the legacy
-        // dropdown listed both in the same picker and the guard didn't
-        // discriminate. Defense-in-depth — the SPA already disables
-        // the Add button, but a programmatic POST would slip past it.
-        // Membership rows live in their own slot (membership_type_id
-        // is NOT NULL) and are excluded from this count.
-        $randomId = $data['random_id'] ?? null;
-        $existingPackage = $randomId
-            ? Packages::where('random_id', $randomId)->first()
-            : null;
-        if ($existingPackage) {
-            $existingBundleCount = PackageBundles::where('package_id', $existingPackage->id)
-                ->whereNull('membership_type_id')
-                ->count();
-            if ($existingBundleCount > 0 && (string) $existingPackage->plan_type === 'bundle') {
-                throw new PlanException(
-                    'A plan can have only one bundle. Remove the current bundle to add a different one.'
-                );
-            }
-        } elseif ($randomId) {
-            $stagedBundleCount = PackageBundles::where('random_id', $randomId)
-                ->whereNull('package_id')
-                ->whereNull('membership_type_id')
-                ->count();
-            if ($stagedBundleCount > 0) {
-                throw new PlanException(
-                    'A plan can have only one bundle. Remove the current bundle to add a different one.'
-                );
-            }
-        }
-
         // Route to service bundle handler if source_type is 'service_bundle'
         if (($data['source_type'] ?? 'bundle') === 'service_bundle') {
             return $this->addServiceBundleToPlan($data);
@@ -4098,8 +3149,8 @@ final class PlanService
             'tax_percentage' => $taxPct,
         ];
 
-        // Org-wide tax treatment from sys-tax-treatment (replaces bundle's per-row col).
-        if (Settings::getOrgTaxTreatment(Auth::user()->account_id) == Config::get('constants.tax_both')) {
+        // Calculate tax based on bundle's tax treatment type
+        if ($bundle->tax_treatment_type_id == Config::get('constants.tax_both')) {
             $bundleData['tax_exclusive_net_amount'] = $netAmount;
             $bundleData['tax_price'] = ceil($netAmount * ($taxPct / 100));
             $bundleData['tax_including_price'] = ceil($netAmount + $bundleData['tax_price']);
@@ -4115,58 +3166,31 @@ final class PlanService
         $findPackage = Packages::where('random_id', $data['random_id'])->first();
         $isEditMode = $findPackage !== null;
 
-        // Stage-draft mode (SPA opt-in): when no package exists yet but the
-        // caller asks for draft persistence, create the PackageBundles +
-        // PackageService rows with `random_id` set and `package_id = null`
-        // — symmetric to `savepackages_service_for_plan` for plan/services.
-        // The final `savepackages` call's simple-id branch then binds them
-        // by random_id. Legacy bundle save (no flag) keeps the old return-
-        // calculations-only behaviour, since legacy ships the structured
-        // array on save.
-        $stageDraft = ! $isEditMode && ($data['stage_draft'] ?? false);
-        $shouldPersist = $isEditMode || $stageDraft;
-
         // Get bundle services and calculate proportional prices
         $bundleServices = BundleHasServices::with('service')
             ->where('bundle_id', $bundle->id)
             ->get();
 
-        // Same fix as the final-save path (search "Aqualyx" comment).
-        // `service_price` is the catalog regular per-row price, NOT
-        // the pre-distributed sold-share. The `Bundles::calculatePrices`
-        // contract is "scale per-service regulars down to the bundle's
-        // sold price" — passing already-discounted values here was
-        // double-counting the discount, then absorbing the
-        // disagreement into the last row.
         $calculableServices = $bundleServices->map(fn ($bs) => [
-            'service_price' => $bs->service_price,
+            'service_price' => $bs->calculated_price,
             'calculated_price' => $bs->calculated_price,
             'service_id' => $bs->service_id,
         ])->toArray();
 
-        // The 2nd/3rd args are "regular total vs sold total" of the
-        // bundle (NOT pre-tax vs post-tax of the same price). Earlier
-        // this passed `tax_exclusive_net_amount` + `tax_including_price`,
-        // which are two tax stages of the SAME number — the function
-        // then computed a fake "markup" between them and asymmetric
-        // per-row prices were the visible symptom.
         $calculatedServicesPrices = Bundles::calculatePrices(
             $calculableServices,
-            $bundle->services_price,
+            $bundleData['tax_exclusive_net_amount'],
             $bundleData['tax_including_price']
         );
 
         $serviceIds = array_column($calculatedServicesPrices, 'service_id');
         $servicesInfo = Services::whereIn('id', $serviceIds)->get()->keyBy('id');
 
-        // Edit mode  → bind directly to the existing package (package_id set, is_allocate=1).
-        // Stage mode → draft rows (package_id=null, is_allocate=0); final save binds by random_id.
-        // Legacy ADD → no persistence; bundlesData.id falls back to catalog id.
+        // In edit mode: persist to DB immediately since package already exists
+        // In create mode: only return calculated data — persistence happens in savepackages via storeBundleTypeServices
         $packageBundleRecordId = $bundle->id;
-        $persistPackageId = $isEditMode ? $findPackage->id : null;
-        $persistIsAllocate = $isEditMode ? 1 : 0;
 
-        if ($shouldPersist) {
+        if ($isEditMode) {
             $packageBundleRecord = PackageBundles::create([
                 'random_id' => $data['random_id'],
                 'qty' => 1,
@@ -4183,8 +3207,8 @@ final class PlanService
                 'tax_price' => $bundleData['tax_price'],
                 'tax_including_price' => $bundleData['tax_including_price'],
                 'location_id' => $data['location_id'],
-                'package_id' => $persistPackageId,
-                'is_allocate' => $persistIsAllocate,
+                'package_id' => $findPackage->id,
+                'is_allocate' => 1,
             ]);
             $packageBundleRecordId = $packageBundleRecord->id;
         }
@@ -4215,11 +3239,11 @@ final class PlanService
                 $taxPrice = ceil($taxIncludingPrice - $taxExclusivePrice);
             }
 
-            // Persist PackageService in edit mode (linked) or stage mode (draft).
-            if ($shouldPersist) {
+            // Only persist PackageService records in edit mode
+            if ($isEditMode) {
                 PackageService::create([
                     'random_id' => $data['random_id'],
-                    'package_id' => $persistPackageId,
+                    'package_id' => $findPackage->id,
                     'package_bundle_id' => $packageBundleRecordId,
                     'service_id' => $calculatedService['service_id'],
                     'price' => $calculatedService['calculated_price'],
@@ -4247,15 +3271,11 @@ final class PlanService
             ];
         }
 
-        // Refresh the plan total only in edit mode — the package name is
-        // the zero-padded `packages.id` (set once at create time) and
-        // doesn't track bundle composition, so there's nothing to
-        // regenerate here on bundle add. The earlier call to
-        // `updatePlanNameForPackage` was orphaned when the helper was
-        // removed; calling it now hits "Call to undefined method".
+        // Update plan name and total only in edit mode
         if ($isEditMode) {
             $newTotal = PackageBundles::where('package_id', $findPackage->id)->sum('tax_including_price');
             $findPackage->update(['total_price' => $newTotal]);
+            $this->updatePlanNameForPackage($findPackage);
         }
 
         return [
@@ -4415,13 +3435,11 @@ final class PlanService
             ];
         }
 
-        // Refresh plan total in edit mode. The orphaned
-        // `updatePlanNameForPackage` call here was removed alongside the
-        // helper itself — the package name is just the zero-padded id
-        // and doesn't need regenerating when bundles change.
+        // Update plan total in edit mode
         if ($isEditMode) {
             $newTotal = PackageBundles::where('package_id', $findPackage->id)->sum('tax_including_price');
             $findPackage->update(['total_price' => $newTotal]);
+            $this->updatePlanNameForPackage($findPackage);
         }
 
         return [
@@ -4712,16 +3730,6 @@ final class PlanService
                 ActivityLogger::logPaymentDeleted($packageadvanceinfo->cash_amount, $package, $patient, $location);
             }
 
-            // Conversion-state cascade — finance policy Q4: deleting
-            // payments to the point where net cash ≤ 0 reverts the
-            // appointment from Converted, even if the plan itself
-            // still exists as a zero-money shell. Defers to the
-            // single-source-of-truth helper.
-            $appointmentId = ConversionStateService::appointmentIdForPackage((int) $packageadvanceinfo->package_id);
-            if ($appointmentId !== null) {
-                ConversionStateService::revertIfNeeded($appointmentId);
-            }
-
             return [
                 'success' => true,
                 'message' => 'Record deleted successfully.',
@@ -4781,90 +3789,56 @@ final class PlanService
             return ['success' => false, 'message' => 'Package service or bundle ID required'];
         }
 
-        // Sold-by eligibility — patient-context ONLY. Mirrors the
-        // create-time rule in `getAppointmentInfo`: doctors who have
-        // actually touched this patient at this centre, NOT every
-        // active doctor + FDM allocated to the centre. The previous
-        // implementation broadened the pool so an admin could
-        // attribute a sale to anyone at the centre — that contradicts
-        // the auto-pick policy (which only picks the consulting
-        // doctor) and was clarified as wrong on 2026-05-02.
-        //
-        //   ELIGIBLE = (most-recent arrived/converted consultancy
-        //               doctor at this centre, for THIS patient)
-        //            ∪ (doctors who treated this patient at this
-        //               centre in the last 30 days)
-        //            ∪ (current sold_by, always — for audit
-        //               continuity on legacy plans)
-        //
-        // No allocation filter, no FDM bypass. The auto-pick and the
-        // reassign dropdown now offer the same set of names.
-        $package = Packages::find($packageServiceId > 0
-            ? PackageService::find($packageServiceId)?->package_id
-            : PackageBundles::find($bundleId)?->package_id);
-        $patientId = $package?->patient_id;
+        // Get all active doctors from the location
+        $doctorsIds = DoctorHasLocations::where('is_allocated', 1)->where('location_id', $locationId)->pluck('user_id')->toArray();
 
+        $allDoctors = User::whereIn('id', $doctorsIds)
+            ->where('active', 1)
+            ->pluck('name', 'id')
+            ->toArray();
+
+        // Get FDM users by getting the user_ids associated with the center (location_id)
+        $findFDM = UserHasLocations::where('location_id', $locationId)->pluck('user_id')->toArray();
+
+        $findRole = DB::table('roles')->where('name', 'FDM')->first();
+        $fdmUserIds = [];
+        if ($findRole) {
+            $roleId = $findRole->id;
+            $roleHasUser = RoleHasUsers::where('role_id', $roleId)->pluck('user_id')->toArray();
+            $fdmUserIds = array_intersect($findFDM, $roleHasUser);
+        }
+
+        $selectedUserId = $currentSoldBy;
         $usersToShow = [];
 
-        // Always include the current sold_by — preserves attribution
-        // on legacy/transferred plans even if the user has since
-        // changed roles or left the centre.
-        if ($currentSoldBy) {
-            $currentSoldByUser = User::find($currentSoldBy);
+        // Ensure the currently selected user (sold_by) is ALWAYS included, even if inactive
+        if ($selectedUserId) {
+            $currentSoldByUser = User::find($selectedUserId);
             if ($currentSoldByUser) {
                 $usersToShow[$currentSoldByUser->id] = $currentSoldByUser->name;
             }
         }
 
-        if ($patientId) {
-            // Most-recent arrived/converted consultancy doctor at the
-            // centre for this patient (the auto-pick anchor).
-            $arrivedStatus = DB::table('appointment_statuses')->where('is_arrived', 1)->first();
-            $convertedStatus = DB::table('appointment_statuses')->where('is_converted', 1)->first();
-            $validStatusIds = array_filter([$arrivedStatus?->id, $convertedStatus?->id]);
-            $consultancyType = DB::table('appointment_types')->where('slug', 'consultancy')->first();
-
-            $consultancyDoctorId = DB::table('appointments')
-                ->where('patient_id', $patientId)
-                ->where('location_id', $locationId)
-                ->where('appointment_type_id', $consultancyType?->id)
-                ->whereIn('appointment_status_id', $validStatusIds)
-                ->whereNull('deleted_at')
-                ->orderByDesc('scheduled_date')
-                ->orderByDesc('scheduled_time')
-                ->value('doctor_id');
-
-            // Doctors who treated this patient at this centre in the
-            // last 30 days (status_id=2 / type_id=2 mirror the
-            // create-time recent-treatment filter).
-            $recentTreatmentDoctorIds = DB::table('appointments')
-                ->where('patient_id', $patientId)
-                ->where('location_id', $locationId)
-                ->where('appointment_status_id', 2)
-                ->where('appointment_type_id', 2)
-                ->where('scheduled_date', '>=', now()->subDays(30)->format('Y-m-d'))
-                ->pluck('doctor_id')
-                ->unique()
-                ->toArray();
-
-            $userIdsToShow = array_unique(array_merge(
-                $consultancyDoctorId ? [$consultancyDoctorId] : [],
-                $recentTreatmentDoctorIds,
-            ));
-
-            if (! empty($userIdsToShow)) {
-                $contextUsers = User::whereIn('id', $userIdsToShow)
-                    ->pluck('name', 'id')
-                    ->toArray();
-                foreach ($contextUsers as $uId => $uName) {
-                    if (! array_key_exists($uId, $usersToShow)) {
-                        $usersToShow[$uId] = $uName;
-                    }
-                }
+        // Add all active doctors from the location
+        foreach ($allDoctors as $doctorId => $doctorName) {
+            if (! array_key_exists($doctorId, $usersToShow)) {
+                $usersToShow[$doctorId] = $doctorName;
             }
         }
 
-        $selectedUserId = $currentSoldBy;
+        // Add all active FDM users from the location
+        if (! empty($fdmUserIds)) {
+            $FDMUsers = User::whereIn('id', $fdmUserIds)
+                ->where('active', 1)
+                ->pluck('name', 'id')
+                ->toArray();
+
+            foreach ($FDMUsers as $fdmId => $fdmName) {
+                if (! array_key_exists($fdmId, $usersToShow)) {
+                    $usersToShow[$fdmId] = $fdmName;
+                }
+            }
+        }
 
         return [
             'success' => true,
@@ -5141,6 +4115,8 @@ final class PlanService
         return $this->discountService->getServiceInfoForPlan($data);
     }
 
+    /** @internal dead body placeholder for getServiceInfoForPlan */
+    /** @internal removed - extracted to PlanDiscountService */
     /**
      * Get discount info for simple plans (non-bundle).
      * Extracted from PackagesController::getdiscountinfo_for_plan().
@@ -5150,6 +4126,9 @@ final class PlanService
         return $this->discountService->getDiscountInfoForPlan($data);
     }
 
+    /** @internal dead placeholder - REMOVED */
+    private function _DEAD_getDiscountInfoForPlan_FINAL(): void {}
+
     /**
      * Get custom discount info for simple plans (non-bundle).
      * Extracted from PackagesController::getdiscountinfocustom_for_plan().
@@ -5158,6 +4137,9 @@ final class PlanService
     {
         return $this->discountService->getCustomDiscountInfoForPlan($data);
     }
+
+    /** @internal dead placeholder - REMOVED */
+    private function _DEAD_getCustomDiscountInfoForPlan(): void {}
 
     /**
      * Save service to plan - handles both simple and configurable discounts.
@@ -5176,6 +4158,12 @@ final class PlanService
     public function refundVoucherAmount(int $voucherId, int $patientId, float $amount): array
     {
         return $this->discountService->refundVoucherAmount($voucherId, $patientId, $amount);
+    }
+
+    /** @internal dead placeholder - REMOVED */
+    private function _DEAD_saveServiceForPlan(): void
+    {
+        // body removed - see PlanDiscountService::saveServiceForPlan
     }
 
     /**

@@ -123,8 +123,7 @@ class AppointmentInvoiceController extends AppointmentBaseController
                         }
                     }
 
-                    $orgTaxTreatment = Settings::getOrgTaxTreatment(Auth::user()->account_id);
-                    if ($orgTaxTreatment == Config::get('constants.tax_both') || $orgTaxTreatment == Config::get('constants.tax_is_exclusive')) {
+                    if ($serviceinfo->tax_treatment_type_id == Config::get('constants.tax_both') || $serviceinfo->tax_treatment_type_id == Config::get('constants.tax_is_exclusive')) {
                         $amount_create = $amount_create_is_inclusive = $service_price;
                         $tax_create = ceil($service_price * ($location_information->tax_percentage / 100));
                         $price = ceil($amount_create + (($amount_create * $location_information->tax_percentage) / 100));
@@ -275,10 +274,9 @@ class AppointmentInvoiceController extends AppointmentBaseController
             $is_exclusive = $package_service_info->is_exclusive;
         } else {
             if ($appointmentinfo->appointment_type->name == Config::get('constants.Service')) {
-                $orgTaxTreatment = Settings::getOrgTaxTreatment(Auth::user()->account_id);
-                if ($orgTaxTreatment == Config::get('constants.tax_both')) {
+                if ($request->tax_treatment_type_id == Config::get('constants.tax_both')) {
                     $is_exclusive = $request->exclusive_or_bundle;
-                } elseif ($orgTaxTreatment == Config::get('constants.tax_is_exclusive')) {
+                } elseif ($request->tax_treatment_type_id == Config::get('constants.tax_is_exclusive')) {
                     $is_exclusive = 1;
                 } else {
                     $is_exclusive = 0;
@@ -409,20 +407,9 @@ class AppointmentInvoiceController extends AppointmentBaseController
 
         $data_package['created_at'] = Filters::getCurrentTimeStamp();
         $data_package['updated_at'] = Filters::getCurrentTimeStamp();
-        // Skip writing a 0-amount cash-in row when consuming a session that
-        // was already paid for. The legacy code wrote one regardless of
-        // whether new cash was tendered, leaving placeholder rows in the
-        // ledger that carried no information — every aggregator already
-        // filters them out via `cash_amount > 0`, and the cash_out settle
-        // pair below carries the actual ledger entry plus the invoice link.
-        // Real cash collections (cash > 0) and non-plan consultancy invoices
-        // (no package_id) still record their cash-in row as before.
-        $shouldRecordCashIn = ! ($invoice_detail->package_id != null && (float) $request->cash <= 0);
-        if ($shouldRecordCashIn) {
-            $package_advances = PackageAdvances::createRecord_forinvoice($data_package);
-            if ($request->package_id && $request->cash > 0) {
-                Invoice_Plan_Refund_Sms_Functions::PlanCashReceived_SMS($request->package_id, $package_advances);
-            }
+        $package_advances = PackageAdvances::createRecord_forinvoice($data_package);
+        if ($request->package_id && $request->cash > 0) {
+            Invoice_Plan_Refund_Sms_Functions::PlanCashReceived_SMS($request->package_id, $package_advances);
         }
         if ($request->remaining != 0) {
             $out_transcation = $request->remaining;
@@ -463,6 +450,8 @@ class AppointmentInvoiceController extends AppointmentBaseController
             PackageService::where('id', '=', $request->package_service_id)->update(['is_consumed' => 1, 'updated_at' => Filters::getCurrentTimeStamp(), 'consumed_at' => Filters::getCurrentTimeStamp()]);
             $packagesservice = PackageService::find($request->package_service_id);
 
+            // Update plan_name in packages table
+            $this->updatePlanNameForPackage((int) $package_advances->package_id);
             $package_service_log = PackageService::updateRecordInvoice($packagesservice);
             if ($request->cash > 0) {
                 $patient = User::whereId($appointmentinfo->patient_id)->first();
@@ -498,12 +487,7 @@ class AppointmentInvoiceController extends AppointmentBaseController
             Invoice_Plan_Refund_Sms_Functions::InvoiceCashReceived_SMS($invoice, $invoice_detail, false);
         }
         $arrivedStatus = AppointmentStatuses::where('is_arrived', '=', 1)->select('id')->first();
-        // Pre-fix: the second `->where('base_appointment_status_id', '!=', ...)`
-        // condition compared a *status* id to the
-        // `appointment_type_service` constant — copy-paste bug. Real
-        // intent: only auto-arrive treatments that aren't already
-        // Arrived. Now compares against `$arrivedStatus->id`.
-        if ($arrivedStatus && Appointments::where('id', '=', $request->appointment_id)->where('appointment_type_id', '=', Config::get('constants.appointment_type_service'))->where('base_appointment_status_id', '!=', $arrivedStatus->id)->exists()) {
+        if (Appointments::where('id', '=', $request->appointment_id)->where('appointment_type_id', '=', Config::get('constants.appointment_type_service'))->where('base_appointment_status_id', '!=', Config::get('constants.appointment_type_service'))->exists()) {
             if (AppointmentStatuses::where('parent_id', '=', $arrivedStatus->id)->exists()) {
                 $appointmentStatus = AppointmentStatuses::where('parent_id', '=', $arrivedStatus->id)->where('active', '=', 1)->first();
                 if ($appointmentStatus) {
@@ -939,8 +923,7 @@ class AppointmentInvoiceController extends AppointmentBaseController
     public function getcalculatedPriceExclusicecheck(Request $request): JsonResponse
     {
         $location_info = Locations::find($request->location_id);
-        $orgTaxTreatment = Settings::getOrgTaxTreatment(Auth::user()->account_id);
-        if ($orgTaxTreatment == Config::get('constants.tax_both')) {
+        if ($request->tax_treatment_type_id == Config::get('constants.tax_both')) {
             if ($request->is_exclusive == '1') {
                 $amount_create = $request->price_orignal;
                 $tax_create = ceil($request->price_orignal * ($location_info->tax_percentage / 100));
@@ -950,7 +933,7 @@ class AppointmentInvoiceController extends AppointmentBaseController
                 $amount_create = ceil((100 * $price) / ($location_info->tax_percentage + 100));
                 $tax_create = ceil($price - $amount_create);
             }
-        } elseif ($orgTaxTreatment == Config::get('constants.tax_is_exclusive')) {
+        } elseif ($request->tax_treatment_type_id == Config::get('constants.tax_is_exclusive')) {
             $amount_create = $request->price_orignal;
             $tax_create = ceil($request->price_orignal * ($location_info->tax_percentage / 100));
             $price = ceil($amount_create + (($amount_create * $location_info->tax_percentage) / 100));
@@ -972,4 +955,61 @@ class AppointmentInvoiceController extends AppointmentBaseController
         ]);
     }
 
+    /**
+     * Update plan_name in packages table based on its bundles/services/memberships.
+     * Always overwrites plan_name (no empty-guard).
+     */
+    private function updatePlanNameForPackage(int $packageId): void
+    {
+        $package = Packages::find($packageId);
+        if (! $package) {
+            return;
+        }
+
+        if ($package->plan_type === 'membership') {
+            $membershipNames = PackageBundles::where('package_bundles.package_id', $package->id)
+                ->join('membership_types', 'package_bundles.membership_type_id', '=', 'membership_types.id')
+                ->orderBy('package_bundles.id', 'asc')
+                ->limit(2)
+                ->pluck('membership_types.name')
+                ->toArray();
+
+            if (! empty($membershipNames)) {
+                $planName = implode(', ', $membershipNames);
+                Packages::where('id', $package->id)->update(['plan_name' => $planName]);
+            }
+
+            return;
+        }
+
+        $totalBundleCount = PackageBundles::where('package_id', $package->id)->count();
+
+        if ($package->plan_type === 'plan') {
+            $names = PackageBundles::where('package_bundles.package_id', $package->id)
+                ->join('services', 'package_bundles.bundle_id', '=', 'services.id')
+                ->orderBy('package_bundles.id', 'asc')
+                ->limit(2)
+                ->pluck('services.name')
+                ->toArray();
+        } else {
+            $names = PackageBundles::where('package_bundles.package_id', $package->id)
+                ->join('bundles', 'package_bundles.bundle_id', '=', 'bundles.id')
+                ->orderBy('package_bundles.id', 'asc')
+                ->limit(2)
+                ->pluck('bundles.name')
+                ->toArray();
+        }
+
+        if (empty($names)) {
+            return;
+        }
+
+        $planName = implode(', ', $names);
+
+        if ($package->plan_type === 'plan' && $totalBundleCount > 2) {
+            $planName .= '...';
+        }
+
+        Packages::where('id', $package->id)->update(['plan_name' => $planName]);
+    }
 }

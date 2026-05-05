@@ -16,7 +16,6 @@ use App\Models\Settings;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
 class ScheduleController extends Controller
@@ -369,22 +368,16 @@ class ScheduleController extends Controller
     }
 
     /**
-     * Store repeating shifts for a resource based on weekly schedule.
-     *
-     * Accepts an optional `additional_resource_ids` array so an operator
-     * can copy the same weekly pattern to other doctors at the same location
-     * in one submit. The primary `resource_id` plus the additional ids are
-     * processed in a single DB transaction.
+     * Store repeating shifts for a resource based on weekly schedule
      */
     public function storeRepeatingShifts(Request $request): JsonResponse
     {
-        $resourceId = (int) $request->input('resource_id');
-        $locationId = (int) $request->input('location_id');
+        $resourceId = $request->input('resource_id');
+        $locationId = $request->input('location_id');
         $scheduleType = $request->input('schedule_type', 'every_week');
         $startDateStr = $request->input('start_date');
         $endDateStr = $request->input('end_date');
         $days = $request->input('days', []);
-        $additionalIds = array_values(array_filter(array_map('intval', (array) $request->input('additional_resource_ids', []))));
         $accountId = Auth::user()->account_id;
 
         if (!$resourceId || !$locationId || !$startDateStr || !$endDateStr) {
@@ -399,85 +392,6 @@ class ScheduleController extends Controller
             return $this->errorResponse('End date must be after start date', 400);
         }
 
-        // Map day names to day of week numbers (0 = Sunday, 1 = Monday, etc.)
-        $dayMap = [
-            'sunday' => 0,
-            'monday' => 1,
-            'tuesday' => 2,
-            'wednesday' => 3,
-            'thursday' => 4,
-            'friday' => 5,
-            'saturday' => 6,
-        ];
-
-        // Determine week interval based on schedule type
-        $weekInterval = match ($scheduleType) {
-            'every_2_weeks' => 2,
-            'every_3_weeks' => 3,
-            'every_4_weeks' => 4,
-            default => 1,
-        };
-
-        // Build a map of day -> shifts and validate for overlaps once up front,
-        // so a bad input fails before we touch any rota.
-        $dayShifts = [];
-        foreach ($days as $day) {
-            $dayName = strtolower($day['day']);
-            if (isset($dayMap[$dayName]) && $day['enabled'] && !empty($day['shifts'])) {
-                $overlapError = $this->validateShiftOverlaps($day['shifts']);
-                if ($overlapError) {
-                    return $this->errorResponse(ucfirst($dayName) . ': ' . $overlapError, 400);
-                }
-                $dayShifts[$dayMap[$dayName]] = $day['shifts'];
-            }
-        }
-
-        // Restrict additional ids to active doctor resources actually allocated
-        // to this location — never trust the client to enforce "same branch".
-        if (!empty($additionalIds)) {
-            $allowedIds = $this->getResourcesForLocation($locationId, 2)->pluck('id')->all();
-            $additionalIds = array_values(array_intersect($additionalIds, $allowedIds));
-        }
-
-        // Primary first, then any additional, deduped (the primary is allowed
-        // to be in either list).
-        $resourceIds = array_values(array_unique(array_merge([$resourceId], $additionalIds)));
-
-        $totalCreated = 0;
-        try {
-            DB::transaction(function () use ($resourceIds, $locationId, $accountId, $startDate, $endDate, $dayShifts, $weekInterval, &$totalCreated) {
-                foreach ($resourceIds as $rid) {
-                    $totalCreated += $this->applyRepeatingShiftsForResource(
-                        $rid, $locationId, $accountId, $startDate, $endDate, $dayShifts, $weekInterval
-                    );
-                }
-            });
-        } catch (\Throwable $e) {
-            return $this->errorResponse('Failed to save repeating shifts: ' . $e->getMessage(), 500);
-        }
-
-        return $this->successResponse('Repeating shifts saved successfully', [
-            'shifts_created' => $totalCreated,
-            'resources_processed' => count($resourceIds),
-            'start_date' => $startDate->format('Y-m-d'),
-            'end_date' => $endDate->format('Y-m-d'),
-        ]);
-    }
-
-    /**
-     * Apply a parsed weekly pattern to a single resource. Returns the number
-     * of rota-day rows created. Caller is responsible for the surrounding
-     * transaction.
-     */
-    private function applyRepeatingShiftsForResource(
-        int $resourceId,
-        int $locationId,
-        int $accountId,
-        Carbon $startDate,
-        Carbon $endDate,
-        array $dayShifts,
-        int $weekInterval
-    ): int {
         // Find the active rota for this resource at this location
         $rota = ResourceHasRota::where('resource_id', $resourceId)
             ->where('location_id', $locationId)
@@ -499,42 +413,75 @@ class ScheduleController extends Controller
             ]);
         }
 
-        // Wipe every rota day in the date range so the new pattern fully
-        // replaces the old one. Rota days with linked appointments would
-        // otherwise survive the delete and the new pattern would stack on
-        // top of them, leaving the operator with two shifts on the same day.
-        // Mirror storeShifts' behavior: unlink the appointments first
-        // (don't delete the appointments themselves), then force-delete.
-        $existingShiftIds = ResourceHasRotaDays::where('resource_has_rota_id', $rota->id)
-            ->whereDate('date', '>=', $startDate->format('Y-m-d'))
-            ->whereDate('date', '<=', $endDate->format('Y-m-d'))
-            ->pluck('id')
-            ->all();
+        // Map day names to day of week numbers (0 = Sunday, 1 = Monday, etc.)
+        $dayMap = [
+            'sunday' => 0,
+            'monday' => 1,
+            'tuesday' => 2,
+            'wednesday' => 3,
+            'thursday' => 4,
+            'friday' => 5,
+            'saturday' => 6,
+        ];
 
-        if (!empty($existingShiftIds)) {
-            DB::table('appointments')
-                ->whereIn('resource_has_rota_day_id', $existingShiftIds)
-                ->update(['resource_has_rota_day_id' => null]);
+        // Determine week interval based on schedule type
+        $weekInterval = match ($scheduleType) {
+            'every_2_weeks' => 2,
+            'every_3_weeks' => 3,
+            'every_4_weeks' => 4,
+            default => 1,
+        };
 
-            ResourceHasRotaDays::whereIn('id', $existingShiftIds)->forceDelete();
+        // Build a map of day -> shifts and validate for overlaps
+        $dayShifts = [];
+        foreach ($days as $day) {
+            $dayName = strtolower($day['day']);
+            if (isset($dayMap[$dayName]) && $day['enabled'] && !empty($day['shifts'])) {
+                // Validate shifts for this day - check for duplicates and overlaps
+                $overlapError = $this->validateShiftOverlaps($day['shifts']);
+                if ($overlapError) {
+                    return $this->errorResponse(ucfirst($dayName) . ': ' . $overlapError, 400);
+                }
+                $dayShifts[$dayMap[$dayName]] = $day['shifts'];
+            }
         }
 
+        // Delete existing rota days in the date range that don't have appointments
+        // Use whereNotExists for efficient subquery instead of loading all IDs
+        ResourceHasRotaDays::where('resource_has_rota_id', $rota->id)
+            ->whereDate('date', '>=', $startDate->format('Y-m-d'))
+            ->whereDate('date', '<=', $endDate->format('Y-m-d'))
+            ->whereNotExists(function ($query) {
+                $query->select(\DB::raw(1))
+                    ->from('appointments')
+                    ->whereColumn('appointments.resource_has_rota_day_id', 'resource_has_rota_days.id');
+            })
+            ->forceDelete();
+
+        // Generate shifts for each applicable date
         $createdCount = 0;
         $currentDate = $startDate->copy();
+        
+        // Calculate week number relative to start date (0-indexed)
+        // Week 0 = first week, Week 1 = second week, etc.
         $startOfFirstWeek = $startDate->copy()->startOfWeek(Carbon::MONDAY);
 
         while ($currentDate->lte($endDate)) {
+            // Calculate which week this date falls into (relative to start)
             $currentWeekStart = $currentDate->copy()->startOfWeek(Carbon::MONDAY);
             $weekNumber = $startOfFirstWeek->diffInWeeks($currentWeekStart);
 
+            // Check if this week should have shifts based on interval
+            // Week 0, 4, 8... for every 4 weeks; Week 0, 2, 4... for every 2 weeks
             if ($weekNumber % $weekInterval === 0) {
                 $dayOfWeek = $currentDate->dayOfWeek;
-
+                
                 if (isset($dayShifts[$dayOfWeek])) {
                     foreach ($dayShifts[$dayOfWeek] as $shift) {
                         $startTime = $this->convertTo24Hour($shift['start_time']);
                         $endTime = $this->convertTo24Hour($shift['end_time']);
 
+                        // Handle midnight end time: 00:00 means end of day, so end_timestamp should be next day
                         $dateStr = $currentDate->format('Y-m-d');
                         $endTimestamp = $endTime === '00:00'
                             ? Carbon::parse($dateStr)->addDay()->startOfDay()->format('Y-m-d H:i:s')
@@ -560,27 +507,10 @@ class ScheduleController extends Controller
             $currentDate->addDay();
         }
 
-        return $createdCount;
-    }
-
-    /**
-     * List active resources (doctors by default) for a location. Used by the
-     * SPA's repeating-shifts page to populate the "also apply to" multiselect
-     * without paying the cost of `getShifts`.
-     */
-    public function getResources(Request $request): JsonResponse
-    {
-        $locationId = (int) $request->input('location_id');
-        $resourceTypeId = (int) $request->input('resource_type_id', 2);
-
-        if (!$locationId) {
-            return $this->errorResponse('Missing required parameters', 400);
-        }
-
-        $resources = $this->getResourcesForLocation($locationId, $resourceTypeId);
-
-        return $this->successResponse('Resources retrieved successfully', [
-            'resources' => $resources,
+        return $this->successResponse('Repeating shifts saved successfully', [
+            'shifts_created' => $createdCount,
+            'start_date' => $startDate->format('Y-m-d'),
+            'end_date' => $endDate->format('Y-m-d'),
         ]);
     }
 

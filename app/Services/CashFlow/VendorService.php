@@ -333,12 +333,6 @@ class VendorService
             'opening_balance' => round($openingBalance, 2),
             'date_from' => $dateFrom,
             'date_to' => $dateTo,
-            // Flat fields the SPA's vendor-detail KPI cards read directly.
-            // The nested period_stats stays for any older consumer until
-            // we confirm nothing else relies on it.
-            'period_purchases' => round((float) $periodPurchases, 2),
-            'period_payments' => round((float) $periodPayments, 2),
-            'closing_balance' => round((float) $closingBalance, 2),
             'period_stats' => [
                 'total_purchases' => round((float) $periodPurchases, 2),
                 'total_payments' => round((float) $periodPayments, 2),
@@ -675,22 +669,11 @@ class VendorService
             $request->toArray()
         );
 
-        // Admin notification is best-effort — if a permission name referenced
-        // by the notifier hasn't been seeded yet (Spatie throws PermissionDoesNotExist
-        // on lookup of unknown names), we still want the request to land. Log
-        // the failure for ops to follow up, then return the saved request.
-        try {
-            $this->notificationService->notifyVendorRequest(
-                $data['name'],
-                Auth::user()->name,
-                $accountId
-            );
-        } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::warning(
-                'notifyVendorRequest failed: ' . $e->getMessage(),
-                ['file' => $e->getFile(), 'line' => $e->getLine(), 'request_id' => $request->id]
-            );
-        }
+        $this->notificationService->notifyVendorRequest(
+            $data['name'],
+            Auth::user()->name,
+            $accountId
+        );
 
         return $request;
     }

@@ -280,23 +280,6 @@ return [
             'created_at' => \Carbon\Carbon::now(),
             'updated_at' => \Carbon\Carbon::now(),
         ],
-        // Org-wide pricing convention. Source of truth for whether prices
-        // entered into services / packages / bundles are tax-inclusive or
-        // tax-exclusive. References config('constants.tax_*') ids:
-        //   1 = Both (legacy "no opinion" — avoid for new installs)
-        //   2 = Exclusive
-        //   3 = Inclusive (default; most common in UAE retail)
-        // Read sites that previously consulted per-row `tax_treatment_type_id`
-        // on services/bundles will move to read this row instead.
-        12 => [
-            'id' => 12,
-            'name' => 'Tax Treatment',
-            'data' => '3',
-            'slug' => 'sys-tax-treatment',
-            'account_id' => '1',
-            'created_at' => \Carbon\Carbon::now(),
-            'updated_at' => \Carbon\Carbon::now(),
-        ],
     ],
 
     // User Operator Settings

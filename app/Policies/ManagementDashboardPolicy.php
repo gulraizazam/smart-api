@@ -9,8 +9,8 @@ use App\Services\Dashboard\Support\ResourceScopeResolver;
 
 /**
  * Gate for Management Dashboard access. Branch visibility is delegated to
- * ResourceScopeResolver (data-driven via user_has_locations); this policy
- * only answers capability questions.
+ * ResourceScopeResolver (data-driven via user_branches); this policy only
+ * answers capability questions.
  */
 final class ManagementDashboardPolicy
 {

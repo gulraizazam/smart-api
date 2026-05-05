@@ -48,18 +48,8 @@ class OrderDetail extends BaseModel
                 $data['order_id'] = $order_id;
                 $data['inventory_id'] = $inventory_id;
                 
-                $discountAmount = $discount > 0 ? ($originalPrice * ($discount / 100)) : 0;
-                $discountedPrice = $originalPrice - $discountAmount;
-
-                // The legacy code only set `sale_price` to the discounted
-                // value, but `sale_price_after_discount` is NOT NULL on the
-                // schema with no default — inserts blew up at MySQL.
-                // Stamp both, plus `discount_price` (the per-unit discount
-                // amount) so the row carries every column the report
-                // queries downstream expect.
-                $data['sale_price'] = $originalPrice;
-                $data['discount_price'] = $discountAmount;
-                $data['sale_price_after_discount'] = $discountedPrice;
+                $discountedPrice = $discount > 0 ? $originalPrice - ($originalPrice * ($discount / 100)) : $originalPrice;
+                $data['sale_price'] = $discountedPrice;
                 $data['order_type'] = 'sale';
                 $data['stock_type'] = 'out';
 

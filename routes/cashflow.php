@@ -143,8 +143,6 @@ Route::prefix('cashflow')->name('cashflow.')->group(function () {
     // Dashboard
     Route::prefix('dashboard')->name('dashboard.')->middleware('permission:cashflow_dashboard')->group(function () {
         Route::get('data', [CashFlowDashboardController::class, 'dashboardData'])->name('data');
-        Route::get('snapshot', [CashFlowDashboardController::class, 'dashboardSnapshot'])->name('snapshot');
-        Route::get('widgets', [CashFlowDashboardController::class, 'dashboardWidgets'])->name('widgets');
         Route::get('reconciliation', [CashFlowDashboardController::class, 'dashboardReconciliation'])->name('reconciliation');
     });
 

@@ -360,23 +360,12 @@ final class VoucherTypeService
 
     public function getListing(?string $search = null, int $limit = 50): array
     {
-        // Returns id + name + the configured default amount so the SPA's
-        // "Issue voucher" dialog can prefill the amount field on selection.
-        // Shape: array of { id, name, amount } — the SPA normaliser
-        // (`normaliseListing` in voucher-types-api.ts) accepts both this
-        // object form and the legacy id→name dict, so older clients still
-        // render correctly even though they ignore the new field.
         return Discounts::where('discount_type', self::DISCOUNT_TYPE)
             ->when($search, fn ($q, $s) => $q->where('name', 'like', '%'.$s.'%'))
             ->orderBy('name')
             ->limit($limit)
-            ->get(['id', 'name', 'amount'])
-            ->map(fn ($v) => [
-                'id' => (int) $v->id,
-                'name' => (string) $v->name,
-                'amount' => $v->amount !== null ? (float) $v->amount : null,
-            ])
-            ->all();
+            ->pluck('name', 'id')
+            ->toArray();
     }
 
     // ── Filter Helpers ──────────────────────────────────

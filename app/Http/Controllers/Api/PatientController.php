@@ -62,9 +62,33 @@ class PatientController extends Controller
     |--------------------------------------------------------------------------
     */
 
-    // create() and store() removed: patients are created only as a
-    // side-effect of booking a consultation, appointment, or treatment
-    // (AppointmentService::create handles the User::create + Lead pairing).
+    public function create(): JsonResponse
+    {
+        try {
+            if (!Gate::allows('patients_manage')) {
+                return $this->unauthorized();
+            }
+
+            return $this->success('Record found.', $this->patientService->getCreateData());
+        } catch (Exception $e) {
+            return $this->exceptionToResponse($e);
+        }
+    }
+
+    public function store(PatientRequest $request): JsonResponse
+    {
+        try {
+            if (!Gate::allows('patients_manage')) {
+                return $this->unauthorized();
+            }
+
+            $result = $this->patientService->create($request->validated());
+
+            return $this->fromService($result);
+        } catch (Exception $e) {
+            return $this->exceptionToResponse($e);
+        }
+    }
 
     public function show(int $id): JsonResponse
     {

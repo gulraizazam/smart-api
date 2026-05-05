@@ -8,7 +8,6 @@ use App\Models\Appointments;
 use App\Models\AppointmentStatuses;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 
 class AppointmentsReportService
 {
@@ -31,33 +30,23 @@ class AppointmentsReportService
     ): Collection {
         $statusIds = $this->getArrivedConvertedStatusIds();
 
-        // Pre-aggregate first invoice per appointment in a derived table.
-        // This replaces a per-row correlated subquery + bulk hasInvoices
-        // eager-load with a single grouped index scan over invoices, joined
-        // back to the narrow appointment set.
-        $firstInvoice = DB::table('invoices')
-            ->select('appointment_id', DB::raw('MIN(created_at) as first_invoice_at'))
-            ->whereNotNull('appointment_id')
-            ->groupBy('appointment_id');
-
-        return Appointments::query()
-            ->select('appointments.*')
-            ->selectRaw('first_invoice.first_invoice_at as first_invoice_at')
-            ->joinSub($firstInvoice, 'first_invoice', 'first_invoice.appointment_id', '=', 'appointments.id')
-            ->with([
-                'patient:id,name',
-                'location:id,name',
-                'user:id,name',
-            ])
-            ->where('appointments.appointment_type_id', 1)
-            ->whereIn('appointments.appointment_status_id', $statusIds)
-            ->whereBetween('appointments.created_at', [$startDate, $endDate])
-            ->when(!empty($centreIds), fn ($q) => $q->whereIn('appointments.location_id', $centreIds))
-            ->when($createdBy, fn ($q, $id) => $q->where('appointments.created_by', $id))
-            ->whereRaw(
-                'TIMESTAMPDIFF(MINUTE, appointments.created_at, first_invoice.first_invoice_at) <= ?',
-                [$timeInterval]
-            )
+        return Appointments::with([
+            'patient:id,name',
+            'location:id,name',
+            'user:id,name',
+            'hasInvoices' => fn ($q) => $q->orderBy('created_at', 'asc'),
+        ])
+            ->where('appointment_type_id', 1)
+            ->whereIn('appointment_status_id', $statusIds)
+            ->whereHas('hasInvoices', function ($query) use ($timeInterval) {
+                $query->havingRaw(
+                    'TIMESTAMPDIFF(MINUTE, appointments.created_at, MIN(invoices.created_at)) <= ?',
+                    [$timeInterval]
+                );
+            })
+            ->when(!empty($centreIds), fn ($q) => $q->whereIn('location_id', $centreIds))
+            ->when($createdBy, fn ($q, $id) => $q->where('created_by', $id))
+            ->whereBetween('created_at', [$startDate, $endDate])
             ->get();
     }
 

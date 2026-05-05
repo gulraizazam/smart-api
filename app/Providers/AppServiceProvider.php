@@ -26,7 +26,6 @@ use App\Models\PlanInvoice;
 use App\Models\Services;
 use App\Models\User;
 use App\Observers\ActivityLogObserver;
-use App\Observers\MembershipObserver;
 use App\Observers\CashFlow\CashTransferObserver;
 use App\Observers\CashFlow\ExpenseObserver;
 use App\Observers\CashFlow\LocationCashflowObserver;
@@ -49,15 +48,12 @@ use Illuminate\Auth\Events\Lockout;
 use Illuminate\Auth\Events\Login;
 use Illuminate\Auth\Events\Logout;
 use Illuminate\Auth\Events\PasswordReset;
-use Illuminate\Auth\Notifications\ResetPassword as ResetPasswordNotification;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
@@ -71,15 +67,7 @@ use Spatie\Permission\PermissionRegistrar;
 
 class AppServiceProvider extends ServiceProvider
 {
-    /**
-     * Where authenticated users land when they hit a "guest only" route
-     * (login, register, password reset). Was the legacy Blade home page;
-     * now points at the SPA mount inside `public/admin-v2/`. Consumed by
-     * `RedirectIfAuthenticated` and by laravel/ui's auth scaffolding
-     * (`$redirectTo` on the Auth\* controllers — those die with the
-     * legacy frontend in Phase 3, but read the constant until then).
-     */
-    public const HOME = '/admin-v2/';
+    public const HOME = '/admin/home';
 
     public function register(): void
     {
@@ -95,78 +83,11 @@ class AppServiceProvider extends ServiceProvider
         $this->configureRateLimiting();
         $this->configureAuthorization();
         $this->configurePassport();
-        $this->configurePasswordResetUrl();
         $this->ensurePermissionCacheHealth();
         $this->registerObservers();
         $this->registerAuditEventListeners();
         $this->registerAuthEventListeners();
         $this->registerObservedModels();
-        $this->registerSlowQueryLogger();
-    }
-
-    /**
-     * Phase 0 of the listing-API perf optimization: log queries slower than
-     * 250ms to storage/logs/slow-queries.log so we have a baseline to
-     * measure each per-module fix against. Off by default; opt in via
-     * `LOG_SLOW_QUERIES=true` in .env. Cheap when off (no DB::listen
-     * registration), no impact in production unless explicitly enabled.
-     *
-     * Pair with App\Http\Middleware\LogSlowRequests, which records the
-     * per-request totals (route, total ms, query count) into the same file
-     * so we catch death-by-many-fast-queries cases too.
-     */
-    private function registerSlowQueryLogger(): void
-    {
-        if (! (bool) env('LOG_SLOW_QUERIES', false)) {
-            return;
-        }
-
-        // Default 50ms in dev — high enough to skip trivially fast lookups
-        // but low enough that real list endpoints with joins routinely cross
-        // it. The original 250ms default was tuned for production and never
-        // tripped on a developer laptop with a small dataset.
-        $threshold = (float) env('LOG_SLOW_QUERIES_THRESHOLD_MS', 50);
-        $channel = Log::build([
-            'driver' => 'single',
-            'path' => storage_path('logs/slow-queries.log'),
-            'level' => 'debug',
-        ]);
-
-        DB::listen(static function ($query) use ($threshold, $channel): void {
-            if ($query->time < $threshold) {
-                return;
-            }
-
-            $route = request()->route();
-            $routeName = $route ? ($route->getName() ?: $route->uri()) : 'cli/no-route';
-
-            $channel->warning('slow-query', [
-                'ms' => round($query->time, 1),
-                'route' => $routeName,
-                'method' => request()->getMethod(),
-                'path' => request()->path(),
-                'sql' => $query->sql,
-                'bindings' => $query->bindings,
-            ]);
-        });
-    }
-
-    /**
-     * Reset-password emails default to `route('password.reset', $token)`
-     * which renders a Blade view — that view dies at cutover. Override
-     * the URL builder so emails link to the SPA's /reset-password/{token}
-     * screen instead. The email parameter rides along so the SPA's reset
-     * form can prefill it (and the backend re-validates it on submit, so
-     * a tampered email simply fails the broker check).
-     */
-    private function configurePasswordResetUrl(): void
-    {
-        ResetPasswordNotification::createUrlUsing(function ($notifiable, string $token): string {
-            $base = rtrim((string) config('app.spa_url'), '/');
-            $email = urlencode((string) $notifiable->getEmailForPasswordReset());
-
-            return "{$base}/reset-password/{$token}?email={$email}";
-        });
     }
 
     /**
@@ -391,9 +312,5 @@ class AppServiceProvider extends ServiceProvider
         StaffAdvance::observe(StaffAdvanceObserver::class);
         StaffReturn::observe(StaffReturnObserver::class);
         PackageAdvances::observe(PackageAdvanceObserver::class);
-        // Mirrors a parent membership's end_date edits onto its
-        // referrals so the data model stays internally consistent
-        // without requiring every read site to look up the parent.
-        Membership::observe(MembershipObserver::class);
     }
 }

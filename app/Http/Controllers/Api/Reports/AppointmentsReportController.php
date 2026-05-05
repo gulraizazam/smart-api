@@ -23,7 +23,7 @@ class AppointmentsReportController extends Controller
                 startDate: $request->startDate(),
                 endDate: $request->endDate(),
                 timeInterval: $request->timeInterval(),
-                centreIds: $request->centreIds(),
+                centreId: $request->centreId(),
                 createdBy: $request->createdBy(),
             );
 

@@ -62,11 +62,7 @@ final class StoreTreatmentRequest extends FormRequest
             'service_id'        => ['required', 'integer', 'exists:services,id'],
             'location_id'       => ['required', 'integer', 'exists:locations,id'],
             'doctor_id'         => ['required', 'integer', 'exists:users,id'],
-            // patient_id is nullable — when absent, TreatmentService
-            // looks the patient up by phone. If no patient is found,
-            // the request is rejected (PATIENT_NOT_REGISTERED): patient
-            // creation is reserved for the consultation booking flow.
-            'patient_id'        => ['nullable', 'integer', 'exists:users,id'],
+            'patient_id'        => ['required', 'integer', 'exists:users,id'],
             'scheduled_date'    => ['nullable', 'date'],
             'scheduled_time'    => ['nullable', 'date_format:H:i:s'],
             'base_service_id'   => ['nullable', 'integer', 'exists:services,id'],
@@ -76,7 +72,6 @@ final class StoreTreatmentRequest extends FormRequest
             'end'               => ['nullable', 'date'],
             'old_phone'         => ['nullable', 'string', 'max:20'],
             'gender'            => ['nullable', 'in:0,1,2'],
-            'email'             => ['nullable', 'email', 'max:255'],
             'referred_by'       => ['nullable', 'integer', 'exists:users,id'],
             'coming_from'       => ['nullable', 'string', 'max:255'],
             'send_message'      => ['nullable', 'boolean'],

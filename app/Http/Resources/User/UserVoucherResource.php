@@ -20,7 +20,6 @@ class UserVoucherResource extends JsonResource
             'id' => $this->id,
             'patient_id' => $this->user_id,
             'name' => $this->whenLoaded('user', fn (): string => $this->user?->name ?? 'N/A', 'N/A'),
-            'phone' => $this->whenLoaded('user', fn (): ?string => $this->user?->phone),
             'voucher_type' => $this->whenLoaded('voucher', fn (): string => $this->voucher?->name ?? 'N/A', 'N/A'),
             'total_amount' => $this->total_amount ?? 0,
             'amount' => $this->amount,

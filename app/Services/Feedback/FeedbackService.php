@@ -452,12 +452,11 @@ class FeedbackService
 
         return [
             'locations' => Locations::getActiveRecordsByCity('', ACL::getUserCentres(), $accountId),
-            'services' => Services::where(fn ($q) => $q->whereNull('parent_id')->orWhere('parent_id', 0))
+            'services' => Services::where('parent_id', 0)
                 ->where('active', 1)
                 ->where('slug', '!=', 'all')
                 ->where('name', 'NOT LIKE', '%refund%')
                 ->where('name', 'NOT LIKE', '%settlement%')
-                ->orderBy('name')
                 ->get(),
         ];
     }

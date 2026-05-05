@@ -37,19 +37,7 @@ final class StoreConfigurableDiscountRequest extends FormRequest
         $sessions = $this->input('sessions', []);
         foreach ($sessions as $key => $value) {
             $rules["sessions.{$key}"]  = ['required', 'integer', 'min:1'];
-            // GET-side discount_type must match what the runtime preview math
-            // branches on — anything outside this set falls through to the
-            // percentage path and produces wrong totals.
-            $rules["disc_type.{$key}"] = ['required', 'string', 'in:complimentory,fixed,percentage'];
-
-            // Type-aware amount validation: percentage 0–100, fixed ≥0,
-            // complimentory ignored (math forces 100% off regardless).
-            $thisType = $this->input("disc_type.{$key}");
-            if ($thisType === 'percentage') {
-                $rules["configurable_amount.{$key}"] = ['required', 'numeric', 'between:0,100'];
-            } elseif ($thisType === 'fixed') {
-                $rules["configurable_amount.{$key}"] = ['required', 'numeric', 'min:0'];
-            }
+            $rules["disc_type.{$key}"] = ['required', 'string'];
 
             $sameService = $this->input("same_service.{$key}");
             if (!$sameService) {

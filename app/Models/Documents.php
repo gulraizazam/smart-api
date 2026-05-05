@@ -37,7 +37,7 @@ class Documents extends BaseModel
     {
         return Attribute::make(
             get: fn (): ?string => $this->url
-                ? route('admin.files.patient_image_api', ['filename' => basename($this->url)])
+                ? route('admin.files.patient_image', ['filename' => basename($this->url)])
                 : null,
         );
     }

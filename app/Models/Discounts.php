@@ -445,27 +445,6 @@ class Discounts extends BaseModel
     }
 
     /**
-     * Builder scope: discounts that are applicable *right now* — active,
-     * within their start/end window, scoped to the given account. Returns
-     * a query builder so callers can chain extra filters (customer-type,
-     * role gate, allocation existence, ordering, projection, etc.) before
-     * executing.
-     *
-     * Centralised to avoid the active+date+account filter being
-     * reimplemented inline at every call site.
-     */
-    public static function applicableNow(int $accountId): \Illuminate\Database\Eloquent\Builder
-    {
-        $today = Carbon::now()->toDateString();
-
-        return self::query()
-            ->where('active', 1)
-            ->where('account_id', $accountId)
-            ->whereDate('start', '<=', $today)
-            ->whereDate('end', '>=', $today);
-    }
-
-    /**
      * Get Discount data
      *
      * @param id
@@ -473,7 +452,15 @@ class Discounts extends BaseModel
      */
     public static function getDiscount($account_id)
     {
-        return self::applicableNow((int) $account_id)->get();
+
+        $date = Carbon::now();
+
+        return self::where([
+            ['start', '<=', $date],
+            ['end', '>=', $date],
+            ['active', '=', '1'],
+            ['account_id', '=', $account_id],
+        ])->get();
     }
 
     /**

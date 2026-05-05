@@ -19,9 +19,9 @@ class AppointmentException extends Exception
         return new self($message, 422);
     }
 
-    public static function invalidStatus(?string $reason = null): self
+    public static function invalidStatus(): self
     {
-        return new self($reason ?? 'Invalid appointment status.', 422);
+        return new self('Invalid appointment status.', 422);
     }
 
     public static function invalidType(): self
@@ -77,13 +77,5 @@ class AppointmentException extends Exception
     public static function updateFailed(string $message = 'Failed to update appointment.'): self
     {
         return new self($message, 500);
-    }
-
-    public static function patientCreationNotAllowed(): self
-    {
-        return new self(
-            'No registered patient with this phone. Book a consultation first to register the patient.',
-            422,
-        );
     }
 }

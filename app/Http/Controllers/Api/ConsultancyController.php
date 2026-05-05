@@ -38,23 +38,10 @@ class ConsultancyController extends Controller
             }
 
             $filters = $request->only([
-                // Unified patient search — SPA sends `q`; the service
-                // delegates to PatientSearchService::applyPatientFilter
-                // (the canonical classifier shared with Plans / Patients /
-                // Treatments / Vouchers / Invoices listings).
-                'q',
-                'patient_id', 'phone', 'location_id', 'doctor_id', 'service_id',
-                'service_parent_id',
+                'patient_id', 'phone', 'location_id', 'doctor_id',
                 'appointment_status_id', 'scheduled_date_from', 'scheduled_date_to',
                 'created_date_from', 'created_date_to', 'scheduled',
-                'created_by', 'updated_by', 'rescheduled_by',
             ]);
-
-            // Sort shape mirrors the legacy datatable pattern:
-            //   ?sort[field]=created_at&sort[sort]=desc
-            // Validated server-side against a column whitelist in the
-            // service layer; unknown / unsafe values fall back to default.
-            $filters['sort'] = $this->resolveSort($request);
 
             $query = $this->consultancyService->getConsultancyList($filters);
 
@@ -271,44 +258,6 @@ class ConsultancyController extends Controller
     }
 
     /**
-     * Resolve a safe `[field, direction]` sort tuple from the request.
-     *
-     * Wire format follows the legacy datatable: `sort[field]=...` +
-     * `sort[sort]=asc|desc`. We don't reuse `getSortBy()` here because
-     * we want a strict enum-style whitelist (not just regex) — joining
-     * arbitrary columns into the query creates ambiguity once the
-     * Eloquent eager-loaded relations land.
-     *
-     * @return array{field: string, direction: string}
-     */
-    private function resolveSort(Request $request): array
-    {
-        $allowed = [
-            'name' => 'appointments.name',
-            'scheduled_date' => 'appointments.scheduled_date',
-            'created_at' => 'appointments.created_at',
-            'updated_at' => 'appointments.updated_at',
-            'appointment_status_id' => 'appointments.appointment_status_id',
-            'location_id' => 'appointments.location_id',
-            'doctor_id' => 'appointments.doctor_id',
-            'service_id' => 'appointments.service_id',
-        ];
-
-        $field = $request->input('sort.field');
-        $direction = strtolower((string) $request->input('sort.sort', 'desc'));
-
-        if (!is_string($field) || !array_key_exists($field, $allowed)) {
-            return ['field' => 'appointments.created_at', 'direction' => 'desc'];
-        }
-
-        if ($direction !== 'asc' && $direction !== 'desc') {
-            $direction = 'desc';
-        }
-
-        return ['field' => $allowed[$field], 'direction' => $direction];
-    }
-
-    /**
      * WhatsApp prefill payload for a consultancy: cleaned phone (PK
      * country-coded) and a templated message with `#token#` placeholders
      * substituted. The SPA uses this to open `whatsapp://send?...` /
@@ -424,36 +373,22 @@ class ConsultancyController extends Controller
         ini_set('memory_limit', '1024M');
         ini_set('max_execution_time', '0');
 
-        // Re-key SPA filter shape onto the *exact* field names the
-        // exporter reads. The legacy DataTables admin used a heterogenous
-        // `filter_*` naming (some `_id`-suffixed, some not, some
-        // `_center_` instead of `_location_`); the exporter still expects
-        // those — so anything we forget to map is silently dropped.
-        // Always force appointment_type=consultancy so this endpoint
-        // can never bleed treatment rows.
+        // Re-key SPA filter shape onto the field names the exporter
+        // expects. Always force appointment_type=consultancy so this
+        // endpoint can never bleed treatment rows.
         $consultancyTypeId = AppointmentType::Consultancy->value;
 
         $request->merge([
             'appointmenttype' => $consultancyTypeId,
-            // Scheduled-date window
             'filter_date_from' => $request->input('scheduled_date_from'),
             'filter_date_to' => $request->input('scheduled_date_to'),
-            // Created-date window — note the legacy `_id` suffix
-            'filter_created_from_id' => $request->input('created_date_from'),
-            'filter_created_to_id' => $request->input('created_date_to'),
-            // Foreign keys — note `filter_center_id` (NOT `filter_location_id`)
-            // and `filter_status_id` (NOT `filter_appointment_status_id`)
             'filter_doctor_id' => $request->input('doctor_id'),
-            'filter_center_id' => $request->input('location_id'),
+            'filter_location_id' => $request->input('location_id'),
             'filter_service_id' => $request->input('service_id'),
-            'filter_status_id' => $request->input('appointment_status_id'),
-            'filter_patient_id' => $request->input('patient_id'),
-            // User filters
-            'filter_created_by_id' => $request->input('created_by'),
-            'filter_updated_by_id' => $request->input('updated_by'),
-            'filter_rescheduled_by_id' => $request->input('rescheduled_by'),
-            // Phone — the exporter handles its own normalisation
+            'filter_appointment_status_id' => $request->input('appointment_status_id'),
             'filter_phone' => $request->input('phone'),
+            'filter_created_from' => $request->input('created_date_from'),
+            'filter_created_to' => $request->input('created_date_to'),
         ]);
 
         return Excel::download(new ExportConsultancies(10000, 0, $request), 'consultancies.xlsx');

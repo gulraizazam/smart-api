@@ -46,6 +46,13 @@
                                 </div>&nbsp;&nbsp;&nbsp;
                             @endif
 
+                            {{-- @if(Gate::allows('patients_create'))
+                                <a href="javascript:void(0);" onclick="createPatient('{{ route('admin.patients.create') }}');" class="btn btn-primary" data-toggle="modal" data-target="#modal_add_patients">
+                                    <i class="la la-plus"></i>
+                                    Add New
+                                </a>
+                            @endif --}}
+
                         <!--end::Button-->
                         </div>
 
@@ -68,6 +75,16 @@
         <!--end::Entry-->
     </div>
     <!--end::Content-->
+
+    <div class="modal fade" id="modal_add_patients" tabindex="-1" aria-hidden="true">
+        <!--begin::Modal dialog-->
+        <div class="modal-dialog modal-dialog-centered form-popup" id="patients_add">
+
+            @include('admin.patients.create')
+
+        </div>
+        <!--end::Modal dialog-->
+    </div>
 
     <div class="modal fade" id="modal_edit_patients" tabindex="-1" aria-hidden="true">
         <!--begin::Modal dialog-->

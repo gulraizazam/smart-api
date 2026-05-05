@@ -32,9 +32,7 @@ return [
 
     'lead_status_open' => 1,
     'lead_status_junk' => 5,
-    // `lead_status_converted` removed — id 3 was "Call Again", not
-    // Converted. Use `LeadStatuses::where('is_converted', 1)` instead;
-    // see `PlanAppointmentCalculation.php` for the canonical pattern.
+    'lead_status_converted' => 3,
     'lead_source_social_media' => 7,
     'appointment_status_pending' => 1,
     'appointment_status_not_show' => 3,
@@ -203,18 +201,6 @@ return [
     'tax_both' => '1',
     'tax_is_exclusive' => '2',
     'tax_is_inclusive' => '3',
-
-    /*
-     * Display labels for the org-wide `sys-tax-treatment` setting. ids
-     * match the legacy `tax_treatment_type` lookup table so this stays
-     * compatible with read sites that already branch on the constants
-     * above. "Both" is intentionally omitted — the centralized setting
-     * must commit to a single convention.
-     */
-    'tax_treatment_array' => [
-        '2' => 'Exclusive (price + tax added at checkout)',
-        '3' => 'Inclusive (price already includes tax)',
-    ],
 
     'consultancy_type_array' => [
         'in_person' => 'In Person',

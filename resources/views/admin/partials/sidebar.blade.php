@@ -59,6 +59,17 @@
                 </li>
                 @endcan
 
+                @can('users_manage')
+                <li class="menu-item {{ activeMenu('admin.user_branches.index') }}" aria-haspopup="true">
+                    <a href="{{ route('admin.user_branches.index') }}" class="menu-link">
+                        <span class="svg-icon menu-icon">
+                            <i class="font-icon la la-map-marker"></i>
+                        </span>
+                        <span class="menu-text">Branch Assignments</span>
+                    </a>
+                </li>
+                @endcan
+
                 @if (Gate::allows('permissions_manage') ||
                 Gate::allows('roles_manage') ||
                 Gate::allows('users_manage') ||

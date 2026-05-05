@@ -35,16 +35,6 @@ class AuthenticateApiWeb
             ], 401);
         }
 
-        // No Authorization header and no live web session — emit JSON 401
-        // so the SPA's `auth:expired` listener can clear local state and
-        // bounce to its own login. Redirecting to a Blade `route('login')`
-        // here ties this middleware to the legacy admin frontend that
-        // retires shortly.
-        return response()->json([
-            'success' => false,
-            'message' => 'Unauthenticated.',
-            'data' => null,
-            'errors' => [],
-        ], 401);
+        return redirect()->route('login');
     }
 }

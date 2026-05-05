@@ -199,6 +199,8 @@ class Refunds extends Model
             $package = Packages::updateRecordRefunds($request->package_id);
         }
 
+        // Always regenerate plan_name from bundles/services on refund
+        self::regeneratePlanName($packageinformation);
         if($request->case_setteled == "1"){
             $package_is_refunded_amount = PackageAdvances::where([
                 ['package_id', '=', $request->package_id],
@@ -253,6 +255,52 @@ class Refunds extends Model
             return $record;
     }
 
+
+    /**
+     * Regenerate plan_name for a package from its bundles/services.
+     */
+    private static function regeneratePlanName(Packages $package): void
+    {
+        if ($package->plan_type === 'membership') {
+            $membershipNames = PackageBundles::where('package_bundles.package_id', $package->id)
+                ->join('membership_types', 'package_bundles.membership_type_id', '=', 'membership_types.id')
+                ->orderBy('package_bundles.id', 'asc')
+                ->limit(2)
+                ->pluck('membership_types.name')
+                ->toArray();
+
+            if (!empty($membershipNames)) {
+                Packages::where('id', $package->id)->update(['plan_name' => implode(', ', $membershipNames)]);
+            }
+            return;
+        }
+
+        $totalBundleCount = PackageBundles::where('package_id', $package->id)->count();
+
+        if ($package->plan_type === 'plan') {
+            $names = PackageBundles::where('package_bundles.package_id', $package->id)
+                ->join('services', 'package_bundles.bundle_id', '=', 'services.id')
+                ->orderBy('package_bundles.id', 'asc')
+                ->limit(2)
+                ->pluck('services.name')
+                ->toArray();
+        } else {
+            $names = PackageBundles::where('package_bundles.package_id', $package->id)
+                ->join('bundles', 'package_bundles.bundle_id', '=', 'bundles.id')
+                ->orderBy('package_bundles.id', 'asc')
+                ->limit(2)
+                ->pluck('bundles.name')
+                ->toArray();
+        }
+
+        $planName = !empty($names) ? implode(', ', $names) : '-';
+
+        if ($package->plan_type === 'plan' && $totalBundleCount > 2) {
+            $planName .= '...';
+        }
+
+        Packages::where('id', $package->id)->update(['plan_name' => $planName]);
+    }
 
     /**
      * Get Total Records

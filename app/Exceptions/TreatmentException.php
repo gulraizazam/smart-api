@@ -75,13 +75,4 @@ final class TreatmentException extends Exception
     {
         return new self("You do not have permission to change the {$field}.");
     }
-
-    public static function patientNotRegistered(): self
-    {
-        return new self(
-            'No registered patient with this phone. Book a consultation first to register the patient.',
-            422,
-            ['code' => 'PATIENT_NOT_REGISTERED'],
-        );
-    }
 }

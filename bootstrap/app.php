@@ -8,9 +8,10 @@ use App\Http\Middleware\AuthenticateApiWeb;
 use App\Http\Middleware\CheckAccountStatus;
 use App\Http\Middleware\CheckIpRestriction;
 use App\Http\Middleware\CheckPermission;
-use App\Http\Middleware\LogSlowRequests;
 use App\Http\Middleware\RedirectIfAuthenticated;
 use App\Http\Middleware\VerifyCsrfToken;
+use App\Jobs\SendCashflowDailyDigest;
+use App\Jobs\SendCashflowMonthlyReport;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
@@ -60,13 +61,6 @@ return Application::configure(basePath: dirname(__DIR__))
             VerifyCsrfToken::class,
         ]);
 
-        // Phase 0 perf instrumentation. Adds X-Response-Time-Ms and writes a
-        // summary line for slow requests when LOG_SLOW_QUERIES=true. Cheap
-        // when disabled. Removed in Phase 2 cleanup of the optimization plan.
-        $middleware->api(append: [
-            LogSlowRequests::class,
-        ]);
-
         // Custom middleware aliases
         $middleware->alias([
             'auth' => Authenticate::class,
@@ -94,15 +88,21 @@ return Application::configure(basePath: dirname(__DIR__))
         $schedule->command('discounts:inactive')
             ->dailyAt('01:00')->timezone($timeZone);
 
-        // Deactivate packages with past end date. Operates on the
-        // `bundles` table behind the SPA "Packages" page (UI label
-        // /packages → DB table `bundles`).
-        $schedule->command('packages:expire')
+        // Inactive bundles with past end date
+        $schedule->command('bundles:inactive')
             ->dailyAt('01:00')->timezone($timeZone);
 
         // Appointment and Treatment daily stats
         $schedule->command('appointments:daily-stats')
             ->dailyAt('23:50')->timezone($timeZone);
+
+        // Cash Flow: Daily Digest Email (08:00 AM PKT)
+        $schedule->job(new SendCashflowDailyDigest)
+            ->dailyAt('08:00')->timezone($timeZone);
+
+        // Cash Flow: Monthly Report Email (1st of every month at 09:00 AM)
+        $schedule->job(new SendCashflowMonthlyReport)
+            ->monthlyOn(1, '09:00')->timezone($timeZone);
 
         // Activities: HIPAA-aligned archive sweep. PHI and security tiers
         // archive-only (append-only cold storage, 6-year min retention). HR
@@ -119,6 +119,21 @@ return Application::configure(basePath: dirname(__DIR__))
         $schedule->command('auth:clear-resets')
             ->daily()->timezone($timeZone);
 
+        // Security: prune leftover bulk-import spreadsheets older than 24h
+        // (L1 finding). The importer should also delete-after-import; this
+        // is the safety net for crashed/aborted runs.
+        $schedule->call(function (): void {
+            $dir = storage_path('app');
+            if (! is_dir($dir)) {
+                return;
+            }
+            $cutoff = time() - 86400;
+            foreach (glob($dir.DIRECTORY_SEPARATOR.'temp_import_*.xlsx') ?: [] as $file) {
+                if (is_file($file) && filemtime($file) < $cutoff) {
+                    @unlink($file);
+                }
+            }
+        })->name('prune-temp-imports')->dailyAt('02:00')->timezone($timeZone);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->dontFlash([

@@ -23,14 +23,10 @@ class UserFactory extends Factory
 
     public function definition(): array
     {
-        // The production users table does NOT have `email_verified_at`,
-        // `is_admin`, or `address` columns — admin status is determined
-        // by Spatie roles, not by a column, and there is no address
-        // column on this table (a previous version of the factory wrote
-        // `address` and broke every test that used the user factory
-        // after the column was dropped). `gender` is `tinyint(4)` in
-        // production: 0 = Male, 1 = Female. Keep this in sync with
-        // `app/Models/User.php::$fillable`.
+        // The production users table does NOT have `email_verified_at` or
+        // `is_admin` columns — admin status is determined by Spatie roles,
+        // not by a column. `gender` is `tinyint(4)` in production: 0 = Male,
+        // 1 = Female. Keep this in sync with `app/Models/User.php::$fillable`.
         return [
             'name' => $this->faker->name(),
             'email' => $this->faker->unique()->safeEmail(),
@@ -39,6 +35,7 @@ class UserFactory extends Factory
             'phone' => $this->faker->numerify('+92##########'),
             'gender' => $this->faker->randomElement([0, 1]),
             'dob' => $this->faker->date('Y-m-d', '-20 years'),
+            'address' => $this->faker->address(),
             'user_type_id' => 1,
             'account_id' => 1,
             'active' => 1,

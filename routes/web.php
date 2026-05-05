@@ -10,10 +10,7 @@ use App\Models\PackageAdvances;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    // Land at the SPA. Was `redirect()->route('login')` which targeted
-    // the legacy Blade login page; that route disappears at cutover and
-    // the SPA owns its own /login screen anyway.
-    return redirect('/admin-v2/');
+    return redirect()->route('login');
 });
 
 Route::get('/unauthorized', function () {
@@ -60,8 +57,7 @@ Route::middleware(['auth.common', 'throttle:5,1'])->group(function () {
         return response()->json(['status' => 'ok']);
     });
     Route::get('/check-expired-records', function () {
-        Artisan::call('discounts:inactive');
-        Artisan::call('packages:expire');
+        Artisan::call('check:expired');
 
         return response()->json(['status' => 'ok']);
     });

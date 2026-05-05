@@ -156,10 +156,7 @@ class Product extends BaseModel
                 $where[][] = ['warehouse_id' => $filters['warehouse_id']];
             }
             if (hasFilter($filters, 'status')) {
-                // `products` carries both legacy `active` and the modern
-                // `status` columns; toggleStatus writes to `status`, so the
-                // filter has to read from the same column or it desynchs.
-                $where[][] = ['status' => $filters['status']];
+                $where[][] = ['active' => $filters['status']];
             }
             if (hasFilter($filters, 'created_at')) {
                 $where[] = ['products.created_at', '>=', $start_date_time];

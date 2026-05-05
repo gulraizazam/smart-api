@@ -161,7 +161,7 @@ class ExpenseService
 
             // Auto-create vendor payment transaction if vendor is selected and expense is upfront
             if ($expense->vendor_id) {
-                $vendorTx = VendorTransaction::create([
+                VendorTransaction::create([
                     'account_id' => $accountId,
                     'vendor_id' => $expense->vendor_id,
                     'type' => VendorTransactionType::Payment,
@@ -174,18 +174,6 @@ class ExpenseService
                     'is_for_general' => $expense->is_for_general ? 1 : 0,
                     'created_by' => $user->id,
                 ]);
-
-                // Mirror VendorService::recordTransaction so the per-row
-                // audit dialog has something to show for expense-derived
-                // payments. Uses AUTO_CREATED to distinguish them from
-                // payments recorded via the manual "Record purchase" flow.
-                $this->auditService->log(
-                    CashflowAuditLog::ACTION_AUTO_CREATED,
-                    CashflowAuditLog::ENTITY_VENDOR_TRANSACTION,
-                    $vendorTx->id,
-                    null,
-                    $vendorTx->toArray(),
-                );
             }
 
             // Run flagging checks
@@ -392,7 +380,7 @@ class ExpenseService
                 }
             } elseif ($newVendorId && !$existingVendorTx) {
                 // Vendor exists but no transaction (was deleted on rejection): re-create
-                $vendorTx = VendorTransaction::create([
+                VendorTransaction::create([
                     'account_id' => $accountId,
                     'vendor_id' => $newVendorId,
                     'type' => VendorTransactionType::Payment,
@@ -405,14 +393,6 @@ class ExpenseService
                     'is_for_general' => $freshExpense->is_for_general ? 1 : 0,
                     'created_by' => Auth::id(),
                 ]);
-
-                $this->auditService->log(
-                    CashflowAuditLog::ACTION_AUTO_CREATED,
-                    CashflowAuditLog::ENTITY_VENDOR_TRANSACTION,
-                    $vendorTx->id,
-                    null,
-                    $vendorTx->toArray(),
-                );
             }
 
             $this->auditService->log(

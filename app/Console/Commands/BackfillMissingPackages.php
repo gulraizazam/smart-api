@@ -136,6 +136,7 @@ class BackfillMissingPackages extends Command
                 'id'           => $packageId,
                 'random_id'    => Str::uuid()->toString(),
                 'name'         => sprintf('%05d', $packageId),
+                'plan_name'    => null,
                 'sessioncount' => $sessionCount,
                 'total_price'  => $totalPrice,
                 'total_price_bk' => $totalPrice,

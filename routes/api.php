@@ -76,28 +76,6 @@ use App\Http\Controllers\Api\ScheduleController;
 
 Route::post('login', [\App\Http\Controllers\Api\AuthController::class, 'login'])->middleware('throttle:5,1');
 
-// Cookie-mode logout. Idempotent: an expired-session caller still gets a
-// clean 200 with the session and CSRF rotated. Bearer-mode SPA builds also
-// hit this endpoint to revoke the per-request Sanctum PAT. Passport-mode
-// uses /api/v2/auth/logout instead (token-bearer auth only).
-Route::post('logout', [\App\Http\Controllers\Api\AuthController::class, 'logout']);
-
-// SPA-facing forgot / reset password. Replaces the legacy Blade pair
-// (web.php /password/email + /password/reset) for the SPA login screen.
-// The reset email's URL is overridden in AppServiceProvider::boot to
-// land on the SPA's /reset-password/{token}?email= route instead of the
-// legacy Blade view, so the email link survives Blade retirement.
-//
-// Throttle: 5/hour for `email` (matches the legacy Blade route limit;
-// stops abuse of the email-sender as a spam vector). 10/hour for `reset`
-// (matches the legacy throttle; tokens are single-use anyway).
-Route::post('password/email', [\App\Http\Controllers\Api\ForgotPasswordController::class, 'send'])
-    ->middleware('throttle:5,60')
-    ->name('api.password.email');
-Route::post('password/reset', [\App\Http\Controllers\Api\ForgotPasswordController::class, 'reset'])
-    ->middleware('throttle:10,60')
-    ->name('api.password.reset');
-
 // v2 auth — Passport password grant. Runs alongside the Sanctum /api/login
 // during the staged migration. See app/Http/Controllers/Api/V2/AuthController.
 Route::prefix('v2/auth')->name('api.v2.auth.')->group(function (): void {

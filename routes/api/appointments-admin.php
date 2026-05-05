@@ -37,9 +37,9 @@ Route::post('appointments/load/lead', [AppointmentLookupController::class, 'load
 // Patients API Routes (Optimized)
 Route::prefix('patients')->name('patients.')->group(function () {
     Route::post('datatable', [PatientController::class, 'index'])->name('datatable');
+    Route::get('create', [PatientController::class, 'create'])->name('create');
     Route::get('search', [PatientController::class, 'search'])->name('search');
-    // Direct patient creation removed — patients are created only as a
-    // side-effect of booking a consultation/appointment/treatment.
+    Route::post('/', [PatientController::class, 'store'])->name('store');
     Route::post('status', [PatientController::class, 'status'])->name('status');
     Route::post('image', [PatientController::class, 'storeImage'])->name('storeimage');
     Route::post('assignmembership', [PatientController::class, 'assignMembership'])->name('assignmembership');
@@ -146,11 +146,6 @@ Route::post('plans/voucher/refund', [PackagesController::class, 'refundVoucherFo
 Route::get('plans/getgrandtotal', [PackagesController::class, 'getgrandtotal'])->name('plans.getgrandtotal');
 
 Route::post('plans/deletepackagesservice', [PackagesController::class, 'deletepackagesservice'])->name('plans.deletepackages_service');
-// Atomic cascade delete — voucher refunds + per-row deletes inside
-// one DB transaction. Used by the SPA when tearing down a
-// configurable Buy/Get group so a mid-batch failure rolls back
-// everything instead of leaving the operator with half-deleted state.
-Route::post('plans/cascade-delete', [PackagesController::class, 'cascadeDeleteGroup'])->name('plans.cascade_delete');
 
 Route::get('plans/updatepackages', [PackagesController::class, 'updatepackages'])->name('plans.updatepackages');
 
@@ -161,8 +156,6 @@ Route::post('plans/status', [PackagesController::class, 'status'])->name('plans.
 Route::delete('plans/destroy/{id}', [PackagesController::class, 'destroy'])->name('plans.destroy');
 
 Route::get('plans/display/{id}', [PackagesController::class, 'display'])->name('plans.display');
-
-Route::get('plans/{id}/print-data', [PackagesController::class, 'printData'])->name('plans.printData');
 
 Route::get('plans/edit/{id}', [PackagesController::class, 'edit'])->name('plans.edit');
 

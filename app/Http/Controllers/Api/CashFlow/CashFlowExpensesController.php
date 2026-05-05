@@ -440,14 +440,8 @@ class CashFlowExpensesController extends Controller
 
     /**
      * Export expenses as CSV with current filters.
-     *
-     * Return type covers both shapes the body can produce:
-     *   - StreamedResponse on the happy path (the CSV stream)
-     *   - JsonResponse on auth/error fall-through (`{success:false, message}`)
-     * The previous narrow `JsonResponse` declaration caused a TypeError on
-     * every successful export.
      */
-    public function expensesExport(Request $request): \Symfony\Component\HttpFoundation\Response
+    public function expensesExport(Request $request): \Illuminate\Http\JsonResponse
     {
 
         try {

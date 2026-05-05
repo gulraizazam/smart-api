@@ -152,11 +152,6 @@ class PackagesController extends Controller
                 'random_id' => $request->random_id,
                 'sold_by' => $request->sold_by ?? null,
                 'source_type' => $request->source_type ?? 'bundle',
-                // SPA opt-in: persist a draft PackageBundles + PackageService
-                // set so the simple-id final-save path can bind them by
-                // random_id. Legacy create-bundle.js does not send this and
-                // continues to ship the structured array on save.
-                'stage_draft' => $request->boolean('stage_draft'),
             ]);
 
             return $this->successResponse('Bundle service added successfully', $result);
@@ -714,40 +709,6 @@ class PackagesController extends Controller
     }
 
     /**
-     * Atomic cascade delete for a configurable Buy/Get group — wraps
-     * voucher refunds + per-row deletes in a single DB transaction
-     * so a mid-batch failure rolls back EVERYTHING. Replaces the
-     * SPA's earlier best-effort sequential loop. Closes G6.
-     */
-    public function cascadeDeleteGroup(Request $request): JsonResponse
-    {
-        $validated = $request->validate([
-            'ids' => 'required|array|min:1',
-            'ids.*' => 'integer',
-            'random_id' => 'nullable|string|max:255',
-            'package_total' => 'nullable',
-            'patient_id' => 'nullable|integer',
-            'vouchers' => 'nullable|array',
-            'vouchers.*.voucher_id' => 'required_with:vouchers|integer',
-            'vouchers.*.amount' => 'required_with:vouchers|numeric|min:0',
-        ]);
-
-        $result = $this->planService->cascadeDeleteGroup($validated);
-
-        if ($result['success']) {
-            return $this->successResponse($result['message'], $result['data'] ?? []);
-        }
-
-        return response()->json([
-            'success' => false,
-            'status' => false,
-            'message' => $result['message'],
-            'data' => $result['data'] ?? null,
-            'errors' => $result['errors'] ?? [],
-        ], $result['status_code'] ?? 500);
-    }
-
-    /**
      * delete serive from packages
      *
      * @param Request
@@ -862,6 +823,245 @@ class PackagesController extends Controller
         return $storedPaths;
     }
 
+    /**
+     * Mark appointment status as converted
+     * Conversion Logic:
+     * 1. Find the latest arrived consultation for the patient (appointment_type_id=1, base_appointment_status_id=arrived)
+     * 2. Get the invoice creation date of this consultation
+     * 3. Check if a service is added on/after invoice creation date in any package for this patient
+     * 4. Check if this is the FIRST payment after invoice creation date (no prior payments exist)
+     * 5. If all conditions met, mark the consultation as converted and send Meta event
+     *
+     * NOTE: If consultation is already converted OR this is 2nd/3rd payment OR no new service added,
+     *       do NOT mark as converted and do NOT send Meta event
+     *
+     * @param  int  $appointment_id  - The appointment being processed (used to get account_id and patient context)
+     * @param  int  $package_id  - The package where service/payment was added
+     * @param  float  $payment_amount  - The payment amount for Meta event
+     */
+    private static function markAppointmentAsConverted($appointment_id, $package_id = null, $payment_amount = null): null
+    {
+        if (! $appointment_id || ! $package_id) {
+            \Log::info('markAppointmentAsConverted: Missing appointment_id or package_id');
+
+            return null;
+        }
+
+        $appointment = Appointments::find($appointment_id);
+        if (! $appointment) {
+            \Log::info('markAppointmentAsConverted: Appointment not found');
+
+            return null;
+        }
+
+        $package = Packages::find($package_id);
+        if (! $package) {
+            \Log::info('markAppointmentAsConverted: Package not found');
+
+            return null;
+        }
+
+        // Get the arrived and converted appointment statuses
+        $arrivedStatus = AppointmentStatuses::where([
+            'account_id' => $appointment->account_id,
+            'is_arrived' => 1,
+        ])->first();
+
+        $convertedStatus = AppointmentStatuses::where([
+            'account_id' => $appointment->account_id,
+            'is_converted' => 1,
+        ])->first();
+
+        if (! $arrivedStatus || ! $convertedStatus) {
+            \Log::info('markAppointmentAsConverted: Arrived or Converted status not found');
+
+            return null;
+        }
+
+        // Step 1: Find the latest arrived consultation for this patient
+        // Only look for consultations that are still in "arrived" status (not already converted)
+        $latestArrivedConsultation = Appointments::where([
+            'patient_id' => $package->patient_id,
+            'appointment_type_id' => AppointmentType::Consultancy->value, // Consultation
+            'base_appointment_status_id' => $arrivedStatus->id,
+        ])
+            ->whereNull('deleted_at')
+            ->orderBy('scheduled_date', 'desc')
+            ->orderBy('id', 'desc')
+            ->first();
+
+        if (! $latestArrivedConsultation) {
+            \Log::info('markAppointmentAsConverted: No arrived consultation found for patient (may already be converted)', [
+                'patient_id' => $package->patient_id,
+            ]);
+
+            return null;
+        }
+
+        \Log::info('markAppointmentAsConverted: Found latest arrived consultation', [
+            'appointment_id' => $latestArrivedConsultation->id,
+            'patient_id' => $package->patient_id,
+        ]);
+
+        // Step 2: Get the invoice creation date of this consultation
+        $consultationInvoice = Invoices::where('appointment_id', $latestArrivedConsultation->id)
+            ->whereNull('deleted_at')
+            ->orderBy('created_at', 'asc')
+            ->first();
+
+        if (! $consultationInvoice) {
+            \Log::info('markAppointmentAsConverted: No invoice found for consultation', [
+                'appointment_id' => $latestArrivedConsultation->id,
+            ]);
+
+            return null;
+        }
+
+        $invoiceCreatedAt = $consultationInvoice->created_at;
+        $invoiceDate = Carbon::parse($invoiceCreatedAt)->format('Y-m-d');
+
+        \Log::info('markAppointmentAsConverted: Invoice found', [
+            'invoice_id' => $consultationInvoice->id,
+            'invoice_date' => $invoiceDate,
+        ]);
+
+        // Step 3: Check if a service is added on/after invoice creation date in any package for this patient
+        $patientPackageIds = Packages::where('patient_id', $package->patient_id)
+            ->whereNull('deleted_at')
+            ->pluck('id');
+
+        $packageBundleIds = PackageBundles::whereIn('package_id', $patientPackageIds)->pluck('id');
+
+        $serviceAfterInvoice = PackageService::whereIn('package_bundle_id', $packageBundleIds)
+            ->whereDate('created_at', '>=', $invoiceDate)
+            ->exists();
+
+        if (! $serviceAfterInvoice) {
+            \Log::info('markAppointmentAsConverted: No service found on/after invoice date - not converting', [
+                'invoice_date' => $invoiceDate,
+            ]);
+
+            return null;
+        }
+
+        // Step 4: Check if this is the FIRST payment after invoice creation date
+        // Count how many payments exist on/after invoice date (excluding the current one being added)
+        $existingPaymentsCount = PackageAdvances::whereIn('package_id', $patientPackageIds)
+            ->where('cash_flow', 'in')
+            ->where('cash_amount', '>', 0)
+            ->whereNull('deleted_at')
+            ->whereDate('created_at', '>=', $invoiceDate)
+            ->count();
+
+        // If more than 1 payment exists (current + previous), this is not the first payment
+        // Note: The current payment is already saved when this function is called, so count > 1 means duplicate
+        if ($existingPaymentsCount > 1) {
+            \Log::info('markAppointmentAsConverted: This is not the first payment after invoice date - not converting', [
+                'invoice_date' => $invoiceDate,
+                'existing_payments_count' => $existingPaymentsCount,
+            ]);
+
+            return null;
+        }
+
+        \Log::info('markAppointmentAsConverted: Conversion criteria met (first payment + service after invoice), marking as converted', [
+            'appointment_id' => $latestArrivedConsultation->id,
+            'invoice_date' => $invoiceDate,
+        ]);
+
+        // Step 5: Mark the consultation as converted
+        $latestArrivedConsultation->update([
+            'base_appointment_status_id' => $convertedStatus->id,
+            'appointment_status_id' => $convertedStatus->id,
+            'converted_at' => now(),
+        ]);
+
+        // Log activity for conversion
+        $patient = Patients::find($package->patient_id);
+        $location = Locations::with('city')->find($latestArrivedConsultation->location_id);
+        $service = Services::find($latestArrivedConsultation->service_id);
+
+        // Log appointment converted activity
+        ActivityLogger::logAppointmentConverted($latestArrivedConsultation, $patient, $location, $service, $payment_amount, $package_id);
+
+        // Also update lead status to converted and log it
+        if ($latestArrivedConsultation->lead_id) {
+            $lead = Leads::find($latestArrivedConsultation->lead_id);
+            if ($lead) {
+                $convertedLeadStatus = LeadStatuses::where([
+                    'account_id' => $latestArrivedConsultation->account_id,
+                    'is_converted' => 1,
+                ])->first();
+
+                if ($convertedLeadStatus) {
+                    $lead->update(['lead_status_id' => $convertedLeadStatus->id]);
+                    ActivityLogger::logLeadConverted($lead, $latestArrivedConsultation, $location, $service, $payment_amount);
+                }
+            }
+        }
+
+        // Send Meta CAPI event
+        self::sendMetaConvertedEvent($latestArrivedConsultation, $package_id, $payment_amount);
+    }
+
+    /**
+     * Send Meta CAPI event for converted status
+     *
+     * @param  Appointments  $appointment
+     * @param  int  $package_id
+     * @param  float  $payment_amount
+     */
+    private static function sendMetaConvertedEvent($appointment, $package_id, $payment_amount): null
+    {
+        if (! $appointment || ! $appointment->lead_id) {
+            return null;
+        }
+
+        $lead = Leads::find($appointment->lead_id);
+        if (! $lead) {
+            return null;
+        }
+
+        // Check if Meta event was already sent for this lead (to prevent duplicates)
+        // We check if any appointment for this lead already has meta_purchase_sent flag
+        $alreadySent = Appointments::where('lead_id', $lead->id)
+            ->where('meta_purchase_sent', 1)
+            ->exists();
+
+        if ($alreadySent) {
+            \Log::info('Meta CAPI converted event already sent for this lead, skipping', [
+                'lead_id' => $lead->id,
+                'appointment_id' => $appointment->id,
+            ]);
+
+            return null;
+        }
+
+        try {
+            $metaService = new MetaConversionApiService;
+            // Use appointment_id as lead_id for event_id if meta_lead_id is null
+            $eventLeadId = $lead->meta_lead_id ?? 'apt_'.$appointment->id;
+            $metaService->sendLeadStatus(
+                $lead->phone,
+                'converted',
+                $eventLeadId,
+                $lead->email,
+                'PKR',
+                $payment_amount ?? 0
+            );
+
+            // Mark this appointment as having sent the Meta purchase event
+            $appointment->update(['meta_purchase_sent' => 1]);
+
+            \Log::info('Meta CAPI converted event sent', [
+                'lead_id' => $lead->id,
+                'appointment_id' => $appointment->id,
+                'event_lead_id' => $eventLeadId,
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Meta CAPI converted event failed: '.$e->getMessage());
+        }
+    }
 
     /**
      * Get service info
@@ -1198,11 +1398,8 @@ class PackagesController extends Controller
 
             return $result['status'] ? $this->successResponse($result['message']) : $this->errorResponse($result['message'], 400);
         } catch (PlanException $e) {
-            // Honour the exception's own status (e.g. 409 hasChildRecords,
-            // 404 notFound). Forcing 500 here masks the real reason — the
-            // SPA's generic 500 mapping then shows "Something went wrong"
-            // instead of the actionable message body.
-            return $this->errorResponse($e->getMessage(), $e->getCode() ?: 500);
+            // Return clean error message without file path
+            return $this->errorResponse($e->getMessage(), 500);
         } catch (\Exception $e) {
             \Log::error('Delete Package Error: '.$e->getMessage());
 
@@ -1222,26 +1419,6 @@ class PackagesController extends Controller
 
         try {
             $data = $this->planService->getDisplayData($id);
-
-            return $this->successResponse('Record found.', $data);
-        } catch (PlanException $e) {
-            return $this->errorResponse($e->getMessage(), 500);
-        } catch (\Exception $e) {
-            return $this->handleException($e, 'PackagesController');
-        }
-    }
-
-    /**
-     * SPA-print payload: display data + org/centre header (NTN/STN, address,
-     * head-office phone). Same auth gate as `display`. Replaces the legacy
-     * dompdf-rendered `package_pdf` Blade — the SPA owns the layout now.
-     */
-    public function printData(int $id): JsonResponse
-    {
-        $this->authorize('managePlans', Packages::class);
-
-        try {
-            $data = $this->planService->getPrintData($id);
 
             return $this->successResponse('Record found.', $data);
         } catch (PlanException $e) {
@@ -1899,17 +2076,8 @@ class PackagesController extends Controller
                     $service_data = Bundles::find($packageBundle['bundleId']);
                     $calculable_servcies = [];
                     foreach ($bundleServices as $bundleService) {
-                        // `service_price` MUST be the catalog regular
-                        // per-row price (`bundle_has_services.service_price`),
-                        // not the pre-distributed sold-share in
-                        // `calculated_price`. Same bug as the two
-                        // `addBundleService` paths in PlanService —
-                        // passing the sold-share triggers the
-                        // last-row-absorption to swallow the gap and
-                        // operators see two identical sessions land at
-                        // wildly different prices.
                         $calculable_servcies[] = [
-                            'service_price' => $bundleService->service_price,
+                            'service_price' => $bundleService->calculated_price,
                             'calculated_price' => $bundleService->calculated_price,
                             'service_id' => $bundleService->service_id,
                         ];
@@ -1921,11 +2089,7 @@ class PackagesController extends Controller
                         $data_service['service_id'] = $calculatedServicePrice['service_id'];
                         $data_service['price'] = $calculatedServicePrice['calculated_price'];
                         $data_service['orignal_price'] = $calculatedServicePrice['service_price'];
-                        // Org-wide pricing convention from sys-tax-treatment.
-                        // Per-row tax_treatment_type_id is no longer consulted —
-                        // see project_tax_centralization plan, Stage 2.
-                        $orgTaxTreatment = Settings::getOrgTaxTreatment(Auth::user()->account_id);
-                        if ($orgTaxTreatment == Config::get('constants.tax_both')) {
+                        if ($service_data->tax_treatment_type_id == Config::get('constants.tax_both')) {
                             if ($request->is_exclusive == '1') {
                                 $data_service['tax_exclusive_price'] = $calculatedServicePrice['calculated_price'];
                                 $data_service['tax_percentage'] = $location_information->tax_percentage;
@@ -1941,7 +2105,7 @@ class PackagesController extends Controller
 
                                 $data_service['is_exclusive'] = 0;
                             }
-                        } elseif ($orgTaxTreatment == Config::get('constants.tax_is_exclusive')) {
+                        } elseif ($service_data->tax_treatment_type_id == Config::get('constants.tax_is_exclusive')) {
                             $data_service['tax_exclusive_price'] = $calculatedServicePrice['calculated_price'];
                             $data_service['tax_percentage'] = $location_information->tax_percentage;
                             $data_service['tax_price'] = ceil($calculatedServicePrice['calculated_price'] * ($location_information->tax_percentage / 100));

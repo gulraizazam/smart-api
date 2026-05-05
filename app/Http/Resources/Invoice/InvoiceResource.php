@@ -38,7 +38,6 @@ class InvoiceResource extends JsonResource
             'package_id' => $invoice->package_id !== null ? (int) $invoice->package_id : null,
             'patient_id' => $invoice->patient_id !== null ? (int) $invoice->patient_id : null,
             'patient_name' => $this->whenLoaded('user', fn (): ?string => $invoice->user?->name),
-            'patient_phone' => $this->whenLoaded('user', fn (): ?string => $invoice->user?->phone),
             'location_id' => $invoice->location_id !== null ? (int) $invoice->location_id : null,
             'location_name' => $invoice->relationLoaded('appointment') && $invoice->appointment?->relationLoaded('location')
                 ? $invoice->appointment->location?->name

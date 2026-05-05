@@ -183,59 +183,40 @@ class InvoicesController extends Controller
 
         }
 
-        // Wrap the destructive sequence in a transaction so the
-        // configurable-discount cancel-order rule (thrown from
-        // PackageService::InvoiceCancel) rolls back the prior
-        // Invoices::CancelRecord. Without this, a thrown rule check
-        // leaves the invoice already cancelled but the package_service
-        // still consumed — a half-state the SPA can't recover from.
-        try {
-            return DB::transaction(function () use ($id) {
-                $invoice = Invoices::CancelRecord($id, Auth::user()->account_id);
+        $invoice = Invoices::CancelRecord($id, Auth::user()->account_id);
 
-                $invocies = Invoices::find($id);
+        $invocies = Invoices::find($id);
 
-                $invoice_detail = InvoiceDetails::where('invoice_id', '=', $id)->first();
+        $invoice_detail = InvoiceDetails::where('invoice_id', '=', $id)->first();
 
-                if ($invoice_detail->package_id) {
-                    $packageservice = PackageService::InvoiceCancel($invoice_detail, Auth::user()->account_id);
-                }
+        if ($invoice_detail->package_id) {
 
-                $appintment = Appointments::find($invocies->appointment_id);
-
-                $appointment_type = AppointmentTypes::where('id', '=', $appintment->appointment_type_id)->first();
-
-                $data_package = [];
-                $data_package['cash_flow'] = 'in';
-                $data_package['cash_amount'] = $invocies->total_price;
-                $data_package['patient_id'] = $invocies->patient_id;
-                $data_package['payment_mode_id'] = '1';
-                $data_package['account_id'] = Auth::user()->account_id;
-                $data_package['appointment_type_id'] = $appointment_type->id;
-                $data_package['appointment_id'] = $invocies->appointment_id;
-                $data_package['location_id'] = $appintment->location_id;
-                $data_package['created_by'] = Auth::user()->id;
-                $data_package['updated_by'] = Auth::user()->id;
-                $data_package['invoice_id'] = $id;
-                $data_package['is_cancel'] = '1';
-
-                if ($invoice_detail->package_id != null) {
-                    $data_package['package_id'] = $invoice_detail->package_id;
-                }
-                $package_advances = PackageAdvances::createRecord_forinvoice($data_package);
-
-                return redirect()->route('admin.invoicepatient.index', [$invocies->patient_id]);
-            });
-        } catch (\App\Exceptions\PlanException $e) {
-            // Rule fired — transaction has already rolled back. Surface
-            // the friendly message as a flash, same as the existing
-            // refunded-package guard above. Reload the patient-id from
-            // the invoice (DB-level state restored) for the redirect.
-            $patientId = Invoices::where('id', $id)->value('patient_id') ?? 0;
-            flash($e->getMessage())->warning()->important();
-
-            return redirect()->route('admin.invoicepatient.index', [$patientId]);
+            $packageservice = PackageService::InvoiceCancel($invoice_detail, Auth::user()->account_id);
         }
+
+        $appintment = Appointments::find($invocies->appointment_id);
+
+        $appointment_type = AppointmentTypes::where('id', '=', $appintment->appointment_type_id)->first();
+
+        $data_package['cash_flow'] = 'in';
+        $data_package['cash_amount'] = $invocies->total_price;
+        $data_package['patient_id'] = $invocies->patient_id;
+        $data_package['payment_mode_id'] = '1';
+        $data_package['account_id'] = Auth::user()->account_id;
+        $data_package['appointment_type_id'] = $appointment_type->id;
+        $data_package['appointment_id'] = $invocies->appointment_id;
+        $data_package['location_id'] = $appintment->location_id;
+        $data_package['created_by'] = Auth::user()->id;
+        $data_package['updated_by'] = Auth::user()->id;
+        $data_package['invoice_id'] = $id;
+        $data_package['is_cancel'] = '1';
+
+        if ($invoice_detail->package_id != null) {
+            $data_package['package_id'] = $invoice_detail->package_id;
+        }
+        $package_advances = PackageAdvances::createRecord_forinvoice($data_package);
+
+        return redirect()->route('admin.invoicepatient.index', [$invocies->patient_id]);
     }
 
     /*display invoice

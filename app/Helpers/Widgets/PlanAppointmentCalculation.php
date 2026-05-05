@@ -243,21 +243,17 @@ class PlanAppointmentCalculation
             $leadObj = $appointmentData;
             unset($leadObj['lead_id']); // Remove Lead ID index
             $leadObj['patient_id'] = $patient->id;
-            // Convert Lead status to Converted. Single source of truth
-            // is the `is_converted=1` flag — never use a hard-coded id
-            // (the legacy `constants.lead_status_converted=3` constant
-            // pointed at "Call Again" by mistake; removed). If the
-            // account hasn't seeded an `is_converted=1` status row,
-            // leave `lead_status_id` untouched and let the next status
-            // cascade fix it; better than silently labelling the lead
-            // with a wrong id.
+            // Convert Lead status to Converted
             $DefaultConvertedLeadStatus = LeadStatuses::where([
                 'account_id' => Auth::user()->account_id,
                 'is_converted' => 1,
             ])->first();
             if ($DefaultConvertedLeadStatus) {
-                $leadObj['lead_status_id'] = $DefaultConvertedLeadStatus->id;
+                $default_converted_lead_status_id = $DefaultConvertedLeadStatus->id;
+            } else {
+                $default_converted_lead_status_id = Config::get('constants.lead_status_converted');
             }
+            $leadObj['lead_status_id'] = $default_converted_lead_status_id;
 
             if (! empty($leadObj) && isset($leadObj['service_id'])) {
                 $leadObj['base_service_id'] = $leadObj['service_id'];

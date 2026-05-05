@@ -19,8 +19,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Validator;
-use Illuminate\Validation\Rules\Password;
 
 class ApplicationUserController extends Controller
 {
@@ -216,64 +214,6 @@ class ApplicationUserController extends Controller
         }
     }
 
-    /**
-     * Path-bound JSON password update.
-     *
-     * Replaces the legacy GET (returns a Blade modal whose hidden
-     * `<input name="id" value="{encrypt($user->id)}">` the SPA had to
-     * scrape) + PATCH (decrypt the scraped id) two-step flow. The
-     * encryption was never a security boundary — `findByAccountId`
-     * is what actually prevents cross-tenant edits, and pinning the
-     * user id in the route path is just as authorisation-safe.
-     *
-     * Validation rules mirror the SPA's zod schema:
-     * min 8, mixed case, at least one number, at least one symbol,
-     * confirmed against `password_confirmation` (Laravel's standard
-     * `confirmed` rule looks for `<field>_confirmation`).
-     */
-    public function updatePassword(Request $request, int $id): JsonResponse
-    {
-        try {
-            if (!Gate::allows('users_change_password')) {
-                return $this->errorResponse('You are not authorized to access this resource.', 401);
-            }
-
-            // Tenant-scoped existence check. Returns null if the target
-            // user belongs to a different account, which we surface as
-            // 404 — indistinguishable from "no such user" so cross-tenant
-            // probing can't enumerate.
-            $user = $this->userService->findByAccountId($id);
-            if (!$user) {
-                return $this->errorResponse('User not found.', 404);
-            }
-
-            $validator = Validator::make($request->all(), [
-                'password' => [
-                    'required',
-                    'string',
-                    Password::min(8)->mixedCase()->numbers()->symbols(),
-                    'confirmed',
-                ],
-            ]);
-
-            if ($validator->fails()) {
-                return $this->errorResponse(
-                    $validator->errors()->first(),
-                    422,
-                    $validator->errors()->all(),
-                );
-            }
-
-            $result = $this->userService->changePassword($id, (string) $request->input('password'));
-
-            return $result
-                ? $this->successResponse('Password has been changed successfully.')
-                : $this->errorResponse('Something went wrong, please try again.', 500);
-        } catch (\Exception $e) {
-            return $this->handleException($e, 'ApplicationUserController');
-        }
-    }
-
     public function getpatientOptimized(Request $request): JsonResponse
     {
         try {
@@ -291,10 +231,7 @@ class ApplicationUserController extends Controller
     }
 
     /**
-     * @deprecated Load-bearing for legacy admin Blade JS only
-     *             (admin/appointments, packages, reports, etc. via
-     *             `public/assets/js/custom.js` and friends). New SPA
-     *             flows use getpatientOptimized() instead.
+     * @deprecated Use getpatientOptimized() for new implementations
      */
     public function getpatientid(Request $request): JsonResponse
     {
@@ -312,10 +249,6 @@ class ApplicationUserController extends Controller
         }
     }
 
-    /**
-     * @deprecated Load-bearing for legacy admin Blade only (orders flow,
-     *             returns extra membership fields not needed by the SPA).
-     */
     public function getpatientidOrder(Request $request): JsonResponse
     {
         try {
@@ -332,9 +265,6 @@ class ApplicationUserController extends Controller
         }
     }
 
-    /**
-     * @deprecated Load-bearing for legacy admin Blade phone-prefix lookups.
-     */
     public function phoneSearch(Request $request): JsonResponse
     {
         try {
@@ -406,40 +336,6 @@ class ApplicationUserController extends Controller
         } catch (\Exception $e) {
             Log::error('Get User Centers Error: ' . $e->getMessage());
             return $this->errorResponse('Failed to get user centers.', 500);
-        }
-    }
-
-    /**
-     * Active application-user dropdown for filter UIs.
-     *
-     * Returns {id, name}[] for the SPA's Created/Updated/Rescheduled-by
-     * filters on the consultations screen. Scope:
-     *   • account-bound (no cross-tenant leakage)
-     *   • active = 1
-     *   • user_type_id IN [administrator_id, application_user_id]
-     *     — i.e. operators and admins, the only roles that actually
-     *     write to appointment audit columns. Doctors and patients are
-     *     excluded.
-     */
-    public function applicationUsersDropdown(): JsonResponse
-    {
-        try {
-            $users = \App\Models\User::query()
-                ->where('account_id', Auth::user()->account_id)
-                ->where('active', 1)
-                ->whereIn('user_type_id', [
-                    config('constants.administrator_id'),
-                    config('constants.application_user_id'),
-                ])
-                ->orderBy('name')
-                ->get(['id', 'name'])
-                ->map(fn ($u) => ['id' => (int) $u->id, 'name' => (string) $u->name])
-                ->values();
-
-            return $this->successResponse('Application users.', $users);
-        } catch (\Throwable $e) {
-            Log::error('applicationUsersDropdown failed: ' . $e->getMessage());
-            return $this->errorResponse('Failed to load application users.', 500);
         }
     }
 }
