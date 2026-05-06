@@ -80,11 +80,7 @@ class GeneralSalesReportRequest extends FormRequest
 
         // For non-web medium types, the locations may come as comma-separated strings
         if ($this->mediumType() !== MediumType::Web && $locationCom) {
-            if (is_array($locationCom) && count($locationCom) > 1) {
-                $locationCom = [implode(',', $locationCom)];
-            }
-
-            $locationCom = Explode_Multi_select::explode($locationCom);
+            $locationCom = Explode_Multi_select::explode(implode(',', $locationCom));
         }
 
         // Filter out empty values (legacy "All" sentinel was '') and the new 'all' keyword
