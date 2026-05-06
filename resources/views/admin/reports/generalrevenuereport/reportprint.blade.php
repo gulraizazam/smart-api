@@ -153,8 +153,8 @@
 
 <script>
 
+    window.onafterprint = function () { window.close(); };
     window.print();
-    setTimeout(function () { window.close(); }, 100);
 
 </script>
 
