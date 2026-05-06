@@ -61,10 +61,12 @@ class LeadStatusesController extends Controller
             return response()->json([
                 'data' => LeadStatusResource::collection($records),
                 'permissions' => [
+                    'create' => Gate::allows('lead_statuses_create'),
                     'edit' => Gate::allows('lead_statuses_edit'),
                     'delete' => Gate::allows('lead_statuses_destroy'),
                     'active' => Gate::allows('lead_statuses_active'),
                     'inactive' => Gate::allows('lead_statuses_inactive'),
+                    'sort' => Gate::allows('lead_statuses_sort'),
                 ],
                 'active_filters' => $datatableData['active_filters'],
                 'filter_values' => [
@@ -93,13 +95,19 @@ class LeadStatusesController extends Controller
 
         $parentStatuses = $this->service->getParentRecords(Auth::user()->account_id, [], 'Parent Group');
 
+        // New rows start with every unique flag off; the SPA uses this
+        // shape as the form's initial state. Matches LeadStatusService's
+        // UNIQUE_FLAGS (is_default/is_booked/is_arrived/is_converted/
+        // is_junk) plus is_comment so the TS contract is complete.
         return $this->successResponse('Success', [
             'parentLeadStatuses' => $parentStatuses,
             'lead_status' => [
                 'is_default' => 0,
+                'is_booked' => 0,
                 'is_arrived' => 0,
                 'is_converted' => 0,
                 'is_junk' => 0,
+                'is_comment' => 0,
             ],
         ]);
     }
@@ -140,7 +148,7 @@ class LeadStatusesController extends Controller
                 return $this->errorResponse('No items to sort.', 404);
             }
 
-            $this->service->saveSortOrder($itemIds);
+            $this->service->saveSortOrder($itemIds, Auth::user()->account_id);
 
             return $this->successResponse('Records are sorted successfully!');
         } catch (\Exception $e) {

@@ -258,6 +258,7 @@ Route::prefix('centres')->name('centres.api.')->group(function () {
 
 // Lead Statuses Routes Start
 Route::post('lead_statuses/datatable', [LeadStatusesController::class, 'datatable'])->name('lead_statuses.datatable');
+Route::get('lead_statuses/create', [LeadStatusesController::class, 'create'])->name('lead_statuses.create');
 Route::post('lead_statuses', [LeadStatusesController::class, 'store'])->name('lead_statuses.store');
 Route::get('lead_statuses/{id}/edit', [LeadStatusesController::class, 'edit'])->name('lead_statuses.edit');
 Route::put('lead_statuses/{id}', [LeadStatusesController::class, 'update'])->name('lead_statuses.update');

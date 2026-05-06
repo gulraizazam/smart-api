@@ -299,17 +299,19 @@ class AppointmentStatuses extends BaseModel
 
         $data['account_id'] = $account_id;
 
-        if ($data['parent_id'] == '') {
-            $data['parent_id'] = 0;
-            //            $data['is_comment'] = 0;
+        // parent_id has a self-referencing FK
+        // (fk_appointment_statuses_parent_id); 0 is not a valid id, so
+        // empty/0/missing must become NULL to satisfy the constraint.
+        if (empty($data['parent_id'])) {
+            $data['parent_id'] = null;
             if (! isset($data['allow_message'])) {
                 $data['allow_message'] = 0;
             }
         } else {
+            $data['parent_id'] = (int) $data['parent_id'];
+            // allow_message is only meaningful at the top level; child
+            // statuses inherit their parent's setting at consume time.
             $data['allow_message'] = 0;
-            //            if (!isset($data['is_comment'])) {
-            //                $data['is_comment'] = 0;
-            //            }
         }
 
         // Set comment as empty if is_comment is not set
@@ -455,12 +457,14 @@ class AppointmentStatuses extends BaseModel
         // Set Account ID
         $data['account_id'] = $account_id;
 
-        if (! isset($data['parent_id'])) {
-            $data['parent_id'] = 0;
+        // Same FK rule as createRecord — empty/0/missing → NULL.
+        if (empty($data['parent_id'])) {
+            $data['parent_id'] = null;
             if (! isset($data['allow_message'])) {
                 $data['allow_message'] = 0;
             }
         } else {
+            $data['parent_id'] = (int) $data['parent_id'];
             $data['allow_message'] = 0;
         }
 

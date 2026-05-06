@@ -57,17 +57,21 @@ class LeadStatusService
             ->get();
     }
 
-    public function saveSortOrder(array $itemIds): void
+    public function saveSortOrder(array $itemIds, int $accountId): void
     {
         foreach ($itemIds as $position => $id) {
-            LeadStatuses::where('id', $id)->update(['sort_no' => $position]);
+            LeadStatuses::where('id', $id)
+                ->where('account_id', $accountId)
+                ->update(['sort_no' => $position]);
         }
     }
 
     public function create(array $data, int $accountId): LeadStatuses
     {
         $data['account_id'] = $accountId;
-        $data['parent_id'] = $data['parent_id'] ?: 0;
+        // parent_id has a self-referencing FK (fk_lead_statuses_parent_id);
+        // 0 is not a valid id, so empty/0/missing must become NULL.
+        $data['parent_id'] = empty($data['parent_id']) ? null : (int) $data['parent_id'];
         $data['is_comment'] ??= 0;
 
         $this->resetUniqueFlags($data, $accountId);
@@ -95,7 +99,7 @@ class LeadStatusService
 
         $oldData = $record->toArray();
         $data['account_id'] = $accountId;
-        $data['parent_id'] ??= 0;
+        $data['parent_id'] = empty($data['parent_id']) ? null : (int) $data['parent_id'];
         $data['is_comment'] ??= 0;
 
         $this->resetUniqueFlags($data, $accountId);
