@@ -26,5 +26,14 @@ composer.json
 /.idea
 /.vscode
 server.php
-.sql
 .claude/settings.local.json
+
+# Database dumps and backups (intentional schema/migration SQL is allowlisted below)
+*.sql
+*.sql.gz
+*.sql.zip
+*.dump
+!database/schema/*.sql
+!database/sql/*.sql
+!storage/backups/*.sql
+
