@@ -1,10 +1,10 @@
 <!--begin::Aside-->
-<div class="aside aside-left aside-fixed d-flex flex-column flex-row-auto" id="kt_aside">
+<div class="aside aside-left aside-fixed d-flex flex-column flex-row-auto" id="kt_aside" style="background-color:#000000!important;">
     <!--begin::Brand-->
     <div class="brand flex-column-auto" id="kt_brand">
         <!--begin::Logo-->
         <a href="{{ route('admin.home') }}" class="brand-logo">
-            <img style="width: 120px;margin-left:25px" alt="Logo" src="{{ asset('logo.png') }}" />
+            <span style="font-size:22px;font-weight:700;color:#ffffff;margin-left:25px;letter-spacing:1px;">Allura</span>
         </a>
         <!--end::Logo-->
         <!--begin::Toggle-->
@@ -32,7 +32,7 @@
             <div class="flex-column-auto d-lg-none pt-4 pb-7" id="kt_brand" style="border-bottom: 1px solid #032f58;">
                 <!--begin::Logo-->
                 <a class="brand-logo">
-                    <img style="width: 130px;margin-left:25px; display:block;" alt="Logo" src="{{ asset('logo.png') }}" />
+                    <span style="font-size:22px;font-weight:700;color:#ffffff;margin-left:25px;letter-spacing:1px;">Allura</span>
                 </a>
                 <!--end::Logo-->
             </div>
