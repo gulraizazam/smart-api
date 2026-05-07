@@ -207,9 +207,10 @@ Route::post('centre_targets/datatable', [CentreTargetsController::class, 'datata
 // `show` method, so this also fixes that latent bug) and
 // `PATCH /centre_targets/{id}`. Admin UI posts updates as `PUT` via
 // `@method('put')` form-spoof, so we re-register PUT-only for legacy.
-// DELETE also left to API (legacy deleteRecord ends with a flash+redirect
-// on failure which doesn't fit a JSON response).
-Route::resource('centre_targets', CentreTargetsController::class)->except(['index', 'show', 'update', 'destroy']);
+// `destroy` is kept on the legacy resource because the admin JS calls
+// `route('admin.centre_targets.destroy', ...)`; the controller method
+// returns JSON via successResponse/handleException, so it is safe to keep.
+Route::resource('centre_targets', CentreTargetsController::class)->except(['index', 'show', 'update']);
 Route::put('centre_targets/{id}', [CentreTargetsController::class, 'update'])->name('centre_targets.update')->whereNumber('id');
 
 // Package Advance route start
