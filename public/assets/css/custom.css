@@ -1160,3 +1160,14 @@ input[type=number] {
     height: 200px;
     overflow-y: scroll;
 }
+
+/* Allura brand — black sidebar */
+.aside,
+.aside .aside-menu,
+.aside .aside-menu-wrapper {
+    background-color: #000000 !important;
+}
+.brand {
+    background-color: #000000 !important;
+    box-shadow: none !important;
+}
