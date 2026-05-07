@@ -79,6 +79,7 @@ use Illuminate\Support\Facades\Route;
     Route::get('reports/doctor-ratings/doctors', [\App\Http\Controllers\Api\Reports\DoctorRatingsApiController::class, 'doctorsForCentres'])->name('api.reports.doctor-ratings.doctors');
     Route::post('reports/doctor-ratings/data', [\App\Http\Controllers\Api\Reports\DoctorRatingsApiController::class, 'data'])->name('api.reports.doctor-ratings.data');
     Route::get('reports/doctor-ratings/export', [\App\Http\Controllers\Api\Reports\DoctorRatingsApiController::class, 'export'])->name('api.reports.doctor-ratings.export');
+    Route::get('reports/doctor-ratings/{doctor}/by-service', [\App\Http\Controllers\Api\Reports\DoctorRatingsApiController::class, 'byService'])->whereNumber('doctor')->name('api.reports.doctor-ratings.by-service');
     Route::get('reports/doctor-incentive/filters', [\App\Http\Controllers\Api\Reports\DoctorIncentiveReportController::class, 'filters'])->name('api.reports.doctor-incentive.filters');
     Route::get('reports/doctor-incentive/doctors', [\App\Http\Controllers\Api\Reports\DoctorIncentiveReportController::class, 'doctorsForCentres'])->name('api.reports.doctor-incentive.doctors');
     Route::post('reports/doctor-incentive', [\App\Http\Controllers\Api\Reports\DoctorIncentiveReportController::class, '__invoke'])->name('api.reports.doctor-incentive');

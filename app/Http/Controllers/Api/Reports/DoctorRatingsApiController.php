@@ -12,6 +12,7 @@ use App\Models\Locations;
 use App\Models\Services;
 use App\Models\User;
 use App\Services\Feedback\FeedbackService;
+use Illuminate\Support\Facades\DB;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -36,6 +37,97 @@ class DoctorRatingsApiController extends Controller
     public function __construct(
         private readonly FeedbackService $feedbackService,
     ) {}
+
+    /**
+     * Per-doctor category breakdown — parent service rating + child treatment
+     * ratings, all-time. Mirrors the legacy `/admin/dashboard/feedback/view/{id}`
+     * page conceptually, but uses the `parentsOnly` scope so it picks up
+     * services with `parent_id IS NULL` (the legacy `parent_id = 0` filter
+     * misses 16 of 17 parent services in current data).
+     */
+    public function byService(int $doctorId): JsonResponse
+    {
+        try {
+            if (! Gate::allows('feedbacks_manage')) {
+                return $this->errorResponse('Unauthorized.', 403);
+            }
+
+            $doctor = User::where('id', $doctorId)
+                ->where('user_type_id', self::DOCTOR_USER_TYPE_ID)
+                ->first(['id', 'name']);
+
+            if ($doctor === null) {
+                return $this->errorResponse('Doctor not found.', 404);
+            }
+
+            $parents = Services::parentsOnly()
+                ->orderBy('name')
+                ->get(['id', 'name', 'color']);
+
+            $childrenByParent = Services::whereIn('parent_id', $parents->pluck('id'))
+                ->get(['id', 'name', 'color', 'parent_id'])
+                ->groupBy('parent_id');
+
+            $parentRatings = \App\Models\Feedback::where('doctor_id', $doctorId)
+                ->whereIn('service_id', $parents->pluck('id'))
+                ->select('service_id', DB::raw('AVG(rating) as avg_rating'))
+                ->groupBy('service_id')
+                ->pluck('avg_rating', 'service_id');
+
+            $childIds = $childrenByParent->flatten()->pluck('id');
+            $childRatings = $childIds->isEmpty()
+                ? collect()
+                : \App\Models\Feedback::where('doctor_id', $doctorId)
+                    ->whereIn('treatment_id', $childIds)
+                    ->select('treatment_id', DB::raw('AVG(rating) as avg_rating'))
+                    ->groupBy('treatment_id')
+                    ->pluck('avg_rating', 'treatment_id');
+
+            $services = [];
+            foreach ($parents as $service) {
+                $parentRating = $parentRatings[$service->id] ?? null;
+                $children = $childrenByParent[$service->id] ?? collect();
+
+                $childData = [];
+                foreach ($children as $child) {
+                    $avgRating = $childRatings[$child->id] ?? null;
+                    if ($avgRating !== null) {
+                        $childData[] = [
+                            'id' => (int) $child->id,
+                            'name' => (string) $child->name,
+                            'color' => $child->color,
+                            'avg_rating' => round((float) $avgRating, 2),
+                        ];
+                    }
+                }
+
+                if ($parentRating !== null || ! empty($childData)) {
+                    $services[] = [
+                        'id' => (int) $service->id,
+                        'name' => (string) $service->name,
+                        'color' => $service->color,
+                        'avg_rating' => $parentRating !== null ? round((float) $parentRating, 2) : 0.0,
+                        'treatments' => $childData,
+                    ];
+                }
+            }
+
+            $aggregate = \App\Models\Feedback::where('doctor_id', $doctorId)
+                ->selectRaw('ROUND(AVG(CAST(rating AS DECIMAL(4,2))), 2) as avg_rating, COUNT(*) as total_feedbacks')
+                ->first();
+
+            return $this->successResponse('OK', [
+                'doctor_id' => (int) $doctor->id,
+                'doctor_name' => (string) $doctor->name,
+                'overall_avg_rating' => $aggregate && $aggregate->avg_rating !== null ? (float) $aggregate->avg_rating : 0.0,
+                'total_feedbacks' => (int) ($aggregate->total_feedbacks ?? 0),
+                'services' => $services,
+            ]);
+        } catch (\Throwable $e) {
+            Log::error($e->getMessage(), ['file' => $e->getFile(), 'line' => $e->getLine()]);
+            return $this->errorResponse('An error occurred. Please try again.', 500);
+        }
+    }
 
     /**
      * Filter dropdown payload — doctors, locations, services. Plus an
