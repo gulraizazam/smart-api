@@ -98,6 +98,53 @@ class UpsellingApiController extends Controller
         }
     }
 
+    /**
+     * Per-doctor breakdown — every package-service this doctor sold in the
+     * filter period, plus running totals. Wraps
+     * `UpsellingService::getDoctorUpsellingDetailData` for the SPA.
+     */
+    public function doctorUpsellingDetail(Request $request, int $doctor): JsonResponse
+    {
+        if (! Gate::allows('upselling_report')) {
+            return $this->errorResponse('Unauthorized.', 403);
+        }
+
+        try {
+            [$locationIds, $startDate, $endDate] = $this->normaliseInput($request);
+
+            $started = microtime(true);
+            $data = $this->service->getDoctorUpsellingDetailData($doctor, $locationIds, $startDate, $endDate);
+            $elapsed = round((microtime(true) - $started) * 1000, 1);
+
+            $rows = collect($data['packageServices'] ?? [])->map(fn ($r) => [
+                'package_id' => (int) ($r->package_id ?? 0),
+                'service_id' => (int) ($r->service_id ?? 0),
+                'service_name' => (string) ($r->service_name ?? ''),
+                'patient_id' => isset($r->patient_id) ? (int) $r->patient_id : null,
+                'patient_name' => (string) ($r->patient_name ?? ''),
+                'scheduled_date' => $r->scheduled_date ? (string) $r->scheduled_date : null,
+                'sold_at' => $r->created_at ? (string) $r->created_at : null,
+                'amount' => (float) ($r->tax_including_price ?? 0),
+            ])->values()->all();
+
+            return $this->successResponse('Doctor upselling detail generated successfully', [
+                'doctor_id' => $doctor,
+                'doctor_name' => (string) ($data['doctorName'] ?? ''),
+                'total_amount' => (float) ($data['totalAmount'] ?? 0),
+                'unique_upsellings' => (int) ($data['uniqueUpsellings'] ?? 0),
+                'rows' => $rows,
+                'meta' => [
+                    'start_date' => $startDate,
+                    'end_date' => $endDate,
+                    'count' => count($rows),
+                    'elapsed_ms' => $elapsed,
+                ],
+            ]);
+        } catch (\Throwable $e) {
+            return $this->handleException($e, 'DoctorUpsellingDetail');
+        }
+    }
+
     public function doctorUpsellingExport(Request $request): SymfonyResponse
     {
         if (! Gate::allows('upselling_report')) {

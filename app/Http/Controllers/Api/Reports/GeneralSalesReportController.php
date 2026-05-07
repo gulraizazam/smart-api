@@ -184,14 +184,23 @@ class GeneralSalesReportController extends Controller
             endDate: $request->endDate(),
         );
 
-        [$title, $headings, $rows] = $this->flattenForExport($reportType, $result);
+        $flat = $this->flattenForExport($reportType, $result);
+        $title = $flat['title'];
+        $headings = $flat['headings'];
+        $rows = $flat['rows'];
+        $totalsRow = $flat['totalsRow'] ?? null;
+        $summaryBlock = $flat['summaryBlock'] ?? null;
+
         $stamp = ($request->startDate() && $request->endDate())
             ? '-'.$request->startDate().'-to-'.$request->endDate()
             : '';
         $base = strtolower(str_replace(' ', '-', $reportType->value));
 
         if ($format === 'excel') {
-            return Excel::download(new GenericTableExport($headings, $rows), "{$base}{$stamp}.xlsx");
+            return Excel::download(
+                new GenericTableExport($headings, $rows, $totalsRow, $summaryBlock),
+                "{$base}{$stamp}.xlsx",
+            );
         }
 
         $subtitle = ($request->startDate() && $request->endDate())
@@ -203,25 +212,34 @@ class GeneralSalesReportController extends Controller
             'subtitle' => $subtitle,
             'headings' => $headings,
             'rows' => $rows,
+            'totalsRow' => $totalsRow,
+            'summaryBlock' => $summaryBlock,
         ])->setPaper($reportType->pdfPaper(), $reportType->pdfOrientation());
 
         return $pdf->download("{$base}{$stamp}.pdf");
     }
 
     /**
-     * Flatten one report's result into [title, headings, rows]. Each row is
-     * a flat array of strings/numbers in heading order — ready for both
-     * GenericTableExport (Excel) and the generic-table Blade (PDF).
+     * Flatten one report's result for export. Returns title + headings + rows
+     * (in heading order), plus optional totalsRow / summaryBlock for the
+     * sales reports — those mirror the on-screen footer and per-mode
+     * breakdown panel so the file matches what the user sees.
      *
-     * @return array{0: string, 1: string[], 2: array<int, array<int, scalar|null>>}
+     * @return array{
+     *   title: string,
+     *   headings: string[],
+     *   rows: array<int, array<int, scalar|null>>,
+     *   totalsRow?: array<int, scalar|null>,
+     *   summaryBlock?: array<int, array{label: string, value: scalar|null, bold?: bool}>,
+     * }
      */
     private function flattenForExport(ReportType $reportType, array $result): array
     {
         return match ($reportType) {
             ReportType::GeneralRevenueSummary => [
-                'Sales Summary',
-                ['Centre', 'City', 'Region', 'Cash in', 'Card in', 'Bank in', 'Refund out', 'In hand'],
-                collect($result['report_data'] ?? [])->map(fn ($r) => [
+                'title' => 'Sales Summary',
+                'headings' => ['Centre', 'City', 'Region', 'Cash in', 'Card in', 'Bank in', 'Refund out', 'In hand'],
+                'rows' => collect($result['report_data'] ?? [])->map(fn ($r) => [
                     $r['name'] ?? '—',
                     $r['city'] ?? '—',
                     $r['region'] ?? '—',
@@ -231,11 +249,13 @@ class GeneralSalesReportController extends Controller
                     round((float) ($r['refund_out'] ?? 0), 2),
                     round((float) ($r['in_hand'] ?? 0), 2),
                 ])->values()->all(),
+                'totalsRow' => $this->salesTotalsRow($result, 3),
+                'summaryBlock' => $this->salesSummaryBlock($result),
             ],
             ReportType::GeneralRevenueDetail => [
-                'Sales Detail',
-                ['Centre', 'Date', 'Patient', 'Gender', 'Phone', 'Type', 'Mode', 'Cash in', 'Card in', 'Bank in', 'Refund out', 'Balance'],
-                collect($result['report_data'] ?? [])->flatMap(function ($centre) {
+                'title' => 'Sales Detail',
+                'headings' => ['Centre', 'Date', 'Patient', 'Gender', 'Phone', 'Type', 'Mode', 'Cash in', 'Card in', 'Bank in', 'Refund out', 'Balance'],
+                'rows' => collect($result['report_data'] ?? [])->flatMap(function ($centre) {
                     return collect($centre['revenue_data'] ?? [])->map(fn ($tx) => [
                         $centre['name'] ?? '—',
                         isset($tx['created_at']) ? substr((string) $tx['created_at'], 0, 10) : '—',
@@ -251,11 +271,13 @@ class GeneralSalesReportController extends Controller
                         round((float) ($tx['Balance'] ?? 0), 2),
                     ])->values();
                 })->values()->all(),
+                'totalsRow' => $this->salesTotalsRow($result, 7),
+                'summaryBlock' => $this->salesSummaryBlock($result),
             ],
             ReportType::DailyEmployeeStats => [
-                'Doctor-wise Summary',
-                ['Doctor', 'Service', 'Amount'],
-                collect($result['reportData'] ?? [])->flatMap(function ($doc) {
+                'title' => 'Doctor-wise Summary',
+                'headings' => ['Doctor', 'Service', 'Amount'],
+                'rows' => collect($result['reportData'] ?? [])->flatMap(function ($doc) {
                     $records = $doc['records'] ?? [];
                     if (empty($records)) {
                         return collect([[$doc['name'] ?? '—', '—', 0]]);
@@ -268,9 +290,9 @@ class GeneralSalesReportController extends Controller
                 })->values()->all(),
             ],
             ReportType::GenderWiseRevenue => [
-                'Gender-wise Revenue',
-                ['Centre', 'Male revenue', 'Female revenue', 'Unknown revenue', 'Total revenue', 'Male count', 'Female count', 'Unknown count', 'Total count'],
-                collect($result['reportData'] ?? [])->map(fn ($r) => [
+                'title' => 'Gender-wise Revenue',
+                'headings' => ['Centre', 'Male revenue', 'Female revenue', 'Unknown revenue', 'Total revenue', 'Male count', 'Female count', 'Unknown count', 'Total count'],
+                'rows' => collect($result['reportData'] ?? [])->map(fn ($r) => [
                     $r['name'] ?? '—',
                     round((float) ($r['male_revenue'] ?? 0), 2),
                     round((float) ($r['female_revenue'] ?? 0), 2),
@@ -283,24 +305,71 @@ class GeneralSalesReportController extends Controller
                 ])->values()->all(),
             ],
             ReportType::ServicesSold => [
-                'Services Sold',
-                ['Service', 'Centre', 'Sold', 'Service price'],
-                $this->buildServicesSoldExportRows($result),
+                'title' => 'Services Sold',
+                'headings' => ['Service', 'Centre', 'Sold', 'Service price'],
+                'rows' => $this->buildServicesSoldExportRows($result),
             ],
             ReportType::CollectionByService => [
-                'Collection by Service',
-                ['Service', 'Total'],
-                collect($result['reportData'] ?? [])->map(fn ($r) => [
+                'title' => 'Collection by Service',
+                'headings' => ['Service', 'Total'],
+                'rows' => collect($result['reportData'] ?? [])->map(fn ($r) => [
                     $r['name'] ?? $r['service_name'] ?? '—',
                     round((float) ($r['total'] ?? $r['amount'] ?? 0), 2),
                 ])->values()->all(),
             ],
             ReportType::ConversionReport => [
-                'Conversion Report',
-                array_keys((array) (collect($result['report_data'] ?? [])->first() ?? [])),
-                collect($result['report_data'] ?? [])->map(fn ($r) => array_values((array) $r))->values()->all(),
+                'title' => 'Conversion Report',
+                'headings' => array_keys((array) (collect($result['report_data'] ?? [])->first() ?? [])),
+                'rows' => collect($result['report_data'] ?? [])->map(fn ($r) => array_values((array) $r))->values()->all(),
             ],
         };
+    }
+
+    /**
+     * Bold totals row for the sales summary / detail tables. `$labelSpan` is
+     * how many leading text columns to skip before the numeric totals start
+     * (3 for summary, 7 for detail) — keeps the row aligned with the headings
+     * even though the row geometry differs between the two reports.
+     *
+     * @return array<int, scalar|null>
+     */
+    private function salesTotalsRow(array $result, int $labelSpan): array
+    {
+        $row = array_fill(0, $labelSpan, '');
+        $row[0] = 'Totals';
+        $cash = round((float) ($result['total_revenue_cash_in'] ?? 0), 2);
+        $card = round((float) ($result['total_revenue_card_in'] ?? 0), 2);
+        $bank = round((float) ($result['total_revenue_bank_in'] ?? 0), 2);
+        $refund = round((float) ($result['total_refund'] ?? 0), 2);
+        // Last column is "In hand" (summary) / "Balance" (detail) — both
+        // represented by Gross − Refund, matching the per-row math.
+        $netOrInHand = round($cash + $card + $bank - $refund, 2);
+        return array_merge($row, [$cash, $card, $bank, $refund, $netOrInHand]);
+    }
+
+    /**
+     * Per-mode breakdown panel mirroring the on-screen TotalsBreakdownPanel
+     * (Cash, Card, Bank/Wire Transfer, Gross Sales, Refund Out, Net Sales).
+     *
+     * @return array<int, array{label: string, value: scalar, bold?: bool}>
+     */
+    private function salesSummaryBlock(array $result): array
+    {
+        $cash = round((float) ($result['total_revenue_cash_in'] ?? 0), 2);
+        $card = round((float) ($result['total_revenue_card_in'] ?? 0), 2);
+        $bank = round((float) ($result['total_revenue_bank_in'] ?? 0), 2);
+        $gross = round($cash + $card + $bank, 2);
+        $refund = round((float) ($result['total_refund'] ?? 0), 2);
+        $net = round($gross - $refund, 2);
+
+        return [
+            ['label' => 'Cash', 'value' => number_format($cash, 2)],
+            ['label' => 'Card', 'value' => number_format($card, 2)],
+            ['label' => 'Bank/Wire Transfer', 'value' => number_format($bank, 2)],
+            ['label' => 'Gross Sales', 'value' => number_format($gross, 2), 'bold' => true],
+            ['label' => 'Refund Out', 'value' => '('.number_format($refund, 2).')'],
+            ['label' => 'Net Sales', 'value' => number_format($net, 2), 'bold' => true],
+        ];
     }
 
     /**

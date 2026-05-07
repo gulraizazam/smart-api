@@ -157,6 +157,29 @@ class PermissionController extends Controller
         }
     }
 
+    /**
+     * Two-level catalogue for the SPA's tree view. Returns parent groups
+     * with their children nested. Cached server-side; bust on every CRUD
+     * via PermissionService::clearCache.
+     */
+    public function tree(): JsonResponse
+    {
+        try {
+            if (! Gate::allows('permissions_manage')) {
+                return $this->errorResponse('You are not authorized to access this resource.', 401);
+            }
+
+            $isSuperAdmin = Auth::user()?->hasRole('Super-Admin') ?? false;
+
+            return $this->successResponse('Permissions tree retrieved', [
+                'tree' => $this->permissionService->getTree($isSuperAdmin),
+                'permissions' => $this->permissionService->getUserPermissions(),
+            ]);
+        } catch (\Exception $e) {
+            return $this->handleException($e, 'PermissionController');
+        }
+    }
+
     public function parentGroups(): JsonResponse
     {
         try {

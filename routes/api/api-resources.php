@@ -55,6 +55,7 @@ use Illuminate\Support\Facades\Route;
         // Page extras: WhatsApp prefill data + Excel export of filtered list.
         // Send-WhatsApp itself stays client-side (window.open to wa.me).
         Route::get('{id}/whatsapp-data', [\App\Http\Controllers\Api\ConsultancyController::class, 'whatsappData'])->name('whatsapp_data');
+        Route::get('{id}/activities', [\App\Http\Controllers\Api\ConsultancyController::class, 'activities'])->name('activities');
         Route::post('export', [\App\Http\Controllers\Api\ConsultancyController::class, 'export'])->name('export');
 
         // Consultancy Invoice API Routes

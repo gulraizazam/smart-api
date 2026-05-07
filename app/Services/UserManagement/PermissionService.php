@@ -12,6 +12,7 @@ class PermissionService
 {
     private const CACHE_TTL = 3600;
     private const CACHE_KEY_PARENT_GROUPS = 'permissions.parent_groups';
+    private const CACHE_KEY_TREE = 'permissions.tree';
 
     public function getDatatableData(array $params, bool $isSuperAdmin): array
     {
@@ -148,8 +149,60 @@ class PermissionService
         ];
     }
 
+    /**
+     * Two-level catalogue: parent groups with their children nested under
+     * a `children` key. Drives the SPA's tree view at /permissions.
+     *
+     * Cached for an hour and busted in clearCache() — same pattern as
+     * getParentGroups so the catalogue stays consistent across CRUD.
+     *
+     * @return array<int, array{id:int,name:string,title:?string,status:bool,guard_name:string,children:array<int, array{id:int,name:string,title:?string,status:bool,guard_name:string,parent_id:?int}>}>
+     */
+    public function getTree(bool $isSuperAdmin): array
+    {
+        $cacheKey = self::CACHE_KEY_TREE.'.'.($isSuperAdmin ? 'sa' : 'std');
+
+        return Cache::remember($cacheKey, self::CACHE_TTL, function () use ($isSuperAdmin): array {
+            $base = Permission::query()
+                ->select(['id', 'name', 'title', 'parent_id', 'status', 'guard_name', 'sort_order'])
+                ->when(!$isSuperAdmin, fn (Builder $q) => $q->where('name', '!=', 'view_inactive_records'))
+                ->orderBy('sort_order')
+                ->orderBy('name')
+                ->get();
+
+            $childrenByParent = $base
+                ->filter(fn (Permission $p) => !empty($p->parent_id))
+                ->groupBy('parent_id');
+
+            return $base
+                ->filter(fn (Permission $p) => empty($p->parent_id))
+                ->map(fn (Permission $parent) => [
+                    'id' => (int) $parent->id,
+                    'name' => (string) $parent->name,
+                    'title' => $parent->title,
+                    'status' => (bool) $parent->status,
+                    'guard_name' => (string) $parent->guard_name,
+                    'children' => ($childrenByParent[$parent->id] ?? collect())
+                        ->map(fn (Permission $c) => [
+                            'id' => (int) $c->id,
+                            'name' => (string) $c->name,
+                            'title' => $c->title,
+                            'status' => (bool) $c->status,
+                            'guard_name' => (string) $c->guard_name,
+                            'parent_id' => $c->parent_id !== null ? (int) $c->parent_id : null,
+                        ])
+                        ->values()
+                        ->all(),
+                ])
+                ->values()
+                ->all();
+        });
+    }
+
     public function clearCache(): void
     {
         Cache::forget(self::CACHE_KEY_PARENT_GROUPS);
+        Cache::forget(self::CACHE_KEY_TREE.'.sa');
+        Cache::forget(self::CACHE_KEY_TREE.'.std');
     }
 }

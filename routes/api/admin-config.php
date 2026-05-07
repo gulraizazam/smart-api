@@ -43,6 +43,10 @@ Route::prefix('treatments')->name('treatments.')->group(function () {
 // Permissions API Routes (Optimized)
 Route::prefix('permissions')->name('permissions.')->middleware('permission:permissions_manage')->group(function () {
     Route::post('datatable', [PermissionController::class, 'datatable'])->name('datatable');
+    // Literal paths first — `tree` would otherwise bind to the
+    // {permission} wildcard below and 404 with
+    // "No query results for model [Permission] tree".
+    Route::get('tree', [PermissionController::class, 'tree'])->name('tree');
     Route::get('parent-groups', [PermissionController::class, 'parentGroups'])->name('parent_groups');
     Route::get('create', [PermissionController::class, 'create'])->name('create');
     Route::post('/', [PermissionController::class, 'store'])->name('store');

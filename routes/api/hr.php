@@ -2,6 +2,7 @@
 
 // HRM Module API Routes — Datatable endpoints, AJAX data
 
+use App\Http\Controllers\Admin\HR\EmployeeDocumentController;
 use App\Http\Controllers\Admin\HR\HrNotificationController;
 use App\Http\Controllers\Admin\HR\LeaveApplicationController as AdminLeaveApplicationController;
 use App\Http\Controllers\Api\HR\DashboardController;
@@ -52,10 +53,35 @@ Route::prefix('hr')->name('api.hr.')->group(function () {
     // Gates are applied in-controller to match the rest of /api/* HR.
     Route::prefix('employees')->name('employees.')->group(function () {
         Route::post('/', [EmployeeController::class, 'store'])->name('store');
-        Route::get('{user}', [EmployeeController::class, 'show'])->name('show');
-        Route::patch('{user}', [EmployeeController::class, 'update'])->name('update');
-        Route::delete('{user}', [EmployeeController::class, 'destroy'])->name('destroy');
-        Route::patch('{user}/status', [EmployeeController::class, 'status'])->name('status');
+        // Literal paths before {user} — otherwise `form-options` /
+        // `documents/...` would bind to the user wildcard and 404 because
+        // no user exists with that id.
+        Route::get('form-options', [EmployeeController::class, 'formOptions'])->name('form-options');
+        // Document delete — employee-scoped path so the SPA can use the
+        // same prefix it uses for upload. Reuses the legacy controller
+        // (route-model-bound EmployeeDocument), gates inside the method.
+        Route::delete('documents/{document}', [EmployeeDocumentController::class, 'destroy'])
+            ->name('documents.destroy')
+            ->whereNumber('document');
+        Route::get('{user}', [EmployeeController::class, 'show'])->name('show')->whereNumber('user');
+        Route::patch('{user}', [EmployeeController::class, 'update'])->name('update')->whereNumber('user');
+        Route::delete('{user}', [EmployeeController::class, 'destroy'])->name('destroy')->whereNumber('user');
+        Route::patch('{user}/status', [EmployeeController::class, 'status'])->name('status')->whereNumber('user');
+        // Document upload — same controller as /admin/hr/documents/{user};
+        // `documents` is a literal segment so it doesn't collide with the
+        // numeric {user} bindings above.
+        Route::post('{user}/documents', [EmployeeDocumentController::class, 'store'])
+            ->name('documents.store')
+            ->whereNumber('user');
+        // Avatar upload / remove — multipart `avatar` field. Returns the
+        // fresh EmployeeResource so the SPA can swap the cached profile
+        // payload in one round-trip.
+        Route::post('{user}/avatar', [EmployeeController::class, 'avatarStore'])
+            ->name('avatar.store')
+            ->whereNumber('user');
+        Route::delete('{user}/avatar', [EmployeeController::class, 'avatarDestroy'])
+            ->name('avatar.destroy')
+            ->whereNumber('user');
     });
 
     // ── Leave Applications (REST actions) ──

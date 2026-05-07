@@ -100,6 +100,7 @@ use Illuminate\Support\Facades\Route;
     Route::get('reports/upselling/filters', [\App\Http\Controllers\Api\Reports\UpsellingApiController::class, 'filters'])->name('api.reports.upselling.filters');
     Route::post('reports/upselling/doctor', [\App\Http\Controllers\Api\Reports\UpsellingApiController::class, 'doctorUpselling'])->name('api.reports.upselling.doctor');
     Route::post('reports/upselling/doctor/export', [\App\Http\Controllers\Api\Reports\UpsellingApiController::class, 'doctorUpsellingExport'])->name('api.reports.upselling.doctor.export');
+    Route::post('reports/upselling/doctor/{doctor}/detail', [\App\Http\Controllers\Api\Reports\UpsellingApiController::class, 'doctorUpsellingDetail'])->whereNumber('doctor')->name('api.reports.upselling.doctor.detail');
     Route::post('reports/upselling/consultant-revenue', [\App\Http\Controllers\Api\Reports\UpsellingApiController::class, 'consultantRevenue'])->name('api.reports.upselling.consultant-revenue');
     Route::post('reports/upselling/consultant-revenue/export', [\App\Http\Controllers\Api\Reports\UpsellingApiController::class, 'consultantRevenueExport'])->name('api.reports.upselling.consultant-revenue.export');
     Route::get('reports/doctor-ratings-detail/filters', [\App\Http\Controllers\Api\Reports\DoctorRatingsDetailApiController::class, 'filters'])->name('api.reports.doctor-ratings-detail.filters');

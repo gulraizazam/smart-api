@@ -4,6 +4,7 @@
 
 use App\Http\Controllers\Admin\CustomFormFeedbacksController;
 use App\Http\Controllers\Admin\CustomFormsController;
+use App\Http\Controllers\Admin\InvoiceGenerationController;
 use App\Http\Controllers\Admin\InvoicesController;
 use App\Http\Controllers\Api\InvoicesController as ApiInvoicesController;
 use App\Http\Controllers\Admin\LeadsController as AdminLeadsController;
@@ -31,6 +32,14 @@ use Illuminate\Support\Facades\Route;
         Route::post('{invoice}/cancel', [ApiInvoicesController::class, 'cancel'])->name('cancel')->whereNumber('invoice');
         Route::get('{invoice}/sms-logs', [ApiInvoicesController::class, 'smsLogs'])->name('sms_logs')->whereNumber('invoice');
         Route::post('{invoice}/resend-sms', [ApiInvoicesController::class, 'resendSMS'])->name('resend_sms')->whereNumber('invoice');
+
+        // Tax Calculation Report — SPA aliases for the legacy
+        // /admin/invoices/{calculate-amounts,export-exempt,download-invoices-zip}
+        // endpoints. Same controller methods, just an /api/ prefix so the
+        // SPA can call them through the standard API client.
+        Route::post('calculate-amounts', [InvoiceGenerationController::class, 'calculateAmounts'])->name('calculate_amounts');
+        Route::post('export-exempt', [InvoiceGenerationController::class, 'exportExemptInvoices'])->name('export_exempt');
+        Route::post('download-invoices-zip', [InvoiceGenerationController::class, 'downloadInvoicesZip'])->name('download_invoices_zip');
     });
 
     Route::post('invoices/datatable/&{id?}', [InvoicesController::class, 'datatable'])->name('invoices.datatable');

@@ -11,8 +11,10 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Appointment\UpdateAppointmentStatusRequest;
 use App\Http\Requests\Consultancy\ScheduleConsultancyRequest;
 use App\Http\Requests\Consultancy\StoreConsultancyRequest;
+use App\Helpers\ActivityLogRenderer;
 use App\Http\Requests\Consultancy\UpdateConsultancyRequest;
 use App\Http\Resources\Consultancy\ConsultancyResource;
+use App\Models\Activity;
 use App\Models\Appointments;
 use App\Models\SMSTemplates;
 use App\Services\Appointment\ConsultancyService;
@@ -243,6 +245,86 @@ class ConsultancyController extends Controller
         } catch (\Throwable $e) {
             return $this->handleException($e, 'Error fetching non-scheduled consultancies');
         }
+    }
+
+    /**
+     * GET /api/consultancy/{id}/activities
+     *
+     * Per-consultation lifecycle timeline. Reads activities scoped to
+     * `appointment_id = $id`, runs each through ActivityLogRenderer so
+     * the SPA receives the same `description_html` shape as the global
+     * activity-logs report. The SPA panel parses the leading tag
+     * (LEAD / APT / RESC / EDIT / RCVD / DEL …) into a coloured badge
+     * via the shared `DescriptionWithTag` component.
+     *
+     * Account scope is enforced through the parent appointment lookup
+     * (404s on a wrong-account id) — same guard the show / update /
+     * status endpoints use. Centre ACL via `ACL::getUserCentres()`.
+     */
+    public function activities(int $id): JsonResponse
+    {
+        try {
+            if (! Gate::allows('consultations_manage') && ! Gate::allows('appointments_view')) {
+                throw AppointmentException::unauthorized();
+            }
+
+            // Reuse the same account + centre ACL guard the rest of the
+            // controller relies on. Throws notFound() on a wrong-tenant
+            // or wrong-centre id, so the activities endpoint can never
+            // leak a different consultation's history.
+            $appointment = $this->consultancyService->getConsultancyById($id);
+
+            $activities = Activity::with('user:id,name')
+                ->where('appointment_id', $appointment->id)
+                ->where('account_id', Auth::user()->account_id)
+                ->orderByDesc('created_at')
+                ->limit(200)
+                ->get();
+
+            $rows = $activities->map(function (Activity $a): array {
+                $description = ActivityLogRenderer::renderCompact($a)
+                    ?? $a->description
+                    ?? ActivityLogRenderer::render($a);
+
+                $timestamp = $a->updated_at ?? $a->created_at;
+                $localTs = $timestamp
+                    ? Carbon::parse((string) $timestamp, 'UTC')->setTimezone(config('app.timezone'))
+                    : null;
+
+                return [
+                    'id' => (int) $a->id,
+                    'type' => $a->activity_type ?? $a->action ?? 'unknown',
+                    'description' => $this->stripHtml((string) $description),
+                    'description_html' => (string) $description,
+                    'created_at' => $timestamp,
+                    'time_formatted' => $localTs?->format('M j, Y g:i A'),
+                    'time_short' => $localTs?->format('m-d-Y H:i'),
+                    'actor' => $a->user ? [
+                        'id' => (int) $a->user->id,
+                        'name' => (string) $a->user->name,
+                    ] : null,
+                ];
+            })->values()->all();
+
+            return $this->successResponse('Consultation activities retrieved.', [
+                'rows' => $rows,
+                'count' => count($rows),
+            ]);
+        } catch (AppointmentException $e) {
+            return $this->errorResponse($e->getMessage(), $e->getCode());
+        } catch (\Throwable $e) {
+            return $this->handleException($e, 'Error fetching consultancy activities');
+        }
+    }
+
+    /**
+     * Strip HTML tags from a rendered description so the SPA has a clean
+     * plain-text fallback (used when the badge-aware renderer can't
+     * parse the leading tag — e.g. legacy un-tagged stored descriptions).
+     */
+    private function stripHtml(string $html): string
+    {
+        return trim(html_entity_decode(strip_tags($html), ENT_QUOTES | ENT_HTML5, 'UTF-8'));
     }
 
     public function statistics(Request $request): JsonResponse

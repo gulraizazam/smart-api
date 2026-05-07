@@ -744,6 +744,48 @@ class AppointmentService
             //     }
             // }
 
+            // Rota guard — same gate scheduleAppointment uses. Re-validates
+            // when the doctor or the scheduled_date changes on update so
+            // rescheduling into a no-rota slot fails loudly instead of
+            // landing with `resource_has_rota_day_id = NULL`. Scoped to
+            // consultancy because treatments allow off-rota slots.
+            $rotaDoctorId = $appointmentData['doctor_id'] ?? $appointment->doctor_id;
+            $rotaDate = $appointmentData['scheduled_date'] ?? null;
+            $rotaLocationId = $appointmentData['location_id'] ?? $appointment->location_id;
+
+            if (
+                $rotaDoctorId
+                && $rotaDate
+                && $appointment->appointment_type_id == AppointmentType::Consultancy->value
+            ) {
+                $resource = Resources::where([
+                    'external_id' => $rotaDoctorId,
+                    'resource_type_id' => Config::get('constants.resource_doctor_type_id'),
+                    'account_id' => $this->getAccountId(),
+                ])->first();
+
+                $rotaDay = $resource
+                    ? ResourceHasRotaDays::getSingleDayRotaWithResourceID(
+                        $resource->id,
+                        $rotaDate,
+                        $this->getAccountId(),
+                        $rotaLocationId
+                    )
+                    : null;
+
+                if (empty($rotaDay)) {
+                    $dateLabel = Carbon::parse($rotaDate)->format('Y-m-d');
+                    throw AppointmentException::invalidData(
+                        "Doctor rota is not defined for {$dateLabel} at the selected centre."
+                    );
+                }
+
+                if ($resource) {
+                    $appointmentData['resource_id'] = $resource->id;
+                    $appointmentData['resource_has_rota_day_id'] = $rotaDay['id'];
+                }
+            }
+
             $oldData = $appointment->toArray();
 
             if (isset($appointmentData['scheduled_date'])) {
@@ -1115,16 +1157,33 @@ class AppointmentService
                     'account_id' => $accountId,
                 ])->first();
 
-                if ($resource) {
-                    $updateData['resource_id'] = $resource->id;
-
-                    $rotaDay = ResourceHasRotaDays::getSingleDayRotaWithResourceID(
+                $rotaDay = $resource
+                    ? ResourceHasRotaDays::getSingleDayRotaWithResourceID(
                         $resource->id,
                         $resolvedDate,
                         $accountId,
                         $resolvedLocationId
-                    );
+                    )
+                    : null;
 
+                // Block scheduling when the doctor has no rota on the
+                // chosen date for the chosen centre. Pre-fix, an empty
+                // rota silently fell through and the appointment landed
+                // with `resource_has_rota_day_id = NULL`, which broke
+                // downstream calendar/utilization queries. Scoped to
+                // consultancy because treatments allow off-rota slots.
+                if (
+                    $appointment->appointment_type_id == AppointmentType::Consultancy->value
+                    && empty($rotaDay)
+                ) {
+                    $dateLabel = Carbon::parse($resolvedDate)->format('Y-m-d');
+                    throw AppointmentException::invalidData(
+                        "Doctor rota is not defined for {$dateLabel} at the selected centre."
+                    );
+                }
+
+                if ($resource) {
+                    $updateData['resource_id'] = $resource->id;
                     if (! empty($rotaDay)) {
                         $updateData['resource_has_rota_day_id'] = $rotaDay['id'];
                     }

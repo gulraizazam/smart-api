@@ -38,7 +38,7 @@ class EmployeeDocumentController extends Controller
             $accountId = Auth::user()->account_id;
             $path = $file->store("accounts/{$accountId}/hr/documents/{$user->id}", self::DISK);
 
-            EmployeeDocument::create([
+            $document = EmployeeDocument::create([
                 'user_id' => $user->id,
                 'file_name' => $fileName,
                 'file_path' => $path,
@@ -46,7 +46,10 @@ class EmployeeDocumentController extends Controller
                 'account_id' => $accountId,
             ]);
 
-            return $this->successResponse('Document uploaded successfully.');
+            return $this->successResponse('Document uploaded successfully.', [
+                'id' => (int) $document->id,
+                'file_name' => (string) $document->file_name,
+            ]);
         } catch (\Illuminate\Validation\ValidationException $e) {
             return $this->errorResponse($e->getMessage(), 422, $e->errors());
         } catch (\Exception $e) {

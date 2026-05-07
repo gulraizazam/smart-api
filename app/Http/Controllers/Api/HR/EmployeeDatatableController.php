@@ -50,6 +50,12 @@ class EmployeeDatatableController extends Controller
                 'name' => $user->name,
                 'email' => $user->email,
                 'phone' => $user->phone,
+                // Relative path so it rides the SPA's session cookie via
+                // the dev proxy / same-origin in prod (same reasoning as
+                // EmployeeResource::personalInformation).
+                'avatar_url' => $user->image_src
+                    ? route('admin.files.patient_image_api', ['filename' => $user->image_src], false)
+                    : null,
                 'designation' => $user->designation_name ?? '—',
                 'hire_date' => $user->hire_date ? \Carbon\Carbon::parse($user->hire_date)->format('d M Y') : '—',
                 'active' => $user->active,

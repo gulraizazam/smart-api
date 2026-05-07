@@ -245,29 +245,63 @@ class ConsultancyInvoiceService
         // dialog can offer "Re-print invoice" / "Print consultation form"
         // without making a second round trip.
         $paidStatus = InvoiceStatuses::where('slug', 'paid')->first();
-        $existingInvoice = Invoices::where([
-            ['appointment_id', '=', $appointmentId],
-            ['invoice_status_id', '=', $paidStatus?->id],
-        ])->first();
+        $existingInvoice = Invoices::with('invoiceDetailService')
+            ->where([
+                ['appointment_id', '=', $appointmentId],
+                ['invoice_status_id', '=', $paidStatus?->id],
+            ])
+            ->first();
+
+        // The print page needs the same shape as the unpaid response so
+        // it can render the printable layout from the saved data.
+        // Pre-fix this returned all-null fields, which is why the print
+        // tab opened post-save showed "—" for patient and 0 for totals.
+        $appointment = Appointments::with([
+            'service',
+            'doctor',
+            'location.city',
+            'appointment_type',
+            'patient',
+        ])->find($appointmentId);
+
+        $detail = $existingInvoice?->invoiceDetailService;
+        $service = $appointment?->service;
+        $location = $appointment?->location;
+        $patient = $appointment?->patient_id ? User::find($appointment->patient_id) : null;
+        $account = $appointment ? Accounts::find($appointment->account_id) : null;
+
+        // Prefer the persisted detail values when available (they're the
+        // exact numbers the customer was charged); fall back to the live
+        // service price + location tax for older paid invoices that pre-
+        // date the detail row.
+        $taxRate = $detail?->tax_percentage !== null
+            ? (float) $detail->tax_percentage
+            : (float) ($location->tax_percentage ?? 0);
+        $totalIncTax = $detail?->tax_including_price !== null
+            ? (float) $detail->tax_including_price
+            : (float) ($existingInvoice?->total_price ?? 0);
+        $basePrice = $detail?->tax_exclusive_serviceprice !== null
+            ? (float) $detail->tax_exclusive_serviceprice
+            : (float) ($detail?->service_price ?? $service?->price ?? 0);
 
         return [
             'invoice_status' => true,
             'invoice_id' => $existingInvoice?->id,
-            'price' => null,
-            'appointment_type' => null,
-            'service' => null,
-            'balance' => null,
-            'settle_amount' => null,
-            'outstanding' => null,
-            'tax' => null,
-            'tax_amt' => null,
-            'location_info' => null,
+            'price' => $basePrice,
+            'appointment_type' => $appointment?->appointment_type,
+            'service' => $service,
+            'balance' => 0,
+            'settle_amount' => 0,
+            'outstanding' => 0,
+            'tax' => $taxRate,
+            'tax_amt' => $totalIncTax,
+            'location_info' => $location,
             'discounts' => null,
-            'cash' => null,
-            'price_tax' => null,
-            'patient' => null,
-            'doctor' => null,
-            'account' => null,
+            'cash' => $totalIncTax,
+            'price_tax' => $basePrice,
+            'patient' => $patient,
+            'doctor' => $appointment?->doctor,
+            'account' => $account,
             'payment_modes' => $paymentModes,
             'appointment_id' => $appointmentId,
         ];

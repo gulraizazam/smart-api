@@ -30,6 +30,7 @@ class EmployeeService
                 'users.name',
                 'users.email',
                 'users.phone',
+                'users.image_src',
                 'users.active',
                 'users.created_at',
                 'employee_details.hire_date',

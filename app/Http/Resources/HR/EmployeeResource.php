@@ -50,6 +50,9 @@ class EmployeeResource extends JsonResource
     private function personalInformation(\App\Models\User $user, bool $canSeeSensitive): array
     {
         $genderRaw = $user->getAttributes()['gender'] ?? null;
+        $userType = $user->user_type_id !== null
+            ? \App\Models\UserTypes::find($user->user_type_id, ['id', 'name'])
+            : null;
 
         return [
             // Avatar files live at storage/app/patient_image/<filename>
@@ -61,8 +64,9 @@ class EmployeeResource extends JsonResource
             // employee avatars too. Was previously `asset($user->image_src)`
             // which resolved to ${APP_URL}/<filename> — wrong directory,
             // produced broken images on the HR detail page.
+            // Relative path — see the same note on document URLs below.
             'avatar_url' => $user->image_src
-                ? route('admin.files.patient_image_api', ['filename' => $user->image_src])
+                ? route('admin.files.patient_image_api', ['filename' => $user->image_src], false)
                 : null,
             'name' => $user->name,
             'email' => $user->email,
@@ -77,6 +81,7 @@ class EmployeeResource extends JsonResource
             'active' => (int) $user->active,
             'hr_managed' => (int) $user->hr_managed,
             'user_type_id' => $user->user_type_id,
+            'user_type_label' => $userType?->name,
         ];
     }
 
@@ -154,8 +159,14 @@ class EmployeeResource extends JsonResource
                 'uploaded_at' => $doc->created_at?->toIso8601String(),
                 'drive_upload_status' => $doc->drive_upload_status?->value,
                 'google_drive_url' => $doc->google_drive_url,
-                'preview_url' => route('admin.hr.documents.preview_api', $doc),
-                'download_url' => route('admin.hr.documents.download_api', $doc),
+                // Emit RELATIVE paths — the SPA opens these via top-level
+                // navigation, so an absolute URL to the backend host would
+                // bypass the session cookie scoped to the SPA origin (e.g.
+                // localhost:5173 → cutera-upgradation.test in dev with the
+                // Vite proxy). Relative paths stay on the current origin
+                // and ride the same auth cookie as every other /api/* call.
+                'preview_url' => route('admin.hr.documents.preview_api', $doc, false),
+                'download_url' => route('admin.hr.documents.download_api', $doc, false),
             ])
             ->values()
             ->all();
