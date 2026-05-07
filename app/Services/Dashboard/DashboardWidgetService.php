@@ -126,8 +126,13 @@ class DashboardWidgetService
      */
     public function getUnattendedPayments(int $page = 1, int $perPage = 10): array
     {
-        $offset = ($page - 1) * $perPage;
         $centerIds = DashboardHelper::getUserCentres();
+
+        if (empty($centerIds)) {
+            return ['patient_data' => [], 'current_page' => $page, 'has_more' => false];
+        }
+
+        $offset = ($page - 1) * $perPage;
         $centerIdsStr = implode(',', array_map('intval', $centerIds));
         $sevenDaysAgo = Carbon::now()->subDays(7)->format('Y-m-d H:i:s');
         $threeMonthsAgo = Carbon::now()->subMonths(3)->format('Y-m-d');
@@ -199,8 +204,13 @@ class DashboardWidgetService
      */
     public function getOverdueTreatments(int $page = 1, int $perPage = 10): array
     {
-        $offset = ($page - 1) * $perPage;
         $centerIds = DashboardHelper::getUserCentres();
+
+        if (empty($centerIds)) {
+            return ['patient_data' => [], 'current_page' => $page, 'has_more' => false];
+        }
+
+        $offset = ($page - 1) * $perPage;
         $centerIdsStr = implode(',', array_map('intval', $centerIds));
         $thirtyOneDaysAgo = Carbon::now()->subDays(31)->format('Y-m-d');
         $today = Carbon::now()->format('Y-m-d');
