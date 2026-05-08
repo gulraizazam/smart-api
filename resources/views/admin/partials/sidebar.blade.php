@@ -93,17 +93,6 @@
                     </a>
                 </li>
 
-                @can('management_dashboard.view')
-                <li class="menu-item {{ activeMenu('admin.management_dashboard.overview') }} {{ activeMenu('admin.management_dashboard.people') }}" aria-haspopup="true">
-                    <a href="{{ route('admin.management_dashboard.overview') }}" class="menu-link">
-                        <span class="svg-icon menu-icon">
-                            <i class="font-icon la la-chart-pie"></i>
-                        </span>
-                        <span class="menu-text">Management Dashboard</span>
-                    </a>
-                </li>
-                @endcan
-
                 {{-- ───────────────── Operations ───────────────── --}}
                 @if ($sidebarShowOps)
                 <li class="menu-section">
@@ -1009,17 +998,6 @@
                     <i class="menu-section-icon flaticon-more-v2"></i>
                 </li>
                 @endif
-
-                @can('users_manage')
-                <li class="menu-item {{ activeMenu('admin.user_branches.index') }}" aria-haspopup="true">
-                    <a href="{{ route('admin.user_branches.index') }}" class="menu-link">
-                        <span class="svg-icon menu-icon">
-                            <i class="font-icon la la-map-marker"></i>
-                        </span>
-                        <span class="menu-text">Branch Assignments</span>
-                    </a>
-                </li>
-                @endcan
 
                 @if (Gate::allows('permissions_manage') ||
                 Gate::allows('roles_manage') ||
