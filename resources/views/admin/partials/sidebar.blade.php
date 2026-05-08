@@ -1,3 +1,41 @@
+@php
+    use Illuminate\Support\Facades\Gate;
+
+    $sidebarHasAny = static fn (array $perms): bool => collect($perms)->contains(static fn ($p) => Gate::allows($p));
+
+    $sidebarOpsPerms = ['patients_manage','leads_manage','consultations_manage','treatments_manage','resourcerotas_manage','business_closures_manage','feedbacks_manage'];
+    $sidebarSalesPerms = ['plans_manage','refunds_manage','services_manage','packages_manage','discounts_manage','vouchers_manage','voucher_types_manage','memberships_manage','membershiptypes_manage'];
+    $sidebarHrPerms = ['hr_dashboard_view','hr_employees_view','hr_departments_view','hr_designations_view','hr_leave_view','hr_leave_approve','hr_recruitment_view'];
+    $sidebarReportsPerms = [
+        'finance_general_revenue_reports_manage',
+        'operations_reports_operations_tax_calculation_report',
+        'operations_reports_manage',
+        'appointment_reports_manage',
+        'csr_dashboard_report',
+        'non_converted_customers_manage',
+        'conversion_report_manage',
+        'staff_wise_arrival_manage',
+        'follow_up_manage',
+        'inventory_report_manage',
+        'feedbacks_manage',
+        'followuppatient_manage',
+        'upselling_report',
+        'consultant_revenue_report',
+    ];
+    $sidebarAdminPerms = [
+        'users_manage','permissions_manage','roles_manage','user_types_manage','doctors_manage',
+        'settings_manage','user_operator_settings_manage','sms_templates_manage','regions_manage','cities_manage',
+        'payment_modes_manage','custom_forms_manage','custom_form_feedbacks_manage','locations_manage','staff_targets_manage',
+        'centre_targets_manage','lead_sources_manage','lead_statuses_manage','appointment_statuses_manage','cancellation_reasons_manage',
+        'resources_manage','logs_manage','finances_manage','invoices_manage','machineType_manage','towns_manage',
+    ];
+
+    $sidebarShowOps = $sidebarHasAny($sidebarOpsPerms);
+    $sidebarShowSales = $sidebarHasAny($sidebarSalesPerms);
+    $sidebarShowHr = $sidebarHasAny($sidebarHrPerms);
+    $sidebarShowReports = $sidebarHasAny($sidebarReportsPerms);
+    $sidebarShowAdmin = $sidebarHasAny($sidebarAdminPerms);
+@endphp
 <!--begin::Aside-->
 <div class="aside aside-left aside-fixed d-flex flex-column flex-row-auto" id="kt_aside">
     <!--begin::Brand-->
@@ -39,6 +77,13 @@
             <!--end::Brand-->
             <!--begin::Menu Nav-->
             <ul class="menu-nav">
+
+                {{-- ───────────────── Dashboards ───────────────── --}}
+                <li class="menu-section">
+                    <h4 class="menu-text">Dashboards</h4>
+                    <i class="menu-section-icon flaticon-more-v2"></i>
+                </li>
+
                 <li class="menu-item {{ activeMenu('admin.home') }}" aria-haspopup="true">
                     <a href="{{ route('admin.home') }}" class="menu-link">
                         <span class="svg-icon menu-icon">
@@ -59,94 +104,13 @@
                 </li>
                 @endcan
 
-                @can('users_manage')
-                <li class="menu-item {{ activeMenu('admin.user_branches.index') }}" aria-haspopup="true">
-                    <a href="{{ route('admin.user_branches.index') }}" class="menu-link">
-                        <span class="svg-icon menu-icon">
-                            <i class="font-icon la la-map-marker"></i>
-                        </span>
-                        <span class="menu-text">Branch Assignments</span>
-                    </a>
-                </li>
-                @endcan
-
-                @if (Gate::allows('permissions_manage') ||
-                Gate::allows('roles_manage') ||
-                Gate::allows('users_manage') ||
-                Gate::allows('user_types_manage') ||
-                Gate::allows('doctors_manage'))
-                <li class="menu-item menu-item-submenu {{ openMenu(['admin.permissions.index', 'admin.users.index', 'admin.roles.index', 'admin.roles.edit', 'admin.users.index', 'admin.doctors.index', 'admin.user_types.index']) }}" aria-haspopup="true" data-menu-toggle="hover">
-                    <a href="javascript:void(0);" class="menu-link menu-toggle">
-                        <span class="svg-icon menu-icon">
-                            <i class="font-icon la la-user"></i>
-                        </span>
-                        <span class="menu-text">User Management</span>
-                        <i class="menu-arrow"></i>
-                    </a>
-                    <div class="menu-submenu">
-                        <i class="menu-arrow"></i>
-                        <ul class="menu-subnav">
-
-                            @can('permissions_manage')
-                            <li class="menu-item {{ activeMenu('admin.permissions.index') }}" aria-haspopup="true">
-                                <a href="{{ route('admin.permissions.index') }}" class="menu-link">
-                                    <i class="menu-bullet menu-bullet-dot">
-                                        <span></span>
-                                    </i>
-                                    <span class="menu-text">Permissions</span>
-                                </a>
-                            </li>
-                            @endcan
-
-                            @can('roles_manage')
-                            <li class="menu-item {{ activeMenu('admin.roles.index') }} {{ activeMenu('admin.roles.edit') }}" aria-haspopup="true">
-                                <a href="{{ route('admin.roles.index') }}" class="menu-link">
-                                    <i class="menu-bullet menu-bullet-dot">
-                                        <span></span>
-                                    </i>
-                                    <span class="menu-text">Roles</span>
-                                </a>
-                            </li>
-                            @endcan
-
-                            @can('users_manage')
-                            <li class="menu-item {{ activeMenu('admin.users.index') }}" aria-haspopup="true">
-                                <a href="{{ route('admin.users.index') }}" class="menu-link">
-                                    <i class="menu-bullet menu-bullet-dot">
-                                        <span></span>
-                                    </i>
-                                    <span class="menu-text">Application Users</span>
-                                </a>
-                            </li>
-                            @endcan
-                            @can('doctors_manage')
-                            <li class="menu-item {{ activeMenu('admin.doctors.index') }}" aria-haspopup="true">
-                                <a href="{{ route('admin.doctors.index') }}" class="menu-link">
-                                    <i class="menu-bullet menu-bullet-dot">
-                                        <span></span>
-                                    </i>
-                                    <span class="menu-text">Doctors</span>
-                                </a>
-                            </li>
-                            @endcan
-                            @can('user_types_manage')
-                            <li class="menu-item {{ activeMenu('admin.user_types.index') }}" aria-haspopup="true">
-                                <a href="{{ route('admin.user_types.index') }}" class="menu-link">
-                                    <i class="menu-bullet menu-bullet-dot">
-                                        <span></span>
-                                    </i>
-                                    <span class="menu-text">User Types</span>
-                                </a>
-                            </li>
-                            @endcan
-
-                        </ul>
-                    </div>
+                {{-- ───────────────── Operations ───────────────── --}}
+                @if ($sidebarShowOps)
+                <li class="menu-section">
+                    <h4 class="menu-text">Operations</h4>
+                    <i class="menu-section-icon flaticon-more-v2"></i>
                 </li>
                 @endif
-
-
-                <!--Patient menu-->
 
                 @if (Gate::allows('patients_manage'))
                 <li class="menu-item {{ activeMenu('admin.patients.index') }} {{ activeMenu('admin.patients.preview') }}" aria-haspopup="true">
@@ -159,11 +123,8 @@
                 </li>
                 @endif
 
-                <!-- Leads menu -->
-
                 @if (Gate::allows('leads_manage'))
                 <li class="menu-item menu-item-submenu {{ openMenu(['admin.leads.index']) }}" aria-haspopup="true" data-menu-toggle="hover">
-
                     <a href="javascript:void(0);" class="menu-link menu-toggle">
                         <span class="svg-icon menu-icon">
                             <i class="font-icon la la-briefcase"></i>
@@ -208,20 +169,13 @@
                             </li>
                             @endcan
 
-
                         </ul>
                     </div>
-
                 </li>
                 @endif
 
-                <!-- End leads menu -->
-
-                <!-- Appointment menu -->
-
                 @if (Gate::allows('consultations_manage') || Gate::allows('treatments_manage'))
                 <li class="menu-item menu-item-submenu {{ openMenu(['admin.consultancy.index']) }} {{ openMenu(['admin.treatment.index']) }} {{ openMenu(['admin.appointments.index']) }}" aria-haspopup="true" data-menu-toggle="hover">
-
                     <a href="javascript:void(0);" class="menu-link menu-toggle">
                         <span class="svg-icon menu-icon fa_icon">
                             <i class="font-icon la la-clock-o"></i>
@@ -231,7 +185,6 @@
                     </a>
                     <div class="menu-submenu">
                         <i class="menu-arrow"></i>
-
                         <ul class="menu-subnav">
 
                             @if(Gate::allows('consultations_manage'))
@@ -258,11 +211,59 @@
 
                         </ul>
                     </div>
-
                 </li>
                 @endif
 
-                <!-- End Appointment menu -->
+                @if (Gate::allows('resourcerotas_manage') || Gate::allows('business_closures_manage'))
+                <li class="menu-item menu-item-submenu {{ openMenu(['admin.resourcerotas.schedule', 'admin.business-closures.index']) }}" aria-haspopup="true" data-menu-toggle="hover">
+                    <a href="javascript:void(0);" class="menu-link menu-toggle">
+                        <span class="svg-icon menu-icon"><i class="font-icon la la-calendar-alt"></i></span>
+                        <span class="menu-text">Schedule</span>
+                        <i class="menu-arrow"></i>
+                    </a>
+                    <div class="menu-submenu">
+                        <i class="menu-arrow"></i>
+                        <ul class="menu-subnav">
+                            @if (Gate::allows('resourcerotas_manage'))
+                            <li class="menu-item {{ activeMenu('admin.resourcerotas.schedule') }} {{ activeMenu('admin.resourcerotas.repeating-shifts') }}" aria-haspopup="true">
+                                <a href="{{ route('admin.resourcerotas.schedule') }}" class="menu-link">
+                                    <i class="menu-bullet menu-bullet-dot">
+                                        <span></span>
+                                    </i>
+                                    <span class="menu-text">Scheduling Shifts</span>
+                                </a>
+                            </li>
+                            @endif
+
+                            <li class="menu-item {{ activeMenu('admin.business-closures.index') }}" aria-haspopup="true">
+                                <a href="{{ route('admin.business-closures.index') }}" class="menu-link">
+                                    <i class="menu-bullet menu-bullet-dot">
+                                        <span></span>
+                                    </i>
+                                    <span class="menu-text">Business Closed Periods</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </li>
+                @endif
+
+                @if (Gate::allows('feedbacks_manage'))
+                <li class="menu-item {{ activeMenu('admin.feedbacks.index') }} " aria-haspopup="true">
+                    <a href="{{ route('admin.feedbacks.index') }}" class="menu-link">
+                        <span class="svg-icon menu-icon"><i class="font-icon la la-file"></i></span>
+                        <span class="menu-text">Doctor Ratings</span>
+                    </a>
+                </li>
+                @endif
+
+                {{-- ───────────────── Sales & Services ───────────────── --}}
+                @if ($sidebarShowSales)
+                <li class="menu-section">
+                    <h4 class="menu-text">Sales &amp; Services</h4>
+                    <i class="menu-section-icon flaticon-more-v2"></i>
+                </li>
+                @endif
 
                 @if (Gate::allows('plans_manage'))
                 <li class="menu-item {{ activeMenu('admin.packages.index') }}" aria-haspopup="true">
@@ -272,17 +273,9 @@
                     </a>
                 </li>
                 @endif
-                @if (Gate::allows('refunds_manage'))
-                <li class="menu-item {{ activeMenu('admin.refunds.index') }}" aria-haspopup="true">
-                    <a href="{{ route('admin.refunds.index') }}" class="menu-link">
-                        <span class="svg-icon menu-icon"><i class="font-icon la la-refresh"></i></span>
-                        <span class="menu-text"> Refunds </span>
-                    </a>
-                </li>
-                @endif
+
                 @if (Gate::allows('services_manage') || Gate::allows('packages_manage') || Gate::allows('discounts_manage'))
                 <li class="menu-item menu-item-submenu {{ openMenu(['admin.services.index']) }} {{ openMenu(['admin.service-bundles.index']) }} {{ openMenu(['admin.bundles.index']) }} {{ openMenu(['admin.discounts.index']) }}" aria-haspopup="true" data-menu-toggle="hover">
-
                     <a href="javascript:void(0);" class="menu-link menu-toggle">
                         <span class="svg-icon menu-icon fa_icon">
                             <i class="font-icon la la-clock-o"></i>
@@ -292,7 +285,6 @@
                     </a>
                     <div class="menu-submenu">
                         <i class="menu-arrow"></i>
-
                         <ul class="menu-subnav">
 
                             @can('services_manage')
@@ -341,12 +333,11 @@
 
                         </ul>
                     </div>
-
                 </li>
                 @endif
+
                 @if (Gate::allows('vouchers_manage') || Gate::allows('voucher_types_manage'))
                 <li class="menu-item menu-item-submenu {{ openMenu(['admin.voucherTypes.index', 'admin.vouchers.index']) }} " aria-haspopup="true" data-menu-toggle="hover">
-
                     <a href="javascript:void(0);" class="menu-link menu-toggle">
                         <span class="svg-icon menu-icon">
                             <i class="font-icon la la-ticket"></i>
@@ -356,7 +347,6 @@
                     </a>
                     <div class="menu-submenu">
                         <i class="menu-arrow"></i>
-
                         <ul class="menu-subnav">
 
                             @can('voucher_types_manage')
@@ -381,17 +371,13 @@
                             </li>
                             @endcan
 
-
-
                         </ul>
                     </div>
-
                 </li>
                 @endif
 
                 @if (Gate::allows('memberships_manage') || Gate::allows('membershiptypes_manage'))
                 <li class="menu-item menu-item-submenu {{ openMenu(['admin.membershiptypes.index', 'admin.memberships.index']) }} " aria-haspopup="true" data-menu-toggle="hover">
-
                     <a href="javascript:void(0);" class="menu-link menu-toggle">
                         <span class="svg-icon menu-icon">
                             <i class="font-icon la la-id-card"></i>
@@ -401,7 +387,6 @@
                     </a>
                     <div class="menu-submenu">
                         <i class="menu-arrow"></i>
-
                         <ul class="menu-subnav">
 
                             @can('membershiptypes_manage')
@@ -428,465 +413,27 @@
 
                         </ul>
                     </div>
-
                 </li>
                 @endif
-                @if (Gate::allows('feedbacks_manage'))
-                <li class="menu-item {{ activeMenu('admin.feedbacks.index') }} " aria-haspopup="true">
-                    <a href="{{ route('admin.feedbacks.index') }}" class="menu-link">
-                        <span class="svg-icon menu-icon"><i class="font-icon la la-file"></i></span>
-                        <span class="menu-text">Doctor Ratings</span>
+
+                @if (Gate::allows('refunds_manage'))
+                <li class="menu-item {{ activeMenu('admin.refunds.index') }}" aria-haspopup="true">
+                    <a href="{{ route('admin.refunds.index') }}" class="menu-link">
+                        <span class="svg-icon menu-icon"><i class="font-icon la la-refresh"></i></span>
+                        <span class="menu-text"> Refunds </span>
                     </a>
                 </li>
                 @endif
-                @if (Gate::allows('resourcerotas_manage') || Gate::allows('business_closures_manage'))
-                <li class="menu-item menu-item-submenu {{ openMenu(['admin.resourcerotas.schedule', 'admin.business-closures.index']) }}" aria-haspopup="true" data-menu-toggle="hover">
-                    <a href="javascript:void(0);" class="menu-link menu-toggle">
-                        <span class="svg-icon menu-icon"><i class="font-icon la la-calendar-alt"></i></span>
-                        <span class="menu-text">Schedule</span>
-                        <i class="menu-arrow"></i>
-                    </a>
-                    <div class="menu-submenu">
-                        <i class="menu-arrow"></i>
-                        <ul class="menu-subnav">
-                            @if (Gate::allows('resourcerotas_manage'))
-                            <li class="menu-item {{ activeMenu('admin.resourcerotas.schedule') }} {{ activeMenu('admin.resourcerotas.repeating-shifts') }}" aria-haspopup="true">
-                                <a href="{{ route('admin.resourcerotas.schedule') }}" class="menu-link">
-                                    <i class="menu-bullet menu-bullet-dot">
-                                        <span></span>
-                                    </i>
-                                    <span class="menu-text">Scheduling Shifts</span>
-                                </a>
-                            </li>
-                            @endif
-                            
-                            <li class="menu-item {{ activeMenu('admin.business-closures.index') }}" aria-haspopup="true">
-                                <a href="{{ route('admin.business-closures.index') }}" class="menu-link">
-                                    <i class="menu-bullet menu-bullet-dot">
-                                        <span></span>
-                                    </i>
-                                    <span class="menu-text">Business Closed Periods</span>
-                                </a>
-                            </li>
-                           
-                        </ul>
-                    </div>
-                </li>
-                @endif
 
-                @if (Gate::allows('settings_manage') ||
-                Gate::allows('user_operator_settings_manage') ||
-                Gate::allows('sms_templates_manage') ||
-                Gate::allows('regions_manage') ||
-                Gate::allows('cities_manage') ||
-                Gate::allows('payment_modes_manage') ||
-                Gate::allows('custom_forms_manage') ||
-                Gate::allows('custom_form_feedbacks_manage') ||
-                Gate::allows('locations_manage') ||
-                Gate::allows('staff_targets_manage') ||
-                Gate::allows('centre_targets_manage') ||
-                Gate::allows('lead_sources_manage') ||
-                Gate::allows('lead_statuses_manage') ||
-                Gate::allows('appointment_statuses_manage') ||
-                Gate::allows('cancellation_reasons_manage') ||
-                Gate::allows('resources_manage') ||
-                Gate::allows('logs_manage') ||
-                Gate::allows('finances_manage') ||
-                Gate::allows('invoices_manage') ||
-                Gate::allows('machineType_manage') ||
-                Gate::allows('towns_manage'))
-
-                <li class="menu-item menu-item-submenu {{ openMenu([
-                        'admin.settings.index',
-                        'admin.user_operator_settings.index',
-                        'admin.payment_modes.index',
-                        'admin.payment_modes.sort',
-                        'admin.regions.index',
-                        'admin.regions.sort',
-                        'admin.cities.index',
-                        'admin.cities.sort',
-                        'admin.lead_sources.index',
-                        'admin.lead_sources.sort',
-                        'admin.towns.index',
-                        'admin.lead_statuses.index',
-                        'admin.lead_statuses.sort',
-                        'admin.appointment_statuses.index',
-                        'admin.locations.index',
-                        'admin.machine_types.index',
-                        'admin.resources.index',
-                        'admin.logs.index',
-
-                        'admin.sms_templates.index',
-                        'admin.centre_targets.index',
-                        'admin.google_reviews.index',
-
-                        'admin.packagesadvances.index',
-                        'admin.resourcerotas.calender-view',
-                        'admin.invoices.index',
-                        'admin.packages.log',
-                        'admin.custom_form_feedbacks.index',
-                        'admin.custom_form_feedbacks.edit',
-                        'admin.custom_form_feedbacks.filled_preview',
-                        'admin.custom_forms.index',
-                        'admin.custom_forms.edit',
-                        'admin.custom_form_feedbacks.preview_form',
-                        'admin.custom_form_feedbacks.fill_form',
-                    ]) }}" aria-haspopup="true" data-menu-toggle="hover">
-
-                    <a href="javascript:void(0);" class="menu-link menu-toggle">
-                        <span class="svg-icon menu-icon">
-                            <i class="font-icon la la-cog"></i>
-                        </span>
-                        <span class="menu-text">Admin Settings</span>
-                        <i class="menu-arrow"></i>
-                    </a>
-
-                    @can('settings_manage')
-                    <div class="menu-submenu">
-                        <i class="menu-arrow"></i>
-                        <ul class="menu-subnav">
-                            <li class="menu-item {{ activeMenu('admin.settings.index') }}" aria-haspopup="true">
-                                <a href="{{ route('admin.settings.index') }}" class="menu-link">
-                                    <i class="menu-bullet menu-bullet-dot">
-                                        <span></span>
-                                    </i>
-                                    <span class="menu-text">Global Settings</span>
-                                </a>
-                            </li>
-
-                        </ul>
-                    </div>
-                    @endcan
-                    @can('user_operator_settings_manage')
-                    <div class="menu-submenu">
-                        <i class="menu-arrow"></i>
-                        <ul class="menu-subnav">
-                            <li class="menu-item {{ activeMenu('admin.user_operator_settings.index') }}" aria-haspopup="true">
-                                <a href="{{ route('admin.user_operator_settings.index') }}" class="menu-link">
-                                    <i class="menu-bullet menu-bullet-dot">
-                                        <span></span>
-                                    </i>
-                                    <span class="menu-text">Operator Settings</span>
-                                </a>
-                            </li>
-
-                        </ul>
-                    </div>
-                    @endcan
-
-                    @can('payment_modes_manage')
-                    <div class="menu-submenu">
-                        <i class="menu-arrow"></i>
-                        <ul class="menu-subnav">
-                            <li class="menu-item {{ openMenu(['admin.payment_modes.index', 'admin.payment_modes.sort'], 'menu-item-active') }}" aria-haspopup="true">
-                                <a href="{{ route('admin.payment_modes.index') }}" class="menu-link">
-                                    <i class="menu-bullet menu-bullet-dot">
-                                        <span></span>
-                                    </i>
-                                    <span class="menu-text">Payment Modes</span>
-                                </a>
-                            </li>
-
-                        </ul>
-                    </div>
-                    @endcan
-
-                    @can('regions_manage')
-                    <div class="menu-submenu">
-                        <i class="menu-arrow"></i>
-                        <ul class="menu-subnav">
-                            <li class="menu-item {{ openMenu(['admin.regions.index', 'admin.regions.sort'], 'menu-item-active') }}" aria-haspopup="true">
-                                <a href="{{ route('admin.regions.index') }}" class="menu-link">
-                                    <i class="menu-bullet menu-bullet-dot">
-                                        <span></span>
-                                    </i>
-                                    <span class="menu-text">Regions</span>
-                                </a>
-                            </li>
-
-                        </ul>
-                    </div>
-                    @endcan
-
-                    @can('cities_manage')
-                    <div class="menu-submenu">
-                        <i class="menu-arrow"></i>
-                        <ul class="menu-subnav">
-                            <li class="menu-item {{ openMenu(['admin.cities.index', 'admin.cities.sort'], 'menu-item-active') }}" aria-haspopup="true">
-                                <a href="{{ route('admin.cities.index') }}" class="menu-link">
-                                    <i class="menu-bullet menu-bullet-dot">
-                                        <span></span>
-                                    </i>
-                                    <span class="menu-text">Cities</span>
-                                </a>
-                            </li>
-
-                        </ul>
-                    </div>
-                    @endcan
-
-                    @can('towns_manage')
-                    <div class="menu-submenu">
-                        <i class="menu-arrow"></i>
-                        <ul class="menu-subnav">
-                            <li class="menu-item {{ activeMenu('admin.towns.index') }}" aria-haspopup="true">
-                                <a href="{{ route('admin.towns.index') }}" class="menu-link">
-                                    <i class="menu-bullet menu-bullet-dot">
-                                        <span></span>
-                                    </i>
-                                    <span class="menu-text">Towns</span>
-                                </a>
-                            </li>
-
-                        </ul>
-                    </div>
-                    @endcan
-
-                    @can('lead_sources_manage')
-                    <div class="menu-submenu">
-                        <i class="menu-arrow"></i>
-                        <ul class="menu-subnav">
-                            <li class="menu-item {{ openMenu(['admin.lead_sources.index', 'admin.lead_sources.sort'], 'menu-item-active') }}" aria-haspopup="true">
-                                <a href="{{ route('admin.lead_sources.index') }}" class="menu-link">
-                                    <i class="menu-bullet menu-bullet-dot">
-                                        <span></span>
-                                    </i>
-                                    <span class="menu-text">Lead Sources</span>
-                                </a>
-                            </li>
-
-                        </ul>
-                    </div>
-                    @endcan
-
-                    @can('lead_statuses_manage')
-                    <div class="menu-submenu">
-                        <i class="menu-arrow"></i>
-                        <ul class="menu-subnav">
-                            <li class="menu-item {{ openMenu(['admin.lead_statuses.index', 'admin.lead_statuses.sort'], 'menu-item-active') }}" aria-haspopup="true">
-                                <a href="{{ route('admin.lead_statuses.index') }}" class="menu-link">
-                                    <i class="menu-bullet menu-bullet-dot">
-                                        <span></span>
-                                    </i>
-                                    <span class="menu-text">Lead Statuses</span>
-                                </a>
-                            </li>
-                        </ul>
-                    </div>
-                    @endcan
-
-                    @can('locations_manage')
-                    <div class="menu-submenu">
-                        <i class="menu-arrow"></i>
-                        <ul class="menu-subnav">
-                            <li class="menu-item {{ activeMenu('admin.locations.index') }}" aria-haspopup="true">
-                                <a href="{{ route('admin.locations.index') }}" class="menu-link">
-                                    <i class="menu-bullet menu-bullet-dot">
-                                        <span></span>
-                                    </i>
-                                    <span class="menu-text">Centres</span>
-                                </a>
-                            </li>
-
-                        </ul>
-                    </div>
-                    @endcan
-
-                    @can('appointment_statuses_manage')
-                    <div class="menu-submenu">
-                        <i class="menu-arrow"></i>
-                        <ul class="menu-subnav">
-                            <li class="menu-item {{ activeMenu('admin.appointment_statuses.index') }}" aria-haspopup="true">
-                                <a href="{{ route('admin.appointment_statuses.index') }}" class="menu-link">
-                                    <i class="menu-bullet menu-bullet-dot">
-                                        <span></span>
-                                    </i>
-                                    <span class="menu-text">Appointment Statuses</span>
-                                </a>
-                            </li>
-                        </ul>
-                    </div>
-                    @endcan
-
-                    @can('machineType_manage')
-                    <div class="menu-submenu">
-                        <i class="menu-arrow"></i>
-                        <ul class="menu-subnav">
-                            <li class="menu-item {{ activeMenu('admin.machine_types.index') }}" aria-haspopup="true">
-                                <a href="{{ route('admin.machine_types.index') }}" class="menu-link">
-                                    <i class="menu-bullet menu-bullet-dot">
-                                        <span></span>
-                                    </i>
-                                    <span class="menu-text">Machine Type</span>
-                                </a>
-                            </li>
-                        </ul>
-                    </div>
-                    @endcan
-
-                    @can('resources_manage')
-                    <div class="menu-submenu">
-                        <i class="menu-arrow"></i>
-                        <ul class="menu-subnav">
-                            <li class="menu-item {{ activeMenu('admin.resources.index') }}" aria-haspopup="true">
-                                <a href="{{ route('admin.resources.index') }}" class="menu-link">
-                                    <i class="menu-bullet menu-bullet-dot">
-                                        <span></span>
-                                    </i>
-                                    <span class="menu-text">Resource</span>
-                                </a>
-                            </li>
-
-                        </ul>
-                    </div>
-                    @endcan
-
-                    <!-- @can('logs_manage')
-                    <div class="menu-submenu">
-                        <i class="menu-arrow"></i>
-                        <ul class="menu-subnav">
-                            <li class="menu-item {{ activeMenu('admin.logs.index') }}" aria-haspopup="true">
-                                <a href="{{ route('admin.logs.index') }}" class="menu-link">
-                                    <i class="menu-bullet menu-bullet-dot">
-                                        <span></span>
-                                    </i>
-                                    <span class="menu-text">Logs</span>
-
-                                </a>
-                            </li>
-
-                        </ul>
-                    </div>
-                    @endcan -->
-
-                    @can('sms_templates_manage')
-                    <div class="menu-submenu">
-                        <i class="menu-arrow"></i>
-                        <ul class="menu-subnav">
-                            <li class="menu-item {{ activeMenu('admin.sms_templates.index') }}" aria-haspopup="true">
-                                <a href="{{ route('admin.sms_templates.index') }}" class="menu-link">
-                                    <i class="menu-bullet menu-bullet-dot">
-                                        <span></span>
-                                    </i>
-                                    <span class="menu-text">SMS Templates</span>
-                                </a>
-                            </li>
-
-                        </ul>
-                    </div>
-                    @endcan
-
-                    @can('centre_targets_manage')
-                    <div class="menu-submenu">
-                        <i class="menu-arrow"></i>
-                        <ul class="menu-subnav">
-                            <li class="menu-item {{ activeMenu('admin.centre_targets.index') }}" aria-haspopup="true">
-                                <a href="{{ route('admin.centre_targets.index') }}" class="menu-link">
-                                    <i class="menu-bullet menu-bullet-dot">
-                                        <span></span>
-                                    </i>
-                                    <span class="menu-text">Centre Targets</span>
-
-                                </a>
-                            </li>
-
-                        </ul>
-                    </div>
-                    @endcan
-
-                    @can('google_reviews_manage')
-                    <div class="menu-submenu">
-                        <i class="menu-arrow"></i>
-                        <ul class="menu-subnav">
-                            <li class="menu-item {{ activeMenu('admin.google_reviews.index') }}" aria-haspopup="true">
-                                <a href="{{ route('admin.google_reviews.index') }}" class="menu-link">
-                                    <i class="menu-bullet menu-bullet-dot">
-                                        <span></span>
-                                    </i>
-                                    <span class="menu-text">Google Reviews</span>
-                                </a>
-                            </li>
-                        </ul>
-                    </div>
-                    @endcan
-
-
-
-                    @can('finances_manage')
-                    <div class="menu-submenu">
-                        <i class="menu-arrow"></i>
-                        <ul class="menu-subnav">
-                            <li class="menu-item {{ activeMenu('admin.packagesadvances.index') }}" aria-haspopup="true">
-                                <a href="{{ route('admin.packagesadvances.index') }}" class="menu-link">
-                                    <i class="menu-bullet menu-bullet-dot">
-                                        <span></span>
-                                    </i>
-                                    <span class="menu-text">Finances</span>
-                                </a>
-                            </li>
-
-                        </ul>
-                    </div>
-                    @endcan
-
-                    @can('invoices_manage')
-                    <div class="menu-submenu">
-                        <i class="menu-arrow"></i>
-                        <ul class="menu-subnav">
-                            <li class="menu-item {{ activeMenu('admin.invoices.index') }}" aria-haspopup="true">
-                                <a href="{{ route('admin.invoices.index') }}" class="menu-link">
-                                    <i class="menu-bullet menu-bullet-dot">
-                                        <span></span>
-                                    </i>
-                                    <span class="menu-text">Invoices</span>
-                                </a>
-                            </li>
-
-                        </ul>
-                    </div>
-                    @endcan
-
-
-                    @can('custom_form_feedbacks_manage')
-                    <div class="menu-submenu">
-                        <i class="menu-arrow"></i>
-                        <ul class="menu-subnav">
-                            <li class="menu-item {{ activeMenu('admin.custom_form_feedbacks.index') }} {{ activeMenu('admin.custom_form_feedbacks.filled_preview') }}" aria-haspopup="true">
-                                <a href="{{ route('admin.custom_form_feedbacks.index') }}" class="menu-link">
-                                    <i class="menu-bullet menu-bullet-dot">
-                                        <span></span>
-                                    </i>
-                                    <span class="menu-text">Custom Form Feedbacks</span>
-                                </a>
-                            </li>
-
-                        </ul>
-                    </div>
-                    @endcan
-
-                    @can('custom_forms_manage')
-                    <div class="menu-submenu">
-                        <i class="menu-arrow"></i>
-                        <ul class="menu-subnav">
-                            <li class="menu-item {{ activeMenu('admin.custom_forms.index') }}" aria-haspopup="true">
-                                <a href="{{ route('admin.custom_forms.index') }}" class="menu-link">
-                                    <i class="menu-bullet menu-bullet-dot">
-                                        <span></span>
-                                    </i>
-                                    <span class="menu-text">Custom Form</span>
-                                </a>
-                            </li>
-
-                        </ul>
-                    </div>
-                    @endcan
-                </li>
-                @endif
-                <!-- Inventory menu -->
+                {{-- ───────────────── Inventory ───────────────── --}}
                 @if (Gate::allows('inventory_manage'))
+                <li class="menu-section">
+                    <h4 class="menu-text">Inventory</h4>
+                    <i class="menu-section-icon flaticon-more-v2"></i>
+                </li>
+
                 @can('inventory_manage')
                 <li class="menu-item menu-item-submenu {{ openMenu(['admin.warehouse.index']) }} {{ openMenu(['admin.brands.index']) }} {{ openMenu(['admin.products.index']) }} {{ openMenu(['admin.products.logs']) }} {{ openMenu(['admin.products.stock']) }} {{ openMenu(['admin.transfer_product.index']) }} {{ openMenu(['admin.orders.index']) }} {{ openMenu(['admin.order.refunds.index']) }}" aria-haspopup="true" data-menu-toggle="hover">
-
                     <a href="javascript:void(0);" class="menu-link menu-toggle">
                         <span class="svg-icon menu-icon fa_icon">
                             <i class="la la-warehouse"></i>
@@ -894,22 +441,7 @@
                         <span class="menu-text">Inventory</span>
                         <i class="menu-arrow"></i>
                     </a>
-                    <!-- @can('warehouse_manage')
-                    <div class="menu-submenu">
-                        <i class="menu-arrow"></i>
-                        <ul class="menu-subnav">
-                            <li class="menu-item {{ activeMenu('admin.warehouse.index') }}" aria-haspopup="true">
-                                <a href="{{ route('admin.warehouse.index') }}" class="menu-link">
-                                    <i class="menu-bullet menu-bullet-dot">
-                                        <span></span>
-                                    </i>
-                                    <span class="menu-text">Warehouse</span>
-                                </a>
-                            </li>
 
-                        </ul>
-                    </div>
-                    @endcan -->
                     @can('brand_manage')
                     <div class="menu-submenu">
                         <i class="menu-arrow"></i>
@@ -922,10 +454,10 @@
                                     <span class="menu-text">Brand</span>
                                 </a>
                             </li>
-
                         </ul>
                     </div>
                     @endcan
+
                     @can('product_manage')
                     <div class="menu-submenu">
                         <i class="menu-arrow"></i>
@@ -938,10 +470,10 @@
                                     <span class="menu-text">Product</span>
                                 </a>
                             </li>
-
                         </ul>
                     </div>
                     @endcan
+
                     @can('product_manage')
                     <div class="menu-submenu">
                         <i class="menu-arrow"></i>
@@ -954,10 +486,10 @@
                                     <span class="menu-text">Transfer</span>
                                 </a>
                             </li>
-
                         </ul>
                     </div>
                     @endcan
+
                     @can('order_manage')
                     <div class="menu-submenu">
                         <i class="menu-arrow"></i>
@@ -970,364 +502,20 @@
                                     <span class="menu-text">Order</span>
                                 </a>
                             </li>
-
-                        </ul>
-                    </div>
-                    @endcan
-                    <!-- @can('inventory_refund_manage')
-                    <div class="menu-submenu">
-                        <i class="menu-arrow"></i>
-                        <ul class="menu-subnav">
-                            <li class="menu-item {{ activeMenu('admin.order.refunds.index') }}" aria-haspopup="true">
-                                <a href="{{ route('admin.order.refunds.index') }}" class="menu-link">
-                                    <i class="menu-bullet menu-bullet-dot">
-                                        <span></span>
-                                    </i>
-                                    <span class="menu-text">Refund</span>
-                                </a>
-                            </li>
-
                         </ul>
                     </div>
                     @endcan
                 </li>
-                @endcan -->
+                @endcan
                 @endif
 
-                <!-- End Inventory menu -->
-                @php
-                    $reportsMenuPermissions = [
-                        'finance_general_revenue_reports_manage',
-                        'operations_reports_operations_tax_calculation_report',
-                        'operations_reports_manage',
-                        'appointment_reports_manage',
-                        'csr_dashboard_report',
-                        'non_converted_customers_manage',
-                        'conversion_report_manage',
-                        'staff_wise_arrival_manage',
-                        'follow_up_manage',
-                        'inventory_report_manage',
-                        'feedbacks_manage',
-                        'followuppatient_manage',
-                        'upselling_report',
-                        'consultant_revenue_report',
-                    ];
-                    $canSeeReportsMenu = collect($reportsMenuPermissions)->contains(fn ($p) => \Illuminate\Support\Facades\Gate::allows($p));
-                @endphp
-                @if ($canSeeReportsMenu)
-                <li class="menu-item menu-item-submenu {{ openMenu(['admin.reports.finance_reports', 'admin.reports.operations_report', 'admin.reports.inventory_report']) }}" aria-haspopup="true" data-menu-toggle="hover">
-
-                    <a href="javascript:void(0);" class="menu-link menu-toggle">
-                        <span class="svg-icon menu-icon">
-                            <i class="font-icon la la-file-text-o"></i>
-                        </span>
-                        <span class="menu-text">Reports Management</span>
-                        <i class="menu-arrow"></i>
-                    </a>
-
-                    @can('finance_general_revenue_reports_manage')
-                    <div class="menu-submenu">
-                        <i class="menu-arrow"></i>
-                        <ul class="menu-subnav">
-                            <li class="menu-item {{ activeMenu('admin.reports.finance_reports') }}" aria-haspopup="true">
-                                <a href="{{ route('admin.reports.finance_reports') }}" class="menu-link">
-                                    <i class="menu-bullet menu-bullet-dot">
-                                        <span></span>
-                                    </i>
-                                    <span class="menu-text">General Sales Report</span>
-                                </a>
-                            </li>
-
-                        </ul>
-                    </div>
-                    @endcan
-
-                    @can('operations_reports_operations_tax_calculation_report')
-                    <div class="menu-submenu">
-                        <i class="menu-arrow"></i>
-                        <ul class="menu-subnav">
-                            <li class="menu-item {{ activeMenu('admin.reports.tax_calculation_report') }}" aria-haspopup="true">
-                                <a href="{{ route('admin.reports.tax_calculation_report') }}" class="menu-link">
-                                    <i class="menu-bullet menu-bullet-dot">
-                                        <span></span>
-                                    </i>
-                                    <span class="menu-text">Tax Calculation Report</span>
-                                </a>
-                            </li>
-
-                        </ul>
-                    </div>
-                    @endcan
-
-                    @can('operations_reports_manage')
-                    <div class="menu-submenu">
-                        <i class="menu-arrow"></i>
-                        <ul class="menu-subnav">
-                            <li class="menu-item {{ activeMenu('admin.reports.operations_report') }}" aria-haspopup="true">
-                                <a href="{{ route('admin.reports.operations_report') }}" class="menu-link">
-                                    <i class="menu-bullet menu-bullet-dot">
-                                        <span></span>
-                                    </i>
-                                    <span class="menu-text">Operation Reports</span>
-                                </a>
-                            </li>
-
-                        </ul>
-                    </div>
-                    @endcan
-                    <!-- @can('finance_general_revenue_reports_manage')
-                    <div class="menu-submenu">
-                        <i class="menu-arrow"></i>
-                        <ul class="menu-subnav">
-                            <li class="menu-item {{ activeMenu('admin.reports.inventory_report') }}" aria-haspopup="true">
-                                <a href="{{ route('admin.reports.inventory_report') }}" class="menu-link">
-                                    <i class="menu-bullet menu-bullet-dot">
-                                        <span></span>
-                                    </i>
-                                    <span class="menu-text">Inventory Reports</span>
-                                </a>
-                            </li>
-
-                        </ul>
-                    </div>
-                    @endcan -->
-                    @can('operations_reports_manage')
-                    <div class="menu-submenu">
-                        <i class="menu-arrow"></i>
-                        <ul class="menu-subnav">
-                            <li class="menu-item {{ activeMenu('admin.reports.membership-reports') }}" aria-haspopup="true">
-                                <a href="{{ route('admin.reports.membership-reports') }}" class="menu-link">
-                                    <i class="menu-bullet menu-bullet-dot">
-                                        <span></span>
-                                    </i>
-                                    <span class="menu-text">Membership Reports</span>
-                                </a>
-                            </li>
-
-                        </ul>
-                    </div>
-                    @endcan
-                    @can('operations_reports_manage')
-                    <div class="menu-submenu">
-                        <i class="menu-arrow"></i>
-                        <ul class="menu-subnav">
-                            <li class="menu-item {{ activeMenu('admin.reports.doctorWiseConversion') }}" aria-haspopup="true">
-                                <a href="{{ route('admin.reports.doctorWiseConversion') }}" class="menu-link">
-                                    <i class="menu-bullet menu-bullet-dot">
-                                        <span></span>
-                                    </i>
-                                    <span class="menu-text">Doctor incentive Report</span>
-                                </a>
-                            </li>
-
-                        </ul>
-                    </div>
-                    @endcan
-                    @can('appointment_reports_manage')
-                    <div class="menu-submenu">
-                        <i class="menu-arrow"></i>
-                        <ul class="menu-subnav">
-                            <li class="menu-item {{ activeMenu('admin.reports.appointmentsReport') }}" aria-haspopup="true">
-                                <a href="{{ route('admin.reports.appointmentsReport') }}" class="menu-link">
-                                    <i class="menu-bullet menu-bullet-dot">
-                                        <span></span>
-                                    </i>
-                                    <span class="menu-text">Appointments Report</span>
-                                </a>
-                            </li>
-
-                        </ul>
-                    </div>
-                    @endcan
-                    @can('csr_dashboard_report')
-                    <div class="menu-submenu">
-                        <i class="menu-arrow"></i>
-                        <ul class="menu-subnav">
-                            <li class="menu-item {{ activeMenu('admin.reports.csr_dashboard') }}" aria-haspopup="true">
-                                <a href="{{ route('admin.reports.csr_dashboard') }}" class="menu-link">
-                                    <i class="menu-bullet menu-bullet-dot">
-                                        <span></span>
-                                    </i>
-                                    <span class="menu-text">CSR Dashboard</span>
-                                </a>
-                            </li>
-
-                        </ul>
-                    </div>
-                    @endcan
-                    @can('non_converted_customers_manage')
-                    <div class="menu-submenu">
-                        <i class="menu-arrow"></i>
-                        <ul class="menu-subnav">
-                            <li class="menu-item {{ activeMenu('admin.reports.arrived_not_converted') }}" aria-haspopup="true">
-                                <a href="{{ route('admin.reports.arrived_not_converted') }}" class="menu-link">
-                                    <i class="menu-bullet menu-bullet-dot">
-                                        <span></span>
-                                    </i>
-                                    <span class="menu-text">Non-Converted Customer Report </span>
-                                </a>
-                            </li>
-
-                        </ul>
-                    </div>
-                    @endcan
-                    @can('conversion_report_manage')
-                    <div class="menu-submenu">
-                        <i class="menu-arrow"></i>
-                        <ul class="menu-subnav">
-                            <li class="menu-item {{ activeMenu('admin.reports.conversion') }}" aria-haspopup="true">
-                                <a href="{{ route('admin.reports.conversion') }}" class="menu-link">
-                                    <i class="menu-bullet menu-bullet-dot">
-                                        <span></span>
-                                    </i>
-                                    <span class="menu-text">Conversion Report</span>
-                                </a>
-                            </li>
-
-                        </ul>
-                    </div>
-                    @endcan
-                    @can('activity_logs_report')
-                    <div class="menu-submenu">
-                        <i class="menu-arrow"></i>
-                        <ul class="menu-subnav">
-                            <li class="menu-item {{ activeMenu('admin.reports.activity_logs') }}" aria-haspopup="true">
-                                <a href="{{ route('admin.reports.activity_logs') }}" class="menu-link">
-                                    <i class="menu-bullet menu-bullet-dot">
-                                        <span></span>
-                                    </i>
-                                    <span class="menu-text">Activity Logs </span>
-                                </a>
-                            </li>
-
-                        </ul>
-                    </div>
-                    @endcan
-                    @can('staff_wise_arrival_manage')
-                    <div class="menu-submenu">
-                        <i class="menu-arrow"></i>
-                        <ul class="menu-subnav">
-                            <li class="menu-item {{ activeMenu('admin.reports.staff_wise_arrival') }}" aria-haspopup="true">
-                                <a href="{{ route('admin.reports.staff_wise_arrival') }}" class="menu-link">
-                                    <i class="menu-bullet menu-bullet-dot">
-                                        <span></span>
-                                    </i>
-                                    <span class="menu-text">Staff Wise Arrival Report </span>
-                                </a>
-                            </li>
-                        </ul>
-                    </div>
-                    @endcan
-                    @can('follow_up_manage')
-                    <div class="menu-submenu">
-                        <i class="menu-arrow"></i>
-                        <ul class="menu-subnav">
-                            <li class="menu-item {{ activeMenu('admin.reports.follow_up') }}" aria-haspopup="true">
-                                <a href="{{ route('admin.reports.follow_up') }}" class="menu-link">
-                                    <i class="menu-bullet menu-bullet-dot">
-                                        <span></span>
-                                    </i>
-                                    <span class="menu-text">Follow Up Report </span>
-                                </a>
-                            </li>
-                        </ul>
-                    </div>
-                    @endcan
-                    @can('inventory_report_manage')
-                    <div class="menu-submenu">
-                        <i class="menu-arrow"></i>
-                        <ul class="menu-subnav">
-                            <li class="menu-item {{ activeMenu('admin.reports.inventory_report') }}" aria-haspopup="true">
-                                <a href="{{ route('admin.reports.inventory_report') }}" class="menu-link">
-                                    <i class="menu-bullet menu-bullet-dot">
-                                        <span></span>
-                                    </i>
-                                    <span class="menu-text">Inventory Report </span>
-                                </a>
-                            </li>
-                        </ul>
-                    </div>
-                    @endcan
-                    @can('feedbacks_manage')
-                    <div class="menu-submenu">
-                        <i class="menu-arrow"></i>
-                        <ul class="menu-subnav">
-                            <li class="menu-item {{ activeMenu('admin.reports.feedback_report') }}" aria-haspopup="true">
-                                <a href="{{ route('admin.reports.feedback_report') }}" class="menu-link">
-                                    <i class="menu-bullet menu-bullet-dot">
-                                        <span></span>
-                                    </i>
-                                    <span class="menu-text">Doctor Ratings Report </span>
-                                </a>
-                            </li>
-                        </ul>
-                    </div>
-                    @endcan
-                   @can('followuppatient_manage')
-                    <div class="menu-submenu">
-                        <i class="menu-arrow"></i>
-                        <ul class="menu-subnav">
-                            <li class="menu-item {{ activeMenu('admin.reports.future_treatments') }}" aria-haspopup="true">
-                                <a href="{{ route('admin.reports.future_treatments') }}" class="menu-link">
-                                    <i class="menu-bullet menu-bullet-dot">
-                                        <span></span>
-                                    </i>
-                                    <span class="menu-text">Future Treatments Report</span>
-                                </a>
-                            </li>
-                        </ul>
-                    </div>
-                    @endcan
-                    @can('upselling_report')
-                    <div class="menu-submenu">
-                        <i class="menu-arrow"></i>
-                        <ul class="menu-subnav">
-                            <li class="menu-item {{ activeMenu('admin.reports.upselling') }}" aria-haspopup="true">
-                                <a href="{{ route('admin.reports.upselling') }}" class="menu-link">
-                                    <i class="menu-bullet menu-bullet-dot">
-                                        <span></span>
-                                    </i>
-                                    <span class="menu-text">Doctors Upselling Report </span>
-                                </a>
-                            </li>
-                        </ul>
-                    </div>
-                    @endcan
-                    @can('consultant_revenue_report')
-                    <div class="menu-submenu">
-                        <i class="menu-arrow"></i>
-                        <ul class="menu-subnav">
-                            <li class="menu-item {{ activeMenu('admin.reports.consultant_revenue') }}" aria-haspopup="true">
-                                <a href="{{ route('admin.reports.consultant_revenue') }}" class="menu-link">
-                                    <i class="menu-bullet menu-bullet-dot">
-                                        <span></span>
-                                    </i>
-                                    <span class="menu-text">Consultants Revenue Report </span>
-                                </a>
-                            </li>
-                        </ul>
-                    </div>
-                    @endcan
-                    @can('consultant_revenue_report')
-                    <div class="menu-submenu">
-                        <i class="menu-arrow"></i>
-                        <ul class="menu-subnav">
-                            <li class="menu-item {{ activeMenu('admin.reports.doctor_revenue') }}" aria-haspopup="true">
-                                <a href="{{ route('admin.reports.doctor_revenue') }}" class="menu-link">
-                                    <i class="menu-bullet menu-bullet-dot">
-                                        <span></span>
-                                    </i>
-                                    <span class="menu-text">Doctor Revenue Report</span>
-                                </a>
-                            </li>
-                        </ul>
-                    </div>
-                    @endcan
-                </li>
-                @endif
-
-                {{-- Cash Flow Module --}}
+                {{-- ───────────────── Finance ───────────────── --}}
                 @can('cashflow_manage')
+                <li class="menu-section">
+                    <h4 class="menu-text">Finance</h4>
+                    <i class="menu-section-icon flaticon-more-v2"></i>
+                </li>
+
                 <li class="menu-item menu-item-submenu {{ openMenu(['admin.cashflow.dashboard','admin.cashflow.expenses','admin.cashflow.transfers','admin.cashflow.vendors','admin.cashflow.staff','admin.cashflow.fdm','admin.cashflow.reports','admin.cashflow.settings']) }}" aria-haspopup="true" data-menu-toggle="hover">
                     <a href="javascript:;" class="menu-link menu-toggle">
                         <i class="menu-icon la la-money-bill-wave"></i>
@@ -1409,8 +597,13 @@
                 </li>
                 @endcan
 
-                {{-- ── HRM Module ── --}}
-                @if (Gate::allows('hr_dashboard_view') || Gate::allows('hr_employees_view') || Gate::allows('hr_departments_view') || Gate::allows('hr_designations_view') || Gate::allows('hr_leave_view') || Gate::allows('hr_leave_approve') || Gate::allows('hr_recruitment_view'))
+                {{-- ───────────────── Human Resources ───────────────── --}}
+                @if ($sidebarShowHr)
+                <li class="menu-section">
+                    <h4 class="menu-text">Human Resources</h4>
+                    <i class="menu-section-icon flaticon-more-v2"></i>
+                </li>
+
                 <li class="menu-item menu-item-submenu {{ openMenu(['admin.hr.dashboard', 'admin.hr.employees.index', 'admin.hr.employees.show', 'admin.hr.departments.index', 'admin.hr.designations.index', 'admin.hr.leave-types.index', 'admin.hr.leave-balances.index', 'admin.hr.leave-applications.index', 'admin.hr.leave-applications.calendar', 'admin.hr.recruitment.index', 'admin.hr.recruitment.show', 'admin.hr.reports.celebrations']) }}" aria-haspopup="true" data-menu-toggle="hover">
                     <a href="javascript:void(0);" class="menu-link menu-toggle">
                         <span class="svg-icon menu-icon">
@@ -1500,6 +693,777 @@
                             @endcan
                         </ul>
                     </div>
+                </li>
+                @endif
+
+                {{-- ───────────────── Reports ───────────────── --}}
+                @if ($sidebarShowReports)
+                <li class="menu-section">
+                    <h4 class="menu-text">Reports</h4>
+                    <i class="menu-section-icon flaticon-more-v2"></i>
+                </li>
+
+                <li class="menu-item menu-item-submenu {{ openMenu(['admin.reports.finance_reports', 'admin.reports.operations_report', 'admin.reports.inventory_report']) }}" aria-haspopup="true" data-menu-toggle="hover">
+                    <a href="javascript:void(0);" class="menu-link menu-toggle">
+                        <span class="svg-icon menu-icon">
+                            <i class="font-icon la la-file-text-o"></i>
+                        </span>
+                        <span class="menu-text">Reports Management</span>
+                        <i class="menu-arrow"></i>
+                    </a>
+
+                    @can('finance_general_revenue_reports_manage')
+                    <div class="menu-submenu">
+                        <i class="menu-arrow"></i>
+                        <ul class="menu-subnav">
+                            <li class="menu-item {{ activeMenu('admin.reports.finance_reports') }}" aria-haspopup="true">
+                                <a href="{{ route('admin.reports.finance_reports') }}" class="menu-link">
+                                    <i class="menu-bullet menu-bullet-dot">
+                                        <span></span>
+                                    </i>
+                                    <span class="menu-text">General Sales Report</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                    @endcan
+
+                    @can('operations_reports_operations_tax_calculation_report')
+                    <div class="menu-submenu">
+                        <i class="menu-arrow"></i>
+                        <ul class="menu-subnav">
+                            <li class="menu-item {{ activeMenu('admin.reports.tax_calculation_report') }}" aria-haspopup="true">
+                                <a href="{{ route('admin.reports.tax_calculation_report') }}" class="menu-link">
+                                    <i class="menu-bullet menu-bullet-dot">
+                                        <span></span>
+                                    </i>
+                                    <span class="menu-text">Tax Calculation Report</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                    @endcan
+
+                    @can('operations_reports_manage')
+                    <div class="menu-submenu">
+                        <i class="menu-arrow"></i>
+                        <ul class="menu-subnav">
+                            <li class="menu-item {{ activeMenu('admin.reports.operations_report') }}" aria-haspopup="true">
+                                <a href="{{ route('admin.reports.operations_report') }}" class="menu-link">
+                                    <i class="menu-bullet menu-bullet-dot">
+                                        <span></span>
+                                    </i>
+                                    <span class="menu-text">Operation Reports</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                    @endcan
+
+                    @can('operations_reports_manage')
+                    <div class="menu-submenu">
+                        <i class="menu-arrow"></i>
+                        <ul class="menu-subnav">
+                            <li class="menu-item {{ activeMenu('admin.reports.membership-reports') }}" aria-haspopup="true">
+                                <a href="{{ route('admin.reports.membership-reports') }}" class="menu-link">
+                                    <i class="menu-bullet menu-bullet-dot">
+                                        <span></span>
+                                    </i>
+                                    <span class="menu-text">Membership Reports</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                    @endcan
+
+                    @can('operations_reports_manage')
+                    <div class="menu-submenu">
+                        <i class="menu-arrow"></i>
+                        <ul class="menu-subnav">
+                            <li class="menu-item {{ activeMenu('admin.reports.doctorWiseConversion') }}" aria-haspopup="true">
+                                <a href="{{ route('admin.reports.doctorWiseConversion') }}" class="menu-link">
+                                    <i class="menu-bullet menu-bullet-dot">
+                                        <span></span>
+                                    </i>
+                                    <span class="menu-text">Doctor incentive Report</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                    @endcan
+
+                    @can('appointment_reports_manage')
+                    <div class="menu-submenu">
+                        <i class="menu-arrow"></i>
+                        <ul class="menu-subnav">
+                            <li class="menu-item {{ activeMenu('admin.reports.appointmentsReport') }}" aria-haspopup="true">
+                                <a href="{{ route('admin.reports.appointmentsReport') }}" class="menu-link">
+                                    <i class="menu-bullet menu-bullet-dot">
+                                        <span></span>
+                                    </i>
+                                    <span class="menu-text">Appointments Report</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                    @endcan
+
+                    @can('csr_dashboard_report')
+                    <div class="menu-submenu">
+                        <i class="menu-arrow"></i>
+                        <ul class="menu-subnav">
+                            <li class="menu-item {{ activeMenu('admin.reports.csr_dashboard') }}" aria-haspopup="true">
+                                <a href="{{ route('admin.reports.csr_dashboard') }}" class="menu-link">
+                                    <i class="menu-bullet menu-bullet-dot">
+                                        <span></span>
+                                    </i>
+                                    <span class="menu-text">CSR Dashboard</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                    @endcan
+
+                    @can('non_converted_customers_manage')
+                    <div class="menu-submenu">
+                        <i class="menu-arrow"></i>
+                        <ul class="menu-subnav">
+                            <li class="menu-item {{ activeMenu('admin.reports.arrived_not_converted') }}" aria-haspopup="true">
+                                <a href="{{ route('admin.reports.arrived_not_converted') }}" class="menu-link">
+                                    <i class="menu-bullet menu-bullet-dot">
+                                        <span></span>
+                                    </i>
+                                    <span class="menu-text">Non-Converted Customer Report </span>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                    @endcan
+
+                    @can('conversion_report_manage')
+                    <div class="menu-submenu">
+                        <i class="menu-arrow"></i>
+                        <ul class="menu-subnav">
+                            <li class="menu-item {{ activeMenu('admin.reports.conversion') }}" aria-haspopup="true">
+                                <a href="{{ route('admin.reports.conversion') }}" class="menu-link">
+                                    <i class="menu-bullet menu-bullet-dot">
+                                        <span></span>
+                                    </i>
+                                    <span class="menu-text">Conversion Report</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                    @endcan
+
+                    @can('activity_logs_report')
+                    <div class="menu-submenu">
+                        <i class="menu-arrow"></i>
+                        <ul class="menu-subnav">
+                            <li class="menu-item {{ activeMenu('admin.reports.activity_logs') }}" aria-haspopup="true">
+                                <a href="{{ route('admin.reports.activity_logs') }}" class="menu-link">
+                                    <i class="menu-bullet menu-bullet-dot">
+                                        <span></span>
+                                    </i>
+                                    <span class="menu-text">Activity Logs </span>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                    @endcan
+
+                    @can('staff_wise_arrival_manage')
+                    <div class="menu-submenu">
+                        <i class="menu-arrow"></i>
+                        <ul class="menu-subnav">
+                            <li class="menu-item {{ activeMenu('admin.reports.staff_wise_arrival') }}" aria-haspopup="true">
+                                <a href="{{ route('admin.reports.staff_wise_arrival') }}" class="menu-link">
+                                    <i class="menu-bullet menu-bullet-dot">
+                                        <span></span>
+                                    </i>
+                                    <span class="menu-text">Staff Wise Arrival Report </span>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                    @endcan
+
+                    @can('follow_up_manage')
+                    <div class="menu-submenu">
+                        <i class="menu-arrow"></i>
+                        <ul class="menu-subnav">
+                            <li class="menu-item {{ activeMenu('admin.reports.follow_up') }}" aria-haspopup="true">
+                                <a href="{{ route('admin.reports.follow_up') }}" class="menu-link">
+                                    <i class="menu-bullet menu-bullet-dot">
+                                        <span></span>
+                                    </i>
+                                    <span class="menu-text">Follow Up Report </span>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                    @endcan
+
+                    @can('inventory_report_manage')
+                    <div class="menu-submenu">
+                        <i class="menu-arrow"></i>
+                        <ul class="menu-subnav">
+                            <li class="menu-item {{ activeMenu('admin.reports.inventory_report') }}" aria-haspopup="true">
+                                <a href="{{ route('admin.reports.inventory_report') }}" class="menu-link">
+                                    <i class="menu-bullet menu-bullet-dot">
+                                        <span></span>
+                                    </i>
+                                    <span class="menu-text">Inventory Report </span>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                    @endcan
+
+                    @can('feedbacks_manage')
+                    <div class="menu-submenu">
+                        <i class="menu-arrow"></i>
+                        <ul class="menu-subnav">
+                            <li class="menu-item {{ activeMenu('admin.reports.feedback_report') }}" aria-haspopup="true">
+                                <a href="{{ route('admin.reports.feedback_report') }}" class="menu-link">
+                                    <i class="menu-bullet menu-bullet-dot">
+                                        <span></span>
+                                    </i>
+                                    <span class="menu-text">Doctor Ratings Report </span>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                    @endcan
+
+                    @can('followuppatient_manage')
+                    <div class="menu-submenu">
+                        <i class="menu-arrow"></i>
+                        <ul class="menu-subnav">
+                            <li class="menu-item {{ activeMenu('admin.reports.future_treatments') }}" aria-haspopup="true">
+                                <a href="{{ route('admin.reports.future_treatments') }}" class="menu-link">
+                                    <i class="menu-bullet menu-bullet-dot">
+                                        <span></span>
+                                    </i>
+                                    <span class="menu-text">Future Treatments Report</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                    @endcan
+
+                    @can('upselling_report')
+                    <div class="menu-submenu">
+                        <i class="menu-arrow"></i>
+                        <ul class="menu-subnav">
+                            <li class="menu-item {{ activeMenu('admin.reports.upselling') }}" aria-haspopup="true">
+                                <a href="{{ route('admin.reports.upselling') }}" class="menu-link">
+                                    <i class="menu-bullet menu-bullet-dot">
+                                        <span></span>
+                                    </i>
+                                    <span class="menu-text">Doctors Upselling Report </span>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                    @endcan
+
+                    @can('consultant_revenue_report')
+                    <div class="menu-submenu">
+                        <i class="menu-arrow"></i>
+                        <ul class="menu-subnav">
+                            <li class="menu-item {{ activeMenu('admin.reports.consultant_revenue') }}" aria-haspopup="true">
+                                <a href="{{ route('admin.reports.consultant_revenue') }}" class="menu-link">
+                                    <i class="menu-bullet menu-bullet-dot">
+                                        <span></span>
+                                    </i>
+                                    <span class="menu-text">Consultants Revenue Report </span>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                    @endcan
+
+                    @can('consultant_revenue_report')
+                    <div class="menu-submenu">
+                        <i class="menu-arrow"></i>
+                        <ul class="menu-subnav">
+                            <li class="menu-item {{ activeMenu('admin.reports.doctor_revenue') }}" aria-haspopup="true">
+                                <a href="{{ route('admin.reports.doctor_revenue') }}" class="menu-link">
+                                    <i class="menu-bullet menu-bullet-dot">
+                                        <span></span>
+                                    </i>
+                                    <span class="menu-text">Doctor Revenue Report</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                    @endcan
+                </li>
+                @endif
+
+                {{-- ───────────────── Administration ───────────────── --}}
+                @if ($sidebarShowAdmin)
+                <li class="menu-section">
+                    <h4 class="menu-text">Administration</h4>
+                    <i class="menu-section-icon flaticon-more-v2"></i>
+                </li>
+                @endif
+
+                @can('users_manage')
+                <li class="menu-item {{ activeMenu('admin.user_branches.index') }}" aria-haspopup="true">
+                    <a href="{{ route('admin.user_branches.index') }}" class="menu-link">
+                        <span class="svg-icon menu-icon">
+                            <i class="font-icon la la-map-marker"></i>
+                        </span>
+                        <span class="menu-text">Branch Assignments</span>
+                    </a>
+                </li>
+                @endcan
+
+                @if (Gate::allows('permissions_manage') ||
+                Gate::allows('roles_manage') ||
+                Gate::allows('users_manage') ||
+                Gate::allows('user_types_manage') ||
+                Gate::allows('doctors_manage'))
+                <li class="menu-item menu-item-submenu {{ openMenu(['admin.permissions.index', 'admin.users.index', 'admin.roles.index', 'admin.roles.edit', 'admin.users.index', 'admin.doctors.index', 'admin.user_types.index']) }}" aria-haspopup="true" data-menu-toggle="hover">
+                    <a href="javascript:void(0);" class="menu-link menu-toggle">
+                        <span class="svg-icon menu-icon">
+                            <i class="font-icon la la-user"></i>
+                        </span>
+                        <span class="menu-text">User Management</span>
+                        <i class="menu-arrow"></i>
+                    </a>
+                    <div class="menu-submenu">
+                        <i class="menu-arrow"></i>
+                        <ul class="menu-subnav">
+
+                            @can('permissions_manage')
+                            <li class="menu-item {{ activeMenu('admin.permissions.index') }}" aria-haspopup="true">
+                                <a href="{{ route('admin.permissions.index') }}" class="menu-link">
+                                    <i class="menu-bullet menu-bullet-dot">
+                                        <span></span>
+                                    </i>
+                                    <span class="menu-text">Permissions</span>
+                                </a>
+                            </li>
+                            @endcan
+
+                            @can('roles_manage')
+                            <li class="menu-item {{ activeMenu('admin.roles.index') }} {{ activeMenu('admin.roles.edit') }}" aria-haspopup="true">
+                                <a href="{{ route('admin.roles.index') }}" class="menu-link">
+                                    <i class="menu-bullet menu-bullet-dot">
+                                        <span></span>
+                                    </i>
+                                    <span class="menu-text">Roles</span>
+                                </a>
+                            </li>
+                            @endcan
+
+                            @can('users_manage')
+                            <li class="menu-item {{ activeMenu('admin.users.index') }}" aria-haspopup="true">
+                                <a href="{{ route('admin.users.index') }}" class="menu-link">
+                                    <i class="menu-bullet menu-bullet-dot">
+                                        <span></span>
+                                    </i>
+                                    <span class="menu-text">Application Users</span>
+                                </a>
+                            </li>
+                            @endcan
+                            @can('doctors_manage')
+                            <li class="menu-item {{ activeMenu('admin.doctors.index') }}" aria-haspopup="true">
+                                <a href="{{ route('admin.doctors.index') }}" class="menu-link">
+                                    <i class="menu-bullet menu-bullet-dot">
+                                        <span></span>
+                                    </i>
+                                    <span class="menu-text">Doctors</span>
+                                </a>
+                            </li>
+                            @endcan
+                            @can('user_types_manage')
+                            <li class="menu-item {{ activeMenu('admin.user_types.index') }}" aria-haspopup="true">
+                                <a href="{{ route('admin.user_types.index') }}" class="menu-link">
+                                    <i class="menu-bullet menu-bullet-dot">
+                                        <span></span>
+                                    </i>
+                                    <span class="menu-text">User Types</span>
+                                </a>
+                            </li>
+                            @endcan
+
+                        </ul>
+                    </div>
+                </li>
+                @endif
+
+                @if (Gate::allows('settings_manage') ||
+                Gate::allows('user_operator_settings_manage') ||
+                Gate::allows('sms_templates_manage') ||
+                Gate::allows('regions_manage') ||
+                Gate::allows('cities_manage') ||
+                Gate::allows('payment_modes_manage') ||
+                Gate::allows('custom_forms_manage') ||
+                Gate::allows('custom_form_feedbacks_manage') ||
+                Gate::allows('locations_manage') ||
+                Gate::allows('staff_targets_manage') ||
+                Gate::allows('centre_targets_manage') ||
+                Gate::allows('lead_sources_manage') ||
+                Gate::allows('lead_statuses_manage') ||
+                Gate::allows('appointment_statuses_manage') ||
+                Gate::allows('cancellation_reasons_manage') ||
+                Gate::allows('resources_manage') ||
+                Gate::allows('logs_manage') ||
+                Gate::allows('finances_manage') ||
+                Gate::allows('invoices_manage') ||
+                Gate::allows('machineType_manage') ||
+                Gate::allows('towns_manage'))
+
+                <li class="menu-item menu-item-submenu {{ openMenu([
+                        'admin.settings.index',
+                        'admin.user_operator_settings.index',
+                        'admin.payment_modes.index',
+                        'admin.payment_modes.sort',
+                        'admin.regions.index',
+                        'admin.regions.sort',
+                        'admin.cities.index',
+                        'admin.cities.sort',
+                        'admin.lead_sources.index',
+                        'admin.lead_sources.sort',
+                        'admin.towns.index',
+                        'admin.lead_statuses.index',
+                        'admin.lead_statuses.sort',
+                        'admin.appointment_statuses.index',
+                        'admin.locations.index',
+                        'admin.machine_types.index',
+                        'admin.resources.index',
+                        'admin.logs.index',
+                        'admin.sms_templates.index',
+                        'admin.centre_targets.index',
+                        'admin.google_reviews.index',
+                        'admin.packagesadvances.index',
+                        'admin.resourcerotas.calender-view',
+                        'admin.invoices.index',
+                        'admin.packages.log',
+                        'admin.custom_form_feedbacks.index',
+                        'admin.custom_form_feedbacks.edit',
+                        'admin.custom_form_feedbacks.filled_preview',
+                        'admin.custom_forms.index',
+                        'admin.custom_forms.edit',
+                        'admin.custom_form_feedbacks.preview_form',
+                        'admin.custom_form_feedbacks.fill_form',
+                    ]) }}" aria-haspopup="true" data-menu-toggle="hover">
+
+                    <a href="javascript:void(0);" class="menu-link menu-toggle">
+                        <span class="svg-icon menu-icon">
+                            <i class="font-icon la la-cog"></i>
+                        </span>
+                        <span class="menu-text">Admin Settings</span>
+                        <i class="menu-arrow"></i>
+                    </a>
+
+                    @can('settings_manage')
+                    <div class="menu-submenu">
+                        <i class="menu-arrow"></i>
+                        <ul class="menu-subnav">
+                            <li class="menu-item {{ activeMenu('admin.settings.index') }}" aria-haspopup="true">
+                                <a href="{{ route('admin.settings.index') }}" class="menu-link">
+                                    <i class="menu-bullet menu-bullet-dot">
+                                        <span></span>
+                                    </i>
+                                    <span class="menu-text">Global Settings</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                    @endcan
+
+                    @can('user_operator_settings_manage')
+                    <div class="menu-submenu">
+                        <i class="menu-arrow"></i>
+                        <ul class="menu-subnav">
+                            <li class="menu-item {{ activeMenu('admin.user_operator_settings.index') }}" aria-haspopup="true">
+                                <a href="{{ route('admin.user_operator_settings.index') }}" class="menu-link">
+                                    <i class="menu-bullet menu-bullet-dot">
+                                        <span></span>
+                                    </i>
+                                    <span class="menu-text">Operator Settings</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                    @endcan
+
+                    @can('payment_modes_manage')
+                    <div class="menu-submenu">
+                        <i class="menu-arrow"></i>
+                        <ul class="menu-subnav">
+                            <li class="menu-item {{ openMenu(['admin.payment_modes.index', 'admin.payment_modes.sort'], 'menu-item-active') }}" aria-haspopup="true">
+                                <a href="{{ route('admin.payment_modes.index') }}" class="menu-link">
+                                    <i class="menu-bullet menu-bullet-dot">
+                                        <span></span>
+                                    </i>
+                                    <span class="menu-text">Payment Modes</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                    @endcan
+
+                    @can('regions_manage')
+                    <div class="menu-submenu">
+                        <i class="menu-arrow"></i>
+                        <ul class="menu-subnav">
+                            <li class="menu-item {{ openMenu(['admin.regions.index', 'admin.regions.sort'], 'menu-item-active') }}" aria-haspopup="true">
+                                <a href="{{ route('admin.regions.index') }}" class="menu-link">
+                                    <i class="menu-bullet menu-bullet-dot">
+                                        <span></span>
+                                    </i>
+                                    <span class="menu-text">Regions</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                    @endcan
+
+                    @can('cities_manage')
+                    <div class="menu-submenu">
+                        <i class="menu-arrow"></i>
+                        <ul class="menu-subnav">
+                            <li class="menu-item {{ openMenu(['admin.cities.index', 'admin.cities.sort'], 'menu-item-active') }}" aria-haspopup="true">
+                                <a href="{{ route('admin.cities.index') }}" class="menu-link">
+                                    <i class="menu-bullet menu-bullet-dot">
+                                        <span></span>
+                                    </i>
+                                    <span class="menu-text">Cities</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                    @endcan
+
+                    @can('towns_manage')
+                    <div class="menu-submenu">
+                        <i class="menu-arrow"></i>
+                        <ul class="menu-subnav">
+                            <li class="menu-item {{ activeMenu('admin.towns.index') }}" aria-haspopup="true">
+                                <a href="{{ route('admin.towns.index') }}" class="menu-link">
+                                    <i class="menu-bullet menu-bullet-dot">
+                                        <span></span>
+                                    </i>
+                                    <span class="menu-text">Towns</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                    @endcan
+
+                    @can('lead_sources_manage')
+                    <div class="menu-submenu">
+                        <i class="menu-arrow"></i>
+                        <ul class="menu-subnav">
+                            <li class="menu-item {{ openMenu(['admin.lead_sources.index', 'admin.lead_sources.sort'], 'menu-item-active') }}" aria-haspopup="true">
+                                <a href="{{ route('admin.lead_sources.index') }}" class="menu-link">
+                                    <i class="menu-bullet menu-bullet-dot">
+                                        <span></span>
+                                    </i>
+                                    <span class="menu-text">Lead Sources</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                    @endcan
+
+                    @can('lead_statuses_manage')
+                    <div class="menu-submenu">
+                        <i class="menu-arrow"></i>
+                        <ul class="menu-subnav">
+                            <li class="menu-item {{ openMenu(['admin.lead_statuses.index', 'admin.lead_statuses.sort'], 'menu-item-active') }}" aria-haspopup="true">
+                                <a href="{{ route('admin.lead_statuses.index') }}" class="menu-link">
+                                    <i class="menu-bullet menu-bullet-dot">
+                                        <span></span>
+                                    </i>
+                                    <span class="menu-text">Lead Statuses</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                    @endcan
+
+                    @can('locations_manage')
+                    <div class="menu-submenu">
+                        <i class="menu-arrow"></i>
+                        <ul class="menu-subnav">
+                            <li class="menu-item {{ activeMenu('admin.locations.index') }}" aria-haspopup="true">
+                                <a href="{{ route('admin.locations.index') }}" class="menu-link">
+                                    <i class="menu-bullet menu-bullet-dot">
+                                        <span></span>
+                                    </i>
+                                    <span class="menu-text">Centres</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                    @endcan
+
+                    @can('appointment_statuses_manage')
+                    <div class="menu-submenu">
+                        <i class="menu-arrow"></i>
+                        <ul class="menu-subnav">
+                            <li class="menu-item {{ activeMenu('admin.appointment_statuses.index') }}" aria-haspopup="true">
+                                <a href="{{ route('admin.appointment_statuses.index') }}" class="menu-link">
+                                    <i class="menu-bullet menu-bullet-dot">
+                                        <span></span>
+                                    </i>
+                                    <span class="menu-text">Appointment Statuses</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                    @endcan
+
+                    @can('machineType_manage')
+                    <div class="menu-submenu">
+                        <i class="menu-arrow"></i>
+                        <ul class="menu-subnav">
+                            <li class="menu-item {{ activeMenu('admin.machine_types.index') }}" aria-haspopup="true">
+                                <a href="{{ route('admin.machine_types.index') }}" class="menu-link">
+                                    <i class="menu-bullet menu-bullet-dot">
+                                        <span></span>
+                                    </i>
+                                    <span class="menu-text">Machine Type</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                    @endcan
+
+                    @can('resources_manage')
+                    <div class="menu-submenu">
+                        <i class="menu-arrow"></i>
+                        <ul class="menu-subnav">
+                            <li class="menu-item {{ activeMenu('admin.resources.index') }}" aria-haspopup="true">
+                                <a href="{{ route('admin.resources.index') }}" class="menu-link">
+                                    <i class="menu-bullet menu-bullet-dot">
+                                        <span></span>
+                                    </i>
+                                    <span class="menu-text">Resource</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                    @endcan
+
+                    @can('sms_templates_manage')
+                    <div class="menu-submenu">
+                        <i class="menu-arrow"></i>
+                        <ul class="menu-subnav">
+                            <li class="menu-item {{ activeMenu('admin.sms_templates.index') }}" aria-haspopup="true">
+                                <a href="{{ route('admin.sms_templates.index') }}" class="menu-link">
+                                    <i class="menu-bullet menu-bullet-dot">
+                                        <span></span>
+                                    </i>
+                                    <span class="menu-text">SMS Templates</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                    @endcan
+
+                    @can('centre_targets_manage')
+                    <div class="menu-submenu">
+                        <i class="menu-arrow"></i>
+                        <ul class="menu-subnav">
+                            <li class="menu-item {{ activeMenu('admin.centre_targets.index') }}" aria-haspopup="true">
+                                <a href="{{ route('admin.centre_targets.index') }}" class="menu-link">
+                                    <i class="menu-bullet menu-bullet-dot">
+                                        <span></span>
+                                    </i>
+                                    <span class="menu-text">Centre Targets</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                    @endcan
+
+                    @can('google_reviews_manage')
+                    <div class="menu-submenu">
+                        <i class="menu-arrow"></i>
+                        <ul class="menu-subnav">
+                            <li class="menu-item {{ activeMenu('admin.google_reviews.index') }}" aria-haspopup="true">
+                                <a href="{{ route('admin.google_reviews.index') }}" class="menu-link">
+                                    <i class="menu-bullet menu-bullet-dot">
+                                        <span></span>
+                                    </i>
+                                    <span class="menu-text">Google Reviews</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                    @endcan
+
+                    @can('finances_manage')
+                    <div class="menu-submenu">
+                        <i class="menu-arrow"></i>
+                        <ul class="menu-subnav">
+                            <li class="menu-item {{ activeMenu('admin.packagesadvances.index') }}" aria-haspopup="true">
+                                <a href="{{ route('admin.packagesadvances.index') }}" class="menu-link">
+                                    <i class="menu-bullet menu-bullet-dot">
+                                        <span></span>
+                                    </i>
+                                    <span class="menu-text">Finances</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                    @endcan
+
+                    @can('invoices_manage')
+                    <div class="menu-submenu">
+                        <i class="menu-arrow"></i>
+                        <ul class="menu-subnav">
+                            <li class="menu-item {{ activeMenu('admin.invoices.index') }}" aria-haspopup="true">
+                                <a href="{{ route('admin.invoices.index') }}" class="menu-link">
+                                    <i class="menu-bullet menu-bullet-dot">
+                                        <span></span>
+                                    </i>
+                                    <span class="menu-text">Invoices</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                    @endcan
+
+                    @can('custom_form_feedbacks_manage')
+                    <div class="menu-submenu">
+                        <i class="menu-arrow"></i>
+                        <ul class="menu-subnav">
+                            <li class="menu-item {{ activeMenu('admin.custom_form_feedbacks.index') }} {{ activeMenu('admin.custom_form_feedbacks.filled_preview') }}" aria-haspopup="true">
+                                <a href="{{ route('admin.custom_form_feedbacks.index') }}" class="menu-link">
+                                    <i class="menu-bullet menu-bullet-dot">
+                                        <span></span>
+                                    </i>
+                                    <span class="menu-text">Custom Form Feedbacks</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                    @endcan
+
+                    @can('custom_forms_manage')
+                    <div class="menu-submenu">
+                        <i class="menu-arrow"></i>
+                        <ul class="menu-subnav">
+                            <li class="menu-item {{ activeMenu('admin.custom_forms.index') }}" aria-haspopup="true">
+                                <a href="{{ route('admin.custom_forms.index') }}" class="menu-link">
+                                    <i class="menu-bullet menu-bullet-dot">
+                                        <span></span>
+                                    </i>
+                                    <span class="menu-text">Custom Form</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                    @endcan
                 </li>
                 @endif
 

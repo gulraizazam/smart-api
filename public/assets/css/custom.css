@@ -1220,12 +1220,40 @@ input[type=number] {
     color: #ffffff !important;
 }
 
-/* Section labels and separators */
+/* Section labels — uppercase category headings */
+.aside-menu .menu-nav > .menu-section {
+    padding: 18px 25px 8px !important;
+    margin-top: 6px !important;
+    height: auto !important;
+    min-height: 0 !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.06) !important;
+}
+.aside-menu .menu-nav > .menu-section:first-child {
+    border-top: 0 !important;
+    margin-top: 0 !important;
+    padding-top: 8px !important;
+}
 .aside-menu .menu-nav > .menu-section .menu-text {
-    color: #ffffff !important;
+    color: rgba(255, 255, 255, 0.55) !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.12em !important;
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    line-height: 1.2 !important;
+    margin: 0 !important;
+}
+.aside-menu .menu-nav > .menu-section .menu-section-icon {
+    display: none !important;
 }
 .aside-menu .menu-nav > .menu-separator {
     border-bottom-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Active state — left accent bar so the current page is obvious on pure black */
+.aside-menu .menu-nav > .menu-item.menu-item-here > .menu-link,
+.aside-menu .menu-nav > .menu-item.menu-item-active > .menu-link,
+.aside-menu .menu-nav > .menu-item.menu-item-open > .menu-link {
+    box-shadow: inset 3px 0 0 #ffffff !important;
 }
 
 /* Bullets — keep visible on black */
