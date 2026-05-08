@@ -20,12 +20,15 @@ use App\Models\Invoices;
 use App\Models\Leads;
 use App\Models\LeadsServices;
 use App\Models\LeadStatuses;
+use App\Models\BusinessClosure;
 use App\Models\Locations;
 use App\Models\Patients;
 use App\Models\ResourceHasRotaDays;
 use App\Models\Resources;
 use App\Models\Services;
+use App\Models\Settings;
 use App\Models\User;
+use App\Models\WorkingDayException;
 use App\Services\Lead\BackfillLeadCategoryAction;
 use App\Services\MetaConversionApiService;
 use App\Services\PatientManagement\PatientSearchService;
@@ -251,6 +254,90 @@ class AppointmentService
         }
 
         return $query;
+    }
+
+    /**
+     * Block scheduling on a date the business has marked closed (full-day
+     * holiday or rolling closure window). The closure may be scoped to a
+     * specific location, to the "All centres" sentinel location, or to no
+     * locations at all (account-wide). Mirrors the legacy admin guards in
+     * `AppointmentScheduleController::validateScheduleDate` and
+     * `ConsultancyUpdateService::validateBusinessClosure`.
+     */
+    protected function validateBusinessClosure(int $accountId, int $locationId, string $date): void
+    {
+        $allCentresLocationId = (int) Config::get('constants.all_centres_location_id', 30);
+
+        $closure = BusinessClosure::where('account_id', $accountId)
+            ->whereDate('start_date', '<=', $date)
+            ->whereDate('end_date', '>=', $date)
+            ->where(function ($query) use ($locationId, $allCentresLocationId) {
+                $query->whereHas('locations', fn ($q) => $q->where('locations.id', $locationId))
+                    ->orWhereHas('locations', fn ($q) => $q->where('locations.id', $allCentresLocationId))
+                    ->orWhereDoesntHave('locations');
+            })
+            ->first();
+
+        if ($closure) {
+            $formattedDate = Carbon::parse($date)->format('d M, Y');
+            throw AppointmentException::invalidData(
+                "Cannot schedule appointment on {$formattedDate}. Business is closed: " . ($closure->title ?? 'Business Closed')
+            );
+        }
+    }
+
+    /**
+     * Block scheduling on a non-working weekday (per the account's
+     * `business_working_days` setting), respecting per-date overrides
+     * stored in `working_day_exceptions`.
+     */
+    protected function validateWorkingDay(int $accountId, string $date): void
+    {
+        $workingDays = $this->getBusinessWorkingDays($accountId);
+        $isWorkingDay = WorkingDayException::isWorkingDay($accountId, $date, $workingDays);
+
+        if (! $isWorkingDay) {
+            $formattedDate = Carbon::parse($date)->format('l, d M Y');
+            throw AppointmentException::invalidData(
+                "Cannot schedule appointment on {$formattedDate}. Business is closed on this day."
+            );
+        }
+    }
+
+    private function getBusinessWorkingDays(int $accountId): array
+    {
+        $setting = Settings::where('account_id', $accountId)
+            ->where('slug', 'business_working_days')
+            ->first();
+
+        if ($setting?->data) {
+            return json_decode($setting->data, true);
+        }
+
+        return [
+            'monday' => true,
+            'tuesday' => true,
+            'wednesday' => true,
+            'thursday' => true,
+            'friday' => true,
+            'saturday' => true,
+            'sunday' => false,
+        ];
+    }
+
+    /**
+     * Convenience wrapper for the create / update / schedule paths.
+     * Skips validation when no date or location is supplied — leaving
+     * an appointment unscheduled is always allowed.
+     */
+    protected function validateScheduleAvailability(int $accountId, ?int $locationId, ?string $date): void
+    {
+        if (! $date || ! $locationId) {
+            return;
+        }
+        $iso = Carbon::parse($date)->format('Y-m-d');
+        $this->validateBusinessClosure($accountId, (int) $locationId, $iso);
+        $this->validateWorkingDay($accountId, $iso);
     }
 
     public function createAppointment(array $data): Appointments
@@ -525,6 +612,16 @@ class AppointmentService
             //     }
             // }
 
+            // Reject scheduling onto a business-closed day (full-day
+            // closure window or non-working weekday). Skipped when the
+            // appointment is being created without a date — operators
+            // routinely create unscheduled rows and slot them in later.
+            $this->validateScheduleAvailability(
+                $this->getAccountId(),
+                isset($appointmentData['location_id']) ? (int) $appointmentData['location_id'] : null,
+                $appointmentData['scheduled_date'] ?? null,
+            );
+
             $appointment = Appointments::create($appointmentData);
 
             if (! $appointment) {
@@ -743,6 +840,18 @@ class AppointmentService
             //         throw AppointmentException::scheduleConflict();
             //     }
             // }
+
+            // Reject rescheduling onto a closed day. Only fires when
+            // `scheduled_date` is actually being set on this update — a
+            // patient-detail edit that doesn't touch the date won't
+            // re-validate against today's closure list.
+            $this->validateScheduleAvailability(
+                $this->getAccountId(),
+                isset($appointmentData['location_id'])
+                    ? (int) $appointmentData['location_id']
+                    : (int) $appointment->location_id,
+                $appointmentData['scheduled_date'] ?? null,
+            );
 
             // Rota guard — same gate scheduleAppointment uses. Re-validates
             // when the doctor or the scheduled_date changes on update so
@@ -1091,6 +1200,16 @@ class AppointmentService
                 $appointment->scheduled_at_count
             );
 
+            // Reject rescheduling onto a business-closed day before any
+            // other validation — fail-fast keeps the message specific
+            // ("Business is closed: …") rather than masked by a downstream
+            // service / rota error.
+            $this->validateScheduleAvailability(
+                $accountId,
+                (int) ($data['location_id'] ?? $appointment->location_id),
+                $scheduleData['scheduled_date'] ?? null,
+            );
+
             // Validate doctor has service allocated at location
             $doctorId = $data['doctor_id'] ?? $appointment->doctor_id;
             $locationId = $data['location_id'] ?? $appointment->location_id;
@@ -1194,7 +1313,71 @@ class AppointmentService
                 $updateData['converted_by'] = $this->getUserId();
             }
 
+            // Capture pre-update snapshot for the activity log — we need
+            // the OLD date/time/doctor to render the "rescheduled from X
+            // to Y" line. Only emit a log when something actually moved.
+            // `scheduled_date` is cast to `date` (Carbon) on the model
+            // and `scheduled_time` is a raw string — normalise both to
+            // a canonical format before comparing so a Carbon vs string
+            // mismatch doesn't fire a false-positive "rescheduled" log.
+            $oldScheduledDateRaw = $appointment->scheduled_date;
+            $oldScheduledTimeRaw = $appointment->scheduled_time;
+            $oldDoctorId = $appointment->doctor_id;
+            $oldDateNorm = $oldScheduledDateRaw ? Carbon::parse($oldScheduledDateRaw)->format('Y-m-d') : null;
+            $oldTimeNorm = $oldScheduledTimeRaw ? Carbon::parse($oldScheduledTimeRaw)->format('H:i:s') : null;
+
             $appointment->update($updateData);
+
+            $newScheduledDate = $updateData['scheduled_date'] ?? $oldDateNorm;
+            $newScheduledTime = $updateData['scheduled_time'] ?? $oldTimeNorm;
+            $newDoctorId = $updateData['doctor_id'] ?? $oldDoctorId;
+            $newDateNorm = $newScheduledDate ? Carbon::parse($newScheduledDate)->format('Y-m-d') : null;
+            $newTimeNorm = $newScheduledTime ? Carbon::parse($newScheduledTime)->format('H:i:s') : null;
+
+            $dateChanged = $oldDateNorm !== $newDateNorm;
+            $timeChanged = $oldTimeNorm !== $newTimeNorm;
+            $doctorChanged = (int) $oldDoctorId !== (int) $newDoctorId;
+
+            if ($dateChanged || $timeChanged || $doctorChanged) {
+                $patient = Patients::find($appointment->patient_id);
+                $location = Locations::with('city')->find($appointment->location_id);
+                $service = Services::find($appointment->service_id);
+
+                if ($patient && ($dateChanged || $timeChanged)) {
+                    ActivityLogger::logAppointmentRescheduled(
+                        $appointment,
+                        $patient,
+                        $oldDateNorm ?? $newDateNorm,
+                        $oldTimeNorm ?? $newTimeNorm,
+                        $newDateNorm,
+                        $newTimeNorm,
+                        $location,
+                        $service,
+                    );
+                }
+
+                if ($doctorChanged && $patient) {
+                    $oldDoctor = User::find($oldDoctorId);
+                    $newDoctor = User::find($newDoctorId);
+                    ActivityLogger::logAppointmentUpdated(
+                        $appointment,
+                        $patient,
+                        [
+                            'Doctor' => [
+                                'old' => $oldDoctor?->name ?? 'Unknown',
+                                'new' => $newDoctor?->name ?? 'Unknown',
+                            ],
+                        ],
+                        $location,
+                        $service,
+                    );
+                }
+
+                $screen = $appointment->appointment_type_id === AppointmentType::Consultancy->value
+                    ? 'Consultancy'
+                    : 'Treatment';
+                ActivityLogger::saveAppointmentLogs('rescheduled', $screen, $appointment);
+            }
 
             AppointmentHelper::clearAppointmentCache($this->getAccountId());
 
