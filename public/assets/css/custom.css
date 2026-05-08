@@ -1161,7 +1161,7 @@ input[type=number] {
     overflow-y: scroll;
 }
 
-/* Allura brand — black sidebar */
+/* Allura brand — black sidebar with white menu text */
 .aside,
 .aside .aside-menu,
 .aside .aside-menu-wrapper {
@@ -1170,4 +1170,77 @@ input[type=number] {
 .brand {
     background-color: #000000 !important;
     box-shadow: none !important;
+}
+
+/* Top-level menu items — white text/icons/arrows in every state */
+.aside-menu .menu-nav > .menu-item > .menu-link .menu-text,
+.aside-menu .menu-nav > .menu-item > .menu-link .menu-icon,
+.aside-menu .menu-nav > .menu-item > .menu-link .menu-icon i,
+.aside-menu .menu-nav > .menu-item > .menu-link .menu-arrow,
+.aside-menu .menu-nav > .menu-item.menu-item-open > .menu-link .menu-text,
+.aside-menu .menu-nav > .menu-item.menu-item-open > .menu-link .menu-icon,
+.aside-menu .menu-nav > .menu-item.menu-item-open > .menu-link .menu-icon i,
+.aside-menu .menu-nav > .menu-item.menu-item-open > .menu-link .menu-arrow,
+.aside-menu .menu-nav > .menu-item.menu-item-here > .menu-link .menu-text,
+.aside-menu .menu-nav > .menu-item.menu-item-here > .menu-link .menu-icon,
+.aside-menu .menu-nav > .menu-item.menu-item-here > .menu-link .menu-icon i,
+.aside-menu .menu-nav > .menu-item.menu-item-here > .menu-link .menu-arrow,
+.aside-menu .menu-nav > .menu-item.menu-item-active > .menu-link .menu-text,
+.aside-menu .menu-nav > .menu-item.menu-item-active > .menu-link .menu-icon,
+.aside-menu .menu-nav > .menu-item.menu-item-active > .menu-link .menu-icon i,
+.aside-menu .menu-nav > .menu-item.menu-item-active > .menu-link .menu-arrow,
+.aside-menu .menu-nav > .menu-item:hover > .menu-link .menu-text,
+.aside-menu .menu-nav > .menu-item:hover > .menu-link .menu-icon,
+.aside-menu .menu-nav > .menu-item:hover > .menu-link .menu-icon i,
+.aside-menu .menu-nav > .menu-item:hover > .menu-link .menu-arrow {
+    color: #ffffff !important;
+}
+
+/* Top-level menu icons rendered as SVG */
+.aside-menu .menu-nav > .menu-item > .menu-link .menu-icon.svg-icon svg g [fill],
+.aside-menu .menu-nav > .menu-item.menu-item-open > .menu-link .menu-icon.svg-icon svg g [fill],
+.aside-menu .menu-nav > .menu-item.menu-item-here > .menu-link .menu-icon.svg-icon svg g [fill],
+.aside-menu .menu-nav > .menu-item.menu-item-active > .menu-link .menu-icon.svg-icon svg g [fill],
+.aside-menu .menu-nav > .menu-item:hover > .menu-link .menu-icon.svg-icon svg g [fill] {
+    fill: #ffffff !important;
+}
+
+/* Submenu items — white text/icons/arrows in every state */
+.aside-menu .menu-nav > .menu-item .menu-submenu,
+.aside-menu .menu-nav > .menu-item .menu-submenu .menu-subnav {
+    background-color: #000000 !important;
+}
+.aside-menu .menu-nav > .menu-item .menu-submenu .menu-item > .menu-link .menu-text,
+.aside-menu .menu-nav > .menu-item .menu-submenu .menu-item > .menu-link .menu-icon,
+.aside-menu .menu-nav > .menu-item .menu-submenu .menu-item > .menu-link .menu-icon i,
+.aside-menu .menu-nav > .menu-item .menu-submenu .menu-item > .menu-link .menu-arrow,
+.aside-menu .menu-nav > .menu-item .menu-submenu .menu-item.menu-item-open > .menu-link .menu-text,
+.aside-menu .menu-nav > .menu-item .menu-submenu .menu-item.menu-item-active > .menu-link .menu-text,
+.aside-menu .menu-nav > .menu-item .menu-submenu .menu-item:hover > .menu-link .menu-text {
+    color: #ffffff !important;
+}
+
+/* Section labels and separators */
+.aside-menu .menu-nav > .menu-section .menu-text {
+    color: #ffffff !important;
+}
+.aside-menu .menu-nav > .menu-separator {
+    border-bottom-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Bullets — keep visible on black */
+.aside-menu .menu-nav .menu-item .menu-link .menu-bullet.menu-bullet-dot > span,
+.aside-menu .menu-nav .menu-item .menu-link .menu-bullet.menu-bullet-line > span {
+    background-color: #ffffff !important;
+}
+
+/* Hover/open/here/active background — keep slight contrast on pure black */
+.aside-menu .menu-nav > .menu-item.menu-item-here > .menu-link,
+.aside-menu .menu-nav > .menu-item.menu-item-active > .menu-link,
+.aside-menu .menu-nav > .menu-item.menu-item-open > .menu-link,
+.aside-menu .menu-nav > .menu-item:not(.menu-item-parent):not(.menu-item-open):not(.menu-item-here):not(.menu-item-active):hover > .menu-link,
+.aside-menu .menu-nav > .menu-item .menu-submenu .menu-item.menu-item-here > .menu-link,
+.aside-menu .menu-nav > .menu-item .menu-submenu .menu-item.menu-item-active > .menu-link,
+.aside-menu .menu-nav > .menu-item .menu-submenu .menu-item:hover > .menu-link {
+    background-color: #1b1b1b !important;
 }
