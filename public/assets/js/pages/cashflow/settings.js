@@ -543,6 +543,7 @@ var CashflowSettings = (function () {
         $.ajax({
             url: apiBase + 'settings/toggle-eligibility',
             type: 'POST',
+            dataType: 'json',
             data: { user_id: userId, is_advance_eligible: eligible },
             headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
             success: function (res) {
@@ -554,7 +555,15 @@ var CashflowSettings = (function () {
                 }
             },
             error: function (xhr) {
-                toastr.error(xhr.responseJSON ? xhr.responseJSON.message : 'Failed.');
+                // Surface the real server message (validation / schema /
+                // permission failures) instead of a generic toast.
+                var msg = 'Failed to update eligibility.';
+                if (xhr && xhr.responseJSON && xhr.responseJSON.message) {
+                    msg = xhr.responseJSON.message;
+                } else if (xhr && xhr.status) {
+                    msg += ' (HTTP ' + xhr.status + ')';
+                }
+                toastr.error(msg);
                 loadEligibleStaff();
             }
         });

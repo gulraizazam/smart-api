@@ -307,55 +307,85 @@ class CashFlowSettingsController extends Controller
         try {
 
             $request->validate([
-
                 'user_id' => 'required|exists:users,id',
-
                 'is_advance_eligible' => 'required|boolean',
-
             ]);
 
-
+            // Schema guard — same reasoning as eligibleStaffList(): if the
+            // is_advance_eligible migration hasn't run on this environment,
+            // surface a clear "run migrate" message instead of an opaque
+            // SQL error.
+            if (! Schema::hasColumn('users', 'is_advance_eligible')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Advance-eligibility column missing on `users` table. Run `php artisan migrate` to enable per-staff toggles.',
+                ], 409);
+            }
 
             $accountId = Auth::user()->account_id;
+            $eligibleFlag = (bool) $request->boolean('is_advance_eligible');
 
-            $user = \App\Models\User::where('account_id', $accountId)->findOrFail($request->user_id);
+            $user = \App\Models\User::query()
+                ->where('account_id', $accountId)
+                ->findOrFail($request->integer('user_id'));
 
+            $oldFlag = (bool) $user->is_advance_eligible;
 
-
-            $user->update(['is_advance_eligible' => $request->is_advance_eligible]);
-
-
+            // updateQuietly skips the global ActivityLogObserver — toggling
+            // advance eligibility is already audited via CashflowAuditLog
+            // below, and the observer has been the source of opaque
+            // failures on hosts where the activities table schema lags.
+            $user->updateQuietly(['is_advance_eligible' => $eligibleFlag]);
 
             $this->auditService->log(
-
-                'updated',
-
+                CashflowAuditLog::ACTION_UPDATED,
                 'user',
-
                 $user->id,
-
-                ['is_advance_eligible' => !$request->is_advance_eligible],
-
-                ['is_advance_eligible' => (bool) $request->is_advance_eligible],
-
+                ['is_advance_eligible' => $oldFlag],
+                ['is_advance_eligible' => $eligibleFlag],
                 'Advance eligibility toggled'
-
             );
 
-
-
             return response()->json([
-
                 'success' => true,
-
-                'message' => $user->name . ' advance eligibility ' . ($request->is_advance_eligible ? 'enabled' : 'disabled') . '.',
-
+                'message' => $user->name . ' advance eligibility ' . ($eligibleFlag ? 'enabled' : 'disabled') . '.',
+                'data' => [
+                    'user_id' => $user->id,
+                    'is_advance_eligible' => $eligibleFlag,
+                ],
             ]);
 
-        } catch (\Exception $e) {
+        } catch (\Illuminate\Validation\ValidationException $e) {
 
-            \Illuminate\Support\Facades\Log::error($e->getMessage(), ['file' => $e->getFile(), 'line' => $e->getLine()]);
-            return response()->json(['success' => false, 'message' => 'An error occurred. Please try again.'], 422);
+            return response()->json([
+                'success' => false,
+                'message' => $e->validator->errors()->first(),
+                'errors' => $e->errors(),
+            ], 422);
+
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Staff member not found in your account.',
+            ], 404);
+
+        } catch (\Throwable $e) {
+
+            \Illuminate\Support\Facades\Log::error('cashflow.toggleStaffEligibility failed', [
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'user_id' => Auth::id(),
+                'target_user_id' => $request->input('user_id'),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => config('app.debug')
+                    ? 'Toggle failed: ' . $e->getMessage()
+                    : 'Could not update eligibility. Check storage/logs/laravel-*.log for details.',
+            ], 500);
 
         }
 
