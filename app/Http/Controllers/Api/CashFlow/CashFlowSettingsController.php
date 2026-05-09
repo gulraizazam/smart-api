@@ -16,6 +16,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Schema;
 
 class CashFlowSettingsController extends Controller
 {
@@ -243,28 +244,55 @@ class CashFlowSettingsController extends Controller
 
             $accountId = Auth::user()->account_id;
 
+            // Guard against environments where the migration adding
+            // is_advance_eligible hasn't run yet — without this check the
+            // SELECT below blows up with "Unknown column" and the UI shows
+            // a generic "Failed to load staff list." that hides the cause.
+            $hasEligibleColumn = Schema::hasColumn('users', 'is_advance_eligible');
 
+            $columns = ['id', 'name', 'email'];
+            if ($hasEligibleColumn) {
+                $columns[] = 'is_advance_eligible';
+            }
 
-            $staff = \App\Models\User::where('account_id', $accountId)
-
+            $query = \App\Models\User::query()
+                ->where('account_id', $accountId)
                 ->where('active', 1)
-
-                ->whereNull('deleted_at')
-
                 ->whereNotIn('user_type_id', [3])
+                ->orderBy('name');
 
-                ->orderBy('name')
+            $staff = $query->get($columns)->map(function ($user) use ($hasEligibleColumn): array {
+                return [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'is_advance_eligible' => $hasEligibleColumn ? (bool) $user->is_advance_eligible : false,
+                ];
+            })->all();
 
-                ->get(['id', 'name', 'email', 'is_advance_eligible']);
+            $payload = ['success' => true, 'data' => $staff];
 
+            if (!$hasEligibleColumn) {
+                $payload['warning'] = 'Advance-eligibility column missing — run `php artisan migrate` to enable per-staff toggles.';
+            }
 
+            return response()->json($payload);
 
-            return response()->json(['success' => true, 'data' => $staff]);
+        } catch (\Throwable $e) {
 
-        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('cashflow.eligibleStaffList failed', [
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'user_id' => Auth::id(),
+            ]);
 
-            \Illuminate\Support\Facades\Log::error($e->getMessage(), ['file' => $e->getFile(), 'line' => $e->getLine()]);
-            return response()->json(['success' => false, 'message' => 'An error occurred. Please try again.'], 500);
+            return response()->json([
+                'success' => false,
+                'message' => config('app.debug')
+                    ? 'Staff list query failed: ' . $e->getMessage()
+                    : 'Could not load staff list. Check storage/logs/laravel-*.log for details.',
+            ], 500);
 
         }
 

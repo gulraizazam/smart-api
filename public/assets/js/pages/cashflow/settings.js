@@ -499,6 +499,7 @@ var CashflowSettings = (function () {
         $.ajax({
             url: apiBase + 'settings/eligible-staff',
             type: 'GET',
+            dataType: 'json',
             success: function (res) {
                 var tbody = $('#eligible-staff-tbody').empty();
                 if (!res.success || !res.data || !res.data.length) {
@@ -523,7 +524,18 @@ var CashflowSettings = (function () {
                     toggleEligibility(userId, eligible);
                 });
             },
-            error: function () { toastr.error('Failed to load staff list.'); }
+            error: function (xhr) {
+                // Surface the actual server message so config/permission/DB
+                // failures are visible instead of a generic toast.
+                var msg = 'Failed to load staff list.';
+                if (xhr && xhr.responseJSON && xhr.responseJSON.message) {
+                    msg = xhr.responseJSON.message;
+                } else if (xhr && xhr.status) {
+                    msg += ' (HTTP ' + xhr.status + ')';
+                }
+                toastr.error(msg);
+                $('#eligible-staff-tbody').html('<tr><td colspan="3" class="text-center text-danger py-3">' + escapeHtml(msg) + '</td></tr>');
+            }
         });
     }
 
