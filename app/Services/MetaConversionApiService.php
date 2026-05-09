@@ -113,7 +113,7 @@ class MetaConversionApiService
         // Build custom data with lead quality indicator
         $customData = [
            
-            'lead_event_source' => 'CuteraCRM',
+            'lead_event_source' => 'AlluraCRM',
              //'event_source' => 'crm',
             'lead_status' => $status,
             'lead_quality' => $statusMapping['quality'], // qualified or disqualified

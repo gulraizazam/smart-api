@@ -165,7 +165,7 @@
      src="{{ public_path('assets/media/new_logo.png') }}" 
      class="img-responsive" alt=""/>
                 <p class="logo_caption">{{$location_info->address}}.</p>
-                <p class="logo_caption logo_caption2">Phone. {{$location_info->fdo_phone}} &nbsp;| &nbsp; Email. {{$account_info->email}}  &nbsp; | &nbsp;  www.cuteraesthetics.com  &nbsp; | &nbsp; NTN. {{$location_info->ntn}} &nbsp; | &nbsp; STN. {{$location_info->stn}}</p>
+                <p class="logo_caption logo_caption2">Phone. {{$location_info->fdo_phone}} &nbsp;| &nbsp; Email. {{$account_info->email}}  &nbsp; | &nbsp;  www.alluraesthetics.pk  &nbsp; | &nbsp; NTN. {{$location_info->ntn}} &nbsp; | &nbsp; STN. {{$location_info->stn}}</p>
             </td>
             <td style="padding:0px !important; float:right; width:120px; text-align:right;">
                 <div class="invoice_btn" style="width:120px; float:right; text-align:right;">
@@ -435,7 +435,7 @@
     </table>
     <table class="grand-tax" style="margin-top: 18px;">
         <tr>
-            <td style="font-size:15px;">Thank you for your business with Cutera Aesthetics.</td>
+            <td style="font-size:15px;">Thank you for your business with Allura Aesthetics.</td>
         </tr>
 
         <tr>
@@ -445,7 +445,7 @@
             <td style="font-size:15px;">
                 <strong>Note: </strong>For Privacy, Cancellation,
                 Late and Refund policies, please visit
-                <a href="https://cuteraesthetics.com/" target="_blank">www.cuteraesthetics.com</a>
+                <a href="https://www.alluraesthetics.pk/" target="_blank">www.alluraesthetics.pk</a>
             </td>
         </tr>
 

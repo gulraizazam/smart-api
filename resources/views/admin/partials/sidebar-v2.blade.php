@@ -430,8 +430,8 @@
 
     {{-- ── Brand ─────────────────────────────────────────────────────── --}}
     <div class="cs-brand">
-        <a href="{{ route('admin.home') }}" class="cs-brand-logo" aria-label="Cutera home">
-            <img alt="Cutera" src="{{ asset('logo.png') }}" />
+        <a href="{{ route('admin.home') }}" class="cs-brand-logo" aria-label="Allura Aesthetics home">
+            <img alt="Allura Aesthetics" src="{{ asset('logo.png') }}" />
         </a>
         <button type="button"
                 class="cs-brand-toggle"
@@ -1050,7 +1050,7 @@
 <!--end::Sidebar v2-->
 
 @push('js')
-{{-- Alpine.js CDN — CUTERA-REVIEW: self-host with SRI before prod enable. --}}
+{{-- Alpine.js CDN — review: self-host with SRI before prod enable. --}}
 <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js" crossorigin="anonymous"></script>
 <script>
     window.sidebarV2 = function (opts) {

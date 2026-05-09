@@ -30,7 +30,7 @@
                 <td>
                     <img style="width: 235px; margin-bottom: 10px;" class="img-responsive logo" src="{{asset('assets/media/new_logo.png')}}" alt=""/>
                     <p class="logo_caption">{{$location_info->address}}.</p>
-                    <p class="logo_caption logo_caption2">Phone. {{$location_info->fdo_phone}}  &nbsp; |  &nbsp; Email. {{$account->email}}  &nbsp; | &nbsp;  www.cuteraesthetics.com  &nbsp; | &nbsp; NTN. {{$location_info->ntn}} &nbsp; | &nbsp; STN. {{$location_info->stn}}</p>
+                    <p class="logo_caption logo_caption2">Phone. {{$location_info->fdo_phone}}  &nbsp; |  &nbsp; Email. {{$account->email}}  &nbsp; | &nbsp;  www.alluraesthetics.pk  &nbsp; | &nbsp; NTN. {{$location_info->ntn}} &nbsp; | &nbsp; STN. {{$location_info->stn}}</p>
                 </td>
                 <td style="padding:0px !important; float:right; width:120px; text-align:right;">
                     <div class="invoice_btn" style="width:120px; float:right; text-align:right;">
@@ -57,7 +57,7 @@
             <div class="row">
 
                 <div class="col-md-6 col-sm-6 col-xs-12 invoice-logo-space">
-                    <img src="{https://crm1.cutera.pk/logo_final.png" style="width: 50%;" class="img-responsive " alt=""/>
+                    <img src="{{ asset('logo_final.png') }}" style="width: 50%;" class="img-responsive " alt=""/>
                 </div>
 
                 <div class="col-md-6 col-sm-6 col-xs-12 invoice-logo-space text-right">

@@ -402,9 +402,11 @@
         var modifiedLocations;
         
         if (locations && locations.length > 0) {
-            if (locations.some(function(str) { return str.includes('CUTERA,'); })) {
-                modifiedLocations = locations.map(function(location) { 
-                    return location.replace('CUTERA, ', ''); 
+            if (locations.some(function(str) {
+                return str.includes('ALLURA,') || str.includes('CUTERA,');
+            })) {
+                modifiedLocations = locations.map(function(location) {
+                    return location.replace(/^(ALLURA|CUTERA), /i, '');
                 });
             } else {
                 modifiedLocations = locations;

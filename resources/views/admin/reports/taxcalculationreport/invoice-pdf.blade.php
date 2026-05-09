@@ -81,7 +81,7 @@
                     <span style="font-weight:lighter;">CUTERA</span> AESTHETICS
                 </div>
                 <p class="logo_caption">{{ $location->address }}.</p>
-                <p class="logo_caption logo_caption2">Phone. {{ $location->fdo_phone }} &nbsp; | &nbsp; Email. care@cutera.pk &nbsp; | &nbsp; www.cuteraesthetics.com &nbsp; | &nbsp; NTN. {{ $location->ntn }} &nbsp; | &nbsp; STN. {{ $location->stn }}</p>
+                <p class="logo_caption logo_caption2">Phone. {{ $location->fdo_phone }} &nbsp; | &nbsp; Email. care@alluraesthetics.pk &nbsp; | &nbsp; www.alluraesthetics.pk &nbsp; | &nbsp; NTN. {{ $location->ntn }} &nbsp; | &nbsp; STN. {{ $location->stn }}</p>
             </td>
             <td style="padding:0px !important; float:right; width:120px; text-align:right;">
                 <div class="invoice_btn" style="width:120px; float:right; text-align:right;">
@@ -121,6 +121,6 @@
         </tr>
     </table>
 
-    <p style="text-align:center; font-size:12px; margin-top:20px; font-style:italic;">Thank you for your business with Cutera Aesthetics.</p>
+    <p style="text-align:center; font-size:12px; margin-top:20px; font-style:italic;">Thank you for your business with Allura Aesthetics.</p>
 </body>
 </html>

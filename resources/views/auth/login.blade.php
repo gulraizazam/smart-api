@@ -371,8 +371,8 @@
             </div>
 
             <div class="allura-auth__brand-meta">
-                <span>&copy; {{ date('Y') }} Cutera Aesthetics</span>
-                <a href="https://cuteraesthetics.com" target="_blank" rel="noopener noreferrer">cuteraesthetics.com</a>
+                <span>&copy; {{ date('Y') }} Allura Aesthetics</span>
+                <a href="https://www.alluraesthetics.pk" target="_blank" rel="noopener noreferrer">alluraesthetics.pk</a>
             </div>
         </div>
     </section>
@@ -463,7 +463,7 @@
             </form>
 
             <p class="allura-auth__footer">
-                Need help? <a href="mailto:support@cuteraesthetics.com" style="color:inherit;text-decoration:underline;text-underline-offset:3px;">Contact support</a>
+                Need help? <a href="mailto:support@alluraesthetics.pk" style="color:inherit;text-decoration:underline;text-underline-offset:3px;">Contact support</a>
             </p>
         </div>
     </section>

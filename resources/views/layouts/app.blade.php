@@ -2,13 +2,11 @@
 <html lang="en">
 <!--begin::Head-->
 <head>
-    <title>Cutera Aesthetics | @yield('title')</title>
+    <title>Allura Aesthetics | @yield('title')</title>
     <meta charset="utf-8" />
     <meta name="description" content="Smart Aesthetic" />
     <meta name="keywords" content="Smart Aesthetic" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <link rel="shortcut icon" href="{{asset('favicon.ico')}}" />
-    <link rel="shortcut icon" href="https://cuteraesthetics.com/wp-content/themes/cutera/assets/img/favicon.png" />
     <!--begin::Fonts-->
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Poppins:300,400,500,600,700" />
     <!--end::Fonts-->

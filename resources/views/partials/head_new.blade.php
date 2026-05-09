@@ -24,6 +24,5 @@
 <link href="{{ url('assets/css/themes/layout/brand/dark.css') }}" rel="stylesheet" type="text/css" />
 <link href="{{ url('assets/css/themes/layout/aside/dark.css') }}" rel="stylesheet" type="text/css" />
 <!-- END THEME LAYOUT STYLES -->
-<link rel="shortcut icon" href="favicon.ico"/>
 
 @yield('stylesheets')

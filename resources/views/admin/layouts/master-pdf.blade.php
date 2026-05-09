@@ -4,7 +4,7 @@
 <head>
     <meta charset="utf-8" />
     <title>Smart</title>
-    <meta content="Smart Aesthetic is a Medical Spa offering more than 60 treatment for skin rejuvenation and body contouring" name="description" />
+    <meta content="Allura Aesthetics is a Medical Spa offering more than 60 treatments for skin rejuvenation and body contouring" name="description" />
     <meta content="Red Signal" name="author"/>
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
     <!--begin::Fonts-->
@@ -21,7 +21,6 @@
     <link href="{{asset('assets/css/themes/layout/brand/dark.css')}}" rel="stylesheet" type="text/css" />
     <link href="{{asset('assets/css/themes/layout/aside/dark.css')}}" rel="stylesheet" type="text/css" />
     <!--end::Layout Themes-->
-    <link rel="shortcut icon" href="{{asset('favicon.ico')}}" />
 
     @stack('css')
 
