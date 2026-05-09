@@ -151,6 +151,7 @@ class ExpenseService
                 'description' => $data['description'],
                 'reference_no' => $data['reference_no'] ?? null,
                 'attachment_url' => $data['attachment_url'] ?? null,
+                'attachment_image' => $data['attachment_image'] ?? null,
                 'notes' => $data['notes'] ?? null,
                 'status' => $status,
                 'verified_by' => $status === ExpenseStatus::Approved ? $user->id : null,
@@ -224,8 +225,9 @@ class ExpenseService
             throw new CashflowException('Only pending expenses can be approved.');
         }
 
-        // Attachment must be present before approval (Sec 5.2)
-        if (empty($expense->attachment_url)) {
+        // Attachment must be present before approval (Sec 5.2). Either the
+        // Drive URL or the uploaded image satisfies the rule.
+        if (empty($expense->attachment_url) && empty($expense->attachment_image)) {
             throw new CashflowException('Cannot approve: attachment must be present before approval.');
         }
 
@@ -322,7 +324,7 @@ class ExpenseService
         ];
 
         // Allow updating all editable fields on resubmit
-        $allowed = ['expense_date', 'amount', 'category_id', 'paid_from_pool_id', 'payment_method_id', 'description', 'reference_no', 'attachment_url', 'notes'];
+        $allowed = ['expense_date', 'amount', 'category_id', 'paid_from_pool_id', 'payment_method_id', 'description', 'reference_no', 'attachment_url', 'attachment_image', 'notes'];
         foreach ($allowed as $field) {
             if (array_key_exists($field, $data) && $data[$field] !== '' && $data[$field] !== null) {
                 $updateData[$field] = $data[$field];
@@ -429,7 +431,7 @@ class ExpenseService
         $oldVendorId = $expense->vendor_id;
         $oldAmount = (float) $expense->amount;
 
-        $allowed = ['expense_date', 'amount', 'category_id', 'paid_from_pool_id', 'payment_method_id', 'description', 'reference_no', 'attachment_url', 'notes', 'vendor_id', 'staff_id'];
+        $allowed = ['expense_date', 'amount', 'category_id', 'paid_from_pool_id', 'payment_method_id', 'description', 'reference_no', 'attachment_url', 'attachment_image', 'notes', 'vendor_id', 'staff_id'];
         $updateData = ['edit_reason' => $data['edit_reason']];
 
         // Handle merged branch/general field
@@ -614,9 +616,12 @@ class ExpenseService
             $flags[] = 'Backdated by ' . abs($daysDiff) . ' days';
         }
 
-        // Cash payment without attachment
+        // Cash payment without any attachment (Drive URL or uploaded image)
         $paymentMethod = $expense->paymentMethod;
-        if ($paymentMethod && strtolower($paymentMethod->name) === 'cash' && empty($expense->attachment_url)) {
+        if ($paymentMethod
+            && strtolower($paymentMethod->name) === 'cash'
+            && empty($expense->attachment_url)
+            && empty($expense->attachment_image)) {
             $flags[] = 'Cash payment without receipt attachment';
         }
 

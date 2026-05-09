@@ -18,10 +18,13 @@ use App\Services\CashFlow\CashflowSettingService;
 use App\Services\CashFlow\CategoryService;
 use App\Services\CashFlow\ExpenseService;
 use App\Services\CashFlow\PoolService;
+use App\Support\SafeFilename;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Storage;
 
 class CashFlowExpensesController extends Controller
 {
@@ -155,9 +158,21 @@ class CashFlowExpensesController extends Controller
 
             }
 
+            $data = $request->validated();
 
+            // Persist the receipt image (if any) on the public disk before
+            // handing the data array to the service. The validator already
+            // guarantees mime/size; we still sanitise the client filename.
+            if ($request->hasFile('attachment_image')) {
+                $data['attachment_image'] = $this->storeAttachmentImage(
+                    $request->file('attachment_image'),
+                    $accountId
+                );
+            } else {
+                unset($data['attachment_image']);
+            }
 
-            $expense = $this->expenseService->create($request->validated(), $accountId);
+            $expense = $this->expenseService->create($data, $accountId);
 
 
 
@@ -278,7 +293,28 @@ class CashFlowExpensesController extends Controller
 
             $accountId = Auth::user()->account_id;
 
-            $expense = $this->expenseService->resubmit($id, $request->all(), $accountId);
+            $data = $request->except('attachment_image');
+
+            // Replace the receipt image if a new one was uploaded; the
+            // request->all() flow used to send a string-y "fakepath"
+            // attachment_image which silently overwrote real paths.
+            if ($request->hasFile('attachment_image')) {
+                $request->validate([
+                    'attachment_image' => ['image', 'mimes:jpg,jpeg,png,gif,webp', 'max:5120'],
+                ]);
+
+                $existing = Expense::forAccount($accountId)->findOrFail($id);
+                $data['attachment_image'] = $this->storeAttachmentImage(
+                    $request->file('attachment_image'),
+                    $accountId
+                );
+
+                if ($existing->attachment_image) {
+                    Storage::disk('public')->delete($existing->attachment_image);
+                }
+            }
+
+            $expense = $this->expenseService->resubmit($id, $data, $accountId);
 
 
 
@@ -307,7 +343,26 @@ class CashFlowExpensesController extends Controller
 
             $accountId = Auth::user()->account_id;
 
-            $expense = $this->expenseService->adminEdit($id, $request->validated(), $accountId);
+            $data = $request->validated();
+
+            // Replace the receipt image if a new one was uploaded; otherwise
+            // strip the field so the service won't overwrite the existing
+            // value with NULL on a partial update.
+            if ($request->hasFile('attachment_image')) {
+                $existing = Expense::forAccount($accountId)->findOrFail($id);
+                $data['attachment_image'] = $this->storeAttachmentImage(
+                    $request->file('attachment_image'),
+                    $accountId
+                );
+
+                if ($existing->attachment_image) {
+                    Storage::disk('public')->delete($existing->attachment_image);
+                }
+            } else {
+                unset($data['attachment_image']);
+            }
+
+            $expense = $this->expenseService->adminEdit($id, $data, $accountId);
 
 
 
@@ -579,5 +634,26 @@ class CashFlowExpensesController extends Controller
 
         }
 
+    }
+
+    /**
+     * Persist an uploaded receipt image on the `public` disk and return
+     * the stored relative path (e.g. `cashflow_attachments/12/1715234567_receipt.jpg`).
+     *
+     * The browser-supplied filename is fully attacker-controlled, so we
+     * route it through SafeFilename and prepend a timestamp to defuse
+     * collisions. Files land under a per-account folder so listing one
+     * account's bucket can never enumerate another's.
+     */
+    private function storeAttachmentImage(UploadedFile $file, int $accountId): string
+    {
+        $safeName = SafeFilename::sanitize(
+            $file->getClientOriginalName(),
+            ['jpg', 'jpeg', 'png', 'gif', 'webp'],
+        );
+
+        $fileName = time() . '_' . $safeName;
+
+        return $file->storeAs("cashflow_attachments/{$accountId}", $fileName, 'public');
     }
 }

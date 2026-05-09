@@ -24,7 +24,7 @@ class Expense extends Model
     protected $fillable = [
         'account_id', 'expense_date', 'amount', 'category_id', 'paid_from_pool_id',
         'for_branch_id', 'payment_method_id', 'vendor_id', 'staff_id', 'description',
-        'reference_no', 'attachment_url', 'notes', 'status', 'verified_by',
+        'reference_no', 'attachment_url', 'attachment_image', 'notes', 'status', 'verified_by',
         'rejection_reason', 'is_flagged', 'flag_reason', 'created_by',
         'voided_at', 'voided_by', 'void_reason', 'edit_reason', 'is_for_general',
     ];

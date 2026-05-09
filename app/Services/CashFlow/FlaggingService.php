@@ -34,8 +34,11 @@ class FlaggingService
             $reasons[] = 'Entry created ' . abs($daysDiff) . ' days after expense date';
         }
 
-        // 2. No attachment for cash expense
-        if ($this->isCashPayment($expense) && empty($expense->attachment_url)) {
+        // 2. No attachment for cash expense — either a Drive URL or an
+        //    uploaded image counts as a receipt.
+        if ($this->isCashPayment($expense)
+            && empty($expense->attachment_url)
+            && empty($expense->attachment_image)) {
             $reasons[] = 'No receipt for cash expense';
         }
 

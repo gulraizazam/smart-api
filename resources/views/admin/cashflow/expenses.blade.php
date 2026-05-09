@@ -206,7 +206,7 @@
                     <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
                 </div>
                 <div class="modal-body">
-                    <form id="form-expense">
+                    <form id="form-expense" enctype="multipart/form-data">
                         <div class="row">
                             <div class="col-md-4">
                                 <div class="form-group">
@@ -269,9 +269,23 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="form-group">
-                            <label>Attachment (Google Drive URL)</label>
-                            <input type="url" name="attachment_url" class="form-control" placeholder="https://drive.google.com/..." maxlength="500" />
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>Receipt Image <span class="text-muted font-size-xs">(JPG, PNG, GIF, WEBP — max 5 MB)</span></label>
+                                    <input type="file" name="attachment_image" id="expense-image-input" class="form-control-file" accept="image/jpeg,image/png,image/gif,image/webp" />
+                                    <div id="expense-image-preview-wrap" class="mt-2 d-none">
+                                        <img id="expense-image-preview" src="" alt="Receipt preview" style="max-width:140px;max-height:140px;border:1px solid #E4E6EF;border-radius:0.42rem;padding:2px;" />
+                                        <a href="javascript:;" id="expense-image-clear" class="d-block text-danger font-size-xs mt-1"><i class="la la-times"></i> Remove</a>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>Google Drive URL <span class="text-muted font-size-xs">(optional)</span></label>
+                                    <input type="url" name="attachment_url" class="form-control" placeholder="https://drive.google.com/..." maxlength="500" />
+                                </div>
+                            </div>
                         </div>
                         <div class="form-group">
                             <label>Description <span class="text-danger">*</span></label>
@@ -403,7 +417,7 @@
                     <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
                 </div>
                 <div class="modal-body">
-                    <form id="form-admin-edit">
+                    <form id="form-admin-edit" enctype="multipart/form-data">
                         <input type="hidden" name="expense_id" />
                         <div class="row">
                             <div class="col-md-4">
@@ -463,9 +477,26 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="form-group">
-                            <label>Attachment (Google Drive URL)</label>
-                            <input type="url" name="attachment_url" class="form-control" placeholder="https://drive.google.com/..." maxlength="500" />
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>Receipt Image <span class="text-muted font-size-xs">(JPG, PNG, GIF, WEBP — max 5 MB)</span></label>
+                                    <input type="file" name="attachment_image" id="edit-image-input" class="form-control-file" accept="image/jpeg,image/png,image/gif,image/webp" />
+                                    <div id="edit-image-preview-wrap" class="mt-2 d-none">
+                                        <img id="edit-image-preview" src="" alt="Receipt preview" style="max-width:140px;max-height:140px;border:1px solid #E4E6EF;border-radius:0.42rem;padding:2px;" />
+                                        <div class="font-size-xs mt-1">
+                                            <a href="javascript:;" id="edit-image-view" class="text-primary mr-2" target="_blank"><i class="la la-external-link-alt"></i> View</a>
+                                            <a href="javascript:;" id="edit-image-clear" class="text-danger"><i class="la la-times"></i> Replace</a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>Google Drive URL <span class="text-muted font-size-xs">(optional)</span></label>
+                                    <input type="url" name="attachment_url" class="form-control" placeholder="https://drive.google.com/..." maxlength="500" />
+                                </div>
+                            </div>
                         </div>
                         <div class="form-group">
                             <label>Description <span class="text-danger">*</span></label>
@@ -575,6 +606,9 @@
                         <div class="col-md-4 mb-4">
                             <label class="text-muted font-size-sm mb-0">Attachment</label>
                             <div id="view-exp-attachment"></div>
+                            <div id="view-exp-image-wrap" class="mt-2 d-none">
+                                <a href="javascript:;" id="view-exp-image-link"><img id="view-exp-image" src="" alt="Receipt" style="max-width:120px;max-height:120px;border:1px solid #E4E6EF;border-radius:0.42rem;padding:2px;" /></a>
+                            </div>
                         </div>
                     </div>
                     <div class="mb-4">

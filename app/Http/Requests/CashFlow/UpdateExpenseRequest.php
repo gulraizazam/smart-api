@@ -28,7 +28,10 @@ class UpdateExpenseRequest extends FormRequest
             'staff_id' => 'nullable|exists:users,id',
             'description' => 'required|string|min:3|max:100',
             'reference_no' => 'nullable|string|max:100',
+            // URL is now always optional — operators can attach an uploaded
+            // image instead of (or alongside) a Drive link.
             'attachment_url' => ['nullable', 'string', 'max:500', new GoogleDriveUrlRule],
+            'attachment_image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,gif,webp', 'max:5120'],
             'notes' => 'nullable|string|max:1000',
             'edit_reason' => 'required|string|min:5|max:500',
         ];
@@ -63,6 +66,9 @@ class UpdateExpenseRequest extends FormRequest
             'description.min' => 'Description must be at least 3 characters.',
             'edit_reason.required' => 'A reason for editing is required.',
             'edit_reason.min' => 'Edit reason must be at least 5 characters.',
+            'attachment_image.image' => 'Attachment must be an image (JPG, PNG, GIF, or WEBP).',
+            'attachment_image.mimes' => 'Allowed image types: JPG, JPEG, PNG, GIF, WEBP.',
+            'attachment_image.max' => 'Image must be 5 MB or smaller.',
         ];
     }
 }
