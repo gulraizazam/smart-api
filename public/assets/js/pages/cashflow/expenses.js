@@ -1760,6 +1760,8 @@ var CashflowExpenses = (function () {
                 oldNorm = JSON.stringify(Array.isArray(oldVal) ? oldVal : []);
                 newNorm = JSON.stringify(Array.isArray(newVal) ? newVal : []);
             }
+
+            if (oldNorm !== newNorm) {
                 changes.push(
                     '<span class="font-weight-bold">' + label + ':</span> ' +
                     '<span class="text-danger">' + formatVal(field, oldVal, oldV) + '</span>' +
