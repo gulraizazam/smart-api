@@ -108,51 +108,67 @@ var CashflowExpenses = (function () {
             }
         });
 
-        // Receipt image preview + clear (add modal)
+        // Receipt images preview + clear (add modal)
         $(document).on('change', '#expense-image-input', function () {
-            var file = this.files && this.files[0];
-            if (!file) {
+            var files = this.files;
+            var $list = $('#expense-images-preview-list').empty();
+            if (!files || !files.length) {
                 $('#expense-image-preview-wrap').addClass('d-none');
                 return;
             }
-            var reader = new FileReader();
-            reader.onload = function (e) {
-                $('#expense-image-preview').attr('src', e.target.result);
-                $('#expense-image-preview-wrap').removeClass('d-none');
-            };
-            reader.readAsDataURL(file);
+            var i;
+            for (i = 0; i < files.length; i++) {
+                (function (file) {
+                    var reader = new FileReader();
+                    reader.onload = function (e) {
+                        $list.append(
+                            '<img src="' + escapeHtml(e.target.result) + '" alt="" style="max-width:80px;max-height:80px;margin:4px;border:1px solid #E4E6EF;border-radius:0.42rem;padding:2px;" />'
+                        );
+                    };
+                    reader.readAsDataURL(file);
+                })(files[i]);
+            }
+            $('#expense-image-preview-wrap').removeClass('d-none');
         });
         $(document).on('click', '#expense-image-clear', function () {
             $('#expense-image-input').val('');
-            $('#expense-image-preview').attr('src', '');
+            $('#expense-images-preview-list').empty();
             $('#expense-image-preview-wrap').addClass('d-none');
         });
 
-        // Receipt image preview + clear (admin edit modal)
+        // Receipt images preview (admin edit / resubmit)
         $(document).on('change', '#edit-image-input', function () {
-            var file = this.files && this.files[0];
-            if (!file) {
-                // No new file picked — revert to existing preview if any.
-                var existing = $('#form-admin-edit').data('existing-image-url');
-                if (existing) {
-                    $('#edit-image-preview').attr('src', existing);
-                    $('#edit-image-view').attr('href', existing);
+            var files = this.files;
+            var $newList = $('#edit-images-new-list').empty();
+            var paths = $('#form-admin-edit').data('existing-receipt-paths') || [];
+            if (!files || !files.length) {
+                $('#edit-images-new-label').addClass('d-none');
+                if (paths.length) {
                     $('#edit-image-preview-wrap').removeClass('d-none');
                 } else {
                     $('#edit-image-preview-wrap').addClass('d-none');
                 }
                 return;
             }
-            var reader = new FileReader();
-            reader.onload = function (e) {
-                $('#edit-image-preview').attr('src', e.target.result);
-                $('#edit-image-view').attr('href', e.target.result);
-                $('#edit-image-preview-wrap').removeClass('d-none');
-            };
-            reader.readAsDataURL(file);
+            $('#edit-images-new-label').removeClass('d-none');
+            var i;
+            for (i = 0; i < files.length; i++) {
+                (function (file) {
+                    var reader = new FileReader();
+                    reader.onload = function (e) {
+                        $newList.append(
+                            '<img src="' + escapeHtml(e.target.result) + '" alt="" style="max-width:80px;max-height:80px;margin:4px;border:1px solid #E4E6EF;border-radius:0.42rem;padding:2px;" />'
+                        );
+                    };
+                    reader.readAsDataURL(file);
+                })(files[i]);
+            }
+            $('#edit-image-preview-wrap').removeClass('d-none');
         });
         $(document).on('click', '#edit-image-clear', function () {
-            $('#edit-image-input').val('').trigger('click');
+            $('#edit-image-input').val('');
+            $('#edit-images-new-list').empty();
+            $('#edit-images-new-label').addClass('d-none');
         });
 
         // Filter pools when payment method changes
@@ -235,7 +251,7 @@ var CashflowExpenses = (function () {
             $('#expense-modal-title').text('New Expense');
             $('#threshold-hint').html('');
             $('#vendor-group').removeClass('bg-light-warning p-3 rounded').show();
-            $('#expense-image-preview').attr('src', '');
+            $('#expense-images-preview-list').empty();
             $('#expense-image-preview-wrap').addClass('d-none');
         });
     }
@@ -506,13 +522,16 @@ var CashflowExpenses = (function () {
 
             var actions = buildActions(exp);
 
+            var imgPaths = expenseImagePathsFromExp(exp);
             // Build the attachment icon: prefer Drive preview when both
-            // exist, fall back to the uploaded image otherwise.
+            // exist, fall back to uploaded images otherwise.
             var attachIcon = '';
             if (exp.attachment_url) {
                 attachIcon = ' <a href="javascript:;" class="btn-preview" data-url="' + escapeHtml(exp.attachment_url) + '" title="Preview attachment"><i class="la la-paperclip text-primary"></i></a>';
-            } else if (exp.attachment_image) {
-                attachIcon = ' <a href="' + escapeHtml(buildImageUrl(exp.attachment_image)) + '" target="_blank" title="View receipt image"><i class="la la-image text-primary"></i></a>';
+            } else if (imgPaths.length) {
+                var firstU = buildImageUrl(imgPaths[0]);
+                var t = imgPaths.length > 1 ? ('View receipts (' + imgPaths.length + ')') : 'View receipt image';
+                attachIcon = ' <a href="' + escapeHtml(firstU) + '" target="_blank" title="' + escapeHtml(t) + '"><i class="la la-image text-primary"></i></a>';
             }
 
             html +=
@@ -560,12 +579,14 @@ var CashflowExpenses = (function () {
 
         var perms = window.cfPerms || {};
 
+        var imgsAttr = attrQuotes(JSON.stringify(expenseImagePathsFromExp(exp)));
+
         // View (always available)
         btns += '<button class="btn btn-sm btn-clean btn-icon btn-view-expense" data-expense=\'' + JSON.stringify(exp).replace(/'/g, '&#39;') + '\' title="View"><i class="la la-eye text-dark-50"></i></button>';
 
         // Approve (pending, non-voided)
         if (perms.canApprove && exp.status === 'pending' && !exp.voided_at) {
-            var hasAttach = (exp.attachment_url || exp.attachment_image) ? '1' : '0';
+            var hasAttach = (exp.attachment_url || expenseImagePathsFromExp(exp).length) ? '1' : '0';
             btns += '<button class="btn btn-sm btn-clean btn-icon btn-approve" data-id="' + exp.id + '" data-attachment="' + hasAttach + '" title="Approve"><i class="la la-check-circle text-success"></i></button>';
         }
 
@@ -588,7 +609,8 @@ var CashflowExpenses = (function () {
                 'data-vendor="' + (exp.vendor_id || '') + '" ' +
                 'data-description="' + escapeHtml(exp.description) + '" ' +
                 'data-attachment="' + escapeHtml(exp.attachment_url || '') + '" ' +
-                'data-image="' + escapeHtml(exp.attachment_image || '') + '" ' +
+                'data-image="' + escapeHtml((expenseImagePathsFromExp(exp)[0]) || '') + '" ' +
+                'data-images="' + imgsAttr + '" ' +
                 'title="Edit & Resubmit"><i class="la la-redo text-info"></i></button>';
         }
 
@@ -606,7 +628,8 @@ var CashflowExpenses = (function () {
                 'data-vendor="' + (exp.vendor_id || '') + '" ' +
                 'data-description="' + escapeHtml(exp.description) + '" ' +
                 'data-attachment="' + escapeHtml(exp.attachment_url || '') + '" ' +
-                'data-image="' + escapeHtml(exp.attachment_image || '') + '" ' +
+                'data-image="' + escapeHtml((expenseImagePathsFromExp(exp)[0]) || '') + '" ' +
+                'data-images="' + imgsAttr + '" ' +
                 'title="Edit"><i class="la la-edit text-primary"></i></button>';
         }
 
@@ -636,7 +659,8 @@ var CashflowExpenses = (function () {
                 'data-vendor="' + (exp.vendor_id || '') + '" ' +
                 'data-description="' + escapeHtml(exp.description || '') + '" ' +
                 'data-attachment="' + escapeHtml(exp.attachment_url || '') + '" ' +
-                'data-image="' + escapeHtml(exp.attachment_image || '') + '" ' +
+                'data-image="' + escapeHtml((expenseImagePathsFromExp(exp)[0]) || '') + '" ' +
+                'data-images="' + imgsAttr + '" ' +
                 'title="Duplicate as New"><i class="la la-copy text-info"></i></button>';
         }
 
@@ -679,6 +703,7 @@ var CashflowExpenses = (function () {
             $('#view-exp-verified-by').text(exp.verifier ? exp.verifier.name : '-');
 
             // Attachment — Drive URL link
+            var imgPaths = expenseImagePathsFromExp(exp);
             if (exp.attachment_url) {
                 var previewUrl = getDrivePreviewUrl(exp.attachment_url);
                 if (previewUrl) {
@@ -686,21 +711,26 @@ var CashflowExpenses = (function () {
                 } else {
                     $('#view-exp-attachment').html('<a href="' + escapeHtml(exp.attachment_url) + '" target="_blank" class="text-primary"><i class="la la-paperclip mr-1"></i>View Drive Link</a>');
                 }
-            } else if (!exp.attachment_image) {
+            } else if (!imgPaths.length) {
                 $('#view-exp-attachment').text('-');
             } else {
                 $('#view-exp-attachment').empty();
             }
 
-            // Attachment — uploaded image thumbnail
-            if (exp.attachment_image) {
-                var imgUrl = buildImageUrl(exp.attachment_image);
-                $('#view-exp-image').attr('src', imgUrl);
-                $('#view-exp-image-link').attr('href', imgUrl).attr('target', '_blank');
-                $('#view-exp-image-wrap').removeClass('d-none');
+            // Attachment — uploaded receipt images
+            var $imgList = $('#view-exp-images-list').empty();
+            if (imgPaths.length) {
+                imgPaths.forEach(function (p) {
+                    var u = buildImageUrl(p);
+                    $imgList.append(
+                        '<a href="' + escapeHtml(u) + '" target="_blank" class="mr-2 mb-2 d-inline-block">' +
+                        '<img src="' + escapeHtml(u) + '" alt="" style="max-width:100px;max-height:100px;border:1px solid #E4E6EF;border-radius:0.42rem;padding:2px;" />' +
+                        '</a>'
+                    );
+                });
+                $('#view-exp-images-wrap').removeClass('d-none');
             } else {
-                $('#view-exp-image').attr('src', '');
-                $('#view-exp-image-wrap').addClass('d-none');
+                $('#view-exp-images-wrap').addClass('d-none');
             }
 
             // Rejection reason
@@ -777,8 +807,8 @@ var CashflowExpenses = (function () {
             form.find('[name="amount"]').val(btn.data('amount'));
             form.find('[name="description"]').val(btn.data('description'));
             form.find('[name="attachment_url"]').val(btn.data('attachment'));
-            form.find('[name="attachment_image"]').val('');
-            applyExistingImagePreview(form, btn.data('image') || '');
+            form.find('[name="attachment_images[]"]').val('');
+            applyExistingReceiptPreviews(form, parseReceiptPathsFromBtn(btn));
 
             // Populate category dropdown
             var catHtml = '<option value="">Select category</option>';
@@ -855,8 +885,8 @@ var CashflowExpenses = (function () {
             form.find('[name="amount"]').val(btn.data('amount'));
             form.find('[name="description"]').val(btn.data('description'));
             form.find('[name="attachment_url"]').val(btn.data('attachment'));
-            form.find('[name="attachment_image"]').val('');
-            applyExistingImagePreview(form, btn.data('image') || '');
+            form.find('[name="attachment_images[]"]').val('');
+            applyExistingReceiptPreviews(form, parseReceiptPathsFromBtn(btn));
             form.find('[name="edit_reason"]').val('');
 
             // Populate category dropdown from create form options
@@ -995,7 +1025,10 @@ var CashflowExpenses = (function () {
         }).on('hidden.bs.modal', function () {
             $(this).find('.kt-select2-general').select2('destroy');
             $('#form-admin-edit').removeData('existing-image-url');
-            $('#edit-image-preview').attr('src', '');
+            $('#form-admin-edit').removeData('existing-receipt-paths');
+            $('#edit-images-saved-list').empty();
+            $('#edit-images-new-list').empty();
+            $('#edit-images-new-label').addClass('d-none');
             $('#edit-image-preview-wrap').addClass('d-none');
             $('#edit-image-input').val('');
         });
@@ -1035,8 +1068,8 @@ var CashflowExpenses = (function () {
             // Image attachment is intentionally NOT carried over — it would
             // re-link the same physical file across two expense rows, and
             // deleting the duplicate later would orphan the original.
-            form.find('[name="attachment_image"]').val('');
-            $('#expense-image-preview').attr('src', '');
+            form.find('[name="attachment_images[]"]').val('');
+            $('#expense-images-preview-list').empty();
             $('#expense-image-preview-wrap').addClass('d-none');
             if (btn.data('general') == 1) {
                 form.find('[name="for_branch_id"]').val('general').trigger('change');
@@ -1086,24 +1119,72 @@ var CashflowExpenses = (function () {
         return '/storage/' + path.replace(/^\//, '');
     }
 
-    /**
-     * Show the existing receipt image (if any) in the admin-edit / resubmit
-     * preview slot, and stash the public URL on the form's data store so
-     * the cash-receipt validator can detect "image already on file".
-     */
-    function applyExistingImagePreview(form, imagePath) {
-        var $form = form && form.length ? form : $('#form-admin-edit');
-        $form.removeData('existing-image-url');
-        if (imagePath) {
-            var url = buildImageUrl(imagePath);
-            $form.data('existing-image-url', url);
-            $('#edit-image-preview').attr('src', url);
-            $('#edit-image-view').attr('href', url);
-            $('#edit-image-preview-wrap').removeClass('d-none');
-        } else {
-            $('#edit-image-preview').attr('src', '');
-            $('#edit-image-preview-wrap').addClass('d-none');
+    function expenseImagePathsFromExp(exp) {
+        if (!exp) return [];
+        if (exp.attachment_images && Array.isArray(exp.attachment_images) && exp.attachment_images.length) {
+            return exp.attachment_images;
         }
+        if (exp.attachment_image) return [exp.attachment_image];
+        return [];
+    }
+
+    /** Escape a string for use inside a double-quoted HTML attribute. */
+    function attrQuotes(s) {
+        return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+    }
+
+    function parseReceiptPathsFromBtn($btn) {
+        var raw = $btn.attr('data-images');
+        if (raw) {
+            try {
+                var parsed = JSON.parse(raw);
+                if (Array.isArray(parsed) && parsed.length) return parsed;
+            } catch (e) { /* ignore */ }
+        }
+        var one = $btn.data('image');
+        if (one) return [String(one)];
+        return [];
+    }
+
+    function applyExistingReceiptPreviews(form, paths) {
+        var $form = form && form.length ? form : $('#form-admin-edit');
+        paths = paths && paths.length ? paths : [];
+        $form.data('existing-receipt-paths', paths);
+        $form.removeData('existing-image-url');
+        var $saved = $('#edit-images-saved-list').empty();
+        $('#edit-images-new-list').empty();
+        $('#edit-images-new-label').addClass('d-none');
+        $('#edit-image-input').val('');
+        if (!paths.length) {
+            $('#edit-image-preview-wrap').addClass('d-none');
+            return;
+        }
+        paths.forEach(function (p) {
+            var url = buildImageUrl(p);
+            $saved.append(
+                '<a href="' + escapeHtml(url) + '" target="_blank" class="mr-2 mb-2 d-inline-block">' +
+                '<img src="' + escapeHtml(url) + '" alt="" style="max-width:80px;max-height:80px;border:1px solid #E4E6EF;border-radius:0.42rem;padding:2px;" />' +
+                '</a>'
+            );
+        });
+        $form.data('existing-image-url', buildImageUrl(paths[0]));
+        $('#edit-image-preview-wrap').removeClass('d-none');
+    }
+
+    /**
+     * Show saved receipt path(s) on the admin-edit / resubmit form.
+     * @param {string|string[]} imagePathOrPaths single legacy path or list
+     */
+    function applyExistingImagePreview(form, imagePathOrPaths) {
+        if (Array.isArray(imagePathOrPaths)) {
+            applyExistingReceiptPreviews(form, imagePathOrPaths);
+            return;
+        }
+        if (imagePathOrPaths && typeof imagePathOrPaths === 'string') {
+            applyExistingReceiptPreviews(form, [imagePathOrPaths]);
+            return;
+        }
+        applyExistingReceiptPreviews(form, []);
     }
 
     function getDrivePreviewUrl(url) {
@@ -1182,11 +1263,9 @@ var CashflowExpenses = (function () {
             data['staff_id'] = '';
         }
 
-        // Pull the receipt-image File object (if any) from the DOM directly
-        // so the cash-receipt rule below can accept either an image upload
-        // or a Drive URL.
-        var imageInput = form.find('[name="attachment_image"]')[0];
-        var imageFile = imageInput && imageInput.files && imageInput.files[0] ? imageInput.files[0] : null;
+        // Receipt image uploads (optional; cash rule below)
+        var imageInput = form.find('[name="attachment_images[]"]')[0];
+        var imageFiles = imageInput && imageInput.files ? Array.from(imageInput.files) : [];
 
         // Highlight missing required fields
         form.find('.is-invalid').removeClass('is-invalid');
@@ -1209,16 +1288,16 @@ var CashflowExpenses = (function () {
             poolEl.siblings('.select2-container').css('border', '1px solid #F64E60').css('border-radius', '0.42rem');
             missing.push('paid_from_pool_id');
         }
-        // Cash expenses MUST have an attachment — either a Drive URL OR an uploaded image
+        // Cash expenses MUST have an attachment — either a Drive URL OR at least one uploaded image
         var selectedPM = $('[name="payment_method_id"] option:selected', form).text().toLowerCase();
-        if (selectedPM.indexOf('cash') !== -1 && !data.attachment_url && !imageFile) {
-            form.find('[name="attachment_image"]').addClass('is-invalid');
+        if (selectedPM.indexOf('cash') !== -1 && !data.attachment_url && !imageFiles.length) {
+            form.find('[name="attachment_images[]"]').addClass('is-invalid');
             form.find('[name="attachment_url"]').addClass('is-invalid');
-            missing.push('attachment_image');
-            toastr.warning('Cash expenses require a receipt — upload an image or paste a Google Drive URL.');
+            missing.push('attachment_images');
+            toastr.warning('Cash expenses require a receipt — upload one or more images or paste a Google Drive URL.');
         }
         if (missing.length) {
-            if (selectedPM.indexOf('cash') === -1 || data.attachment_url || imageFile) {
+            if (selectedPM.indexOf('cash') === -1 || data.attachment_url || imageFiles.length) {
                 toastr.warning('Please fill the highlighted fields.');
             }
             var first = form.find('.is-invalid:visible, .select2-container[style*="border"]').first();
@@ -1240,8 +1319,10 @@ var CashflowExpenses = (function () {
                 fd.append(k, data[k]);
             }
         });
-        if (imageFile) {
-            fd.append('attachment_image', imageFile);
+        if (imageFiles.length) {
+            imageFiles.forEach(function (file) {
+                fd.append('attachment_images[]', file);
+            });
         }
 
         var btn = $('#btn-submit-expense');
@@ -1263,8 +1344,9 @@ var CashflowExpenses = (function () {
                     form.find('[name="amount"]').val('');
                     form.find('[name="description"]').val('');
                     form.find('[name="attachment_url"]').val('');
-                    form.find('[name="attachment_image"]').val('');
-                    form.find('[name="category_id"]').val('');
+                    form.find('[name="attachment_images[]"]').val('');
+                    $('#expense-images-preview-list').empty();
+                    $('#expense-image-preview-wrap').addClass('d-none');
                     form.find('[name="paid_from_pool_id"]').val('');
                     form.find('[name="for_branch_id"]').val('');
                     form.find('[name="payment_method_id"]').val('');
@@ -1282,7 +1364,7 @@ var CashflowExpenses = (function () {
                     var newBalance = poolObj.cached_balance !== undefined ? 'PKR ' + numberFormat(poolObj.cached_balance) : 'N/A';
                     var amt = 'PKR ' + numberFormat(exp.amount || 0);
                     var status = (exp.status === 'approved') ? '<span class="text-success font-weight-bold">Auto-Approved</span>' : '<span class="text-warning font-weight-bold">Pending Approval</span>';
-                    var attach = (exp.attachment_url || exp.attachment_image) ? '<span class="text-success"><i class="la la-check-circle"></i> Attached</span>' : '<span class="text-danger"><i class="la la-times-circle"></i> No attachment</span>';
+                    var attach = (exp.attachment_url || expenseImagePathsFromExp(exp).length) ? '<span class="text-success"><i class="la la-check-circle"></i> Attached</span>' : '<span class="text-danger"><i class="la la-times-circle"></i> No attachment</span>';
 
                     Swal.fire({
                         icon: 'success',
@@ -1416,17 +1498,11 @@ var CashflowExpenses = (function () {
             data['staff_id'] = '';
         }
 
-        // New image upload (if any). The existing image stays untouched
-        // when no new file is picked, because the controller only writes
-        // attachment_image when $request->hasFile() is true.
-        var imageInput = form.find('[name="attachment_image"]')[0];
-        var imageFile = imageInput && imageInput.files && imageInput.files[0] ? imageInput.files[0] : null;
-
-        // True when an image attachment is already saved on the expense
-        // and was not just replaced with a new upload — used by the cash
-        // rule below so admins editing an old expense aren't forced to
-        // re-upload the same receipt.
-        var hasExistingImage = !!form.data('existing-image-url');
+        // New receipt images (optional). Controller appends to existing paths on edit/resubmit.
+        var imageInput = form.find('[name="attachment_images[]"]')[0];
+        var imageFiles = imageInput && imageInput.files ? Array.from(imageInput.files) : [];
+        var existingReceiptPaths = form.data('existing-receipt-paths') || [];
+        var hasExistingImage = existingReceiptPaths.length > 0 || !!form.data('existing-image-url');
 
         // Highlight missing required fields (same as add expense)
         form.find('.is-invalid').removeClass('is-invalid');
@@ -1460,15 +1536,15 @@ var CashflowExpenses = (function () {
 
         // Cash expenses MUST have attachment — Drive URL OR a (new or existing) image
         var selectedPM = $('[name="payment_method_id"] option:selected', form).text().toLowerCase();
-        if (selectedPM.indexOf('cash') !== -1 && !data.attachment_url && !imageFile && !hasExistingImage) {
-            form.find('[name="attachment_image"]').addClass('is-invalid');
+        if (selectedPM.indexOf('cash') !== -1 && !data.attachment_url && !imageFiles.length && !hasExistingImage) {
+            form.find('[name="attachment_images[]"]').addClass('is-invalid');
             form.find('[name="attachment_url"]').addClass('is-invalid');
-            missing.push('attachment_image');
-            toastr.warning('Cash expenses require a receipt — upload an image or paste a Google Drive URL.');
+            missing.push('attachment_images');
+            toastr.warning('Cash expenses require a receipt — upload one or more images or paste a Google Drive URL.');
         }
 
         if (missing.length) {
-            if (selectedPM.indexOf('cash') === -1 || data.attachment_url || imageFile || hasExistingImage) {
+            if (selectedPM.indexOf('cash') === -1 || data.attachment_url || imageFiles.length || hasExistingImage) {
                 toastr.warning('Please fill the highlighted fields.');
             }
             var first = form.find('.is-invalid:visible, .select2-container[style*="border"]').first();
@@ -1493,8 +1569,10 @@ var CashflowExpenses = (function () {
                 fd.append(k, data[k]);
             }
         });
-        if (imageFile) {
-            fd.append('attachment_image', imageFile);
+        if (imageFiles.length) {
+            imageFiles.forEach(function (file) {
+                fd.append('attachment_images[]', file);
+            });
         }
 
         var btn = $(this);
@@ -1626,6 +1704,7 @@ var CashflowExpenses = (function () {
             vendor_id: 'Vendor',
             staff_id: 'Staff',
             attachment_url: 'Drive Link',
+            attachment_images: 'Receipt Images',
             attachment_image: 'Receipt Image',
             reference_no: 'Reference No',
             notes: 'Notes',
@@ -1660,6 +1739,10 @@ var CashflowExpenses = (function () {
             if (field === 'amount') return 'PKR ' + parseInt(val).toLocaleString();
             if (field === 'is_for_general') return val ? 'Yes' : 'No';
             if (field === 'attachment_url') return val ? 'Attached' : '(none)';
+            if (field === 'attachment_images') {
+                var n = Array.isArray(val) ? val.length : (val ? 1 : 0);
+                return n ? (n + ' image(s)') : '(none)';
+            }
             if (field === 'attachment_image') return val ? 'Image attached' : '(none)';
             return escapeHtml(String(val));
         }
@@ -1673,8 +1756,10 @@ var CashflowExpenses = (function () {
             var newNorm = (newVal === null || newVal === undefined) ? '' : String(newVal);
             // Normalize dates to YYYY-MM-DD to avoid false positives from format differences
             if (field === 'expense_date') { oldNorm = oldNorm.substring(0, 10); newNorm = newNorm.substring(0, 10); }
-
-            if (oldNorm !== newNorm) {
+            if (field === 'attachment_images') {
+                oldNorm = JSON.stringify(Array.isArray(oldVal) ? oldVal : []);
+                newNorm = JSON.stringify(Array.isArray(newVal) ? newVal : []);
+            }
                 changes.push(
                     '<span class="font-weight-bold">' + label + ':</span> ' +
                     '<span class="text-danger">' + formatVal(field, oldVal, oldV) + '</span>' +

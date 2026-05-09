@@ -30,9 +30,10 @@ class StoreExpenseRequest extends FormRequest
             'reference_no' => 'nullable|string|max:100',
             // Both attachment fields are optional individually. Cash payments still
             // need *some* receipt — that cross-field rule is enforced in
-            // withValidator() so URL or image satisfies it.
+            // withValidator() so URL or one or more images satisfies it.
             'attachment_url' => ['nullable', 'string', 'max:500', new GoogleDriveUrlRule],
-            'attachment_image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,gif,webp', 'max:5120'],
+            'attachment_images' => ['nullable', 'array', 'max:10'],
+            'attachment_images.*' => ['image', 'mimes:jpg,jpeg,png,gif,webp', 'max:5120'],
             'notes' => 'nullable|string|max:1000',
         ];
     }
@@ -50,14 +51,14 @@ class StoreExpenseRequest extends FormRequest
                 $validator->errors()->add('paid_from_pool_id', 'Please select a cash pool or a staff member.');
             }
 
-            // Cash payments still need a receipt — accept either an uploaded
-            // image or a Google Drive URL (Sec 5.5).
+            // Cash payments still need a receipt — accept either uploaded
+            // image(s) or a Google Drive URL (Sec 5.5).
             if ($this->isCashPayment()
                 && empty($this->input('attachment_url'))
-                && !$this->hasFile('attachment_image')) {
+                && ! $this->hasReceiptImageUploads()) {
                 $validator->errors()->add(
-                    'attachment_image',
-                    'Attachment is mandatory for cash expenses — upload an image or paste a Google Drive URL.'
+                    'attachment_images',
+                    'Attachment is mandatory for cash expenses — upload one or more images or paste a Google Drive URL.'
                 );
             }
         });
@@ -70,10 +71,32 @@ class StoreExpenseRequest extends FormRequest
             'amount.min' => 'Amount must be at least 1.',
             'amount.integer' => 'Amount must be a whole number (no decimals).',
             'description.min' => 'Description must be at least 3 characters.',
-            'attachment_image.image' => 'Attachment must be an image (JPG, PNG, GIF, or WEBP).',
-            'attachment_image.mimes' => 'Allowed image types: JPG, JPEG, PNG, GIF, WEBP.',
-            'attachment_image.max' => 'Image must be 5 MB or smaller.',
+            'attachment_images.max' => 'You can upload at most 10 receipt images at once.',
+            'attachment_images.*.image' => 'Each attachment must be an image (JPG, PNG, GIF, or WEBP).',
+            'attachment_images.*.mimes' => 'Allowed image types: JPG, JPEG, PNG, GIF, WEBP.',
+            'attachment_images.*.max' => 'Each image must be 5 MB or smaller.',
         ];
+    }
+
+    /**
+     * True when at least one valid file was uploaded under attachment_images[].
+     */
+    private function hasReceiptImageUploads(): bool
+    {
+        $files = $this->file('attachment_images', []);
+        if ($files instanceof \Illuminate\Http\UploadedFile) {
+            return $files->isValid();
+        }
+        if (! is_array($files)) {
+            return false;
+        }
+        foreach ($files as $file) {
+            if ($file instanceof \Illuminate\Http\UploadedFile && $file->isValid()) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

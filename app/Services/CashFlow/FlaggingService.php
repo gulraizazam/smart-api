@@ -38,7 +38,7 @@ class FlaggingService
         //    uploaded image counts as a receipt.
         if ($this->isCashPayment($expense)
             && empty($expense->attachment_url)
-            && empty($expense->attachment_image)) {
+            && ! $expense->hasReceiptImages()) {
             $reasons[] = 'No receipt for cash expense';
         }
 

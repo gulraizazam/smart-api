@@ -10,9 +10,11 @@ use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
+
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Expense extends Model
 {
@@ -24,7 +26,7 @@ class Expense extends Model
     protected $fillable = [
         'account_id', 'expense_date', 'amount', 'category_id', 'paid_from_pool_id',
         'for_branch_id', 'payment_method_id', 'vendor_id', 'staff_id', 'description',
-        'reference_no', 'attachment_url', 'attachment_image', 'notes', 'status', 'verified_by',
+        'reference_no', 'attachment_url', 'attachment_image', 'attachment_images', 'notes', 'status', 'verified_by',
         'rejection_reason', 'is_flagged', 'flag_reason', 'created_by',
         'voided_at', 'voided_by', 'void_reason', 'edit_reason', 'is_for_general',
     ];
@@ -39,7 +41,32 @@ class Expense extends Model
             'is_for_general' => 'boolean',
             'voided_at' => 'datetime',
             'status' => ExpenseStatus::class,
+            'attachment_images' => 'array',
         ];
+    }
+
+    /**
+     * Normalised list of uploaded receipt paths (JSON + legacy single column).
+     *
+     * @return list<string>
+     */
+    public function receiptImagePaths(): array
+    {
+        $json = $this->attachment_images;
+        if (is_array($json) && $json !== []) {
+            return array_values(array_filter($json, fn ($p) => is_string($p) && $p !== ''));
+        }
+
+        if (! empty($this->attachment_image)) {
+            return [$this->attachment_image];
+        }
+
+        return [];
+    }
+
+    public function hasReceiptImages(): bool
+    {
+        return $this->receiptImagePaths() !== [];
     }
 
     // Status enum: App\Enums\ExpenseStatus

@@ -272,11 +272,11 @@
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="form-group">
-                                    <label>Receipt Image <span class="text-muted font-size-xs">(JPG, PNG, GIF, WEBP — max 5 MB)</span></label>
-                                    <input type="file" name="attachment_image" id="expense-image-input" class="form-control-file" accept="image/jpeg,image/png,image/gif,image/webp" />
+                                    <label>Receipt images <span class="text-muted font-size-xs">(optional — select multiple, JPG/PNG/GIF/WEBP, max 5 MB each)</span></label>
+                                    <input type="file" name="attachment_images[]" id="expense-image-input" class="form-control-file" accept="image/jpeg,image/png,image/gif,image/webp" multiple />
                                     <div id="expense-image-preview-wrap" class="mt-2 d-none">
-                                        <img id="expense-image-preview" src="" alt="Receipt preview" style="max-width:140px;max-height:140px;border:1px solid #E4E6EF;border-radius:0.42rem;padding:2px;" />
-                                        <a href="javascript:;" id="expense-image-clear" class="d-block text-danger font-size-xs mt-1"><i class="la la-times"></i> Remove</a>
+                                        <div id="expense-images-preview-list" class="d-flex flex-wrap"></div>
+                                        <a href="javascript:;" id="expense-image-clear" class="d-block text-danger font-size-xs mt-1"><i class="la la-times"></i> Clear selected files</a>
                                     </div>
                                 </div>
                             </div>
@@ -480,13 +480,15 @@
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="form-group">
-                                    <label>Receipt Image <span class="text-muted font-size-xs">(JPG, PNG, GIF, WEBP — max 5 MB)</span></label>
-                                    <input type="file" name="attachment_image" id="edit-image-input" class="form-control-file" accept="image/jpeg,image/png,image/gif,image/webp" />
+                                    <label>Receipt images <span class="text-muted font-size-xs">(append more — multiple, max 5 MB each; existing files kept)</span></label>
+                                    <input type="file" name="attachment_images[]" id="edit-image-input" class="form-control-file" accept="image/jpeg,image/png,image/gif,image/webp" multiple />
                                     <div id="edit-image-preview-wrap" class="mt-2 d-none">
-                                        <img id="edit-image-preview" src="" alt="Receipt preview" style="max-width:140px;max-height:140px;border:1px solid #E4E6EF;border-radius:0.42rem;padding:2px;" />
+                                        <div class="font-size-xs text-muted mb-1">Saved on this expense:</div>
+                                        <div id="edit-images-saved-list" class="d-flex flex-wrap mb-2"></div>
+                                        <div class="font-size-xs text-muted mb-1 d-none" id="edit-images-new-label">New files to upload:</div>
+                                        <div id="edit-images-new-list" class="d-flex flex-wrap"></div>
                                         <div class="font-size-xs mt-1">
-                                            <a href="javascript:;" id="edit-image-view" class="text-primary mr-2" target="_blank"><i class="la la-external-link-alt"></i> View</a>
-                                            <a href="javascript:;" id="edit-image-clear" class="text-danger"><i class="la la-times"></i> Replace</a>
+                                            <a href="javascript:;" id="edit-image-clear" class="text-danger"><i class="la la-times"></i> Clear new file selection</a>
                                         </div>
                                     </div>
                                 </div>
@@ -606,8 +608,9 @@
                         <div class="col-md-4 mb-4">
                             <label class="text-muted font-size-sm mb-0">Attachment</label>
                             <div id="view-exp-attachment"></div>
-                            <div id="view-exp-image-wrap" class="mt-2 d-none">
-                                <a href="javascript:;" id="view-exp-image-link"><img id="view-exp-image" src="" alt="Receipt" style="max-width:120px;max-height:120px;border:1px solid #E4E6EF;border-radius:0.42rem;padding:2px;" /></a>
+                            <div id="view-exp-images-wrap" class="mt-2 d-none">
+                                <div class="font-size-xs text-muted mb-1">Receipt images</div>
+                                <div id="view-exp-images-list" class="d-flex flex-wrap"></div>
                             </div>
                         </div>
                     </div>

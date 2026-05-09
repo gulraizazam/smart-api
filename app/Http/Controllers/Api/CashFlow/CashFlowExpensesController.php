@@ -25,9 +25,12 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\ValidationException;
 
 class CashFlowExpensesController extends Controller
 {
+    private const MAX_RECEIPT_IMAGES_PER_EXPENSE = 15;
     public function __construct(
         private readonly ExpenseService $expenseService,
         private readonly PoolService $poolService,
@@ -160,16 +163,16 @@ class CashFlowExpensesController extends Controller
 
             $data = $request->validated();
 
-            // Persist the receipt image (if any) on the public disk before
-            // handing the data array to the service. The validator already
-            // guarantees mime/size; we still sanitise the client filename.
-            if ($request->hasFile('attachment_image')) {
-                $data['attachment_image'] = $this->storeAttachmentImage(
-                    $request->file('attachment_image'),
-                    $accountId
-                );
-            } else {
-                unset($data['attachment_image']);
+            // Files are validated in rules but must be converted to stored paths here.
+            unset($data['attachment_images']);
+
+            if ($request->hasFile('attachment_images')) {
+                $files = $this->normalizedUploadedFiles($request->file('attachment_images'));
+                if ($files !== []) {
+                    $paths = $this->storeAttachmentImages($files, $accountId);
+                    $data['attachment_images'] = $paths;
+                    $data['attachment_image'] = $paths[0] ?? null;
+                }
             }
 
             $expense = $this->expenseService->create($data, $accountId);
@@ -293,25 +296,22 @@ class CashFlowExpensesController extends Controller
 
             $accountId = Auth::user()->account_id;
 
-            $data = $request->except('attachment_image');
+            $data = $request->except(['attachment_images']);
 
-            // Replace the receipt image if a new one was uploaded; the
-            // request->all() flow used to send a string-y "fakepath"
-            // attachment_image which silently overwrote real paths.
-            if ($request->hasFile('attachment_image')) {
-                $request->validate([
-                    'attachment_image' => ['image', 'mimes:jpg,jpeg,png,gif,webp', 'max:5120'],
-                ]);
-
+            // Append new receipt images to any already on file (resubmit).
+            if ($request->hasFile('attachment_images')) {
                 $existing = Expense::forAccount($accountId)->findOrFail($id);
-                $data['attachment_image'] = $this->storeAttachmentImage(
-                    $request->file('attachment_image'),
-                    $accountId
+                $files = $this->normalizedUploadedFiles($request->file('attachment_images'));
+                Validator::validate(
+                    ['attachment_images' => $files],
+                    [
+                        'attachment_images' => ['required', 'array', 'max:10'],
+                        'attachment_images.*' => ['image', 'mimes:jpg,jpeg,png,gif,webp', 'max:5120'],
+                    ]
                 );
-
-                if ($existing->attachment_image) {
-                    Storage::disk('public')->delete($existing->attachment_image);
-                }
+                $merged = $this->mergeAppendedReceiptImages($existing->receiptImagePaths(), $files, $accountId);
+                $data['attachment_images'] = $merged;
+                $data['attachment_image'] = $merged[0] ?? null;
             }
 
             $expense = $this->expenseService->resubmit($id, $data, $accountId);
@@ -345,21 +345,22 @@ class CashFlowExpensesController extends Controller
 
             $data = $request->validated();
 
-            // Replace the receipt image if a new one was uploaded; otherwise
-            // strip the field so the service won't overwrite the existing
-            // value with NULL on a partial update.
-            if ($request->hasFile('attachment_image')) {
-                $existing = Expense::forAccount($accountId)->findOrFail($id);
-                $data['attachment_image'] = $this->storeAttachmentImage(
-                    $request->file('attachment_image'),
-                    $accountId
-                );
+            unset($data['attachment_images'], $data['attachment_image']);
 
-                if ($existing->attachment_image) {
-                    Storage::disk('public')->delete($existing->attachment_image);
-                }
-            } else {
-                unset($data['attachment_image']);
+            // Append new uploads to existing receipt images (admin edit).
+            if ($request->hasFile('attachment_images')) {
+                $existing = Expense::forAccount($accountId)->findOrFail($id);
+                $files = $this->normalizedUploadedFiles($request->file('attachment_images'));
+                Validator::validate(
+                    ['attachment_images' => $files],
+                    [
+                        'attachment_images' => ['required', 'array', 'max:10'],
+                        'attachment_images.*' => ['image', 'mimes:jpg,jpeg,png,gif,webp', 'max:5120'],
+                    ]
+                );
+                $merged = $this->mergeAppendedReceiptImages($existing->receiptImagePaths(), $files, $accountId);
+                $data['attachment_images'] = $merged;
+                $data['attachment_image'] = $merged[0] ?? null;
             }
 
             $expense = $this->expenseService->adminEdit($id, $data, $accountId);
@@ -652,8 +653,73 @@ class CashFlowExpensesController extends Controller
             ['jpg', 'jpeg', 'png', 'gif', 'webp'],
         );
 
-        $fileName = time() . '_' . $safeName;
+        $fileName = time() . '_' . bin2hex(random_bytes(4)) . '_' . $safeName;
 
         return $file->storeAs("cashflow_attachments/{$accountId}", $fileName, 'public');
+    }
+
+    /**
+     * @param  list<UploadedFile>  $files
+     * @return list<string>
+     */
+    private function storeAttachmentImages(array $files, int $accountId): array
+    {
+        $paths = [];
+        foreach ($files as $file) {
+            if (! $file instanceof UploadedFile || ! $file->isValid()) {
+                continue;
+            }
+            $paths[] = $this->storeAttachmentImage($file, $accountId);
+        }
+
+        return $paths;
+    }
+
+    /**
+     * Normalise request file input (single file vs attachment_images[] array).
+     *
+     * @return list<UploadedFile>
+     */
+    private function normalizedUploadedFiles(mixed $files): array
+    {
+        if ($files instanceof UploadedFile) {
+            return $files->isValid() ? [$files] : [];
+        }
+        if (! is_array($files)) {
+            return [];
+        }
+        $out = [];
+        foreach ($files as $file) {
+            if ($file instanceof UploadedFile && $file->isValid()) {
+                $out[] = $file;
+            }
+        }
+
+        return $out;
+    }
+
+    /**
+     * Append newly stored paths to existing receipt paths; enforce a per-expense cap.
+     *
+     * @param  list<string>  $existingPaths
+     * @param  list<UploadedFile>  $uploadedFiles
+     * @return list<string>
+     */
+    private function mergeAppendedReceiptImages(array $existingPaths, array $uploadedFiles, int $accountId): array
+    {
+        $newPaths = $this->storeAttachmentImages($uploadedFiles, $accountId);
+        $merged = array_values(array_merge($existingPaths, $newPaths));
+        if (count($merged) > self::MAX_RECEIPT_IMAGES_PER_EXPENSE) {
+            foreach ($newPaths as $p) {
+                Storage::disk('public')->delete($p);
+            }
+            throw ValidationException::withMessages([
+                'attachment_images' => [
+                    'This expense can have at most ' . self::MAX_RECEIPT_IMAGES_PER_EXPENSE . ' receipt images. Remove some files or add fewer new ones.',
+                ],
+            ]);
+        }
+
+        return $merged;
     }
 }

@@ -138,6 +138,10 @@ class ExpenseService
             : ExpenseStatus::Pending;
 
         return DB::transaction(function () use ($data, $accountId, $user, $status) {
+            $imagePaths = ! empty($data['attachment_images']) && is_array($data['attachment_images'])
+                ? array_values(array_filter($data['attachment_images'], fn ($p) => is_string($p) && $p !== ''))
+                : [];
+
             $expense = Expense::create([
                 'account_id' => $accountId,
                 'expense_date' => $data['expense_date'],
@@ -151,7 +155,8 @@ class ExpenseService
                 'description' => $data['description'],
                 'reference_no' => $data['reference_no'] ?? null,
                 'attachment_url' => $data['attachment_url'] ?? null,
-                'attachment_image' => $data['attachment_image'] ?? null,
+                'attachment_image' => $imagePaths[0] ?? null,
+                'attachment_images' => $imagePaths !== [] ? $imagePaths : null,
                 'notes' => $data['notes'] ?? null,
                 'status' => $status,
                 'verified_by' => $status === ExpenseStatus::Approved ? $user->id : null,
@@ -227,7 +232,7 @@ class ExpenseService
 
         // Attachment must be present before approval (Sec 5.2). Either the
         // Drive URL or the uploaded image satisfies the rule.
-        if (empty($expense->attachment_url) && empty($expense->attachment_image)) {
+        if (empty($expense->attachment_url) && ! $expense->hasReceiptImages()) {
             throw new CashflowException('Cannot approve: attachment must be present before approval.');
         }
 
@@ -324,11 +329,24 @@ class ExpenseService
         ];
 
         // Allow updating all editable fields on resubmit
-        $allowed = ['expense_date', 'amount', 'category_id', 'paid_from_pool_id', 'payment_method_id', 'description', 'reference_no', 'attachment_url', 'attachment_image', 'notes'];
+        $allowed = ['expense_date', 'amount', 'category_id', 'paid_from_pool_id', 'payment_method_id', 'description', 'reference_no', 'attachment_url', 'attachment_images', 'notes'];
         foreach ($allowed as $field) {
-            if (array_key_exists($field, $data) && $data[$field] !== '' && $data[$field] !== null) {
-                $updateData[$field] = $data[$field];
+            if (! array_key_exists($field, $data)) {
+                continue;
             }
+            if ($field === 'attachment_images' && is_array($data[$field]) && count($data[$field]) === 0) {
+                continue;
+            }
+            if ($data[$field] === '' || $data[$field] === null) {
+                continue;
+            }
+            $updateData[$field] = $data[$field];
+        }
+
+        if (isset($updateData['attachment_images']) && is_array($updateData['attachment_images'])) {
+            $paths = array_values(array_filter($updateData['attachment_images'], fn ($p) => is_string($p) && $p !== ''));
+            $updateData['attachment_images'] = $paths === [] ? null : $paths;
+            $updateData['attachment_image'] = $paths[0] ?? null;
         }
 
         // Handle merged branch/general field
@@ -431,7 +449,7 @@ class ExpenseService
         $oldVendorId = $expense->vendor_id;
         $oldAmount = (float) $expense->amount;
 
-        $allowed = ['expense_date', 'amount', 'category_id', 'paid_from_pool_id', 'payment_method_id', 'description', 'reference_no', 'attachment_url', 'attachment_image', 'notes', 'vendor_id', 'staff_id'];
+        $allowed = ['expense_date', 'amount', 'category_id', 'paid_from_pool_id', 'payment_method_id', 'description', 'reference_no', 'attachment_url', 'attachment_images', 'notes', 'vendor_id', 'staff_id'];
         $updateData = ['edit_reason' => $data['edit_reason']];
 
         // Handle merged branch/general field
@@ -458,10 +476,22 @@ class ExpenseService
         }
 
         foreach ($allowed as $field) {
-            if ($field === 'vendor_id' || $field === 'staff_id') continue; // handled above
-            if (array_key_exists($field, $data)) {
-                $updateData[$field] = ($data[$field] !== '' && $data[$field] !== null) ? $data[$field] : null;
+            if ($field === 'vendor_id' || $field === 'staff_id') {
+                continue;
             }
+            if (! array_key_exists($field, $data)) {
+                continue;
+            }
+            if ($field === 'attachment_images' && is_array($data[$field]) && count($data[$field]) === 0) {
+                continue;
+            }
+            $updateData[$field] = ($data[$field] !== '' && $data[$field] !== null) ? $data[$field] : null;
+        }
+
+        if (isset($updateData['attachment_images']) && is_array($updateData['attachment_images'])) {
+            $paths = array_values(array_filter($updateData['attachment_images'], fn ($p) => is_string($p) && $p !== ''));
+            $updateData['attachment_images'] = $paths === [] ? null : $paths;
+            $updateData['attachment_image'] = $paths[0] ?? null;
         }
 
         return DB::transaction(function () use ($expense, $updateData, $auditRelations, $oldValues, $oldVendorId, $oldAmount, $data, $accountId) {
@@ -621,7 +651,7 @@ class ExpenseService
         if ($paymentMethod
             && strtolower($paymentMethod->name) === 'cash'
             && empty($expense->attachment_url)
-            && empty($expense->attachment_image)) {
+            && ! $expense->hasReceiptImages()) {
             $flags[] = 'Cash payment without receipt attachment';
         }
 
