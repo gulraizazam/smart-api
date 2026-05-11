@@ -573,6 +573,24 @@ final class PlanService
      *     patient currently holds (with the parent_id chain expanded so
      *     a Renewal-Gold member also qualifies for parent Gold-tier
      *     discounts; this matches the legacy admin's behaviour).
+     *
+     * Vouchers (`discounts.discount_type = 'voucher'`) live in the same
+     * table but follow a different eligibility rule — they only surface
+     * when the patient has a matching row in `user_vouchers`. The
+     * pre-patient call therefore omits vouchers entirely; the
+     * patient-scoped call unions general discounts with the patient's
+     * assigned vouchers. Each row's `discount_type` is included in the
+     * projection so the SPA can render the "(voucher)" / "(discount)"
+     * suffix in the dropdown.
+     *
+     * Vouchers also bypass the active flag + date-window check that
+     * applies to general discounts. Once a voucher has been handed to a
+     * patient (a `user_vouchers` row exists) the balance is the
+     * patient's property — letting it disappear from the dropdown after
+     * the voucher type's `end` date would strand the unredeemed
+     * balance. This matches the legacy admin's behaviour (see
+     * `PlanDiscountService::loadPlanDiscountsCalculations`, where the
+     * voucher half of the union omits the active/date filters).
      */
     private function buildEligibleDiscounts(?int $patientId): \Illuminate\Database\Eloquent\Collection
     {
@@ -584,39 +602,59 @@ final class PlanService
             return Discounts::query()->whereRaw('1 = 0')->get(['id', 'name']);
         }
 
-        // Base filter (active + date window + account scope) is owned by
-        // Discounts::applicableNow() — kept in the model so the legacy
-        // PDF / plan-edit cache paths share the same definition.
-        $query = Discounts::applicableNow($accountId)->orderBy('name');
+        $today = Carbon::now()->toDateString();
+
+        // Build the base query manually rather than via
+        // Discounts::applicableNow() because vouchers need to bypass the
+        // active+date window (the assignment row IS the gate; see
+        // method docblock). The active/date checks are reapplied below
+        // only to the general-discount half of the union.
+        $query = Discounts::query()
+            ->where('account_id', $accountId)
+            ->orderBy('name');
 
         // Exclude orphaned discounts — those with zero rows in
-        // discount_has_locations. They pass active+date checks but have
-        // no centre/service they actually apply to, so the operator
-        // cannot save a plan with them. Keeping them in the dropdown
-        // just invites a save-time error.
+        // discount_has_locations. They have no centre/service they
+        // actually apply to, so the operator cannot save a plan with
+        // them. Applies to vouchers too — an unallocated voucher type
+        // can't redeem against anything.
         $query->whereExists(function ($sub) {
             $sub->select(DB::raw(1))
                 ->from('discount_has_locations')
                 ->whereColumn('discount_has_locations.discount_id', 'discounts.id');
         });
 
-        if ($patientId === null) {
-            $query->whereNull('customer_type_id');
-        } else {
-            $tierIds = $this->patientActiveMembershipTypeIds($patientId);
-            $query->where(fn ($q) => $q
-                ->whereNull('customer_type_id')
-                ->orWhereIn('customer_type_id', $tierIds === [] ? [-1] : $tierIds));
-        }
+        // Two-track eligibility:
+        //   • General discounts → active+date+tier (customer_type_id) gate.
+        //   • Vouchers → assignment row in `user_vouchers` is the gate;
+        //     they skip active/date AND tier checks so an already-handed-
+        //     out balance never strands.
+        // Pre-patient calls (patientId === null) have no possible
+        // assignments and so drop vouchers entirely.
+        $assignedVoucherIds = $patientId === null
+            ? []
+            : UserVouchers::where('user_id', $patientId)
+                ->pluck('voucher_id')
+                ->map(static fn ($v): int => (int) $v)
+                ->all();
 
-        // Staff-role gate. Each discount is associated with a set of
-        // roles via the `discount_role` pivot — only operators in one of
-        // those roles can apply it. Filter the dropdown to match so the
-        // operator never picks something the save endpoint will reject.
+        $tierIds = $patientId === null
+            ? []
+            : $this->patientActiveMembershipTypeIds($patientId);
+
+        // Staff-role gate (applies to general discounts only — vouchers
+        // are already gated by the per-patient user_vouchers assignment
+        // and the legacy admin's voucher path doesn't role-check
+        // either). Each discount is associated with a set of roles via
+        // the `discount_role` pivot — only operators in one of those
+        // roles can apply it.
         //
         // Administrator (role 1) and Super-Admin (role 21) bypass the
         // gate and see every discount, mirroring how those roles
         // typically operate above the per-role permission matrix.
+        $applyRoleGate = false;
+        $operatorRoleIds = [];
+
         if ($userId > 0) {
             // model_type appears as both `App\User` (legacy) and
             // `App\Models\User` (post-namespace-move) in this DB. Match
@@ -629,15 +667,45 @@ final class PlanService
                 ->all();
 
             $isPrivileged = ! empty(array_intersect($operatorRoleIds, [1, 21]));
-
-            if (! $isPrivileged) {
-                $query->whereIn('id', function ($sub) use ($operatorRoleIds) {
-                    $sub->select('discount_id')
-                        ->from('discount_role')
-                        ->whereIn('role_id', $operatorRoleIds === [] ? [-1] : $operatorRoleIds);
-                });
-            }
+            $applyRoleGate = ! $isPrivileged;
         }
+
+        $query->where(function ($q) use ($patientId, $today, $tierIds, $assignedVoucherIds, $applyRoleGate, $operatorRoleIds): void {
+            // General discounts (everything that isn't a voucher).
+            $q->where(function ($general) use ($patientId, $today, $tierIds, $applyRoleGate, $operatorRoleIds): void {
+                $general->where(fn ($w) => $w
+                    ->whereNull('discount_type')
+                    ->orWhere('discount_type', '!=', 'voucher'));
+
+                $general->where('active', 1)
+                    ->whereDate('start', '<=', $today)
+                    ->whereDate('end', '>=', $today);
+
+                if ($patientId === null) {
+                    $general->whereNull('customer_type_id');
+                } else {
+                    $general->where(fn ($w) => $w
+                        ->whereNull('customer_type_id')
+                        ->orWhereIn('customer_type_id', $tierIds === [] ? [-1] : $tierIds));
+                }
+
+                if ($applyRoleGate) {
+                    $general->whereIn('id', function ($sub) use ($operatorRoleIds): void {
+                        $sub->select('discount_id')
+                            ->from('discount_role')
+                            ->whereIn('role_id', $operatorRoleIds === [] ? [-1] : $operatorRoleIds);
+                    });
+                }
+            });
+
+            // Vouchers — surfaced when assigned to this patient. Skip
+            // active/date/tier/role gates; the assignment row IS the gate.
+            if ($assignedVoucherIds !== []) {
+                $q->orWhere(fn ($v) => $v
+                    ->where('discount_type', 'voucher')
+                    ->whereIn('id', $assignedVoucherIds));
+            }
+        });
 
         // Hydrate `service_ids` so the SPA can filter the dropdown to
         // only the discounts that actually apply to the operator's
@@ -648,10 +716,24 @@ final class PlanService
         //     BUY anchors. We surface ONLY the BUY services so the
         //     operator picks the configurable on the BUY service; the
         //     backend auto-adds the GETs at save time.
-        //   • Simple (Fixed/Percentage) → `discount_has_locations`
-        //     tracks the (location, service) allocations. Any service
-        //     the discount was allocated to is eligible.
-        $discounts = $query->get(['discounts.id', 'discounts.name', 'discounts.type']);
+        //   • Simple (Fixed/Percentage) / voucher → `discount_has_locations`
+        //     tracks the (location, service) allocations.
+        //
+        // The legacy admin allows allocations against three kinds of
+        // service rows: a leaf service (end_node=1), a category
+        // (end_node=0, e.g. "Body Contouring"), and the "All Services"
+        // sentinel (slug='all'). The SPA's filter expects a flat list
+        // of leaf service ids on each discount, so we expand each
+        // allocation row here:
+        //   • leaf      → as-is.
+        //   • category  → union of every leaf descendant.
+        //   • all-svc   → union of every leaf in the account.
+        // Mirrors `LocationsWidget::findServiceParents` / legacy
+        // `DiscountWidget::loadPlanDiscountAllocationsByLocationService`
+        // (which walks parents UP from the picked service); expanding
+        // DOWN once at catalog-build time is equivalent and lets the
+        // SPA stay with `service_ids.includes(picked)`.
+        $discounts = $query->get(['discounts.id', 'discounts.name', 'discounts.type', 'discounts.discount_type']);
 
         if ($discounts->isEmpty()) {
             return $discounts;
@@ -671,20 +753,149 @@ final class PlanService
             ->get()
             ->groupBy('discount_id');
 
-        return $discounts->map(function ($d) use ($configurableServices, $simpleServices) {
+        // Pre-compute the leaf-expansion lookup once for this account.
+        // Returns: [categoryId => [leafId, leafId, ...]] plus a flat
+        // list of all leaf ids (used for the slug='all' sentinel).
+        ['descendants' => $leafDescendants, 'all_leaves' => $allLeafIds, 'all_sentinel' => $allSentinelIds]
+            = $this->buildServiceLeafExpansion($accountId);
+
+        return $discounts->map(function ($d) use (
+            $configurableServices,
+            $simpleServices,
+            $leafDescendants,
+            $allLeafIds,
+            $allSentinelIds,
+        ) {
+            // Vouchers are stored with `type = 'Fixed'` but their service
+            // linkage lives in `discount_has_locations` like every other
+            // simple discount — only `Configurable` actually uses
+            // `base_discount_services`. Branch on `type` regardless of
+            // `discount_type`.
             $rows = $d->type === 'Configurable'
                 ? ($configurableServices->get($d->id) ?? collect())
                 : ($simpleServices->get($d->id) ?? collect());
 
-            $d->service_ids = $rows
-                ->pluck('service_id')
-                ->map(fn ($v) => (int) $v)
-                ->unique()
-                ->values()
-                ->all();
+            $expanded = [];
+            foreach ($rows->pluck('service_id') as $raw) {
+                $svcId = (int) $raw;
+
+                if (isset($allSentinelIds[$svcId])) {
+                    // "All Services" sentinel — every leaf in the account
+                    // is in scope. We can stop expanding further; the
+                    // service_ids array is now the universe.
+                    foreach ($allLeafIds as $leaf) {
+                        $expanded[$leaf] = true;
+                    }
+                    continue;
+                }
+
+                if (isset($leafDescendants[$svcId])) {
+                    // Category row — substitute all its leaf descendants.
+                    foreach ($leafDescendants[$svcId] as $leaf) {
+                        $expanded[$leaf] = true;
+                    }
+                    continue;
+                }
+
+                // Leaf row (or an unknown id we can't expand) — keep as-is.
+                $expanded[$svcId] = true;
+            }
+
+            $d->service_ids = array_values(array_map('intval', array_keys($expanded)));
 
             return $d;
         });
+    }
+
+    /**
+     * Build a one-shot lookup that turns a category service id into the
+     * list of its leaf descendants, and surfaces the "All Services"
+     * sentinel ids (slug='all') so callers can substitute them with
+     * "every leaf in this account".
+     *
+     * Returns:
+     *   - descendants:   [categoryId => int[]] (only for end_node=0 rows
+     *                    that actually have at least one leaf below).
+     *   - all_leaves:    int[] — every end_node=1 service id in the
+     *                    account, used to expand the slug='all' sentinel.
+     *   - all_sentinel:  [serviceId => true] — set of ids whose
+     *                    `slug='all'`. Constant-time membership test.
+     *
+     * One pass over the services table; safe to call inside the
+     * eligibility hot path. Tree walk is iterative (BFS) to avoid blowing
+     * the PHP stack on deep service hierarchies.
+     *
+     * @return array{descendants: array<int, int[]>, all_leaves: int[], all_sentinel: array<int, true>}
+     */
+    private function buildServiceLeafExpansion(int $accountId): array
+    {
+        $rows = DB::table('services')
+            ->where('account_id', $accountId)
+            ->select('id', 'parent_id', 'end_node', 'slug')
+            ->get();
+
+        $childrenOf = []; // parent_id => int[]
+        $isLeafById = []; // serviceId => bool
+        $allLeaves = [];
+        $allSentinel = [];
+
+        foreach ($rows as $r) {
+            $id = (int) $r->id;
+            $parentId = $r->parent_id !== null ? (int) $r->parent_id : 0;
+            $isLeaf = (int) $r->end_node === 1;
+
+            $isLeafById[$id] = $isLeaf;
+
+            if ($parentId !== 0) {
+                $childrenOf[$parentId][] = $id;
+            }
+
+            if ($isLeaf) {
+                $allLeaves[] = $id;
+            }
+
+            if ($r->slug === 'all') {
+                $allSentinel[$id] = true;
+            }
+        }
+
+        // BFS down from each category to collect leaf descendants.
+        $descendants = [];
+        foreach ($rows as $r) {
+            if ((int) $r->end_node === 1) {
+                continue; // leaves don't need descendant expansion.
+            }
+            $categoryId = (int) $r->id;
+            $leaves = [];
+            $queue = [$categoryId];
+            $visited = [$categoryId => true];
+
+            while ($queue !== []) {
+                $current = array_shift($queue);
+                $kids = $childrenOf[$current] ?? [];
+                foreach ($kids as $kid) {
+                    if (isset($visited[$kid])) {
+                        continue; // defensive — cycles shouldn't happen but a bad parent_id could create one.
+                    }
+                    $visited[$kid] = true;
+                    if ($isLeafById[$kid] ?? false) {
+                        $leaves[] = $kid;
+                    } else {
+                        $queue[] = $kid;
+                    }
+                }
+            }
+
+            if ($leaves !== []) {
+                $descendants[$categoryId] = array_values(array_unique($leaves));
+            }
+        }
+
+        return [
+            'descendants' => $descendants,
+            'all_leaves' => array_values(array_unique($allLeaves)),
+            'all_sentinel' => $allSentinel,
+        ];
     }
 
     /**
