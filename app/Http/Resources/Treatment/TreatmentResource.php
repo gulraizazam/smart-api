@@ -110,6 +110,11 @@ final class TreatmentResource extends JsonResource
                 (int) $this->id,
                 (int) (Auth::user()?->account_id ?? 0),
             ),
+            // True when a treatment-feedback row exists for this
+            // appointment. TreatmentService::getTreatmentList eager-loads
+            // `withCount('feedback')`, so this is a no-N+1 lookup. SPA
+            // colours the row's Feedback star icon yellow when true.
+            'has_feedback'          => (int) ($this->feedback_count ?? 0) > 0,
             'patient'               => $this->whenLoaded('patient', function () use ($canViewContact): array {
                 $patient = [
                     'id'   => $this->patient->id,

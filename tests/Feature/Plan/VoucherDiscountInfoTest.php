@@ -594,6 +594,104 @@ class VoucherDiscountInfoTest extends TestCase
         return $bundleId;
     }
 
+    public function test_consume_voucher_for_bundle_skips_journal_when_voucher_is_already_exhausted(): void
+    {
+        // Pre-fix bug observed on plan #47260 (user's screenshot 43).
+        // Sequence:
+        //   1. Voucher assigned with balance 5,000.
+        //   2. First voucher application drained balance to 0 (correct).
+        //   3. Operator picked the SAME voucher for a second service
+        //      row before the catalog refreshed.
+        //   4. `getDiscountInfoForPlan` returned discount_price=0 +
+        //      discount_is_voucher=false (correct — depleted).
+        //   5. SPA submitted addServiceRow WITHOUT
+        //      `voucher_pre_reserved=1` (because nothing to reserve).
+        //   6. `saveServiceForPlan` ran the LEGACY decrement branch
+        //      inside consumeVoucherForBundle. `originalAmount=0`,
+        //      `amountLeft=0`, `actualConsumed=0` — nothing changed
+        //      on user_vouchers.
+        //   7. But the journal row was written with
+        //      `amount = $servicePrice` (24,995) as a "sentinel".
+        //
+        // That sentinel surfaced in voucher history as a −Rs 24,995
+        // entry on a voucher with total 5,000 — meaningless and
+        // dangerous (the row-delete refund path would have read it as
+        // a real refund without the cap fix). Skip the journal row
+        // entirely when nothing was actually consumed.
+        $voucherId = $this->seedVoucher(balance: 0); // depleted from a prior application.
+        // Match the legacy save path's call shape — pass through the
+        // public method (the SPA hits this for non-pre-reserved
+        // simple-discount adds).
+        $packageId = (int) DB::table('packages')->insertGetId([
+            'patient_id' => $this->patientId,
+            'location_id' => $this->locationId,
+            'name' => 'Sentinel test',
+            'plan_type' => 'plan',
+            'total_price' => 0,
+            'account_id' => 1,
+            'active' => 1,
+            'random_id' => 'SENT-'.uniqid(),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        $randomId = (string) DB::table('packages')->where('id', $packageId)->value('random_id');
+        $bundleId = (int) DB::table('package_bundles')->insertGetId([
+            'package_id' => $packageId,
+            'random_id' => $randomId,
+            'is_allocate' => 1,
+            'qty' => 1,
+            'service_price' => $this->servicePrice,
+            'net_amount' => $this->servicePrice,
+            'tax_exclusive_net_amount' => 0,
+            'tax_percentage' => 0,
+            'tax_price' => 0,
+            'tax_including_price' => 0,
+            'location_id' => $this->locationId,
+            'discount_id' => $voucherId,
+            'discount_name' => 'Voucher',
+            'discount_type' => 'Fixed',
+            'discount_price' => 0,
+            'bundle_id' => $this->serviceId,
+            'active' => 1,
+            'is_exclusive' => 0,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $packageBundleModel = \App\Models\PackageBundles::findOrFail($bundleId);
+        $discountModel = \App\Models\Discounts::findOrFail($voucherId);
+        $serviceModel = \App\Models\Services::findOrFail($this->serviceId);
+
+        $this->discountService->consumeVoucherForBundle(
+            $discountModel,
+            [
+                'random_id' => $randomId,
+                'patient_id' => $this->patientId,
+                'user_id' => $this->patientId,
+            ],
+            $this->serviceId,
+            $packageBundleModel,
+            $this->patientId,
+            $serviceModel,
+        );
+
+        $journalCount = DB::table('package_vouchers')
+            ->where('package_random_id', $randomId)
+            ->count();
+        $this->assertSame(
+            0,
+            $journalCount,
+            'consumeVoucherForBundle must NOT write a journal row when actualConsumed=0 — the previous sentinel of `amount=servicePrice` produced phantom history entries.',
+        );
+
+        // Belt-and-braces: user_vouchers.amount stays at 0.
+        $balance = (float) DB::table('user_vouchers')
+            ->where('voucher_id', $voucherId)
+            ->where('user_id', $this->patientId)
+            ->value('amount');
+        $this->assertSame(0.0, $balance);
+    }
+
     public function test_consume_voucher_for_bundle_still_decrements_when_not_pre_reserved(): void
     {
         // Inverse pin for the legacy admin (Blade plan-form.js) path.

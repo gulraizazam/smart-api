@@ -2532,31 +2532,49 @@ final class PlanDiscountService
                 'actual_consumed' => $actualConsumed,
             ]);
 
+            if ($actualConsumed <= 0) {
+                // Voucher was already depleted before this row was
+                // saved — nothing got deducted from the ledger. The
+                // previous code wrote a journal row with
+                // `amount = $servicePrice` as a "sentinel", which then
+                // showed up in the voucher history dialog as a real
+                // consumption of (e.g.) Rs 24,995 against a voucher
+                // that had a 0 balance. That is the −Rs 24,995 entry
+                // the user observed; it was also unsafe because the
+                // row-delete refund path read it as a real refund and
+                // could inflate the ledger above `total_amount`
+                // (mitigated separately by the cap in
+                // `PlanService::deletePackageService`). Skip the
+                // journal write entirely when nothing was consumed —
+                // the bundle row still carries the voucher's
+                // `discount_id` so anyone walking the bundles can see
+                // the voucher was attempted; the journal stays clean.
+                Log::info('consumeVoucherForBundle: skipped journal — voucher already exhausted', [
+                    'user_voucher_id' => $userVoucher->id,
+                    'package_bundle_id' => $packageBundle->id,
+                ]);
+
+                return;
+            }
+
             PackageVouchers::create([
                 'package_random_id' => $data['random_id'] ?? null,
                 'voucher_id' => $discount->id,
                 'user_id' => $patientId,
-                // When the voucher is exhausted by an oversized service
-                // the journal still needs to record the value applied;
-                // fall back to the full service price as the sentinel,
-                // matching the behaviour pinned by
-                // VoucherDoubleRedemptionPreventedTest.
-                'amount' => $actualConsumed > 0 ? $actualConsumed : $servicePrice,
+                'amount' => $actualConsumed,
                 'service_id' => $packageBundle->id,
                 'main_service_id' => $mainServiceId,
             ]);
 
-            if ($actualConsumed > 0) {
-                // Patients model extends BaseModel (not User); the logger
-                // enforces that type. Same trap seen in PlanService and
-                // UserVoucherService — fetch via Patients to pass the
-                // strict parameter type check.
-                $patient = Patients::find($patientId);
-                if ($patient) {
-                    DB::afterCommit(static function () use ($actualConsumed, $patient, $discount, $amountLeft): void {
-                        ActivityLogger::logVoucherConsumed($actualConsumed, $patient, $discount, $amountLeft);
-                    });
-                }
+            // Patients model extends BaseModel (not User); the logger
+            // enforces that type. Same trap seen in PlanService and
+            // UserVoucherService — fetch via Patients to pass the
+            // strict parameter type check.
+            $patient = Patients::find($patientId);
+            if ($patient) {
+                DB::afterCommit(static function () use ($actualConsumed, $patient, $discount, $amountLeft): void {
+                    ActivityLogger::logVoucherConsumed($actualConsumed, $patient, $discount, $amountLeft);
+                });
             }
         });
     }

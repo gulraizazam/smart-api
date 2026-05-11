@@ -258,19 +258,41 @@ final class PlanService
         return Packages::query()
             ->select([
                 'packages.*',
+                // Fall back to `packages.total_price` (the value
+                // `savePlanPackage` stamped at create-time) when the
+                // aggregate is null — i.e. the plan has no bundle /
+                // service rows attached. Pre-fix this returned 0 for
+                // any plan whose bundles never got bound (e.g. the
+                // random_id rotation bug seen on plan #47288), which
+                // surfaced as TOTAL=0.00 on the datatable AND on the
+                // detail dialog even though the saved
+                // `packages.total_price` carried the real number.
+                // Now an empty plan still shows its stored total so
+                // the operator can spot the inconsistency.
                 DB::raw('CASE
-                    WHEN packages.plan_type = "membership" THEN COALESCE(pb_agg.bundle_total, 0)
-                    ELSE COALESCE(ps_agg.service_total, 0)
+                    WHEN packages.plan_type = "membership" THEN COALESCE(pb_agg.bundle_total, packages.total_price, 0)
+                    ELSE COALESCE(ps_agg.service_total, packages.total_price, 0)
                 END as total_price'),
                 DB::raw('COALESCE(pa_agg.cash_receive, 0) as cash_receive'),
                 DB::raw('COALESCE(pa_agg.settle_amount, 0) as settle_amount'),
                 DB::raw('COALESCE(pa_agg.refund_amount_calculated, 0) as refund_amount_calculated'),
                 DB::raw('COALESCE(ps_agg.session_count, 0) as session_count'),
                 DB::raw('COALESCE(ps_agg.consumed_count, 0) as consumed_count'),
+                // Include `packages.updated_at` in the GREATEST so a
+                // plan with zero advances / bundles / services still
+                // reports its own row mtime as "latest activity" — a
+                // brand-new plan saved today should show "today", not
+                // "Jan 1, 70". The literal 1970 sentinels were
+                // returned by COALESCE when every aggregate was null,
+                // and GREATEST over four 1970 dates pinned the result
+                // there too. Carrying packages.updated_at (non-null on
+                // every saved row) anchors the value to something
+                // sane.
                 DB::raw('GREATEST(
                     COALESCE(pa_agg.max_updated, "1970-01-01"),
                     COALESCE(pb_agg.max_updated, "1970-01-01"),
-                    COALESCE(ps_agg.max_updated, "1970-01-01")
+                    COALESCE(ps_agg.max_updated, "1970-01-01"),
+                    COALESCE(packages.updated_at, packages.created_at, "1970-01-01")
                 ) as latest_advance_updated_at'),
                 // Pre-computed delete-blockers so the SPA can disable the
                 // row trash icon ahead of time and surface the reason in
@@ -2124,19 +2146,41 @@ final class PlanService
         $query = Packages::query()
             ->select([
                 'packages.*',
+                // Fall back to `packages.total_price` (the value
+                // `savePlanPackage` stamped at create-time) when the
+                // aggregate is null — i.e. the plan has no bundle /
+                // service rows attached. Pre-fix this returned 0 for
+                // any plan whose bundles never got bound (e.g. the
+                // random_id rotation bug seen on plan #47288), which
+                // surfaced as TOTAL=0.00 on the datatable AND on the
+                // detail dialog even though the saved
+                // `packages.total_price` carried the real number.
+                // Now an empty plan still shows its stored total so
+                // the operator can spot the inconsistency.
                 DB::raw('CASE
-                    WHEN packages.plan_type = "membership" THEN COALESCE(pb_agg.bundle_total, 0)
-                    ELSE COALESCE(ps_agg.service_total, 0)
+                    WHEN packages.plan_type = "membership" THEN COALESCE(pb_agg.bundle_total, packages.total_price, 0)
+                    ELSE COALESCE(ps_agg.service_total, packages.total_price, 0)
                 END as total_price'),
                 DB::raw('COALESCE(pa_agg.cash_receive, 0) as cash_receive'),
                 DB::raw('COALESCE(pa_agg.settle_amount, 0) as settle_amount'),
                 DB::raw('COALESCE(pa_agg.refund_amount_calculated, 0) as refund_amount_calculated'),
                 DB::raw('COALESCE(ps_agg.session_count, 0) as session_count'),
                 DB::raw('COALESCE(ps_agg.consumed_count, 0) as consumed_count'),
+                // Include `packages.updated_at` in the GREATEST so a
+                // plan with zero advances / bundles / services still
+                // reports its own row mtime as "latest activity" — a
+                // brand-new plan saved today should show "today", not
+                // "Jan 1, 70". The literal 1970 sentinels were
+                // returned by COALESCE when every aggregate was null,
+                // and GREATEST over four 1970 dates pinned the result
+                // there too. Carrying packages.updated_at (non-null on
+                // every saved row) anchors the value to something
+                // sane.
                 DB::raw('GREATEST(
                     COALESCE(pa_agg.max_updated, "1970-01-01"),
                     COALESCE(pb_agg.max_updated, "1970-01-01"),
-                    COALESCE(ps_agg.max_updated, "1970-01-01")
+                    COALESCE(ps_agg.max_updated, "1970-01-01"),
+                    COALESCE(packages.updated_at, packages.created_at, "1970-01-01")
                 ) as latest_advance_updated_at'),
                 // Pre-computed delete-blockers — see buildOptimizedResultQueryForIds.
                 DB::raw('CASE WHEN pa_agg.package_id IS NOT NULL THEN 1 ELSE 0 END as has_advances'),

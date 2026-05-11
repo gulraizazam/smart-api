@@ -491,7 +491,11 @@ final class TreatmentService
     {
         $service = app(AppointmentService::class);
 
-        return $service->getAppointmentsList($filters, $this->getTreatmentTypeId());
+        // Eager-count feedback rows so the SPA's row resource can emit
+        // `has_feedback` without an N+1. Treatments-only; consultancy
+        // list doesn't need this signal.
+        return $service->getAppointmentsList($filters, $this->getTreatmentTypeId())
+            ->withCount('feedback');
     }
 
     public function getScheduledTreatments(array $filters): mixed
