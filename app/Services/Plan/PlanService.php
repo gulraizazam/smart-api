@@ -2505,6 +2505,7 @@ final class PlanService
             'total' => 'total_price',
             'total_price' => 'total_price',
             'cash_receive' => 'cash_receive',
+            'settle_amount' => 'settle_amount',
             'session_count' => 'session_count',
             'consumed_count' => 'consumed_count',
         ];
