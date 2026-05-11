@@ -276,7 +276,10 @@ final class PackagesController extends Controller
      */
     public function sortOrderSave(Request $request): JsonResponse
     {
-        if (! Gate::allows('packages_edit')) {
+        // Gated on the dedicated reorder permission so a role can have
+        // packages_edit (price/duration edits) without being able to
+        // change global ordering. Seeded by PermissionSeeder (parent_id=195).
+        if (! Gate::allows('packages_sort')) {
             return $this->unauthorizedResponse();
         }
 

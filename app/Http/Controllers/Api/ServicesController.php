@@ -301,7 +301,7 @@ final class ServicesController extends Controller
      */
     public function sortOrderGet(): JsonResponse
     {
-        if (! Gate::allows('services_edit')) {
+        if (! Gate::allows('services_sort')) {
             return $this->unauthorizedResponse();
         }
 
@@ -339,7 +339,7 @@ final class ServicesController extends Controller
      */
     public function categorySortOrderSave(Request $request): JsonResponse
     {
-        if (! Gate::allows('services_edit')) {
+        if (! Gate::allows('services_sort')) {
             return $this->unauthorizedResponse();
         }
 

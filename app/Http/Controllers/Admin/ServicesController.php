@@ -523,10 +523,17 @@ class ServicesController extends Controller
     }
     public function exportPdf(): \Symfony\Component\HttpFoundation\BinaryFileResponse
     {
+        // Server-side authority — the SPA also hides the button when this
+        // gate is missing, but a 403 here is the actual security boundary.
+        // Permission seeded by PermissionSeeder (services_export, parent_id=46).
+        if (! \Illuminate\Support\Facades\Gate::allows('services_export')) {
+            abort(403);
+        }
+
         $services = Services::getTreeStructure();
-        
+
         $pdf = PDF::loadView('admin.services.pdf', compact('services'));
-        
+
         return $pdf->download('services-tree.pdf');
     }
 
