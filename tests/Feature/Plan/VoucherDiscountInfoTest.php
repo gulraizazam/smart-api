@@ -362,6 +362,238 @@ class VoucherDiscountInfoTest extends TestCase
         );
     }
 
+    public function test_delete_package_service_refund_caps_at_total_amount(): void
+    {
+        // Bug observed on user voucher 78 (TestIng voucher): trash of a
+        // staged voucher row was bumping `user_vouchers.amount` ABOVE
+        // `total_amount`. The journal carried a stale or inflated
+        // `amount` (a row written before the SPA-pre-reserved fix
+        // landed, or where the SPA reserved against a manually-bumped
+        // balance during testing). The auto-refund inside
+        // `deletePackageService` did a raw additive update with no
+        // ceiling — so a Rs.6,000-issued voucher ended up showing
+        // BALANCE=12,000 in the history dialog. Same invariant
+        // `refundVoucherAmount` already enforces; mirroring it here
+        // keeps the dialog stat sane and stops the derived
+        // "consumed = total - balance" from going negative.
+        $voucherId = $this->seedVoucher(balance: 6000); // total_amount=6000
+        // Force the ledger to 5000 (simulate 1000 already consumed).
+        DB::table('user_vouchers')
+            ->where('voucher_id', $voucherId)
+            ->where('user_id', $this->patientId)
+            ->update(['amount' => 5000]);
+
+        // Build a saved plan with a journal row carrying an oversized
+        // amount (e.g. 9000) — the kind of stale row the bug surfaced.
+        $randomId = 'CAP-'.uniqid();
+        $packageId = (int) DB::table('packages')->insertGetId([
+            'patient_id' => $this->patientId,
+            'location_id' => $this->locationId,
+            'name' => 'Cap test',
+            'plan_type' => 'plan',
+            'total_price' => $this->servicePrice,
+            'account_id' => 1,
+            'active' => 1,
+            'random_id' => $randomId,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        $bundleId = (int) DB::table('package_bundles')->insertGetId([
+            'package_id' => $packageId,
+            'random_id' => $randomId,
+            'config_group_id' => null,
+            'is_allocate' => 1,
+            'qty' => 1,
+            'service_price' => $this->servicePrice,
+            'net_amount' => 0,
+            'tax_exclusive_net_amount' => 0,
+            'tax_percentage' => 0,
+            'tax_price' => 0,
+            'tax_including_price' => 0,
+            'location_id' => $this->locationId,
+            'discount_id' => $voucherId,
+            'discount_name' => 'Test',
+            'discount_type' => 'Fixed',
+            'discount_price' => $this->servicePrice,
+            'bundle_id' => $this->serviceId,
+            'active' => 1,
+            'is_exclusive' => 0,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        DB::table('package_services')->insert([
+            'package_id' => $packageId,
+            'package_bundle_id' => $bundleId,
+            'service_id' => $this->serviceId,
+            'sold_by' => $this->patientId,
+            'consumption_order' => 0,
+            'is_consumed' => 0,
+            'price' => $this->servicePrice,
+            'orignal_price' => $this->servicePrice,
+            'tax_including_price' => 0,
+            'tax_price' => 0,
+            'tax_exclusive_price' => 0,
+            'tax_percentage' => 0,
+            'random_id' => $randomId,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        // Plant a journal row with an over-stated amount (9000 vs total=6000).
+        DB::table('package_vouchers')->insert([
+            'package_random_id' => $randomId,
+            'voucher_id' => $voucherId,
+            'user_id' => $this->patientId,
+            'amount' => 9000,
+            'service_id' => $bundleId,
+            'main_service_id' => $this->serviceId,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $this->planService->deletePackageService([
+            'id' => $bundleId,
+            'random_id' => $randomId,
+            'package_total' => 0,
+            'update_status' => 1,
+        ]);
+
+        $balanceAfter = (float) DB::table('user_vouchers')
+            ->where('voucher_id', $voucherId)
+            ->where('user_id', $this->patientId)
+            ->value('amount');
+        $this->assertSame(
+            6000.0,
+            $balanceAfter,
+            'After delete, user_vouchers.amount must cap at total_amount (6000) — '
+            . 'a raw 5000+9000=14000 update would inflate the balance above the originally assigned grant.',
+        );
+    }
+
+    public function test_delete_package_service_refunds_the_specific_journal_row_for_this_bundle(): void
+    {
+        // Bug observed on plan #47283: the voucher row trash flow
+        // looked the journal up by `main_service_id = bundle.bundle_id`,
+        // which is the services.id rather than the per-bundle id. When
+        // the same voucher had been applied to the same service across
+        // multiple bundles (add-row → cancel → re-add), the wrong
+        // journal entry got refunded and stale rows were left
+        // floating in `package_vouchers`. Fix: look up by
+        // `service_id = package_bundle.id` so each delete refunds the
+        // journal it actually wrote.
+        $voucherId = $this->seedVoucher(balance: 3000);
+        // Drain the balance to 0 (simulating the state after both
+        // bundles below have been consumed); the trash refunds the
+        // matching journal back into the ledger.
+        DB::table('user_vouchers')
+            ->where('voucher_id', $voucherId)
+            ->where('user_id', $this->patientId)
+            ->update(['amount' => 0]);
+
+        $randomId = 'JRN-'.uniqid();
+        $packageId = (int) DB::table('packages')->insertGetId([
+            'patient_id' => $this->patientId,
+            'location_id' => $this->locationId,
+            'name' => 'Journal test',
+            'plan_type' => 'plan',
+            'total_price' => $this->servicePrice * 2,
+            'account_id' => 1,
+            'active' => 1,
+            'random_id' => $randomId,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        // Two bundles applied to the SAME service id. Each writes a
+        // distinct journal row keyed on its own package_bundle id.
+        $bundleA = $this->seedVoucherBundle($packageId, $randomId, $voucherId, journalAmount: 1500);
+        $bundleB = $this->seedVoucherBundle($packageId, $randomId, $voucherId, journalAmount: 1200);
+
+        // Trash bundle A. The journal row referencing bundle A
+        // (service_id = $bundleA) must be the one that gets refunded
+        // — not the row for bundle B. Pre-fix this was non-deterministic
+        // (PackageVouchers::first() picked whichever ordered first).
+        $this->planService->deletePackageService([
+            'id' => $bundleA,
+            'random_id' => $randomId,
+            'package_total' => 0,
+            'update_status' => 1,
+        ]);
+
+        $remainingJournal = DB::table('package_vouchers')
+            ->where('package_random_id', $randomId)
+            ->get();
+        $this->assertCount(
+            1,
+            $remainingJournal,
+            'Exactly one journal row must remain after the per-bundle delete; the other was the trashed bundle\'s row and should be cleaned up.',
+        );
+        $this->assertSame(
+            $bundleB,
+            (int) $remainingJournal->first()->service_id,
+            'The journal row that remains must be the one referencing bundle B — bundle A\'s journal is the one we just refunded.',
+        );
+        $this->assertSame(
+            1500.0,
+            (float) DB::table('user_vouchers')->where('voucher_id', $voucherId)->where('user_id', $this->patientId)->value('amount'),
+            'Balance must reflect the refund of bundle A\'s journal amount (1500), not bundle B\'s (1200) — the lookup must pin the right row.',
+        );
+    }
+
+    private function seedVoucherBundle(int $packageId, string $randomId, int $voucherId, float $journalAmount): int
+    {
+        $bundleId = (int) DB::table('package_bundles')->insertGetId([
+            'package_id' => $packageId,
+            'random_id' => $randomId,
+            'is_allocate' => 1,
+            'qty' => 1,
+            'service_price' => $this->servicePrice,
+            'net_amount' => $this->servicePrice - $journalAmount,
+            'tax_exclusive_net_amount' => 0,
+            'tax_percentage' => 0,
+            'tax_price' => 0,
+            'tax_including_price' => 0,
+            'location_id' => $this->locationId,
+            'discount_id' => $voucherId,
+            'discount_name' => 'Voucher',
+            'discount_type' => 'Fixed',
+            'discount_price' => $journalAmount,
+            'bundle_id' => $this->serviceId,
+            'active' => 1,
+            'is_exclusive' => 0,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        DB::table('package_services')->insert([
+            'package_id' => $packageId,
+            'package_bundle_id' => $bundleId,
+            'service_id' => $this->serviceId,
+            'sold_by' => $this->patientId,
+            'consumption_order' => 0,
+            'is_consumed' => 0,
+            'price' => $this->servicePrice,
+            'orignal_price' => $this->servicePrice,
+            'tax_including_price' => 0,
+            'tax_price' => 0,
+            'tax_exclusive_price' => 0,
+            'tax_percentage' => 0,
+            'random_id' => $randomId,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        DB::table('package_vouchers')->insert([
+            'package_random_id' => $randomId,
+            'voucher_id' => $voucherId,
+            'user_id' => $this->patientId,
+            'amount' => $journalAmount,
+            'service_id' => $bundleId, // per-bundle id — the discriminator the fixed lookup keys on.
+            'main_service_id' => $this->serviceId,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        return $bundleId;
+    }
+
     public function test_consume_voucher_for_bundle_still_decrements_when_not_pre_reserved(): void
     {
         // Inverse pin for the legacy admin (Blade plan-form.js) path.

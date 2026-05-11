@@ -4013,12 +4013,50 @@ final class PlanService
 
         $findPackage = Packages::find($packageService->package_id);
         if ($findPackage) {
-            $packageVoucher = PackageVouchers::where('package_random_id', $packageService->random_id)->where('main_service_id', $packageService->bundle_id)->first();
+            // Journal lookup — find the SPECIFIC row this bundle wrote.
+            // `consumeVoucherForBundle` stores `service_id` =
+            // package_bundle.id (the bundle's own id) and
+            // `main_service_id` = the services.id. The earlier lookup
+            // here used `main_service_id` matched against the bundle's
+            // `bundle_id` column — but `bundle_id` IS a services.id
+            // for plan-type rows, so when the operator added the same
+            // voucher to two bundles for the same service (e.g. retry
+            // after a cancelled save), the lookup returned an
+            // arbitrary journal row and refunded the wrong amount,
+            // leaving orphan journal rows behind that then showed up
+            // in the voucher history dialog with mismatched amounts.
+            //
+            // Falling back to main_service_id preserves compatibility
+            // with rows written by the optimized save path
+            // (`writeVoucherJournalRow`) which stores services.id in
+            // both columns — those journals match either lookup.
+            $packageVoucher = PackageVouchers::where('package_random_id', $packageService->random_id)
+                ->where('service_id', $packageService->id)
+                ->first()
+                ?? PackageVouchers::where('package_random_id', $packageService->random_id)
+                    ->where('main_service_id', $packageService->bundle_id)
+                    ->first();
             if ($packageVoucher) {
-                $packageVoucherAmount = $packageVoucher->amount;
+                $packageVoucherAmount = (float) $packageVoucher->amount;
                 $findUserVoucher = UserVouchers::where('voucher_id', $packageVoucher->voucher_id)->where('user_id', $findPackage->patient_id)->first();
                 if ($findUserVoucher) {
-                    $findUserVoucher->update(['amount' => $findUserVoucher->amount + $packageVoucherAmount]);
+                    // Cap the refund at `total_amount` — same invariant
+                    // `refundVoucherAmount` enforces. Without this cap,
+                    // a journal row carrying an over-stated `amount`
+                    // (a stale row written before the pre-reserved
+                    // fix landed, or a row where the SPA reserved
+                    // against a manually-inflated balance during
+                    // testing) pushes user_vouchers.amount ABOVE
+                    // total_amount on row delete — that's how the user
+                    // observed BALANCE=12,000 on a voucher with
+                    // TOTAL=6,000 in the history dialog. The cap also
+                    // stops the "consumed = total - balance" derived
+                    // stat from going negative.
+                    $newAmount = min(
+                        (float) $findUserVoucher->total_amount,
+                        (float) $findUserVoucher->amount + $packageVoucherAmount,
+                    );
+                    $findUserVoucher->update(['amount' => $newAmount]);
                 }
                 $packageVoucher->delete();
             }
