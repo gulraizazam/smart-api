@@ -631,9 +631,20 @@ final class PlanService
         //     out balance never strands.
         // Pre-patient calls (patientId === null) have no possible
         // assignments and so drop vouchers entirely.
+        // Depleted vouchers (user_vouchers.amount <= 0) must be filtered
+        // out — the assignment exists but the patient has already
+        // burned the balance on another plan. Surfacing a 0-balance
+        // voucher in the dropdown lets the operator pick it; downstream
+        // getDiscountInfo returns discount_price=0, which would silently
+        // save a row with no real discount but with `discount_id` set
+        // to a voucher — distorting the voucher usage report and
+        // leaving the operator confused why the row doesn't drop the
+        // service price. The cap is `amount > 0`, not `amount >=
+        // service_price`, because a partial cover is still useful.
         $assignedVoucherIds = $patientId === null
             ? []
             : UserVouchers::where('user_id', $patientId)
+                ->where('amount', '>', 0)
                 ->pluck('voucher_id')
                 ->map(static fn ($v): int => (int) $v)
                 ->all();
