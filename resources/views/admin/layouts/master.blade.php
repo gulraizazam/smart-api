@@ -10,6 +10,9 @@
         name="description" />
     <meta content="Red Signal" name="author" />
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <link rel="icon" type="image/png" href="{{ asset('favicon2.png') }}" />
+    <link rel="shortcut icon" type="image/png" href="{{ asset('favicon2.png') }}" />
+    <link rel="apple-touch-icon" href="{{ asset('favicon2.png') }}" />
     <!--begin::Fonts-->
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Poppins:300,400,500,600,700" />
     <!--end::Fonts-->
