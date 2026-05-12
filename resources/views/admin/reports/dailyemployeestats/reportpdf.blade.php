@@ -53,7 +53,7 @@
                     <table>
                         <tr>
                             <td >
-                                <img class="logo" src="{{ public_path('assets/media/new_logo.png') }}" class="img-responsive" alt="" style="width: 235px;"/>
+                                <img class="logo" src="{{ public_path('allura-logo2.jpeg') }}" class="img-responsive" alt="" style="width: 235px;"/>
                             </td>
                         </tr>
                     </table>

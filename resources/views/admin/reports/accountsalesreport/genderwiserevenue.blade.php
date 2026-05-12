@@ -203,7 +203,7 @@
     <!-- Header Info -->
     <div class="row" style="margin: 20px 0;">
         <div class="col-md-2">
-            <img src="{{ asset('logo_final.png') }}" style="height: 120px;">
+            <img src="{{ asset('allura-logo2.jpeg') }}" style="height: 120px;">
         </div>
         <div class="col-md-6">&nbsp;</div>
         <div class="col-md-4">

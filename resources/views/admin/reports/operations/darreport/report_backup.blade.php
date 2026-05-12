@@ -77,7 +77,7 @@
 
             <div class="row">
                 <div class="col-md-2">
-                    <img style="width: 145px;" src="{{ asset('assets/media/logos/smart.svg') }}" height="80">
+                    <img style="width: 145px;" src="{{ asset('allura-logo2.jpeg') }}" height="80">
                 </div>
                 <div class="col-md-6">&nbsp;</div>
                 <div class="col-md-4">

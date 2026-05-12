@@ -16,7 +16,7 @@
 <div class="invoice-pdf">
     <div class="sn-table-head">
         <div class="print-logo">
-            <img style="width:235px" src="{{ public_path('assets/media/new_logo.png') }}" alt=""/>
+            <img style="width:235px" src="{{ public_path('allura-logo2.jpeg') }}" alt=""/>
         </div>
         <div class="print-time">
             <table class="dark-th-table table table-bordered">

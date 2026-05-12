@@ -65,7 +65,7 @@
         <div class="sn-table-head">
             <div class="row">
                 <div class="col-md-2">
-                    <img style="width: 180px;" src="{{asset('logo_final.png')}}" >
+                    <img style="width: 180px;" src="{{asset('allura-logo2.jpeg')}}" >
                 </div>
                 <div class="col-md-6">&nbsp;</div>
                 <div class="col-md-4">
