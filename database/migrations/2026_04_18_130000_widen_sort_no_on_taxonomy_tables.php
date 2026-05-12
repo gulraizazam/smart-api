@@ -22,7 +22,7 @@ use Illuminate\Support\Facades\DB;
  * they carry the same bug latently, and the `ServiceService` / the two
  * Lead services use identical `sort_no = id` logic.
  *
- * Safe on production-sized tables: MySQL 8 widens an unsigned integer
+ * Safe on production-sized tables: MariaDB 11 widens an unsigned integer
  * column in-place (INSTANT algorithm) for this kind of promotion — no
  * table rebuild. Down migration narrows back but the narrowing will
  * fail if any row already holds a value > 255, which is expected if

@@ -278,7 +278,7 @@ class Patients extends BaseModel
 
             // FIELD(id, ?, ?, ...) preserves the resolver's own ordering —
             // for the text branch that's MATCH() relevance, for phone it's
-            // the prefix-match order. Without this MySQL re-orders the IN
+            // the prefix-match order. Without this MariaDB re-orders the IN
             // result by primary key, which loses relevance.
             $placeholders = implode(',', array_fill(0, count($candidateIds), '?'));
 

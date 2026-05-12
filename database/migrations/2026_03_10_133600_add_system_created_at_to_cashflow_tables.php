@@ -21,7 +21,7 @@ return new class extends Migration
 
         foreach ($tables as $tableName) {
             if (!Schema::hasColumn($tableName, 'system_created_at')) {
-                // Add column with DEFAULT CURRENT_TIMESTAMP in one statement (MySQL compatible)
+                // Add column with DEFAULT CURRENT_TIMESTAMP in one statement (MariaDB compatible)
                 DB::statement("ALTER TABLE `{$tableName}` ADD COLUMN `system_created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP AFTER `updated_at`");
 
                 // Backfill existing records from created_at (best approximation)

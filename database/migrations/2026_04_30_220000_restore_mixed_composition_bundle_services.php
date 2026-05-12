@@ -64,7 +64,7 @@ return new class extends Migration
         //     inserted missing slots after the existing ones, leaving
         //     children in the wrong order).
         // Pulling all bundles with snapshot history and filtering in
-        // PHP keeps the SQL simple and works on both MySQL flavours.
+        // PHP keeps the SQL simple and works on both MariaDB flavours.
         $bundleIds = DB::table('bundle_services_price_history')
             ->select('bundle_id')
             ->groupBy('bundle_id')

@@ -143,7 +143,7 @@ partition the biggest one by month.
 
 ## Suggested Live Run Order
 
-1. Take full backup (mysqldump or snapshot).
+1. Take full backup (mariadb-dump or snapshot).
 2. **Category 1** (indexes) — safe, online.
 3. **Category 3** (column types) — medium risk; test rollback plan.
 4. **Category 4** (rightsizing/encoding) — medium risk.

@@ -66,7 +66,7 @@ return new class extends Migration
 
     public function down(): void
     {
-        // No-op: data repair is restored via the pre-migration mysqldump in
+        // No-op: data repair is restored via the pre-migration mariadb-dump in
         // storage/backups/permissions_pre_recat_*.sql if rollback is required.
     }
 };

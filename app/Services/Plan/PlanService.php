@@ -248,7 +248,7 @@ final class PlanService
     /**
      * Same shape as `buildOptimizedResultQuery` but with the three aggregate
      * sub-joins scoped to a fixed list of package IDs (the visible page) so
-     * MySQL aggregates ~25 child-row groups instead of 47k. The inner
+     * MariaDB aggregates ~25 child-row groups instead of 47k. The inner
      * `IN (…)` literals are integer-cast at the call site.
      */
     private function buildOptimizedResultQueryForIds(array $pageIds): Builder
@@ -2491,7 +2491,7 @@ final class PlanService
 
         // Whitelist for click-to-sort headers in the datatable. Aliases
         // (total_price, cash_receive, etc.) are computed in the SELECT
-        // list of buildOptimizedResultQuery, so MySQL can sort by them
+        // list of buildOptimizedResultQuery, so MariaDB can sort by them
         // directly. `balance` is derived (total - cash + refund) and
         // sorts by the equivalent expression.
         $fieldMap = [
@@ -4023,7 +4023,7 @@ final class PlanService
         // sends 0. Using the live sum gives the right answer in both
         // cases AND avoids the `number_format()` round-trip that was
         // re-introducing thousand-separator commas into the UPDATE
-        // statement (MySQL rejected `-2,995` as an invalid decimal).
+        // statement (MariaDB rejected `-2,995` as an invalid decimal).
         $newTotal = (float) PackageService::where('random_id', $packageService->random_id)
             ->sum('tax_including_price');
 

@@ -18,7 +18,7 @@ use Illuminate\Http\Request;
  * but cannot catch:
  *   - Historical "wrong" conversions that pre-date the trigger deploy
  *     (auto-revert only fires on NEW writes)
- *   - Direct DB edits (tinker, mysql CLI, ad-hoc fixes)
+ *   - Direct DB edits (tinker, DB CLI, ad-hoc fixes)
  *   - Validation criteria beyond net cash (missing invoice / no service
  *     after invoice — see `WrongConversionService::isValidConversion`)
  *   - Trigger paths that silently fail (the SOT swallows exceptions to

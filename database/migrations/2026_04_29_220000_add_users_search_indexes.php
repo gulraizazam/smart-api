@@ -61,7 +61,7 @@ return new class extends Migration
         }
 
         // Backfill — strip every non-digit from `phone`. REGEXP_REPLACE
-        // requires MySQL 8.0+; if that's ever a concern this is the line
+        // requires MariaDB 11+; if that's ever a concern this is the line
         // to swap to a chained REPLACE() pipeline. Run unconditionally so
         // re-running the migration after a partial failure is idempotent.
         DB::statement("

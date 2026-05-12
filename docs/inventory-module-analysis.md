@@ -676,7 +676,7 @@ Inside `map()`, for each transfer product:
 ->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('id', 'DESC')->get();
 ```
 
-Two conflicting `orderBy` clauses. The second one (`id DESC`) will take precedence in MySQL, making the first one (`name ASC`) useless.
+Two conflicting `orderBy` clauses. The second one (`id DESC`) will take precedence in MariaDB, making the first one (`name ASC`) useless.
 
 **Fix:** Remove the duplicate/contradicting orderBy.
 

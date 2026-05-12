@@ -34,7 +34,7 @@ return new class extends Migration
             WHERE f1.appointment_id IS NOT NULL
         ');
 
-        // 2. Add the unique index. MySQL treats multiple NULLs as distinct
+        // 2. Add the unique index. MariaDB treats multiple NULLs as distinct
         //    for unique indexes, so appointments with no feedback yet (or
         //    orphaned pre-linkage rows) remain unaffected.
         Schema::table('feedback', function (Blueprint $table): void {

@@ -25,7 +25,7 @@ class PatientFactory extends Factory
         // `address` column — patient addresses live on the patient
         // detail / profile relations, not directly on the user row.
         // Writing it here used to silently swallow into a since-dropped
-        // column; now MySQL surfaces "Unknown column 'address'" and
+        // column; now MariaDB surfaces "Unknown column 'address'" and
         // breaks the whole feature suite.
         return [
             'name' => $this->faker->name(),

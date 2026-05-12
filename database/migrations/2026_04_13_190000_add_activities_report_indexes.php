@@ -40,12 +40,12 @@ use Illuminate\Support\Facades\Schema;
  *     column wastes space. The OR-on-updated_at branch in buildQuery() should
  *     be removed in a follow-up — tracked separately.
  *   - (account_id, centre_id, ...), (account_id, service_id, ...): lower hit
- *     rate; MySQL 8 index_merge handles them acceptably for now. Revisit if
+ *     rate; MariaDB 11 index_merge handles them acceptably for now. Revisit if
  *     EXPLAIN shows scans on those filters.
  *
  * Production safety:
  *   - Uses ALGORITHM=INPLACE, LOCK=NONE so the ALTER is online on InnoDB
- *     (MySQL 8 / MariaDB 10.6+). Writes continue during the build.
+ *     (MariaDB 11+). Writes continue during the build.
  *   - Each CREATE INDEX is guarded by an information_schema check so the
  *     migration is idempotent and safe to re-run.
  *

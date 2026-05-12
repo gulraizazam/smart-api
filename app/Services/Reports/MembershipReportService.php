@@ -68,7 +68,7 @@ class MembershipReportService
                 'membership_types.name as membership_type_name',
             )
             // Inner-join package_services with the service-id filter inline
-            // so MySQL filters at join-time (instead of via EXISTS subquery).
+            // so MariaDB filters at join-time (instead of via EXISTS subquery).
             ->join('package_services', function ($join) use ($serviceIds) {
                 $join->on('package_services.package_id', '=', 'packages.id')
                     ->whereIn('package_services.service_id', $serviceIds);

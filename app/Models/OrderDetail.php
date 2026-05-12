@@ -7,7 +7,8 @@ namespace App\Models;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
+
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class OrderDetail extends BaseModel
 {
@@ -53,7 +54,7 @@ class OrderDetail extends BaseModel
 
                 // The legacy code only set `sale_price` to the discounted
                 // value, but `sale_price_after_discount` is NOT NULL on the
-                // schema with no default — inserts blew up at MySQL.
+                // schema with no default — inserts blew up at MariaDB.
                 // Stamp both, plus `discount_price` (the per-unit discount
                 // amount) so the row carries every column the report
                 // queries downstream expect.

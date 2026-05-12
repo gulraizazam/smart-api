@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\DB;
  * surfacing "An error occurred" to the client even though the record was
  * gone.
  *
- * Add 'deleted' to the allowed set. MySQL 8 supports in-place ALTER for
+ * Add 'deleted' to the allowed set. MariaDB 11 supports in-place ALTER for
  * ENUM when the change is additive (values appended) — no table rewrite.
  */
 return new class extends Migration

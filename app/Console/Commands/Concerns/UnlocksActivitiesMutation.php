@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\DB;
  * ReclassifyActivityLogTiers) that legitimately need to DELETE or UPDATE
  * rows in `activities` or `activities_archive`.
  *
- * Sets the MySQL session variable the tamper-evident triggers check before
+ * Sets the MariaDB session variable the tamper-evident triggers check before
  * allowing a mutation, then unsets it after — so a subsequent code path
  * in the same connection can't piggyback on the unlocked state.
  *

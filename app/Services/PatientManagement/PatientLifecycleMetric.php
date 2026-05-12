@@ -247,7 +247,7 @@ final class PatientLifecycleMetric
      * The inner aggregate over `package_advances` (834k rows) is the
      * perf-sensitive bit — same anti-pattern we fixed on Plans. We
      * scope it to JUST the package_ids belonging to the visible
-     * patient set so MySQL aggregates ~50 child-row groups instead of
+     * patient set so MariaDB aggregates ~50 child-row groups instead of
      * the whole table. Drops the cost from ~1.1s to <10ms per page.
      */
     private function mergeOutstandingAndActivePackages(array &$out, array $patientIds, int $accountId, array $userCentres): void
