@@ -2,8 +2,8 @@
 
 /**
  * Dumps the schema (CREATE TABLE statements only — no data) of the local
- * `crm` database into `mysql_testing-schema.sql`. This file is loaded by
- * Laravel's `schema:load` mechanism (see `config/database.php` mysql_testing
+ * `crm` database into `mariadb_testing-schema.sql`. This file is loaded by
+ * Laravel's `schema:load` mechanism (see `config/database.php` mariadb_testing
  * connection) so the test database can be hydrated from a curated schema
  * snapshot rather than running 275 historical migrations — many of which
  * assume production-DB state and cannot apply cleanly on a fresh DB.
@@ -13,11 +13,15 @@
  *     php database/schema/dump_schema.php
  *
  * The output is checked into the repo so CI does not depend on a local
- * MySQL instance.
+ * MariaDB instance.
+ *
+ * Note: the `mysql:` PDO DSN prefix below is a PHP language identifier
+ * (from the `pdo_mysql` extension, which is the only PHP driver for MariaDB).
+ * It is not removable and not a project-level MySQL reference.
  */
 
 $host = '127.0.0.1';
-$port = 3306;
+$port = 3307;
 $user = 'root';
 $pass = '';
 $db = 'crm';
@@ -60,7 +64,7 @@ $lines[] = 'SET FOREIGN_KEY_CHECKS=1;';
 $lines[] = '';
 
 $out = implode("\n", $lines);
-$path = __DIR__ . '/mysql_testing-schema.sql';
+$path = __DIR__ . '/mariadb_testing-schema.sql';
 file_put_contents($path, $out);
 
 echo "Wrote " . count($tables) . " tables to {$path}\n";

@@ -15,7 +15,7 @@ return [
     |
     */
 
-    'default' => env('DB_CONNECTION', 'mysql'),
+    'default' => env('DB_CONNECTION', 'mariadb'),
 
     /*
     |--------------------------------------------------------------------------
@@ -43,8 +43,8 @@ return [
             'foreign_key_constraints' => env('DB_FOREIGN_KEYS', true),
         ],
 
-        'mysql' => [
-            'driver' => 'mysql',
+        'mariadb' => [
+            'driver' => 'mariadb',
             'url' => env('DATABASE_URL'),
             'host' => env('DB_HOST', '127.0.0.1'),
             'port' => env('DB_PORT', '3306'),
@@ -67,7 +67,7 @@ return [
             ],
             'engine' => null,
             'options' => extension_loaded('pdo_mysql') ? array_filter([
-                PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
+                PDO::MYSQL_ATTR_SSL_CA => env('DB_SSL_CA'),
                 PDO::ATTR_PERSISTENT => false,
                 PDO::ATTR_TIMEOUT => 5,
                 PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
@@ -76,21 +76,21 @@ return [
 
         /*
         |--------------------------------------------------------------------------
-        | mysql_testing — dedicated PHPUnit / CI connection
+        | mariadb_testing — dedicated PHPUnit / CI connection
         |--------------------------------------------------------------------------
         |
-        | Used by phpunit.xml (DB_CONNECTION=mysql_testing). MUST point at a
+        | Used by phpunit.xml (DB_CONNECTION=mariadb_testing). MUST point at a
         | separate, throwaway database — never the production schema. The
         | RefreshDatabase trait wraps each test in a transaction, but a
         | misconfigured connection here would still leak schema-level
         | mutations into prod. See tests/README.md for setup.
         |
-        | The mode list mirrors the production `mysql` connection so that
+        | The mode list mirrors the production `mariadb` connection so that
         | MariaDB-specific behaviour (ONLY_FULL_GROUP_BY, no PK functional
         | dependency) is faithfully reproduced under test.
         */
-        'mysql_testing' => [
-            'driver' => 'mysql',
+        'mariadb_testing' => [
+            'driver' => 'mariadb',
             'host' => env('DB_TEST_HOST', env('DB_HOST', '127.0.0.1')),
             'port' => env('DB_TEST_PORT', env('DB_PORT', '3306')),
             'database' => env('DB_TEST_DATABASE', 'cutera_test'),

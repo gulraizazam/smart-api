@@ -7,7 +7,7 @@ use App\Models\DBBackups;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
 
-class MySQLDumpRemover extends Command
+class MariadbDumpRemover extends Command
 {
     /**
      * The name and signature of the console command.
@@ -21,7 +21,7 @@ class MySQLDumpRemover extends Command
      *
      * @var string
      */
-    protected $description = 'Runs the mysqldump utility using info from .env to remove old backups';
+    protected $description = 'Removes DB backup files older than 30 days';
 
     /**
      * Create a new command instance.
