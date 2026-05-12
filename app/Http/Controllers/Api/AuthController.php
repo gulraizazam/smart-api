@@ -138,7 +138,14 @@ class AuthController extends Controller
             $user->api_token = $user->createToken('login')->plainTextToken;
 
             $this->audit->record($request, 'api', LoginAuditLogger::OUTCOME_SUCCESS, $request->input('email'), $user);
-            return $this->successResponse('Success', $user);
+            // toAuthPayload() bundles permissions + role alongside the
+            // user attributes (and preserves the api_token we just set).
+            // Without this the SPA caches the user with `permissions`
+            // undefined and `usePermissions().has()` falls back to
+            // allow-all, leaking gated menu entries (Scheduling Shifts,
+            // Business Closures, Business Working Days) into roles
+            // that shouldn't see them.
+            return $this->successResponse('Success', $user->toAuthPayload());
 
         } catch (\Exception $e) {
             \Illuminate\Support\Facades\Log::error($e->getMessage(), ['file' => $e->getFile(), 'line' => $e->getLine()]);

@@ -219,6 +219,8 @@ final class DiscountService
             }
         }
 
+        $this->applyTypeGroupFilter($query, $filters, $applyFilter);
+
         $total = $query->count();
 
         $filterValues = $this->getFilterValues();
@@ -239,6 +241,7 @@ final class DiscountService
         int $limit,
         ?string $startDate = null,
         ?string $endDate = null,
+        array $filters = [],
     ): Collection {
         $canViewInactive = Gate::allows('view_inactive_discounts');
 
@@ -257,6 +260,11 @@ final class DiscountService
                 $query->active();
             }
         }
+
+        // type_group can't be expressed through the `$where` array form
+        // (it's a whereIn over multiple DB enum values), so apply it
+        // directly. Persistence already happened in buildFilterConditions.
+        $this->applyTypeGroupFilter($query, $filters, false);
 
         return $query->limit($limit)
             ->offset($offset)
@@ -911,7 +919,44 @@ final class DiscountService
             }
         }
 
+        // type_group sticky-filter persistence — actual whereIn is applied
+        // by applyTypeGroupFilter() because the array-where form can't
+        // express IN over multiple values.
+        if (hasFilter($filters, 'type_group')) {
+            Filters::put($userId, $filename, 'type_group', $filters['type_group']);
+        } elseif ($applyFilter) {
+            Filters::forget($userId, $filename, 'type_group');
+        }
+
         return $where;
+    }
+
+    /**
+     * Apply the SPA's two-mode "type" grouping (Simple = Fixed/Percentage,
+     * Configurable = Configurable) to the query. Sticky-filter persistence
+     * lives in buildFilterConditions; this just translates the resolved
+     * value into a whereIn.
+     */
+    private function applyTypeGroupFilter(
+        \Illuminate\Database\Eloquent\Builder $query,
+        array $filters,
+        bool $applyFilter,
+    ): void {
+        $userId   = Auth::id();
+        $filename = self::FILTER_KEY;
+
+        $value = null;
+        if (hasFilter($filters, 'type_group')) {
+            $value = $filters['type_group'];
+        } elseif (!$applyFilter) {
+            $value = Filters::get($userId, $filename, 'type_group');
+        }
+
+        if ($value === 'simple') {
+            $query->whereIn('type', ['Fixed', 'Percentage']);
+        } elseif ($value === 'configurable') {
+            $query->whereIn('type', ['Configurable']);
+        }
     }
 
     private function applyFilterField(

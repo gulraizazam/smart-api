@@ -76,7 +76,12 @@ class AuthController extends Controller
             'refresh_token' => $tokens['refresh_token'],
             'expires_in' => $tokens['expires_in'],
             'token_type' => $tokens['token_type'],
-            'user' => $user,
+            // Match the sanctum login payload — see User::toAuthPayload()
+            // for the rationale. Without permissions+role here the SPA's
+            // passport-mode boot leaves the user cache with no perms
+            // (boot doesn't refetch /api/user in passport mode) and
+            // gated menu entries leak through.
+            'user' => $user->toAuthPayload(),
         ]);
     }
 

@@ -122,4 +122,28 @@ class DiscountCrudTest extends TestCase
         $response = $this->postJson('/api/discounts/datatable', []);
         $this->assertContains($response->status(), [401, 302, 403]);
     }
+
+    /**
+     * The SPA creates Configurable discounts bare (metadata only) and
+     * follows up from the allocation dialog with a PUT that populates
+     * the actual Buy/Get rules. Validating `sessions_buy` / `base_service`
+     * / `sessions` as required at create time blocked the create form
+     * entirely with "The sessions buy field is required." — pin the
+     * relaxed contract so that regression can't slip back.
+     */
+    public function test_store_configurable_without_rules_is_accepted(): void
+    {
+        $response = $this->postJson('/api/discounts', [
+            'name'          => 'Bare configurable ' . uniqid(),
+            'type'          => 'Configurable',
+            'discount_type' => 'Treatment',
+            'start'         => now()->format('Y-m-d'),
+            'end'           => now()->addMonth()->format('Y-m-d'),
+            'active'        => '1',
+            'roles'         => [],
+        ]);
+
+        $response->assertStatus(200);
+        $response->assertJson(['status' => true]);
+    }
 }

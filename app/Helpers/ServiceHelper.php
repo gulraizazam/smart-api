@@ -95,6 +95,7 @@ final class ServiceHelper
             'inactive'  => Gate::allows('services_inactive'),
             'create'    => Gate::allows('services_create'),
             'sort'      => Gate::allows('services_sort'),
+            'export'    => Gate::allows('services_export'),
             'duplicate' => Gate::allows('services_duplicate'),
             'detail'    => Gate::allows('services_detail'),
         ];

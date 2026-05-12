@@ -213,6 +213,7 @@ final class DiscountsController extends Controller
                 $pagination['perpage'],
                 $request->input('startdate'),
                 $request->input('enddate'),
+                $filters,
             );
 
             $totalPages = $pagination['perpage'] > 0
@@ -433,13 +434,19 @@ final class DiscountsController extends Controller
 
     private function validateConfigurableStore(Request $request): \Illuminate\Validation\Validator
     {
+        // The SPA creates Configurable discounts bare — name, dates, roles
+        // only — and then issues a follow-up PUT from the allocation dialog
+        // with the actual Buy/Get rules (UpdateDiscountRequest already
+        // tolerates rule-less Configurable updates the same way). Mirror
+        // that here: validate the metadata, and only enforce rule-level
+        // shape when the operator actually submits rules in this request.
         $rules = [
             'name'         => ['required', 'string', 'max:255'],
             'type'         => ['required', 'string'],
             'start'        => ['required', 'date'],
             'end'          => ['required', 'date', 'after_or_equal:start'],
-            'sessions_buy' => ['required', 'integer', 'min:1'],
-            'base_service' => ['required'],
+            'sessions_buy' => ['nullable', 'integer', 'min:1'],
+            'base_service' => ['nullable'],
         ];
 
         $sessions = $request->input('sessions', []);

@@ -189,6 +189,44 @@ class User extends Authenticatable
         );
     }
 
+    /**
+     * Build the auth-payload shape the SPA expects: raw user attributes
+     * plus the effective permission gate names (direct + role-inherited)
+     * and the primary role name.
+     *
+     * The SPA's `usePermissions().has()` falls back to "allow all" when
+     * the `permissions` field is missing (a backward-compat affordance
+     * for legacy bearer-token clients), so any endpoint that returns a
+     * user without permissions silently leaks gated menu entries —
+     * e.g. Scheduling Shifts / Business Closures showed up for FDM
+     * after login because `/api/login` returned the bare `$user` model.
+     *
+     * Use this from every endpoint that hands a user back to the SPA:
+     *   - POST /api/login (sanctum)
+     *   - POST /api/v2/auth/login (passport)
+     *   - GET  /api/user (boot refresh)
+     *
+     * @return array<string, mixed>
+     */
+    public function toAuthPayload(): array
+    {
+        $payload = $this->toArray();
+
+        // Preserve `api_token` if the caller set it on the model
+        // (sanctum login does this so the SPA can store the PAT).
+        if (isset($this->api_token)) {
+            $payload['api_token'] = $this->api_token;
+        }
+
+        $payload['role']        = $this->roles->pluck('name')->first();
+        $payload['permissions'] = $this->getAllPermissions()
+            ->pluck('name')
+            ->values()
+            ->all();
+
+        return $payload;
+    }
+
     public function membership(): HasOne
     {
         return $this->hasOne(Membership::class, 'patient_id')->orderByDesc('id');

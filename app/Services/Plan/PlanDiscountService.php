@@ -88,11 +88,28 @@ final class PlanDiscountService
             $netAmount = ($serviceData->price) - ($discountPriceCal);
         } elseif ($discountData->discount_type == 'voucher') {
             $patientVoucher = UserVouchers::where('user_id', $patientId)->where('voucher_id', $discountId)->first();
-            if ($patientVoucher) {
+            // Voucher rule (agreed with the user):
+            //   - voucher_balance >= service_price → wipe service to 0 and
+            //     consume `service_price` from the balance (NOT the full
+            //     balance; otherwise the operator silently burns 20k from
+            //     a 50k voucher on a 5k service).
+            //   - voucher_balance <  service_price → consume the remaining
+            //     balance, patient owes the residual.
+            // The cap is `min(balance, service_price)` — the same formula
+            // `consumeVoucherForBundle` already uses for the journal
+            // entry. Surface it here so the discount_price stamped on
+            // the saved bundle row matches what the ledger actually
+            // burned, and so the SPA's reservation request doesn't ask
+            // for more than is owed.
+            // Balance==0 returns discount_price=0 (the dropdown filter
+            // in PlanService::buildEligibleDiscounts blocks the depleted
+            // voucher upstream, but keep the zero-balance branch here
+            // as a safety net in case the catalog is stale).
+            if ($patientVoucher && (float) $patientVoucher->amount > 0) {
                 $discountType = Config::get('constants.Fixed');
-                $discountPrice = $patientVoucher->amount;
+                $discountPrice = min((float) $patientVoucher->amount, (float) $serviceData->price);
                 $discountIsVoucher = true;
-                $netAmount = ($serviceData->price) - ($discountPrice);
+                $netAmount = ((float) $serviceData->price) - $discountPrice;
                 if ($netAmount < 0) {
                     $netAmount = 0;
                 }
@@ -165,9 +182,11 @@ final class PlanDiscountService
             }
         } elseif ($discountData->type == 'Fixed' && $discountData->discount_type == 'voucher') {
             $voucherRecord = UserVouchers::where('user_id', $patientId)->where('voucher_id', $discountId)->first();
-            if ($voucherRecord) {
-                $discountPrice = $voucherRecord->amount;
-                $netAmount = ($serviceData->price) - ($discountPrice);
+            // Voucher cap: min(balance, service_price). See identical
+            // block in `getDiscountInfo` for rationale.
+            if ($voucherRecord && (float) $voucherRecord->amount > 0) {
+                $discountPrice = min((float) $voucherRecord->amount, (float) $serviceData->price);
+                $netAmount = ((float) $serviceData->price) - $discountPrice;
                 if ($netAmount < 0) {
                     $netAmount = 0;
                 }
@@ -177,10 +196,14 @@ final class PlanDiscountService
             }
         } elseif ($discountData->type == 'Percentage' && $discountData->discount_type == 'voucher') {
             $voucherRecord = UserVouchers::where('user_id', $patientId)->where('voucher_id', $discountId)->first();
-            if ($voucherRecord) {
-                $discountPrice = $voucherRecord->amount;
-                $discountPriceInPercentage = ($discountPrice / 100) * $serviceData->price;
-                $netAmount = ($serviceData->price) - ($discountPriceInPercentage);
+            // Percentage-voucher cap: compute the equivalent fixed
+            // discount (`balance/100 * service_price`), then cap at the
+            // service price so a 200% voucher (legacy data) doesn't
+            // wipe more than the service is worth.
+            if ($voucherRecord && (float) $voucherRecord->amount > 0) {
+                $discountPriceInPercentage = ((float) $voucherRecord->amount / 100) * (float) $serviceData->price;
+                $discountPrice = min($discountPriceInPercentage, (float) $serviceData->price);
+                $netAmount = ((float) $serviceData->price) - $discountPrice;
                 if ($netAmount < 0) {
                     $netAmount = 0;
                 }
@@ -1205,11 +1228,21 @@ final class PlanDiscountService
                     $net_amount = ($service_data->price) - ($discount_price_cal);
                 } elseif ($discount_data->discount_type == 'voucher') {
                     $patientVoucher = UserVouchers::where('user_id', $patient_id)->where('voucher_id', $discount_id)->first();
-                    if ($patientVoucher) {
+                    // Voucher cap: `min(balance, service_price)` — see
+                    // the equivalent block in `getDiscountInfo` for the
+                    // full rationale. The previous code stamped the
+                    // un-capped voucher balance as `discount_price` and
+                    // only clamped `net_amount` to 0, which left the
+                    // saved bundle row carrying a discount value WAY
+                    // higher than the service price (e.g. discount=
+                    // 49,990 on a 24,995 service when the voucher had
+                    // 50k balance). The user observed this directly on
+                    // plan #47275.
+                    if ($patientVoucher && (float) $patientVoucher->amount > 0) {
                         $discount_type = Config::get('constants.Fixed');
-                        $discount_price = $patientVoucher->amount;
+                        $discount_price = min((float) $patientVoucher->amount, (float) $service_data->price);
                         $discount_is_voucher = true;
-                        $net_amount = ($service_data->price) - ($discount_price);
+                        $net_amount = ((float) $service_data->price) - $discount_price;
                         if ($net_amount < 0) {
                             $net_amount = 0;
                         }
@@ -1535,6 +1568,27 @@ final class PlanDiscountService
 
                 $packagebundle = PackageBundles::createPackagebundle($bundle_data);
 
+                // Tag the row's slot in the configurable group's
+                // consumption queue: 1 = paid BUY anchor, 2 = priced
+                // GET (Percentage/Fixed/custom — a real discount applied
+                // to a paid service), 3 = complimentary GET (free).
+                // The legacy admin's `PlanService::validateConsumptionOrder`
+                // + `PlanService::getEditFormData`'s `add_locked` use
+                // this to refuse new rows when a higher-order session
+                // has been consumed before a lower-order sibling
+                // (operator gave away the freebie first, then tried to
+                // bolt more services onto the plan). Without an order
+                // value the comparison `ps2.consumption_order < this`
+                // is `0 < 0` for every row, the predicate never fires,
+                // and the lock can never trigger — which is why this
+                // path silently failed in production after the SPA
+                // edit dialog started reading `add_locked`.
+                if ($is_buy_row) {
+                    $rowConsumptionOrder = 1;
+                } else {
+                    $rowConsumptionOrder = ($ds->discount_type === 'complimentory') ? 3 : 2;
+                }
+
                 $data_service = [
                     'random_id' => $data['random_id'],
                     'package_bundle_id' => $packagebundle->id,
@@ -1547,6 +1601,7 @@ final class PlanDiscountService
                     // groups always landed with sold_by NULL and never
                     // showed up in any upsell report.
                     'sold_by' => $data['sold_by'] ?? null,
+                    'consumption_order' => $rowConsumptionOrder,
                     'price' => $row_net_amount,
                     'orignal_price' => $svc->price,
                     'tax_including_price' => $bundle_data['tax_including_price'],
@@ -2407,6 +2462,47 @@ final class PlanDiscountService
             return;
         }
 
+        // SPA pre-reservation path. When `voucher_pre_reserved` is set
+        // in the request payload, the SPA has already called
+        // `reserveVoucherAmount` to decrement `user_vouchers.amount`
+        // BEFORE hitting this save endpoint. Decrementing a second
+        // time here would double-charge the voucher — observed on
+        // production plan #47275 where balance 30,000 dropped to 0
+        // on a single 24,995 service (over-consumed by 5,005).
+        //
+        // In that case we still need the PackageVouchers journal row
+        // so the row-delete path (`deletePackageService`) can refund
+        // the right amount when the operator removes the row. We
+        // write the journal using the amount the SPA reserved
+        // (`$data['discount_price']`) — the cap is already applied at
+        // `getDiscountInfo`/`getDiscountInfoForPlan` so
+        // discount_price ≤ service_price.
+        $preReserved = ! empty($data['voucher_pre_reserved']);
+        $preReservedAmount = $preReserved ? (float) ($data['discount_price'] ?? 0) : 0.0;
+
+        if ($preReserved && $preReservedAmount > 0) {
+            // Journal-only path. No mutation of user_vouchers.amount.
+            // No activity-log entry (the reserve endpoint already logged
+            // its decrement to the audit trail).
+            PackageVouchers::create([
+                'package_random_id' => $data['random_id'] ?? null,
+                'voucher_id' => $discount->id,
+                'user_id' => $patientId,
+                'amount' => $preReservedAmount,
+                'service_id' => $packageBundle->id,
+                'main_service_id' => $mainServiceId,
+            ]);
+
+            Log::info('consumeVoucherForBundle: journal-only (SPA pre-reserved)', [
+                'voucher_id' => $discount->id,
+                'patient_id' => $patientId,
+                'journal_amount' => $preReservedAmount,
+                'package_bundle_id' => $packageBundle->id,
+            ]);
+
+            return;
+        }
+
         DB::transaction(function () use ($discount, $patientId, $data, $servicePrice, $mainServiceId, $packageBundle): void {
             $userVoucher = UserVouchers::where('voucher_id', $discount->id)
                 ->where('user_id', $patientId)
@@ -2436,31 +2532,49 @@ final class PlanDiscountService
                 'actual_consumed' => $actualConsumed,
             ]);
 
+            if ($actualConsumed <= 0) {
+                // Voucher was already depleted before this row was
+                // saved — nothing got deducted from the ledger. The
+                // previous code wrote a journal row with
+                // `amount = $servicePrice` as a "sentinel", which then
+                // showed up in the voucher history dialog as a real
+                // consumption of (e.g.) Rs 24,995 against a voucher
+                // that had a 0 balance. That is the −Rs 24,995 entry
+                // the user observed; it was also unsafe because the
+                // row-delete refund path read it as a real refund and
+                // could inflate the ledger above `total_amount`
+                // (mitigated separately by the cap in
+                // `PlanService::deletePackageService`). Skip the
+                // journal write entirely when nothing was consumed —
+                // the bundle row still carries the voucher's
+                // `discount_id` so anyone walking the bundles can see
+                // the voucher was attempted; the journal stays clean.
+                Log::info('consumeVoucherForBundle: skipped journal — voucher already exhausted', [
+                    'user_voucher_id' => $userVoucher->id,
+                    'package_bundle_id' => $packageBundle->id,
+                ]);
+
+                return;
+            }
+
             PackageVouchers::create([
                 'package_random_id' => $data['random_id'] ?? null,
                 'voucher_id' => $discount->id,
                 'user_id' => $patientId,
-                // When the voucher is exhausted by an oversized service
-                // the journal still needs to record the value applied;
-                // fall back to the full service price as the sentinel,
-                // matching the behaviour pinned by
-                // VoucherDoubleRedemptionPreventedTest.
-                'amount' => $actualConsumed > 0 ? $actualConsumed : $servicePrice,
+                'amount' => $actualConsumed,
                 'service_id' => $packageBundle->id,
                 'main_service_id' => $mainServiceId,
             ]);
 
-            if ($actualConsumed > 0) {
-                // Patients model extends BaseModel (not User); the logger
-                // enforces that type. Same trap seen in PlanService and
-                // UserVoucherService — fetch via Patients to pass the
-                // strict parameter type check.
-                $patient = Patients::find($patientId);
-                if ($patient) {
-                    DB::afterCommit(static function () use ($actualConsumed, $patient, $discount, $amountLeft): void {
-                        ActivityLogger::logVoucherConsumed($actualConsumed, $patient, $discount, $amountLeft);
-                    });
-                }
+            // Patients model extends BaseModel (not User); the logger
+            // enforces that type. Same trap seen in PlanService and
+            // UserVoucherService — fetch via Patients to pass the
+            // strict parameter type check.
+            $patient = Patients::find($patientId);
+            if ($patient) {
+                DB::afterCommit(static function () use ($actualConsumed, $patient, $discount, $amountLeft): void {
+                    ActivityLogger::logVoucherConsumed($actualConsumed, $patient, $discount, $amountLeft);
+                });
             }
         });
     }

@@ -215,4 +215,36 @@ class StatusLockSignalsTest extends TestCase
         $this->assertTrue($payload['appointment_status']['is_converted']);
         $this->assertFalse($payload['appointment_status']['is_arrived']);
     }
+
+    /**
+     * Pins `has_feedback` on the SPA treatment resource. Drives the
+     * yellow star icon on the treatments listing so operators can see
+     * which arrived rows already have feedback recorded. The list query
+     * (TreatmentService::getTreatmentList) eager-loads
+     * `withCount('feedback')`; the resource reads `feedback_count`.
+     */
+    public function test_treatment_resource_exposes_has_feedback(): void
+    {
+        $this->actingAsAdmin();
+        $appointment = Appointments::factory()->create();
+
+        $rowWithout = Appointments::withCount('feedback')->findOrFail($appointment->id);
+        $payload = (new \App\Http\Resources\Treatment\TreatmentResource($rowWithout))
+            ->toArray(new Request());
+
+        $this->assertArrayHasKey('has_feedback', $payload);
+        $this->assertFalse($payload['has_feedback']);
+
+        \App\Models\Feedback::create([
+            'appointment_id' => $appointment->id,
+            'rating'         => 5,
+            'comment'        => 'great',
+        ]);
+
+        $rowWith = Appointments::withCount('feedback')->findOrFail($appointment->id);
+        $payload = (new \App\Http\Resources\Treatment\TreatmentResource($rowWith))
+            ->toArray(new Request());
+
+        $this->assertTrue($payload['has_feedback']);
+    }
 }

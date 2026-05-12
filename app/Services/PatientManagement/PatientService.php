@@ -956,9 +956,21 @@ class PatientService
             : collect();
 
         $serviceIds = $rawHistory->pluck('main_service_id')->filter()->unique();
+        // `main_service_id` is a `services.id` (see `consumeVoucherForBundle`).
+        // The earlier lookup hit the `bundles` table by the same id, which
+        // only worked when `services.id` and `bundles.id` happened to
+        // coincide for matching display names — fragile and wrong for
+        // most services. Hit `services` first; fall back to `bundles`
+        // only when an older journal row stored a bundle id (the
+        // bundle-subtype save path also writes through this journal).
         $serviceNameMap = $serviceIds->isNotEmpty()
-            ? DB::table('bundles')->whereIn('id', $serviceIds)->pluck('name', 'id')
+            ? DB::table('services')->whereIn('id', $serviceIds)->pluck('name', 'id')
             : collect();
+        $missingNames = $serviceIds->diff($serviceNameMap->keys());
+        if ($missingNames->isNotEmpty()) {
+            $bundleNames = DB::table('bundles')->whereIn('id', $missingNames)->pluck('name', 'id');
+            $serviceNameMap = $serviceNameMap->merge($bundleNames);
+        }
 
         // Fallback amount lookup: PackageBundles keyed by (random_id, bundle_id)
         // for the rows where `package_vouchers.amount` is null/0.

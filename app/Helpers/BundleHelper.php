@@ -256,6 +256,12 @@ class BundleHelper
             'active'   => Gate::allows('packages_active'),
             'inactive' => Gate::allows('packages_inactive'),
             'details'  => Gate::allows('packages_manage'),
+            // `create` was missing from the map, so the SPA had no flag
+            // to gate the "Add package" button on and showed it to every
+            // role that could see the list (e.g. FDM). `sort` was
+            // missing entirely; seeded by PermissionSeeder (parent_id=195).
+            'create'   => Gate::allows('packages_create'),
+            'sort'     => Gate::allows('packages_sort'),
         ];
     }
 }

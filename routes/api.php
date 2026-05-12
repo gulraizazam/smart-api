@@ -74,7 +74,7 @@ use App\Http\Controllers\Api\ScheduleController;
 |
 */
 
-Route::post('login', [\App\Http\Controllers\Api\AuthController::class, 'login'])->middleware('throttle:5,1');
+Route::post('login', [\App\Http\Controllers\Api\AuthController::class, 'login'])->middleware('throttle:30,1');
 
 // Cookie-mode logout. Idempotent: an expired-session caller still gets a
 // clean 200 with the session and CSRF rotated. Bearer-mode SPA builds also
@@ -102,7 +102,7 @@ Route::post('password/reset', [\App\Http\Controllers\Api\ForgotPasswordControlle
 // during the staged migration. See app/Http/Controllers/Api/V2/AuthController.
 Route::prefix('v2/auth')->name('api.v2.auth.')->group(function (): void {
     Route::post('login', [\App\Http\Controllers\Api\V2\AuthController::class, 'login'])
-        ->middleware('throttle:5,1')
+        ->middleware('throttle:30,1')
         ->name('login');
     Route::post('refresh', [\App\Http\Controllers\Api\V2\AuthController::class, 'refresh'])
         ->middleware('throttle:10,1')
@@ -129,7 +129,14 @@ Route::middleware('auth.api.dual')->name('admin.')->group(function () {
 });
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
-    return $request->user();
+    /** @var \App\Models\User $user */
+    $user = $request->user();
+
+    // toAuthPayload() folds in the effective permission gate names + the
+    // primary role, both of which the SPA's `usePermissions().has()`
+    // needs to render menus and actions per-role. Defined on User so
+    // every auth-returning endpoint (login + this one) stays aligned.
+    return $user->toAuthPayload();
 });
 
 // Meta Conversion API Routes
