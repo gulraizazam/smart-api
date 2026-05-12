@@ -1272,3 +1272,14 @@ input[type=number] {
 .aside-menu .menu-nav > .menu-item .menu-submenu .menu-item:hover > .menu-link {
     background-color: #1b1b1b !important;
 }
+
+/* Report header logo — extend the JPEG's dark background outward via padding
+   so allura-logo1.jpeg reads as an intentional dark brand band on white report pages
+   instead of a raw stamped rectangle. Width still controlled by inline style on the <img>. */
+img[src*="allura-logo1.jpeg"] {
+    background-color: #000000;
+    padding: 12px 22px;
+    border-radius: 6px;
+    box-sizing: content-box;
+    display: inline-block;
+}

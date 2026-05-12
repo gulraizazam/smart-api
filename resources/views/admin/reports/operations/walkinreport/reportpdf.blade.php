@@ -4,6 +4,13 @@
 <head>
     <link href="{{ url('metronic/assets/global/css/generic-style.css') }}" rel="stylesheet" type="text/css"/>
     <link href="{{ url('metronic/assets/global/css/print-page.css') }}" rel="stylesheet" type="text/css"/>
+    <style>
+        .logo {
+            background-color: #000000;
+            padding: 12px 22px;
+            border-radius: 4px;
+        }
+    </style>
 </head>
 <body>
 <div class="invoice-pdf">
@@ -13,7 +20,7 @@
                 <table>
                     <tr>
                         <td>
-                            <img  style="width:235px" class="logo" src="{{ public_path('allura-logo2.jpeg') }}"
+                            <img  style="width:235px" class="logo" src="{{ public_path('allura-logo1.jpeg') }}"
                                  class="img-responsive" alt=""/>
                         </td>
                     </tr>

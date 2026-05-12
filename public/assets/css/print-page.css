@@ -24,7 +24,7 @@ table.table tr.total td { text-align: left; padding: 10px 15px; font-weight: 500
 .sn-report-head{ background-color: #364150; padding: 10px 15px; text-align: center; }
 .sn-report-head h1{ margin: 0; font-size: 20px; line-height: 23px; font-weight: 500; color: #fff; }
 .sn-table-head{ overflow:hidden;  padding: 20px 15px; background-color: #f3f7f9; }
-.print-logo{ float: left; width: 200px; }
+.print-logo{ float: left; width: 200px; background-color: #000000; padding: 12px 22px; border-radius: 4px; box-sizing: content-box; }
 .print-logo img{ max-width: 100%; display: block; height: auto; }
 .print-time{ float: right; max-width: 450px; }
 .print-time table.dark-th-table tr:last-child{ border: 0; background-color: #fff; }

@@ -69,7 +69,7 @@
 
             <div class="row">
                 <div class="col-md-2">
-                    <img style="width: 180px;" src="{{asset('allura-logo2.jpeg')}}" >
+                    <img style="width: 180px;" src="{{asset('allura-logo1.jpeg')}}" >
                 </div>
                 <div class="col-md-6">&nbsp;</div>
                 <div class="col-md-4">

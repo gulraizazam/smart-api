@@ -10,6 +10,9 @@
         .logo {
             width: 200px;
             text-align: left;
+            background-color: #000000;
+            padding: 12px 22px;
+            border-radius: 4px;
         }
         table {
             font-family: arial, sans-serif;
@@ -53,7 +56,7 @@
                     <table>
                         <tr>
                             <td >
-                                <img class="logo" src="{{ public_path('allura-logo2.jpeg') }}" class="img-responsive" alt="" style="width: 235px;"/>
+                                <img class="logo" src="{{ public_path('allura-logo1.jpeg') }}" class="img-responsive" alt="" style="width: 235px;"/>
                             </td>
                         </tr>
                     </table>
