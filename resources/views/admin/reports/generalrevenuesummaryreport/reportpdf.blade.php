@@ -11,9 +11,6 @@
         .logo {
             width: 200px;
             text-align: left;
-            background-color: #000000;
-            padding: 12px 22px;
-            border-radius: 4px;
         }
 
         table {
