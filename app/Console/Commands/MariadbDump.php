@@ -6,7 +6,7 @@ namespace App\Console\Commands;
 use App\Models\DBBackups;
 use Illuminate\Console\Command;
 
-class SyncAppointments extends Command
+class MariadbDump extends Command
 {
     /**
      * The name and signature of the console command.
@@ -20,7 +20,7 @@ class SyncAppointments extends Command
      *
      * @var string
      */
-    protected $description = 'Runs the mysqldump utility using info from .env';
+    protected $description = 'Runs mariadb-dump using info from .env';
 
     /**
      * Create a new command instance.
@@ -41,16 +41,16 @@ class SyncAppointments extends Command
     {
         try {
             $ds = DIRECTORY_SEPARATOR;
-            $host = config('database.connections.mysql.host');
-            $username = config('database.connections.mysql.username');
-            $password = config('database.connections.mysql.password');
-            $database = config('database.connections.mysql.database');
+            $host = config('database.connections.mariadb.host');
+            $username = config('database.connections.mariadb.username');
+            $password = config('database.connections.mariadb.password');
+            $database = config('database.connections.mariadb.database');
 
             $ts = time();
             $path = database_path().$ds.'backups'.$ds;
             $file = date('Y-m-d-His', $ts).'-dump-'.$database.'.sql.gz';
             $command = sprintf(
-                'mysqldump -h %s -u %s -p%s %s | gzip -9 -c > %s',
+                'mariadb-dump -h %s -u %s -p%s %s | gzip -9 -c > %s',
                 escapeshellarg($host),
                 escapeshellarg($username),
                 escapeshellarg($password),
@@ -68,7 +68,7 @@ class SyncAppointments extends Command
             ]);
 
         } catch (\Exception $exception) {
-            \Log::error('SyncAppointments failed', ['error' => $exception->getMessage()]);
+            \Log::error('MariadbDump failed', ['error' => $exception->getMessage()]);
         }
     }
 }

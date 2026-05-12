@@ -20,7 +20,7 @@ use RuntimeException;
  * created via direct ALTER on the live DB, schema fix-ups that assumed prior
  * state). Running them on a fresh DB hits dozens of "duplicate column",
  * "unknown column", and "FK constraint malformed" failures. Maintaining a
- * canonical schema snapshot at `database/schema/mysql_testing-schema.sql`
+ * canonical schema snapshot at `database/schema/mariadb_testing-schema.sql`
  * (regenerated from the dev `crm` DB via `php database/schema/dump_schema.php`)
  * sidesteps the entire migration mess and gives tests a stable, fast,
  * production-shaped schema to run against.
@@ -51,7 +51,7 @@ trait RefreshTestDatabase
         $database = $connection->getDatabaseName();
 
         // Hard guard: never wipe a database whose name doesn't end in
-        // `_test`. The mysql_testing connection defaults to `cutera_test`
+        // `_test`. The mariadb_testing connection defaults to `cutera_test`
         // but a misconfigured env could point at the dev `crm` database;
         // catching that here prevents accidental data loss.
         if (! str_ends_with($database, '_test')) {
@@ -68,7 +68,7 @@ trait RefreshTestDatabase
         Schema::dropAllTables();
         Schema::enableForeignKeyConstraints();
 
-        $dumpPath = database_path('schema/mysql_testing-schema.sql');
+        $dumpPath = database_path('schema/mariadb_testing-schema.sql');
 
         if (! is_file($dumpPath)) {
             throw new RuntimeException(

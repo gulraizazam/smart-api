@@ -92,7 +92,7 @@ A7
 Expense categories: admin-only. Accountant selects or suggests new.
 
 A8
-Laravel 8+ / MySQL. Follows existing CRM patterns.
+Laravel 12 / MariaDB. Follows existing CRM patterns.
 
 A9
 Payment methods from existing CRM config (Cash, Credit Card, Bank Transfer).

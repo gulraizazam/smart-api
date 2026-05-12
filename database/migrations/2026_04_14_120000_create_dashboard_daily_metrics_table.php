@@ -18,7 +18,7 @@ use Illuminate\Support\Facades\Schema;
  * not silently rewrite historical "% to target" figures.
  *
  * Uniqueness is enforced at the application layer via updateOrCreate inside a
- * job-mutex (WithoutOverlapping) rather than a strict DB UNIQUE — MySQL treats
+ * job-mutex (WithoutOverlapping) rather than a strict DB UNIQUE — MariaDB treats
  * NULL as distinct in unique indexes, which would have forced sentinel values
  * and complicated every scope query.
  */

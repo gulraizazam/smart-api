@@ -1790,7 +1790,7 @@ final class AtRiskPatientsMetric
 
     /**
      * Per-package consumed/unused/remaining aggregates for a bounded set
-     * of package IDs. Uses MySQL's IN-list — fine up to a few thousand
+     * of package IDs. Uses MariaDB's IN-list — fine up to a few thousand
      * IDs; chunks if larger.
      *
      * @param  list<int>  $packageIds

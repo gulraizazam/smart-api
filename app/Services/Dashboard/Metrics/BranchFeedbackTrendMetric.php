@@ -24,7 +24,7 @@ use Illuminate\Support\Facades\DB;
  * type=2, status=2, today excluded) so the snapshot/trend numbers reconcile.
  *
  * Aggregation is one grouped query per flavour over the whole window —
- * cheaper than N anchor-by-anchor queries and gives MySQL a chance to
+ * cheaper than N anchor-by-anchor queries and gives MariaDB a chance to
  * use the same index for every month.
  */
 final class BranchFeedbackTrendMetric

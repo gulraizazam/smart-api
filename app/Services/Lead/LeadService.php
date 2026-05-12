@@ -1538,7 +1538,7 @@ class LeadService
 
         // Subquery: latest appointment id per (patient_id, service_id) pair.
         // The previous query selected appointments.* alongside an aggregate, which relied
-        // on MySQL non-strict GROUP BY to pick arbitrary row values. MariaDB rejects that
+        // on MariaDB non-strict GROUP BY to pick arbitrary row values. MariaDB rejects that
         // under ONLY_FULL_GROUP_BY. MAX(id) gives a deterministic latest row.
         $latestPerPair = DB::table('appointments')
             ->join('leads', 'leads.id', '=', 'appointments.lead_id')

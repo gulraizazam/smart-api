@@ -17,7 +17,7 @@ class CreateBrandsTable extends Migration
             $table->id();
             // accounts.id is BIGINT UNSIGNED, so this column must match — the
             // original migration used unsignedInteger() which works on legacy
-            // MySQL but is rejected by MariaDB 11.x with the
+            // MariaDB but is rejected by MariaDB 11.x with the
             // "Foreign key constraint is incorrectly formed" error.
             $table->unsignedBigInteger('account_id');
             $table->string('name');

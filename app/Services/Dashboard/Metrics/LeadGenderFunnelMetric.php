@@ -80,8 +80,8 @@ final class LeadGenderFunnelMetric implements Metric
         $arrivedList = implode(',', self::STATUS_ARRIVED_OR_BEYOND);
         $convertedList = implode(',', self::STATUS_CONVERTED);
 
-        // Aliases prefixed with `cnt_` to sidestep MySQL reserved words —
-        // `generated` and `converted` are both keywords in MySQL 8.
+        // Aliases prefixed with `cnt_` to sidestep MariaDB reserved words —
+        // `generated` and `converted` are both keywords in MariaDB 11.
         $rows = $query
             ->selectRaw(
                 'CASE COALESCE(NULLIF(p.gender, 0), NULLIF(l.gender, 0)) '.

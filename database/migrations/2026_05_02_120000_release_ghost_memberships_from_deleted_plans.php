@@ -92,7 +92,7 @@ return new class extends Migration
         // 2. Soft-delete orphan student_verifications whose package is
         //    soft-deleted. Two-step (collect ids → update by id) so
         //    we don't depend on JOIN-in-UPDATE syntax, which differs
-        //    across MySQL versions and would silently no-op on some.
+        //    across MariaDB versions and would silently no-op on some.
         //    Files on disk are not touched here — that requires the
         //    StudentVerificationService and its Auth context, which
         //    migrations don't have. The forward-looking

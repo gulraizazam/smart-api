@@ -84,23 +84,23 @@ tests/
 
 ## One-time setup (local dev)
 
-The suite **must** run against a dedicated MariaDB database — never the production schema. The connection is wired through the `mysql_testing` block in `config/database.php`.
+The suite **must** run against a dedicated MariaDB database — never the production schema. The connection is wired through the `mariadb_testing` block in `config/database.php`.
 
 ```bash
-# 1. Create the test database (any MariaDB 10.5+ / MySQL 8+ works; prod is MariaDB 11.8)
-mysql -u root -p -e "CREATE DATABASE cutera_test CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+# 1. Create the test database (MariaDB 11.x; prod is MariaDB 11.8)
+mariadb -u root -p -e "CREATE DATABASE cutera_test CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
 
 # 2. Configure your local .env (or copy from .env.example)
 #    Add the following lines to your .env if they aren't already there:
 #
 #       DB_TEST_HOST=127.0.0.1
-#       DB_TEST_PORT=3306
+#       DB_TEST_PORT=3307
 #       DB_TEST_DATABASE=cutera_test
 #       DB_TEST_USERNAME=root
 #       DB_TEST_PASSWORD=
 
 # 3. Apply migrations to the test DB
-php artisan migrate --database=mysql_testing --force
+php artisan migrate --database=mariadb_testing --force
 
 # 4. Run the suite
 php artisan test
@@ -193,7 +193,7 @@ A GitHub Actions workflow at `.github/workflows/tests.yml` runs the full suite o
 
 1. Spins up a MariaDB 11 service container
 2. Sets up PHP 8.4 with required extensions
-3. Loads the schema dump (`database/schema/mysql_testing-schema.sql`)
+3. Loads the schema dump (`database/schema/mariadb_testing-schema.sql`)
 4. Runs pending migrations
 5. Executes `php artisan test`
 

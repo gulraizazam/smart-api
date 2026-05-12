@@ -44,7 +44,7 @@ return new class extends Migration
         /*
          * Build the "keep list" once, then delete everything outside it.
          * Done in a single DELETE JOIN for efficiency on a large table.
-         * MySQL 8 / MariaDB 10.6 both support the <=> NULL-safe operator.
+         * MariaDB 11 both support the <=> NULL-safe operator.
          */
         DB::statement('
             DELETE ls FROM leads_services ls

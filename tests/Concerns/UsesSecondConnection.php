@@ -34,7 +34,7 @@ trait UsesSecondConnection
     private ?Connection $secondConnection = null;
 
     /**
-     * Boot a second connection by re-using the `mysql_testing` config but
+     * Boot a second connection by re-using the `mariadb_testing` config but
      * giving it a fresh PDO via Laravel's connection factory. Returns the
      * `Connection` instance so the test can use ->table(), ->statement(),
      * ->select(), etc.
@@ -47,13 +47,13 @@ trait UsesSecondConnection
 
         // Register a clone of the testing connection under a new name so
         // Laravel's connection manager treats it as independent.
-        $base = config('database.connections.mysql_testing');
-        config(['database.connections.mysql_testing_secondary' => $base]);
+        $base = config('database.connections.mariadb_testing');
+        config(['database.connections.mariadb_testing_secondary' => $base]);
 
         // Forget any cached PDO so the next resolve opens a fresh socket.
-        DB::purge('mysql_testing_secondary');
+        DB::purge('mariadb_testing_secondary');
 
-        $this->secondConnection = DB::connection('mysql_testing_secondary');
+        $this->secondConnection = DB::connection('mariadb_testing_secondary');
 
         return $this->secondConnection;
     }
@@ -65,7 +65,7 @@ trait UsesSecondConnection
     protected function tearDownSecondConnection(): void
     {
         if ($this->secondConnection !== null) {
-            DB::purge('mysql_testing_secondary');
+            DB::purge('mariadb_testing_secondary');
             $this->secondConnection = null;
         }
     }

@@ -721,7 +721,7 @@ class PatientService
         }
 
         // Preserve resolver order: MATCH relevance for text, prefix-match for
-        // phone. Without FIELD() MySQL would re-order by primary key.
+        // phone. Without FIELD() MariaDB would re-order by primary key.
         $orderExpr = 'FIELD(id, '.implode(',', array_fill(0, count($candidateIds), '?')).')';
 
         return (clone $baseQuery)

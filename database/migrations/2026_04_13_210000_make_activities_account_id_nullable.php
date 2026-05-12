@@ -16,7 +16,7 @@ use Illuminate\Support\Facades\Schema;
  * associated account — Failed/Lockout happen before a user is identified —
  * so the column must allow NULL to record them.
  *
- * Safe on production-sized data: ALGORITHM=INPLACE, LOCK=NONE (MySQL 8 /
+ * Safe on production-sized data: ALGORITHM=INPLACE, LOCK=NONE (MariaDB 11 /
  * MariaDB 10.6+). If the column is already NULLable (some envs) the
  * statement is skipped so the migration is idempotent.
  */

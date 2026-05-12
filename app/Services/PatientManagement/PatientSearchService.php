@@ -206,7 +206,7 @@ class PatientSearchService
      * MATCH AGAINST ... IN BOOLEAN MODE expression with `+token*` per
      * token (AND across tokens, prefix expansion), and falls back to
      * a prefix LIKE on `users.name` when every token is shorter than
-     * MySQL's default `innodb_ft_min_token_size` (3) — otherwise the
+     * MariaDB's default `innodb_ft_min_token_size` (3) — otherwise the
      * FT engine quietly returns nothing for short queries like "ab".
      *
      * Returns up to 200 patient ids — callers apply their own LIMIT and
@@ -291,7 +291,7 @@ class PatientSearchService
      *
      * Returned candidates are deduped and trimmed to ≥ 3 chars to keep the
      * prefix scan tight (a 1-digit prefix would match every phone in the
-     * table). MySQL OR's the prefix matches over the same B-tree index.
+     * table). MariaDB OR's the prefix matches over the same B-tree index.
      *
      * @return list<string>
      */

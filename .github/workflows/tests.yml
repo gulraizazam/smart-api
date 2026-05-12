@@ -66,17 +66,17 @@ jobs:
       - name: Wait for MariaDB to be ready
         run: |
           for i in $(seq 1 30); do
-            mysqladmin ping -h 127.0.0.1 -u root -ppassword --silent && break
+            mariadb-admin ping -h 127.0.0.1 -u root -ppassword --silent && break
             echo "Waiting for MariaDB... ($i/30)"
             sleep 2
           done
 
       - name: Load test database schema
         run: |
-          mysql -h 127.0.0.1 -u root -ppassword cutera_test < database/schema/mysql_testing-schema.sql
+          mariadb -h 127.0.0.1 -u root -ppassword cutera_test < database/schema/mariadb_testing-schema.sql
 
       - name: Run migrations on test database
-        run: php artisan migrate --database=mysql_testing --force
+        run: php artisan migrate --database=mariadb_testing --force
 
       - name: Run tests
         run: php artisan test --colors=always

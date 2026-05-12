@@ -537,7 +537,7 @@ final class UtilizationMetric implements Metric
      */
     private function busyMinutesPerBranchPerMonth(array $doctorIds, MetricScope $scope, DateRange $range): array
     {
-        // Activity-gated allocation filter in joinSub form — MySQL picks
+        // Activity-gated allocation filter in joinSub form — MariaDB picks
         // the (user_id, location_id) composite index cleanly. Dropping
         // this pattern made the same query ~10× slower in testing.
         $query = DB::table('appointments as a')
@@ -977,7 +977,7 @@ final class UtilizationMetric implements Metric
      * missing-duration count) with a single grouped pass. Each of those
      * five queries previously cost ~8s because the allocation filter
      * materialized as an EXISTS subquery; the consolidated form uses a
-     * DISTINCT-derived JOIN on doctor_has_locations which MySQL plans
+     * DISTINCT-derived JOIN on doctor_has_locations which MariaDB plans
      * far more efficiently against the appointments index.
      *
      * Returns:

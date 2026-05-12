@@ -815,7 +815,7 @@ final class NewReturningMetric implements Metric
 
     /**
      * Lifetime-first qualified visit per patient for this account. Used as a
-     * join-subquery by both headcount and revenue queries — MySQL materializes
+     * join-subquery by both headcount and revenue queries — MariaDB materializes
      * it once per statement.
      *
      * @param  list<int>  $statusIds

@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * Adds MariaDB/MySQL triggers that make `activities` and `activities_archive`
+ * Adds MariaDB triggers that make `activities` and `activities_archive`
  * tamper-evident. HIPAA §164.312(c)(1) integrity requirement: audit rows
  * must be protected from improper alteration or destruction.
  *

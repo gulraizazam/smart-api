@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\DB;
  * client. Same class of bug the 2026_04_23_130000 migration fixed for
  * 'deleted'.
  *
- * Append 'unflagged' to the allowed set. Additive ENUM ALTER on MySQL 8 is
+ * Append 'unflagged' to the allowed set. Additive ENUM ALTER on MariaDB 11 is
  * an in-place metadata change — no table rewrite, safe on prod-sized data.
  */
 return new class extends Migration
