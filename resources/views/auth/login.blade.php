@@ -380,7 +380,7 @@
     <section class="allura-auth__panel">
         <div class="allura-auth__card">
             <div class="allura-auth__mobile-mark">
-                <img src="{{ asset('logo_final.png') }}" alt="Allura" width="160" height="40" fetchpriority="high" />
+                <img src="{{ asset('allura-logo2.jpeg') }}" alt="Allura" width="96" height="40" fetchpriority="high" />
             </div>
 
             <header class="allura-auth__heading">
