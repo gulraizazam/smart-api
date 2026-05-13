@@ -71,6 +71,13 @@
         letter-spacing: 0;
     }
 
+    .allura-auth__brand-mark img {
+        display: block;
+        height: 56px;
+        width: auto;
+        max-width: 100%;
+    }
+
     .allura-auth__brand-quote {
         font-size: clamp(1.4rem, 2vw + 0.5rem, 2rem);
         line-height: 1.3;
@@ -359,8 +366,7 @@
         <div class="allura-auth__brand-glow"></div>
         <div class="allura-auth__brand-inner">
             <a href="/" class="allura-auth__brand-mark">
-                <span class="mark">A</span>
-                <span>Allura</span>
+                <img src="{{ asset('allura-logo2.jpeg') }}" alt="Allura Aesthetics" />
             </a>
 
             <div>

@@ -42,7 +42,7 @@
     <div class="brand flex-column-auto" id="kt_brand">
         <!--begin::Logo-->
         <a href="{{ route('admin.home') }}" class="brand-logo">
-            <img src="{{ asset('allura-logo2.jpeg') }}" alt="Allura Aesthetics" style="max-height:42px;width:auto;margin-left:25px;display:block;" />
+            <img src="{{ asset('allura-logo1.jpeg') }}" alt="Allura Aesthetics" style="max-height:42px;width:auto;margin-left:25px;display:block;" />
         </a>
         <!--end::Logo-->
         <!--begin::Toggle-->
@@ -70,7 +70,7 @@
             <div class="flex-column-auto d-lg-none pt-4 pb-7" id="kt_brand" style="border-bottom: 1px solid #032f58;">
                 <!--begin::Logo-->
                 <a class="brand-logo">
-                    <img src="{{ asset('allura-logo2.jpeg') }}" alt="Allura Aesthetics" style="max-height:42px;width:auto;margin-left:25px;display:block;" />
+                    <img src="{{ asset('allura-logo1.jpeg') }}" alt="Allura Aesthetics" style="max-height:42px;width:auto;margin-left:25px;display:block;" />
                 </a>
                 <!--end::Logo-->
             </div>
