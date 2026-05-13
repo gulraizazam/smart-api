@@ -76,6 +76,7 @@
         height: 56px;
         width: auto;
         max-width: 100%;
+        mix-blend-mode: lighten;
     }
 
     .allura-auth__brand-quote {
@@ -366,7 +367,7 @@
         <div class="allura-auth__brand-glow"></div>
         <div class="allura-auth__brand-inner">
             <a href="/" class="allura-auth__brand-mark">
-                <img src="{{ asset('allura-logo2.jpeg') }}" alt="Allura Aesthetics" />
+                <img src="{{ asset('allura-logo2_processed.jpg') }}" alt="Allura Aesthetics" />
             </a>
 
             <div>
@@ -386,7 +387,7 @@
     <section class="allura-auth__panel">
         <div class="allura-auth__card">
             <div class="allura-auth__mobile-mark">
-                <img src="{{ asset('allura-logo2.jpeg') }}" alt="Allura" width="96" height="40" fetchpriority="high" />
+                <img src="{{ asset('allura-logo2_processed.jpg') }}" alt="Allura" width="96" height="40" fetchpriority="high" />
             </div>
 
             <header class="allura-auth__heading">
