@@ -1165,10 +1165,10 @@ input[type=number] {
 .aside,
 .aside .aside-menu,
 .aside .aside-menu-wrapper {
-    background-color: #000000 !important;
+    background-color: #072542 !important;
 }
 .brand {
-    background-color: #000000 !important;
+    background-color: #072542 !important;
     box-shadow: none !important;
 }
 
@@ -1208,7 +1208,7 @@ input[type=number] {
 /* Submenu items — white text/icons/arrows in every state */
 .aside-menu .menu-nav > .menu-item .menu-submenu,
 .aside-menu .menu-nav > .menu-item .menu-submenu .menu-subnav {
-    background-color: #000000 !important;
+    background-color: #072542 !important;
 }
 .aside-menu .menu-nav > .menu-item .menu-submenu .menu-item > .menu-link .menu-text,
 .aside-menu .menu-nav > .menu-item .menu-submenu .menu-item > .menu-link .menu-icon,
@@ -1249,18 +1249,19 @@ input[type=number] {
     border-bottom-color: rgba(255, 255, 255, 0.1) !important;
 }
 
-/* Active state — golden brand colour (matches the lotus mark in the Allura logo).
-   Background fill + a deeper-gold inset accent bar on the leading edge. */
+/* Active state — white background makes the current page unmistakable against the
+   navy sidebar. Inset gold accent bar on the leading edge ties it back to the
+   Allura brand. Dark navy text gives ~16:1 contrast (WCAG AAA) on white. */
 .aside-menu .menu-nav > .menu-item.menu-item-here > .menu-link,
 .aside-menu .menu-nav > .menu-item.menu-item-active > .menu-link,
 .aside-menu .menu-nav > .menu-item.menu-item-open > .menu-link,
 .aside-menu .menu-nav > .menu-item .menu-submenu .menu-item.menu-item-here > .menu-link,
 .aside-menu .menu-nav > .menu-item .menu-submenu .menu-item.menu-item-active > .menu-link {
-    background-color: #D4AF37 !important;
-    box-shadow: inset 3px 0 0 #8B6914 !important;
+    background-color: #ffffff !important;
+    box-shadow: inset 3px 0 0 #D4AF37 !important;
 }
 
-/* Active text / icons / arrows — near-black for ~9.5:1 contrast on the gold (WCAG AAA). */
+/* Active text / icons / arrows — brand navy on white */
 .aside-menu .menu-nav > .menu-item.menu-item-here > .menu-link .menu-text,
 .aside-menu .menu-nav > .menu-item.menu-item-here > .menu-link .menu-icon,
 .aside-menu .menu-nav > .menu-item.menu-item-here > .menu-link .menu-icon i,
@@ -1275,17 +1276,17 @@ input[type=number] {
 .aside-menu .menu-nav > .menu-item.menu-item-open > .menu-link .menu-arrow,
 .aside-menu .menu-nav > .menu-item .menu-submenu .menu-item.menu-item-here > .menu-link .menu-text,
 .aside-menu .menu-nav > .menu-item .menu-submenu .menu-item.menu-item-active > .menu-link .menu-text {
-    color: #0a0a0a !important;
+    color: #072542 !important;
 }
 
-/* Active SVG icon fills — dark on gold */
+/* Active SVG icon fills — navy on white */
 .aside-menu .menu-nav > .menu-item.menu-item-here > .menu-link .menu-icon.svg-icon svg g [fill],
 .aside-menu .menu-nav > .menu-item.menu-item-active > .menu-link .menu-icon.svg-icon svg g [fill],
 .aside-menu .menu-nav > .menu-item.menu-item-open > .menu-link .menu-icon.svg-icon svg g [fill] {
-    fill: #0a0a0a !important;
+    fill: #072542 !important;
 }
 
-/* Bullets — white on black, but dark when their menu item is active (on gold) */
+/* Bullets — white on navy by default, but navy on white when the item is active */
 .aside-menu .menu-nav .menu-item .menu-link .menu-bullet.menu-bullet-dot > span,
 .aside-menu .menu-nav .menu-item .menu-link .menu-bullet.menu-bullet-line > span {
     background-color: #ffffff !important;
@@ -1295,11 +1296,31 @@ input[type=number] {
 .aside-menu .menu-nav > .menu-item.menu-item-open > .menu-link .menu-bullet > span,
 .aside-menu .menu-nav > .menu-item .menu-submenu .menu-item.menu-item-here > .menu-link .menu-bullet > span,
 .aside-menu .menu-nav > .menu-item .menu-submenu .menu-item.menu-item-active > .menu-link .menu-bullet > span {
-    background-color: #0a0a0a !important;
+    background-color: #072542 !important;
 }
 
-/* Hover-only background on non-active items — subtle dark, distinct from the gold active state */
+/* Hover state on non-active items — golden brand colour (Allura lotus tone) */
 .aside-menu .menu-nav > .menu-item:not(.menu-item-parent):not(.menu-item-open):not(.menu-item-here):not(.menu-item-active):hover > .menu-link,
 .aside-menu .menu-nav > .menu-item .menu-submenu .menu-item:not(.menu-item-active):not(.menu-item-here):hover > .menu-link {
-    background-color: #1b1b1b !important;
+    background-color: #D4AF37 !important;
+}
+
+/* Hover text / icons / arrows — near-black for ~9.5:1 contrast on the gold */
+.aside-menu .menu-nav > .menu-item:not(.menu-item-parent):not(.menu-item-open):not(.menu-item-here):not(.menu-item-active):hover > .menu-link .menu-text,
+.aside-menu .menu-nav > .menu-item:not(.menu-item-parent):not(.menu-item-open):not(.menu-item-here):not(.menu-item-active):hover > .menu-link .menu-icon,
+.aside-menu .menu-nav > .menu-item:not(.menu-item-parent):not(.menu-item-open):not(.menu-item-here):not(.menu-item-active):hover > .menu-link .menu-icon i,
+.aside-menu .menu-nav > .menu-item:not(.menu-item-parent):not(.menu-item-open):not(.menu-item-here):not(.menu-item-active):hover > .menu-link .menu-arrow,
+.aside-menu .menu-nav > .menu-item .menu-submenu .menu-item:not(.menu-item-active):not(.menu-item-here):hover > .menu-link .menu-text {
+    color: #0a0a0a !important;
+}
+
+/* Hover SVG icon fills — dark on gold */
+.aside-menu .menu-nav > .menu-item:not(.menu-item-parent):not(.menu-item-open):not(.menu-item-here):not(.menu-item-active):hover > .menu-link .menu-icon.svg-icon svg g [fill] {
+    fill: #0a0a0a !important;
+}
+
+/* Hover bullets — dark on gold */
+.aside-menu .menu-nav > .menu-item:not(.menu-item-parent):not(.menu-item-open):not(.menu-item-here):not(.menu-item-active):hover > .menu-link .menu-bullet > span,
+.aside-menu .menu-nav > .menu-item .menu-submenu .menu-item:not(.menu-item-active):not(.menu-item-here):hover > .menu-link .menu-bullet > span {
+    background-color: #0a0a0a !important;
 }
