@@ -279,14 +279,26 @@ class Product extends BaseModel
     //  */
     public static function isChildExists($id, $account_id)
     {
-        if (
-            TransferProduct::where(['product_id' => $id, 'account_id' => $account_id])->orwhere(['child_product_id' => $id])->count() ||
-            OrderDetail::where(['product_id' => $id, 'account_id' => $account_id])->count()
-        ) {
+        // Group the product_id/child_product_id alternative under the
+        // account scope. The previous form had the `orWhere` outside the
+        // account_id constraint, so it matched `child_product_id = $id`
+        // across ALL accounts — a cross-tenant leak that could block
+        // (or wrongly approve) a delete based on another organisation's
+        // transfer history.
+        $hasTransfer = TransferProduct::where('account_id', $account_id)
+            ->where(function ($q) use ($id) {
+                $q->where('product_id', $id)
+                    ->orWhere('child_product_id', $id);
+            })
+            ->exists();
+
+        if ($hasTransfer) {
             return true;
         }
 
-        return false;
+        return OrderDetail::where('account_id', $account_id)
+            ->where('product_id', $id)
+            ->exists();
     }
 
     /* * Ajax base result of patient according to id or name

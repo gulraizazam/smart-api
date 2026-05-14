@@ -52,11 +52,21 @@ class InvoiceDetailResource extends JsonResource
                 ]
                 : null,
 
+            // The print page reads `fdo_phone / ntn / stn / city.name` from
+            // this block to compose the header strip — consistent with the
+            // consultation- and treatment-invoice receipts. They're surfaced
+            // here so the SPA print route doesn't need a second fetch.
             'location' => $invoice->relationLoaded('location') && $invoice->location
                 ? [
                     'id' => (int) $invoice->location->id,
                     'name' => $invoice->location->name,
                     'address' => $invoice->location->address ?? null,
+                    'fdo_phone' => $invoice->location->fdo_phone ?? null,
+                    'ntn' => $invoice->location->ntn ?? null,
+                    'stn' => $invoice->location->stn ?? null,
+                    'city' => $invoice->location->relationLoaded('city') && $invoice->location->city
+                        ? ['id' => (int) $invoice->location->city->id, 'name' => $invoice->location->city->name]
+                        : null,
                 ]
                 : null,
 
@@ -72,6 +82,7 @@ class InvoiceDetailResource extends JsonResource
                 ? [
                     'id' => (int) $invoice->account->id,
                     'name' => $invoice->account->name ?? null,
+                    'email' => $invoice->account->email ?? null,
                 ]
                 : null,
 
