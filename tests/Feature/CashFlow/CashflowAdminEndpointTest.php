@@ -39,6 +39,10 @@ class CashflowAdminEndpointTest extends TestCase
             'cashflow_category_manage', 'cashflow_pool_manage',
             'cashflow_settings', 'cashflow_reports',
             'cashflow_reports_export',
+            // Route-level middleware (Phase 10) requires this on the
+            // category-requests group; without it the routes 302/403 before
+            // the test reaches the controller.
+            'cashflow_expense_create',
         ]);
     }
 

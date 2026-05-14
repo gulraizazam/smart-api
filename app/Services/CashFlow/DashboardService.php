@@ -15,6 +15,7 @@ use App\Models\CashFlow\Vendor;
 use App\Models\CashFlow\VendorTransaction;
 use App\Models\Order;
 use App\Models\PackageAdvances;
+use App\Models\PaymentModes;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -181,6 +182,7 @@ class DashboardService
         // Get go-live date
         $goLiveDate = app(CashflowSettingService::class)->getGoLiveDate($accountId);
         if ($goLiveDate) {
+            $cashModeIds = PaymentModes::cashIds($accountId);
             $branchPools = $pools->where('type', CashPool::TYPE_BRANCH_CASH)->where('location_id', '!=', null);
             if ($branchPools->isNotEmpty()) {
                 $locationIds = $branchPools->pluck('location_id')->toArray();
@@ -188,7 +190,7 @@ class DashboardService
                 // Cash inventory sales → add to branch pools
                 $inventoryCashSales = Order::where('account_id', $accountId)
                     ->where('order_type', 'sale')
-                    ->where('payment_mode', 1)
+                    ->whereIn('payment_mode', $cashModeIds)
                     ->whereIn('location_id', $locationIds)
                     ->where('created_at', '>=', $goLiveDate.' 00:00:00')
                     ->selectRaw('location_id, SUM(total_price) as total')
@@ -198,7 +200,7 @@ class DashboardService
                 // Cash inventory refunds → subtract from branch pools
                 $inventoryCashRefunds = Order::where('account_id', $accountId)
                     ->where('order_type', 'refund')
-                    ->where('payment_mode', 1)
+                    ->whereIn('payment_mode', $cashModeIds)
                     ->whereIn('location_id', $locationIds)
                     ->where('created_at', '>=', $goLiveDate.' 00:00:00')
                     ->selectRaw('location_id, SUM(total_price) as total')
@@ -217,13 +219,13 @@ class DashboardService
             if ($bankPools->isNotEmpty()) {
                 $nonCashSales = (float) Order::where('account_id', $accountId)
                     ->where('order_type', 'sale')
-                    ->where('payment_mode', '!=', 1)
+                    ->whereNotIn('payment_mode', $cashModeIds)
                     ->where('created_at', '>=', $goLiveDate.' 00:00:00')
                     ->sum('total_price');
 
                 $nonCashRefunds = (float) Order::where('account_id', $accountId)
                     ->where('order_type', 'refund')
-                    ->where('payment_mode', '!=', 1)
+                    ->whereNotIn('payment_mode', $cashModeIds)
                     ->where('created_at', '>=', $goLiveDate.' 00:00:00')
                     ->sum('total_price');
 

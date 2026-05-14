@@ -70,6 +70,7 @@ class CashflowPermissionsSeeder extends Seeder
                 ['name' => 'cashflow_vendor_transaction_delete', 'title' => 'Delete Vendor Purchases'],
                 ['name' => 'cashflow_vendor_deliver', 'title' => 'Mark Vendor Purchases Delivered'],
                 ['name' => 'cashflow_vendor_request', 'title' => 'Request Vendor'],
+                ['name' => 'cashflow_vendor_manage', 'title' => 'Approve/Dismiss Vendor Requests'],
 
                 // Staff Advances
                 ['name' => 'cashflow_staff_advance_view', 'title' => 'View Staff Advances'],
@@ -78,6 +79,8 @@ class CashflowPermissionsSeeder extends Seeder
                 ['name' => 'cashflow_staff_advance_void', 'title' => 'Void Staff Advances'],
                 ['name' => 'cashflow_staff_return_create', 'title' => 'Record Staff Returns'],
                 ['name' => 'cashflow_staff_return_void', 'title' => 'Void Staff Returns'],
+                ['name' => 'cashflow_staff_transfer_create', 'title' => 'Record Staff-to-Staff Handovers'],
+                ['name' => 'cashflow_staff_transfer_void', 'title' => 'Void Staff-to-Staff Handovers'],
 
                 // Admin
                 ['name' => 'cashflow_category_manage', 'title' => 'Manage Expense Categories'],

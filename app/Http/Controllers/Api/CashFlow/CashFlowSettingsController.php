@@ -123,6 +123,10 @@ class CashFlowSettingsController extends Controller
 
             return $e->render(request());
 
+        } catch (\Illuminate\Validation\ValidationException $e) {
+
+            throw $e;
+
         } catch (\Exception $e) {
 
             \Illuminate\Support\Facades\Log::error($e->getMessage(), ['file' => $e->getFile(), 'line' => $e->getLine()]);
@@ -223,6 +227,10 @@ class CashFlowSettingsController extends Controller
         } catch (CashflowException $e) {
 
             return $e->render(request());
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+
+            throw $e;
 
         } catch (\Exception $e) {
 
@@ -335,11 +343,23 @@ class CashFlowSettingsController extends Controller
 
     /**
      * Paginated audit logs for admin viewer.
+     *
+     * Gated on `cashflow_audit_view` (the canonical audit-trail slug used by
+     * the per-entity audit dialogs on Expenses / Vendors / Transfers / Staff).
+     * Previously this endpoint had no inline gate beyond the route-level
+     * `cashflow_settings`; that allowed users with settings access but no
+     * audit-view permission to read every cashflow audit row.
      */
     public function auditLogs(Request $request): JsonResponse
     {
 
         try {
+
+            if (!\Illuminate\Support\Facades\Gate::allows('cashflow_audit_view')) {
+
+                throw CashflowException::unauthorized('view audit log');
+
+            }
 
             $accountId = Auth::user()->account_id;
 
@@ -392,6 +412,10 @@ class CashFlowSettingsController extends Controller
                 ],
 
             ]);
+
+        } catch (CashflowException $e) {
+
+            return $e->render(request());
 
         } catch (\Exception $e) {
 

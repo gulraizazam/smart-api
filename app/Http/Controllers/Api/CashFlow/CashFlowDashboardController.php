@@ -8,6 +8,7 @@ use App\Exceptions\CashflowException;
 use App\Helpers\CashflowHelper;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
+use App\Models\PaymentModes;
 use App\Services\CashFlow\CashflowSettingService;
 use App\Services\CashFlow\DashboardService;
 use App\Services\CashFlow\NotificationService;
@@ -148,6 +149,10 @@ class CashFlowDashboardController extends Controller
 
             $accountId = Auth::user()->account_id;
 
+            // Cache the per-tenant cash-mode IDs once — six call sites below
+            // would otherwise re-run the SELECT for every block.
+            $cashModeIds = PaymentModes::cashIds($accountId);
+
             $userBranches = CashflowHelper::getUserBranches();
 
             if ($userBranches->isEmpty()) {
@@ -198,23 +203,50 @@ class CashFlowDashboardController extends Controller
 
             $inventoryCashSales = (float) Order::where('account_id', $accountId)
                 ->where('order_type', 'sale')
-                ->where('payment_mode', 1)
+                ->whereIn('payment_mode', $cashModeIds)
                 ->whereIn('location_id', array_keys($branchPoolMap))
                 ->where('created_at', '>=', $goLiveDate . ' 00:00:00')
                 ->sum('total_price');
 
             $inventoryCashRefunds = (float) Order::where('account_id', $accountId)
                 ->where('order_type', 'refund')
-                ->where('payment_mode', 1)
+                ->whereIn('payment_mode', $cashModeIds)
                 ->whereIn('location_id', array_keys($branchPoolMap))
                 ->where('created_at', '>=', $goLiveDate . ' 00:00:00')
                 ->sum('total_price');
 
             $currentBalance += $inventoryCashSales - $inventoryCashRefunds;
 
-            // Week range: Sunday (start) to today - for opening balance calculation
-            $sunday = \Carbon\Carbon::now()->startOfWeek(\Carbon\Carbon::SUNDAY)->toDateString();
-            $today = \Carbon\Carbon::now()->toDateString();
+            // Week range: defaults to Sunday → today, but the caller can
+            // override via `date_from` / `date_to` query params. Plan C-1
+            // shipped the date-range picker on the SPA side. Bounds are
+            // clamped to ISO-8601 date strings; anything malformed falls
+            // back to the default current-week window.
+            $defaultSunday = \Carbon\Carbon::now()->startOfWeek(\Carbon\Carbon::SUNDAY)->toDateString();
+            $defaultToday = \Carbon\Carbon::now()->toDateString();
+            $rawFrom = $request->input('date_from');
+            $rawTo = $request->input('date_to');
+            $sunday = (is_string($rawFrom) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $rawFrom))
+                ? $rawFrom
+                : $defaultSunday;
+            $today = (is_string($rawTo) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $rawTo))
+                ? $rawTo
+                : $defaultToday;
+            // Defensive: swap if caller sent date_from > date_to so SQL
+            // BETWEEN doesn't return empty silently.
+            if (strcmp($sunday, $today) > 0) {
+                [$sunday, $today] = [$today, $sunday];
+            }
+            // Clamp `date_to` to today — FDM is a historical view, future-dated
+            // requests would return empty windows and confuse the UI. The SPA
+            // picker already enforces this on `<input max>` but a direct API
+            // caller could bypass; pin it here as the authority.
+            if (strcmp($today, $defaultToday) > 0) {
+                $today = $defaultToday;
+                if (strcmp($sunday, $today) > 0) {
+                    $sunday = $today;
+                }
+            }
             $sundayStart = $sunday . ' 00:00:00';
             $nowEnd = $today . ' 23:59:59';
 
@@ -366,6 +398,10 @@ class CashFlowDashboardController extends Controller
 
                             'id' => $a->id,
 
+                            // Expose the staff user id so the SPA can deep-link
+                            // straight into that ledger pane (Staff page focus).
+                            'user_id' => (int) $a->user_id,
+
                             'date' => $a->created_at->format('Y-m-d'),
 
                             'amount' => (float) $a->amount,
@@ -380,12 +416,7 @@ class CashFlowDashboardController extends Controller
 
             }
 
-            // Get cash payment mode IDs (needed for opening balance calculation)
-            $cashModeIds = \App\Models\PaymentModes::where('active', 1)
-                ->get()
-                ->filter(fn($pm) => str_contains(strtolower($pm->name), 'cash'))
-                ->pluck('id')
-                ->toArray();
+            // $cashModeIds is already computed at the top of fdmData() — reuse.
 
             // ---- Calculate opening balance (last week's closing balance) ----
             // If we're in the first week since go-live, use the static opening balance
@@ -434,7 +465,7 @@ class CashFlowDashboardController extends Controller
                 // Add inventory cash sales
                 $inventorySales = (float) Order::where('account_id', $accountId)
                     ->where('order_type', 'sale')
-                    ->where('payment_mode', 1)
+                    ->whereIn('payment_mode', $cashModeIds)
                     ->whereIn('location_id', array_keys($branchPoolMap))
                     ->whereBetween('created_at', [$goLiveDate . ' 00:00:00', $lastSaturday])
                     ->sum('total_price');
@@ -443,7 +474,7 @@ class CashFlowDashboardController extends Controller
                 // Subtract inventory cash refunds
                 $inventoryRefunds = (float) Order::where('account_id', $accountId)
                     ->where('order_type', 'refund')
-                    ->where('payment_mode', 1)
+                    ->whereIn('payment_mode', $cashModeIds)
                     ->whereIn('location_id', array_keys($branchPoolMap))
                     ->whereBetween('created_at', [$goLiveDate . ' 00:00:00', $lastSaturday])
                     ->sum('total_price');
@@ -547,7 +578,7 @@ class CashFlowDashboardController extends Controller
             // Inventory Cash Inflows (sales minus refunds)
             $inventorySalesQuery = Order::where('account_id', $accountId)
                 ->where('order_type', 'sale')
-                ->where('payment_mode', 1)
+                ->whereIn('payment_mode', $cashModeIds)
                 ->whereIn('location_id', array_keys($branchPoolMap))
                 ->whereDate('created_at', '>=', $sunday)
                 ->whereDate('created_at', '<=', $today);
@@ -556,7 +587,7 @@ class CashFlowDashboardController extends Controller
 
             $inventoryRefundsQuery = Order::where('account_id', $accountId)
                 ->where('order_type', 'refund')
-                ->where('payment_mode', 1)
+                ->whereIn('payment_mode', $cashModeIds)
                 ->whereIn('location_id', array_keys($branchPoolMap))
                 ->whereDate('created_at', '>=', $sunday)
                 ->whereDate('created_at', '<=', $today);
@@ -644,6 +675,12 @@ class CashFlowDashboardController extends Controller
                     'pool_balance' => round($liveCashBalance, 2),
 
                     'opening_balance' => round($openingBalance, 2),
+
+                    // Plan C-4: expose the 9-component breakdown the SPA
+                    // uses to render the "How is this computed?" popover.
+                    // Stays null when we're inside the first week post
+                    // go-live (no breakdown needed; static opening only).
+                    'opening_balance_breakdown' => $debugInfo['opening_balance_calc'] ?? null,
 
                     'week_start' => $sunday,
 

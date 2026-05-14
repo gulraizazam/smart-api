@@ -86,6 +86,10 @@ class CashFlowCategoriesController extends Controller
 
             return $e->render(request());
 
+        } catch (\Illuminate\Validation\ValidationException $e) {
+
+            throw $e;
+
         } catch (\Exception $e) {
 
             \Illuminate\Support\Facades\Log::error($e->getMessage(), ['file' => $e->getFile(), 'line' => $e->getLine()]);
@@ -134,6 +138,10 @@ class CashFlowCategoriesController extends Controller
         } catch (CashflowException $e) {
 
             return $e->render(request());
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+
+            throw $e;
 
         } catch (\Exception $e) {
 
@@ -283,6 +291,10 @@ class CashFlowCategoriesController extends Controller
 
             return $e->render(request());
 
+        } catch (\Illuminate\Validation\ValidationException $e) {
+
+            throw $e;
+
         } catch (\Exception $e) {
 
             \Illuminate\Support\Facades\Log::error($e->getMessage(), ['file' => $e->getFile(), 'line' => $e->getLine()]);
@@ -319,6 +331,10 @@ class CashFlowCategoriesController extends Controller
         } catch (CashflowException $e) {
 
             return $e->render(request());
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+
+            throw $e;
 
         } catch (\Exception $e) {
 
