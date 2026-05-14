@@ -69,4 +69,90 @@ final class AppointmentCountsQuery
             'done_count' => (int) ($row->done_count ?? 0),
         ];
     }
+
+    /**
+     * Multi-type variant: counts both totals AND the qualifying-status subset
+     * for *several* appointment types in a single round-trip, grouped by
+     * `appointment_type_id`. Used by the Management Dashboard Stats card
+     * where consultations + treatments are always fetched together — halving
+     * the appointment scans per overview call.
+     *
+     * `$qualifyingByType` maps appointment_type_id => list<int statusIds>.
+     * Returned map is keyed by the same appointment_type_id; types with
+     * zero matching rows still appear (filled with zeros) so callers can
+     * `$out[$typeId]` blindly.
+     *
+     * @param  list<int>  $locationIds  (empty = no branch filter)
+     * @param  array<int, list<int>>  $qualifyingByType
+     * @return array<int, array{all_count: int, done_count: int}>
+     */
+    public static function forTypes(
+        int $accountId,
+        array $locationIds,
+        array $qualifyingByType,
+        string $startDate,
+        string $endDate,
+        ?int $doctorId = null,
+    ): array {
+        if ($qualifyingByType === []) {
+            return [];
+        }
+
+        $typeIds = array_keys($qualifyingByType);
+
+        // Build a single CASE that evaluates the per-type qualifying set.
+        // Bindings are appended in column order; we keep them strictly
+        // positional to avoid Laravel re-binding by name.
+        $bindings = [];
+        $caseParts = [];
+        foreach ($qualifyingByType as $typeId => $statusIds) {
+            if ($statusIds === []) {
+                continue;
+            }
+            $statusPlaceholders = implode(',', array_fill(0, count($statusIds), '?'));
+            $caseParts[] = "WHEN appointment_type_id = ? AND appointment_status_id IN ({$statusPlaceholders}) THEN 1";
+            $bindings[] = (int) $typeId;
+            foreach ($statusIds as $statusId) {
+                $bindings[] = (int) $statusId;
+            }
+        }
+
+        $doneExpr = $caseParts === []
+            ? '0'
+            : 'SUM(CASE '.implode(' ', $caseParts).' ELSE 0 END)';
+
+        $query = DB::table('appointments')
+            ->where('account_id', $accountId)
+            ->whereIn('appointment_type_id', $typeIds)
+            ->whereBetween('scheduled_date', [$startDate, $endDate])
+            ->whereNull('deleted_at');
+
+        if ($locationIds !== []) {
+            $query->whereIn('location_id', $locationIds);
+        }
+        if ($doctorId !== null) {
+            $query->where('doctor_id', $doctorId);
+        }
+
+        $rows = $query
+            ->selectRaw(
+                "appointment_type_id, COUNT(*) AS all_count, {$doneExpr} AS done_count",
+                $bindings,
+            )
+            ->groupBy('appointment_type_id')
+            ->get();
+
+        $out = [];
+        foreach ($typeIds as $typeId) {
+            $out[(int) $typeId] = ['all_count' => 0, 'done_count' => 0];
+        }
+        foreach ($rows as $row) {
+            $out[(int) $row->appointment_type_id] = [
+                'all_count' => (int) ($row->all_count ?? 0),
+                'done_count' => (int) ($row->done_count ?? 0),
+            ];
+        }
+
+        return $out;
+    }
 }

@@ -380,10 +380,11 @@ class CashFlowDashboardController extends Controller
 
             }
 
-            // Get cash payment mode IDs (needed for opening balance calculation)
+            // Get cash payment mode IDs (needed for opening balance calculation).
+            // Pre-filter on the DB side instead of loading every active payment
+            // mode and rejecting non-cash rows in PHP.
             $cashModeIds = \App\Models\PaymentModes::where('active', 1)
-                ->get()
-                ->filter(fn($pm) => str_contains(strtolower($pm->name), 'cash'))
+                ->whereRaw('LOWER(name) LIKE ?', ['%cash%'])
                 ->pluck('id')
                 ->toArray();
 
@@ -509,120 +510,141 @@ class CashFlowDashboardController extends Controller
             }
 
             // ---- Calculate current week card totals (all NET values) ----
+            //
+            // Each block below used to do `->sum()` and `->count()` as two
+            // separate calls — two round-trips and two full predicate scans
+            // for the same predicate. We now fetch both in one
+            // `selectRaw('SUM(...) AS total, COUNT(*) AS cnt')->first()` pass,
+            // and we switched the date predicates from `whereDate()` (which
+            // wraps the column in DATE() and disables index use) to literal
+            // datetime bounds so MySQL can use the `created_at` index.
+            $sumCount = static function ($builder, string $sumExpr): array {
+                $row = $builder
+                    ->selectRaw("COALESCE(SUM({$sumExpr}), 0) AS total, COUNT(*) AS cnt")
+                    ->first();
+
+                return [
+                    'total' => (float) ($row->total ?? 0),
+                    'count' => (int) ($row->cnt ?? 0),
+                ];
+            };
 
             // Services Cash Inflows: NET = inflows - refunds
             $servicesCashInflows = 0;
             $servicesCashInflowsCount = 0;
             if (!empty($cashModeIds)) {
-                // Inflows
-                $svcInQuery = \App\Models\PackageAdvances::where('account_id', $accountId)
-                    ->where('cash_flow', 'in')
-                    ->where('is_cancel', 0)
-                    ->whereNull('deleted_at')
-                    ->where('cash_amount', '>', 0)
-                    ->whereIn('payment_mode_id', $cashModeIds)
-                    ->whereIn('location_id', array_keys($branchPoolMap))
-                    ->whereDate('system_created_at', '>=', $sunday)
-                    ->whereDate('system_created_at', '<=', $today);
-                $svcIn = (float) $svcInQuery->sum('cash_amount');
-                $svcInCount = $svcInQuery->count();
+                $svcIn = $sumCount(
+                    \App\Models\PackageAdvances::where('account_id', $accountId)
+                        ->where('cash_flow', 'in')
+                        ->where('is_cancel', 0)
+                        ->whereNull('deleted_at')
+                        ->where('cash_amount', '>', 0)
+                        ->whereIn('payment_mode_id', $cashModeIds)
+                        ->whereIn('location_id', array_keys($branchPoolMap))
+                        ->where('system_created_at', '>=', $sundayStart)
+                        ->where('system_created_at', '<=', $nowEnd),
+                    'cash_amount',
+                );
 
-                // Refunds (outflows)
-                $svcOutQuery = \App\Models\PackageAdvances::where('account_id', $accountId)
-                    ->where('cash_flow', 'out')
-                    ->where('is_refund', 1)
-                    ->where('is_cancel', 0)
-                    ->whereNull('deleted_at')
-                    ->whereIn('payment_mode_id', $cashModeIds)
-                    ->whereIn('location_id', array_keys($branchPoolMap))
-                    ->whereDate('system_created_at', '>=', $sunday)
-                    ->whereDate('system_created_at', '<=', $today);
-                $svcOut = (float) $svcOutQuery->sum('cash_amount');
-                $svcOutCount = $svcOutQuery->count();
+                $svcOut = $sumCount(
+                    \App\Models\PackageAdvances::where('account_id', $accountId)
+                        ->where('cash_flow', 'out')
+                        ->where('is_refund', 1)
+                        ->where('is_cancel', 0)
+                        ->whereNull('deleted_at')
+                        ->whereIn('payment_mode_id', $cashModeIds)
+                        ->whereIn('location_id', array_keys($branchPoolMap))
+                        ->where('system_created_at', '>=', $sundayStart)
+                        ->where('system_created_at', '<=', $nowEnd),
+                    'cash_amount',
+                );
 
-                $servicesCashInflows = $svcIn - $svcOut;
-                $servicesCashInflowsCount = $svcInCount + $svcOutCount;
+                $servicesCashInflows = $svcIn['total'] - $svcOut['total'];
+                $servicesCashInflowsCount = $svcIn['count'] + $svcOut['count'];
             }
 
             // Inventory Cash Inflows (sales minus refunds)
-            $inventorySalesQuery = Order::where('account_id', $accountId)
-                ->where('order_type', 'sale')
-                ->where('payment_mode', 1)
-                ->whereIn('location_id', array_keys($branchPoolMap))
-                ->whereDate('created_at', '>=', $sunday)
-                ->whereDate('created_at', '<=', $today);
-            $inventorySalesAmount = (float) $inventorySalesQuery->sum('total_price');
-            $inventorySalesCount = $inventorySalesQuery->count();
-
-            $inventoryRefundsQuery = Order::where('account_id', $accountId)
-                ->where('order_type', 'refund')
-                ->where('payment_mode', 1)
-                ->whereIn('location_id', array_keys($branchPoolMap))
-                ->whereDate('created_at', '>=', $sunday)
-                ->whereDate('created_at', '<=', $today);
-            $inventoryRefundsAmount = (float) $inventoryRefundsQuery->sum('total_price');
-            $inventoryRefundsCount = $inventoryRefundsQuery->count();
-
+            $invSales = $sumCount(
+                Order::where('account_id', $accountId)
+                    ->where('order_type', 'sale')
+                    ->where('payment_mode', 1)
+                    ->whereIn('location_id', array_keys($branchPoolMap))
+                    ->where('created_at', '>=', $sundayStart)
+                    ->where('created_at', '<=', $nowEnd),
+                'total_price',
+            );
+            $invRefunds = $sumCount(
+                Order::where('account_id', $accountId)
+                    ->where('order_type', 'refund')
+                    ->where('payment_mode', 1)
+                    ->whereIn('location_id', array_keys($branchPoolMap))
+                    ->where('created_at', '>=', $sundayStart)
+                    ->where('created_at', '<=', $nowEnd),
+                'total_price',
+            );
+            $inventorySalesAmount = $invSales['total'];
+            $inventoryRefundsAmount = $invRefunds['total'];
             $inventoryCashInflows = $inventorySalesAmount - $inventoryRefundsAmount;
-            $inventoryCashInflowsCount = $inventorySalesCount + $inventoryRefundsCount;
+            $inventoryCashInflowsCount = $invSales['count'] + $invRefunds['count'];
 
             // Expenses Total (current week)
             $weekExpensesTotal = 0;
             $weekExpensesCount = 0;
             if (!empty($poolIds)) {
-                $weekExpensesQuery = \App\Models\CashFlow\Expense::forAccount($accountId)
-                    ->whereNull('voided_at')
-                    ->where('status', '!=', 'rejected')
-                    ->whereIn('paid_from_pool_id', $poolIds)
-                    ->whereBetween('expense_date', [$sunday, $today]);
-                $weekExpensesTotal = (float) $weekExpensesQuery->sum('amount');
-                $weekExpensesCount = $weekExpensesQuery->count();
+                $exp = $sumCount(
+                    \App\Models\CashFlow\Expense::forAccount($accountId)
+                        ->whereNull('voided_at')
+                        ->where('status', '!=', 'rejected')
+                        ->whereIn('paid_from_pool_id', $poolIds)
+                        ->whereBetween('expense_date', [$sunday, $today]),
+                    'amount',
+                );
+                $weekExpensesTotal = $exp['total'];
+                $weekExpensesCount = $exp['count'];
             }
 
             // Cash Transfers Total: NET = out - in (current week)
             $weekTransfersTotal = 0;
             $weekTransfersCount = 0;
             if (!empty($poolIds)) {
-                // Transfers OUT of branch pools
-                $trfOutQuery = \App\Models\CashFlow\CashTransfer::forAccount($accountId)
-                    ->whereNull('voided_at')
-                    ->whereIn('from_pool_id', $poolIds)
-                    ->whereBetween('transfer_date', [$sunday, $today]);
-                $trfOut = (float) $trfOutQuery->sum('amount');
-                $trfOutCount = $trfOutQuery->count();
-
-                // Transfers IN to branch pools
-                $trfInQuery = \App\Models\CashFlow\CashTransfer::forAccount($accountId)
-                    ->whereNull('voided_at')
-                    ->whereIn('to_pool_id', $poolIds)
-                    ->whereBetween('transfer_date', [$sunday, $today]);
-                $trfIn = (float) $trfInQuery->sum('amount');
-                $trfInCount = $trfInQuery->count();
-
-                $weekTransfersTotal = $trfOut - $trfIn;
-                $weekTransfersCount = $trfOutCount + $trfInCount;
+                $trfOut = $sumCount(
+                    \App\Models\CashFlow\CashTransfer::forAccount($accountId)
+                        ->whereNull('voided_at')
+                        ->whereIn('from_pool_id', $poolIds)
+                        ->whereBetween('transfer_date', [$sunday, $today]),
+                    'amount',
+                );
+                $trfIn = $sumCount(
+                    \App\Models\CashFlow\CashTransfer::forAccount($accountId)
+                        ->whereNull('voided_at')
+                        ->whereIn('to_pool_id', $poolIds)
+                        ->whereBetween('transfer_date', [$sunday, $today]),
+                    'amount',
+                );
+                $weekTransfersTotal = $trfOut['total'] - $trfIn['total'];
+                $weekTransfersCount = $trfOut['count'] + $trfIn['count'];
             }
 
             // Staff Advances Total: NET = advances - returns (current week)
             $weekAdvancesTotal = 0;
             $weekAdvancesCount = 0;
             if (!empty($poolIds)) {
-                $advQuery = \App\Models\CashFlow\StaffAdvance::forAccount($accountId)
-                    ->whereNull('voided_at')
-                    ->whereIn('pool_id', $poolIds)
-                    ->whereBetween('created_at', [$sundayStart, $nowEnd]);
-                $advOut = (float) $advQuery->sum('amount');
-                $advOutCount = $advQuery->count();
-
-                $retQuery = \App\Models\CashFlow\StaffReturn::forAccount($accountId)
-                    ->whereNull('voided_at')
-                    ->whereIn('pool_id', $poolIds)
-                    ->whereBetween('created_at', [$sundayStart, $nowEnd]);
-                $retIn = (float) $retQuery->sum('amount');
-                $retInCount = $retQuery->count();
-
-                $weekAdvancesTotal = $advOut - $retIn;
-                $weekAdvancesCount = $advOutCount + $retInCount;
+                $adv = $sumCount(
+                    \App\Models\CashFlow\StaffAdvance::forAccount($accountId)
+                        ->whereNull('voided_at')
+                        ->whereIn('pool_id', $poolIds)
+                        ->whereBetween('created_at', [$sundayStart, $nowEnd]),
+                    'amount',
+                );
+                $ret = $sumCount(
+                    \App\Models\CashFlow\StaffReturn::forAccount($accountId)
+                        ->whereNull('voided_at')
+                        ->whereIn('pool_id', $poolIds)
+                        ->whereBetween('created_at', [$sundayStart, $nowEnd]),
+                    'amount',
+                );
+                $weekAdvancesTotal = $adv['total'] - $ret['total'];
+                $weekAdvancesCount = $adv['count'] + $ret['count'];
             }
 
             // ---- Live Cash Balance = Opening + Services + Inventory - Expenses - Transfers - Advances ----

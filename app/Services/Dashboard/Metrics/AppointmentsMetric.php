@@ -91,18 +91,27 @@ final class AppointmentsMetric implements Metric
             ];
         }
 
-        $consultCounts = $this->appointmentCounts(
-            $scope,
-            $range,
-            AppointmentType::Consultancy->value,
-            DoctorDashboardHelper::getConsultationStatusIds(),
+        // One round-trip for both consult + treatment counts. The Stats
+        // card always shows both, so splitting them into separate queries
+        // (as before) was pure overhead on the dashboard's slowest path.
+        $consultTypeId = AppointmentType::Consultancy->value;
+        $treatmentTypeId = 2;
+        $counts = AppointmentCountsQuery::forTypes(
+            accountId: $scope->accountId,
+            locationIds: $this->locationIdsForScope($scope),
+            qualifyingByType: [
+                $consultTypeId => DoctorDashboardHelper::getConsultationStatusIds(),
+                $treatmentTypeId => DoctorDashboardHelper::getTreatmentStatusIds(),
+            ],
+            startDate: $range->startString(),
+            endDate: $range->endString(),
+            doctorId: ($scope->isResourceScoped() && $scope->resourceType === ResourceType::Doctor)
+                ? $scope->resourceId
+                : null,
         );
-        $treatCounts = $this->appointmentCounts(
-            $scope,
-            $range,
-            2,
-            DoctorDashboardHelper::getTreatmentStatusIds(),
-        );
+
+        $consultCounts = $counts[$consultTypeId];
+        $treatCounts = $counts[$treatmentTypeId];
 
         return [
             'consultations' => [
