@@ -17,12 +17,17 @@ use Tests\Concerns\UsesFinancialFixtures;
 use Tests\TestCase;
 
 /**
- * Exercises ExpenseService::create / approve / reject / void end-to-end.
+ * Exercises ExpenseService::create / void end-to-end.
  *
  * Reaches the service through the container (not HTTP) so the test does not
  * couple to the controller wiring or the form-request shape — that lets the
  * suite stay green when controllers are refactored, while still pinning the
  * pool-balance, audit-log, and state-transition contracts.
+ *
+ * The approve / reject / resubmit flows were removed in the Option-A
+ * migration (2026-05-13): every payment posts as Approved by default and
+ * review happens via flags, so no separate transition is needed. The
+ * tests that exercised those methods were retired alongside the methods.
  */
 class ExpenseLifecycleTest extends TestCase
 {
@@ -62,61 +67,6 @@ class ExpenseLifecycleTest extends TestCase
             CashflowAuditLog::ENTITY_EXPENSE,
             $expense->id,
             CashflowAuditLog::ACTION_CREATED,
-        );
-    }
-
-    public function test_approve_only_works_on_pending_and_records_verifier(): void
-    {
-        $pool = CashPool::factory()->withOpeningBalance(50000)->create();
-        $expense = Expense::factory()->create([
-            'paid_from_pool_id' => $pool->id,
-            'amount' => 9000, // assumed above auto-approve threshold
-            'status' => ExpenseStatus::Pending,
-            'attachment_url' => 'attachments/receipt.pdf',
-        ]);
-
-        $approved = $this->service->approve($expense->id, accountId: 1);
-
-        $this->assertSame(ExpenseStatus::Approved, $approved->status);
-        $this->assertSame(auth()->id(), $approved->verified_by);
-        $this->assertCashflowAuditLogged(
-            CashflowAuditLog::ENTITY_EXPENSE,
-            $expense->id,
-            CashflowAuditLog::ACTION_APPROVED,
-        );
-    }
-
-    public function test_approval_without_attachment_is_blocked(): void
-    {
-        $pool = CashPool::factory()->withOpeningBalance(50000)->create();
-        $expense = Expense::factory()->create([
-            'paid_from_pool_id' => $pool->id,
-            'amount' => 9000,
-            'status' => ExpenseStatus::Pending,
-            'attachment_url' => null,
-        ]);
-
-        $this->expectExceptionMessage('attachment must be present');
-        $this->service->approve($expense->id, accountId: 1);
-    }
-
-    public function test_reject_credits_pool_back_and_logs_reason(): void
-    {
-        $pool = CashPool::factory()->withOpeningBalance(20000)->create();
-        $expense = Expense::factory()->create([
-            'paid_from_pool_id' => $pool->id,
-            'amount' => 5000,
-            'status' => ExpenseStatus::Pending,
-        ]);
-        $this->assertSame(15000.00, (float) $pool->fresh()->cached_balance);
-
-        $this->service->reject($expense->id, 'Missing receipt', accountId: 1);
-
-        $this->assertSame(20000.00, (float) $pool->fresh()->cached_balance);
-        $this->assertCashflowAuditLogged(
-            CashflowAuditLog::ENTITY_EXPENSE,
-            $expense->id,
-            CashflowAuditLog::ACTION_REJECTED,
         );
     }
 

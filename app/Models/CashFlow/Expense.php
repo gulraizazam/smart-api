@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;use Illuminate\Database\Eloquent\Relations\HasOne;
 
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Expense extends Model
 {
@@ -130,6 +131,17 @@ class Expense extends Model
     public function vendorTransaction(): HasOne
     {
         return $this->hasOne(VendorTransaction::class, 'expense_id');
+    }
+
+    /**
+     * Uploaded receipt/invoice files for this payment. Legacy rows that
+     * carry an `attachment_url` Google Drive link have ZERO attachments
+     * here — the SPA renders the URL as a fallback when this collection
+     * is empty.
+     */
+    public function attachments(): HasMany
+    {
+        return $this->hasMany(ExpenseAttachment::class);
     }
 
     /**

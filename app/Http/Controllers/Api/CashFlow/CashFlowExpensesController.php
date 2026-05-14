@@ -194,107 +194,43 @@ class CashFlowExpensesController extends Controller
 
     }
 
-    /**
-     * Approve an expense.
-     */
-    public function expensesApprove(int $id): JsonResponse
-    {
-
-        try {
-
-            if (!Gate::allows('cashflow_expense_approve')) {
-
-                throw CashflowException::unauthorized('approve expenses');
-
-            }
-
-
-
-            $accountId = Auth::user()->account_id;
-
-            $expense = $this->expenseService->approve($id, $accountId);
-
-
-
-            return response()->json(['success' => true, 'data' => $expense, 'message' => 'Expense approved.']);
-
-        } catch (CashflowException $e) {
-
-            return $e->render(request());
-
-        } catch (\Exception $e) {
-
-            \Illuminate\Support\Facades\Log::error($e->getMessage(), ['file' => $e->getFile(), 'line' => $e->getLine()]);
-            return response()->json(['success' => false, 'message' => 'An error occurred. Please try again.'], 500);
-
-        }
-
-    }
-
-    /**
-     * Reject an expense.
-     */
+    // expensesApprove / expensesResubmit stayed retired 2026-05-13
+    // (Option A — every payment posts as Approved by default).
+    //
+    // `expensesReject` came back 2026-05-14 as the "return to accountant
+    // for revisions" workflow: admin rejects with a reason, the row's
+    // creator gains edit rights even without the global edit slug, and
+    // a successful save auto-re-approves. See ExpenseService::reject.
     public function expensesReject(RejectExpenseRequest $request, int $id): JsonResponse
     {
-
+        $user = Auth::user();
+        $accountId = (int) $user->account_id;
         try {
-
-            $accountId = Auth::user()->account_id;
-
-            $expense = $this->expenseService->reject($id, $request->input('rejection_reason'), $accountId);
-
-
-
-            return response()->json(['success' => true, 'data' => $expense, 'message' => 'Expense rejected.']);
-
+            $expense = $this->expenseService->reject(
+                $id,
+                $request->validated()['rejection_reason'],
+                $accountId,
+            );
+            return response()->json([
+                'success' => true,
+                'data' => $expense,
+                'message' => 'Payment rejected — returned to the creator for revision.',
+            ]);
         } catch (CashflowException $e) {
-
-            return $e->render(request());
-
-        } catch (\Exception $e) {
-
-            \Illuminate\Support\Facades\Log::error($e->getMessage(), ['file' => $e->getFile(), 'line' => $e->getLine()]);
-            return response()->json(['success' => false, 'message' => 'An error occurred. Please try again.'], 500);
-
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 422);
+        } catch (\Throwable $e) {
+            \Log::error('cashflow.expense.reject_failed', [
+                'expense_id' => $id,
+                'error' => $e->getMessage(),
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'An error occurred. Please try again.',
+            ], 500);
         }
-
-    }
-
-    /**
-     * Resubmit a rejected expense.
-     */
-    public function expensesResubmit(Request $request, int $id): JsonResponse
-    {
-
-        try {
-
-            if (!Gate::allows('cashflow_expense_resubmit')) {
-
-                throw CashflowException::unauthorized('resubmit expenses');
-
-            }
-
-
-
-            $accountId = Auth::user()->account_id;
-
-            $expense = $this->expenseService->resubmit($id, $request->all(), $accountId);
-
-
-
-            return response()->json(['success' => true, 'data' => $expense, 'message' => 'Expense resubmitted for approval.']);
-
-        } catch (CashflowException $e) {
-
-            return $e->render(request());
-
-        } catch (\Exception $e) {
-
-            \Illuminate\Support\Facades\Log::error($e->getMessage(), ['file' => $e->getFile(), 'line' => $e->getLine()]);
-            return response()->json(['success' => false, 'message' => 'An error occurred. Please try again.'], 500);
-
-        }
-
     }
 
     /**
@@ -346,17 +282,29 @@ class CashFlowExpensesController extends Controller
 
             $expense = Expense::forAccount($accountId)->findOrFail($id);
 
+            // Snapshot the flag state BEFORE clearing so the audit trail
+            // preserves *what* the row was flagged for. Without this the
+            // reason is lost the moment the admin clicks Unflag, and
+            // months later there's no record of why the row drew
+            // attention in the first place.
+            $previousFlagReason = $expense->flag_reason;
+            $oldValues = [
+                'is_flagged' => (bool) $expense->is_flagged,
+                'flag_reason' => $previousFlagReason,
+            ];
+
             $expense->update(['is_flagged' => false, 'flag_reason' => null]);
 
-
-
+            // Use the original flag reason as the audit-log message — that
+            // way the timeline entry reads with substance ("Reused receipt")
+            // instead of a boilerplate "Expense unflagged by admin" line.
             $this->auditService->log(
                 CashflowAuditLog::ACTION_UNFLAGGED,
                 CashflowAuditLog::ENTITY_EXPENSE,
                 $expense->id,
-                ['is_flagged' => true],
-                ['is_flagged' => false],
-                'Expense unflagged by admin'
+                $oldValues,
+                ['is_flagged' => false, 'flag_reason' => null],
+                $previousFlagReason ?: 'Unflagged'
             );
 
 
@@ -496,6 +444,12 @@ class CashFlowExpensesController extends Controller
 
             }
 
+            if ($request->filled('pool_id')) {
+
+                $query->where('paid_from_pool_id', $request->input('pool_id'));
+
+            }
+
             if ($request->filled('category_id')) {
 
                 $query->where('category_id', $request->input('category_id'));
@@ -517,6 +471,10 @@ class CashFlowExpensesController extends Controller
                     $q->where('description', 'like', "%{$search}%")
 
                         ->orWhere('reference_no', 'like', "%{$search}%")
+
+                        ->orWhere('notes', 'like', "%{$search}%")
+
+                        ->orWhere('amount', 'like', "%{$search}%")
 
                         ->orWhereHas('vendor', fn($vq) => $vq->where('name', 'like', "%{$search}%"));
 
@@ -550,7 +508,7 @@ class CashFlowExpensesController extends Controller
 
                         $exp->expense_date ? $exp->expense_date->format('d/m/Y') : '',
 
-                        number_format($exp->amount, 0),
+                        number_format((float) $exp->amount, 0),
 
                         $exp->category?->name ?? '',
 
@@ -562,7 +520,7 @@ class CashFlowExpensesController extends Controller
 
                         $exp->description,
 
-                        $exp->voided_at ? 'Voided' : $exp->status,
+                        $exp->voided_at ? 'Voided' : $exp->status->value,
 
                         $exp->is_flagged ? $exp->flag_reason : '',
 
