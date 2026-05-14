@@ -20,6 +20,10 @@ class StoreVendorPurchaseRequest extends FormRequest
     public function rules(): array
     {
         $isDelivered = $this->input('status', 'delivered') === 'delivered';
+        // Edit mode is signalled by the `txId` route param. On edit the user
+        // must supply an `edit_reason` so the audit log captures why the row
+        // changed (mirroring the contract on Expenses + Transfers edits).
+        $isEdit = (bool) $this->route('txId');
 
         return [
             'amount'           => 'required|numeric|min:1|max:99999999|integer',
@@ -30,6 +34,7 @@ class StoreVendorPurchaseRequest extends FormRequest
             'for_branch_id'    => 'nullable',
             'is_for_general'   => 'nullable|boolean',
             'status'           => 'required|in:ordered,delivered',
+            'edit_reason'      => $isEdit ? 'required|string|min:5|max:500' : 'nullable|string|max:500',
         ];
     }
 

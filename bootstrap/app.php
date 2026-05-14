@@ -37,11 +37,17 @@ return Application::configure(basePath: dirname(__DIR__))
             Request::HEADER_X_FORWARDED_AWS_ELB
         );
 
-        // Preserve password fields from trimming
+        // Preserve password fields from trimming. `search` is also exempt:
+        // the cash-flow Payments list uses a trailing space as the user's
+        // "I'm done with this token" signal to switch from substring to
+        // word-boundary search (e.g. "pens " excludes "Dispenser"). If
+        // TrimStrings ran first, the SPA's signal would be erased before
+        // ExpenseService ever saw it.
         $middleware->trimStrings(except: [
             'current_password',
             'password',
             'password_confirmation',
+            'search',
         ]);
 
         // Custom CSRF: skips verification for requests with Authorization header
