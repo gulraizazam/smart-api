@@ -9,6 +9,7 @@ use App\Models\CashFlow\CashflowAuditLog;
 use App\Models\CashFlow\Expense;
 use App\Models\CashFlow\StaffAdvance;
 use App\Models\CashFlow\StaffReturn;
+use App\Models\CashFlow\StaffTransfer;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -23,25 +24,44 @@ class StaffAdvanceService
 
     /**
      * Get staff advance summary (grouped by staff member).
+     *
+     * `$dateFrom` / `$dateTo` are optional ISO `YYYY-MM-DD` strings. When
+     * supplied, advances + returns are filtered by `created_at` and expenses
+     * by `expense_date` — the staff list pane shows only activity inside the
+     * chosen window. Outstanding still totals across all history because the
+     * "what does this staff member still owe" question is range-independent.
      */
-    public function getStaffSummary(int $accountId): \Illuminate\Support\Collection
-    {
-        $advances = StaffAdvance::forAccount($accountId)
+    public function getStaffSummary(
+        int $accountId,
+        ?string $dateFrom = null,
+        ?string $dateTo = null,
+    ): \Illuminate\Support\Collection {
+        $advancesQ = StaffAdvance::forAccount($accountId)->whereNull('voided_at');
+        $returnsQ = StaffReturn::forAccount($accountId)->whereNull('voided_at');
+        $expensesQ = Expense::forAccount($accountId)
             ->whereNull('voided_at')
+            ->where('status', '!=', 'rejected')
+            ->whereNotNull('staff_id');
+
+        if ($dateFrom && $dateTo) {
+            $start = $dateFrom . ' 00:00:00';
+            $end = $dateTo . ' 23:59:59';
+            $advancesQ->whereBetween('created_at', [$start, $end]);
+            $returnsQ->whereBetween('created_at', [$start, $end]);
+            $expensesQ->whereBetween('expense_date', [$dateFrom, $dateTo]);
+        }
+
+        $advances = $advancesQ
             ->select('user_id', DB::raw('SUM(amount) as total_advances'))
             ->groupBy('user_id')
             ->pluck('total_advances', 'user_id');
 
-        $returns = StaffReturn::forAccount($accountId)
-            ->whereNull('voided_at')
+        $returns = $returnsQ
             ->select('user_id', DB::raw('SUM(amount) as total_returns'))
             ->groupBy('user_id')
             ->pluck('total_returns', 'user_id');
 
-        $expenses = Expense::forAccount($accountId)
-            ->whereNull('voided_at')
-            ->where('status', '!=', 'rejected')
-            ->whereNotNull('staff_id')
+        $expenses = $expensesQ
             ->select('staff_id', DB::raw('SUM(amount) as total_expenses'))
             ->groupBy('staff_id')
             ->pluck('total_expenses', 'staff_id');
@@ -68,44 +88,92 @@ class StaffAdvanceService
 
     /**
      * Get advances and returns for a specific staff member.
+     *
+     * Optional date range filters all lists by their respective date
+     * columns (`created_at` for advances/returns/transfers, `expense_date`
+     * for expenses). KPIs are computed over the filtered set, so outstanding
+     * here is window-scoped — useful when reconciling a specific period.
+     *
+     * Phase B adds `transfers_in` (handovers RECEIVED by this user) and
+     * `transfers_out` (handovers GIVEN by this user). Outstanding now also
+     * factors them in so the number matches what's visible in the lists.
      */
-    public function getStaffLedger(int $userId, int $accountId): array
-    {
-        $advances = StaffAdvance::forAccount($accountId)
+    public function getStaffLedger(
+        int $userId,
+        int $accountId,
+        ?string $dateFrom = null,
+        ?string $dateTo = null,
+    ): array {
+        $advancesQ = StaffAdvance::forAccount($accountId)
             ->forStaff($userId)
             ->with(['pool:id,name', 'creator:id,name'])
-            ->orderBy('created_at', 'desc')
-            ->get();
+            ->orderBy('created_at', 'desc');
 
-        $returns = StaffReturn::forAccount($accountId)
+        $returnsQ = StaffReturn::forAccount($accountId)
             ->forStaff($userId)
             ->with(['pool:id,name', 'creator:id,name'])
-            ->orderBy('created_at', 'desc')
-            ->get();
+            ->orderBy('created_at', 'desc');
 
-        $expenses = Expense::forAccount($accountId)
+        $expensesQ = Expense::forAccount($accountId)
             ->where('staff_id', $userId)
             ->whereNull('voided_at')
             ->where('status', '!=', 'rejected')
             ->with(['category:id,name', 'creator:id,name'])
-            ->orderBy('expense_date', 'desc')
-            ->get();
+            ->orderBy('expense_date', 'desc');
+
+        $transfersInQ = StaffTransfer::forAccount($accountId)
+            ->where('to_user_id', $userId)
+            ->whereNull('voided_at')
+            ->with(['fromUser:id,name', 'creator:id,name'])
+            ->orderBy('created_at', 'desc');
+
+        $transfersOutQ = StaffTransfer::forAccount($accountId)
+            ->where('from_user_id', $userId)
+            ->whereNull('voided_at')
+            ->with(['toUser:id,name', 'creator:id,name'])
+            ->orderBy('created_at', 'desc');
+
+        if ($dateFrom && $dateTo) {
+            $start = $dateFrom . ' 00:00:00';
+            $end = $dateTo . ' 23:59:59';
+            $advancesQ->whereBetween('created_at', [$start, $end]);
+            $returnsQ->whereBetween('created_at', [$start, $end]);
+            $expensesQ->whereBetween('expense_date', [$dateFrom, $dateTo]);
+            $transfersInQ->whereBetween('created_at', [$start, $end]);
+            $transfersOutQ->whereBetween('created_at', [$start, $end]);
+        }
+
+        $advances = $advancesQ->get();
+        $returns = $returnsQ->get();
+        $expenses = $expensesQ->get();
+        $transfersIn = $transfersInQ->get();
+        $transfersOut = $transfersOutQ->get();
 
         $user = User::find($userId, ['id', 'name', 'is_advance_eligible']);
 
         $totalAdvances = $advances->sum('amount');
         $totalReturns = $returns->sum('amount');
         $totalExpenses = $expenses->sum('amount');
+        $totalTransfersIn = $transfersIn->sum('amount');
+        $totalTransfersOut = $transfersOut->sum('amount');
 
         return [
             'user' => $user,
             'advances' => $advances,
             'returns' => $returns,
             'expenses' => $expenses,
+            'transfers_in' => $transfersIn,
+            'transfers_out' => $transfersOut,
             'total_advances' => (float) $totalAdvances,
             'total_returns' => (float) $totalReturns,
             'total_expenses' => (float) $totalExpenses,
-            'outstanding' => (float) $totalAdvances - (float) $totalReturns - (float) $totalExpenses,
+            'total_transfers_in' => (float) $totalTransfersIn,
+            'total_transfers_out' => (float) $totalTransfersOut,
+            'outstanding' => (float) $totalAdvances
+                - (float) $totalReturns
+                - (float) $totalExpenses
+                - (float) $totalTransfersOut
+                + (float) $totalTransfersIn,
         ];
     }
 
@@ -118,6 +186,17 @@ class StaffAdvanceService
 
         if (!$user->is_advance_eligible) {
             throw new CashflowException('This staff member is not eligible for cash advances.');
+        }
+
+        // Period-lock guard — advances inherit today's date implicitly (no
+        // advance_date column on the model). Refuse to write into a closed
+        // current month so locking the month-end actually freezes new advances.
+        $today = now()->toDateString();
+        if (CashflowHelper::isDateInLockedPeriod($today, $accountId)) {
+            throw CashflowException::periodLocked(
+                (int) now()->month,
+                (int) now()->year,
+            );
         }
 
         // Check cumulative threshold
@@ -173,6 +252,15 @@ class StaffAdvanceService
             );
         }
 
+        // Period-lock guard — returns are dated today (no explicit date column).
+        $today = now()->toDateString();
+        if (CashflowHelper::isDateInLockedPeriod($today, $accountId)) {
+            throw CashflowException::periodLocked(
+                (int) now()->month,
+                (int) now()->year,
+            );
+        }
+
         // Observer handles pool balance increment
         $return = StaffReturn::create([
             'account_id' => $accountId,
@@ -203,6 +291,16 @@ class StaffAdvanceService
 
         if ($advance->isVoided()) {
             throw new CashflowException('This advance is already voided.');
+        }
+
+        // Period-lock guard — voiding rewinds the pool deduction, which
+        // counts as a write against the advance's original month.
+        $createdAt = $advance->created_at->format('Y-m-d');
+        if (CashflowHelper::isDateInLockedPeriod($createdAt, $accountId)) {
+            throw CashflowException::periodLocked(
+                (int) $advance->created_at->month,
+                (int) $advance->created_at->year,
+            );
         }
 
         return DB::transaction(function () use ($advance, $reason) {
@@ -241,6 +339,16 @@ class StaffAdvanceService
 
         if ($advance->isVoided()) {
             throw new CashflowException('Cannot edit a voided advance.');
+        }
+
+        // Period-lock guard — editing reshapes the pool deduction booked
+        // against the advance's creation date. If that month is closed, block.
+        $createdAt = $advance->created_at->format('Y-m-d');
+        if (CashflowHelper::isDateInLockedPeriod($createdAt, $accountId)) {
+            throw CashflowException::periodLocked(
+                (int) $advance->created_at->month,
+                (int) $advance->created_at->year,
+            );
         }
 
         return DB::transaction(function () use ($advance, $data) {
@@ -289,6 +397,16 @@ class StaffAdvanceService
             throw new CashflowException('This return is already voided.');
         }
 
+        // Period-lock guard — voiding reverses the pool credit that was booked
+        // against the return's creation date. If the month is closed, block.
+        $createdAt = $return->created_at->format('Y-m-d');
+        if (CashflowHelper::isDateInLockedPeriod($createdAt, $accountId)) {
+            throw CashflowException::periodLocked(
+                (int) $return->created_at->month,
+                (int) $return->created_at->year,
+            );
+        }
+
         return DB::transaction(function () use ($return, $reason) {
             // Reverse: debit pool (return had credited pool)
             DB::table('cash_pools')
@@ -318,6 +436,10 @@ class StaffAdvanceService
 
     /**
      * Get outstanding advance balance for a staff member.
+     *
+     * Formula (Phase B): advances - returns - expenses - transfers_out + transfers_in.
+     * Peer handovers (`staff_transfers`) shift outstanding between users
+     * atomically — the source loses the amount, the destination gains it.
      */
     public function getOutstanding(int $userId, int $accountId): float
     {
@@ -330,7 +452,20 @@ class StaffAdvanceService
             ->where('status', '!=', 'rejected')
             ->sum('amount');
 
-        return (float) $advances - (float) $expenses - (float) $returns;
+        $transfersOut = StaffTransfer::forAccount($accountId)
+            ->where('from_user_id', $userId)
+            ->whereNull('voided_at')
+            ->sum('amount');
+        $transfersIn = StaffTransfer::forAccount($accountId)
+            ->where('to_user_id', $userId)
+            ->whereNull('voided_at')
+            ->sum('amount');
+
+        return (float) $advances
+            - (float) $expenses
+            - (float) $returns
+            - (float) $transfersOut
+            + (float) $transfersIn;
     }
 
     /**
@@ -382,11 +517,31 @@ class StaffAdvanceService
             ->pluck('total', 'staff_id')
             ->toArray();
 
+        // Phase B: factor peer handovers into the cumulative balance.
+        // Two more GROUP BY queries — still O(1) in user count.
+        $transfersOut = StaffTransfer::forAccount($accountId)
+            ->whereIn('from_user_id', $userIds)
+            ->whereNull('voided_at')
+            ->select('from_user_id', DB::raw('SUM(amount) as total'))
+            ->groupBy('from_user_id')
+            ->pluck('total', 'from_user_id')
+            ->toArray();
+
+        $transfersIn = StaffTransfer::forAccount($accountId)
+            ->whereIn('to_user_id', $userIds)
+            ->whereNull('voided_at')
+            ->select('to_user_id', DB::raw('SUM(amount) as total'))
+            ->groupBy('to_user_id')
+            ->pluck('total', 'to_user_id')
+            ->toArray();
+
         $balances = [];
         foreach ($userIds as $userId) {
             $balances[$userId] = (float) ($advances[$userId] ?? 0)
                 - (float) ($returns[$userId] ?? 0)
-                - (float) ($expenses[$userId] ?? 0);
+                - (float) ($expenses[$userId] ?? 0)
+                - (float) ($transfersOut[$userId] ?? 0)
+                + (float) ($transfersIn[$userId] ?? 0);
         }
         return $balances;
     }

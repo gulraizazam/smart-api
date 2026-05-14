@@ -30,6 +30,7 @@ class CashflowTransferEndpointTest extends TestCase
         $this->seedFinancialFixtures();
         $this->actingAsAdmin();
         $this->grantPermissions([
+            'cashflow_transfer_view',
             'cashflow_transfer_create', 'cashflow_transfer_void',
             'cashflow_transfer_edit', 'cashflow_audit_view',
         ]);
@@ -118,5 +119,77 @@ class CashflowTransferEndpointTest extends TestCase
         auth()->logout();
         $response = $this->getJson('/api/cashflow/transfers/data');
         $this->assertContains($response->status(), [401, 302, 403]);
+    }
+
+    /**
+     * Phase-4 fix: backend description max widened from 50 → 100 chars to match
+     * the SPA Zod schema, so transfers no longer 422 on borderline descriptions.
+     * Pins the new ceiling on BOTH create and edit validators.
+     */
+    public function test_transfer_store_accepts_100_char_description(): void
+    {
+        $response = $this->postJson('/api/cashflow/transfers/store', [
+            'transfer_date' => now()->format('Y-m-d'),
+            'amount' => 500,
+            'from_pool_id' => 1,
+            'to_pool_id' => 2,
+            'method' => 'physical_cash',
+            'attachment_url' => 'https://drive.google.com/file/d/abc/view',
+            'description' => str_repeat('a', 100),
+        ]);
+        // Hits validator → can be 200/201/500/422. The point is: NOT 422 on description.
+        if ($response->status() === 422) {
+            $this->assertArrayNotHasKey('description', $response->json('errors') ?? []);
+        } else {
+            $this->assertNotSame(422, $response->status());
+        }
+    }
+
+    public function test_transfer_store_rejects_101_char_description(): void
+    {
+        $response = $this->postJson('/api/cashflow/transfers/store', [
+            'transfer_date' => now()->format('Y-m-d'),
+            'amount' => 500,
+            'from_pool_id' => 1,
+            'to_pool_id' => 2,
+            'method' => 'physical_cash',
+            'attachment_url' => 'https://drive.google.com/file/d/abc/view',
+            'description' => str_repeat('a', 101),
+        ]);
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors(['description']);
+    }
+
+    public function test_transfer_edit_accepts_100_char_description(): void
+    {
+        $response = $this->postJson('/api/cashflow/transfers/999999/edit', [
+            'amount' => 1000,
+            'from_pool_id' => 1,
+            'to_pool_id' => 2,
+            'method' => 'bank_deposit',
+            'attachment_url' => 'https://drive.google.com/file/d/abc/view',
+            'description' => str_repeat('b', 100),
+            'edit_reason' => 'Lengthening the description',
+        ]);
+        if ($response->status() === 422) {
+            $this->assertArrayNotHasKey('description', $response->json('errors') ?? []);
+        } else {
+            $this->assertNotSame(422, $response->status());
+        }
+    }
+
+    public function test_transfer_edit_rejects_101_char_description(): void
+    {
+        $response = $this->postJson('/api/cashflow/transfers/999999/edit', [
+            'amount' => 1000,
+            'from_pool_id' => 1,
+            'to_pool_id' => 2,
+            'method' => 'bank_deposit',
+            'attachment_url' => 'https://drive.google.com/file/d/abc/view',
+            'description' => str_repeat('b', 101),
+            'edit_reason' => 'Trying to overflow',
+        ]);
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors(['description']);
     }
 }

@@ -26,7 +26,9 @@ class StoreStaffReturnRequest extends FormRequest
         return [
             'user_id' => 'required|integer|exists:users,id',
             'pool_id' => 'required|integer|exists:cash_pools,id',
-            'amount' => 'required|numeric|min:0.01|max:99999999.99',
+            // Whole numbers only — mirrors advances (StoreStaffAdvanceRequest).
+            // Cash returns are physical handovers and never include paisa.
+            'amount' => 'required|integer|min:1|max:99999999',
             'description' => 'nullable|string|max:500',
         ];
     }

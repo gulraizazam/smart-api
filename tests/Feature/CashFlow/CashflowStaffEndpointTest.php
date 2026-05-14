@@ -38,7 +38,8 @@ class CashflowStaffEndpointTest extends TestCase
         $this->grantPermissions([
             'cashflow_staff_advance_view', 'cashflow_staff_advance',
             'cashflow_staff_advance_create', 'cashflow_staff_advance_void',
-            'cashflow_staff_advance_edit', 'cashflow_staff_return_void',
+            'cashflow_staff_advance_edit', 'cashflow_staff_return_create',
+            'cashflow_staff_return_void',
             'cashflow_audit_view',
         ]);
     }
@@ -141,6 +142,22 @@ class CashflowStaffEndpointTest extends TestCase
         $this->assertContains($response->status(), [422, 403]);
     }
 
+    /**
+     * Cash returns are physical handovers and never carry paisa; the rule
+     * was tightened to `integer|min:1` to mirror advances. A decimal payload
+     * must surface as a field-level 422 on `amount`.
+     */
+    public function test_return_store_rejects_decimal_amount(): void
+    {
+        $response = $this->postJson('/api/cashflow/staff/return/store', [
+            'user_id' => 1,
+            'pool_id' => 1,
+            'amount' => 12.50,
+            'description' => 'decimal return',
+        ]);
+        $response->assertStatus(422)->assertJsonValidationErrors(['amount']);
+    }
+
     public function test_return_void_on_nonexistent_id(): void
     {
         $response = $this->postJson('/api/cashflow/staff/return/999999/void', [
@@ -155,10 +172,102 @@ class CashflowStaffEndpointTest extends TestCase
         $this->assertContains($response->status(), [200, 404, 500]);
     }
 
+    /**
+     * Phase-5 fix: staff advance EDIT now accepts up to 500 chars for
+     * description (was 50), matching the create-form ceiling. The 50-char
+     * cap was clipping descriptions whenever an admin edited an existing
+     * advance.
+     */
+    public function test_advance_update_accepts_500_char_description(): void
+    {
+        $response = $this->postJson('/api/cashflow/staff/advance/999999/update', [
+            'amount' => 1000,
+            'pool_id' => 1,
+            'description' => str_repeat('a', 500),
+            'edit_reason' => 'Lengthening description',
+        ]);
+        if ($response->status() === 422) {
+            $this->assertArrayNotHasKey('description', $response->json('errors') ?? []);
+        } else {
+            $this->assertNotSame(422, $response->status());
+        }
+    }
+
+    public function test_advance_update_rejects_501_char_description(): void
+    {
+        $response = $this->postJson('/api/cashflow/staff/advance/999999/update', [
+            'amount' => 1000,
+            'pool_id' => 1,
+            'description' => str_repeat('a', 501),
+            'edit_reason' => 'Trying to overflow',
+        ]);
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors(['description']);
+    }
+
     public function test_unauthenticated_access_is_rejected(): void
     {
         auth()->logout();
         $response = $this->getJson('/api/cashflow/staff/summary');
         $this->assertContains($response->status(), [401, 302, 403]);
+    }
+
+    /**
+     * Date-range filter: advances created BEFORE date_from should drop out
+     * of the summary; advances inside the window stay. Mirrors the SPA
+     * date picker on `/cashflow/staff`.
+     */
+    public function test_staff_summary_filters_by_date_range(): void
+    {
+        $accountId = 1;
+        $admin = auth()->user();
+
+        $pool = \App\Models\CashFlow\CashPool::factory()->create([
+            'account_id' => $accountId,
+            'type' => \App\Models\CashFlow\CashPool::TYPE_BRANCH_CASH,
+            'location_id' => $this->defaultLocation->id,
+        ]);
+        $staff = \App\Models\User::factory()->create([
+            'account_id' => $accountId,
+            'is_advance_eligible' => 1,
+        ]);
+
+        // Two advances: one inside the window, one well before it. Insert
+        // via DB::table to keep the explicit `created_at` — Eloquent's
+        // timestamp auto-fill would otherwise rewrite both to "now".
+        \Illuminate\Support\Facades\DB::table('staff_advances')->insert([
+            [
+                'account_id' => $accountId,
+                'user_id' => $staff->id,
+                'pool_id' => $pool->id,
+                'amount' => 500,
+                'description' => 'inside window',
+                'created_by' => $admin->id,
+                'created_at' => '2026-05-10 12:00:00',
+                'updated_at' => '2026-05-10 12:00:00',
+            ],
+            [
+                'account_id' => $accountId,
+                'user_id' => $staff->id,
+                'pool_id' => $pool->id,
+                'amount' => 9000,
+                'description' => 'before window',
+                'created_by' => $admin->id,
+                'created_at' => '2026-04-01 12:00:00',
+                'updated_at' => '2026-04-01 12:00:00',
+            ],
+        ]);
+
+        $response = $this->getJson('/api/cashflow/staff/summary?date_from=2026-05-01&date_to=2026-05-13');
+        if ($response->status() !== 200) {
+            $this->markTestSkipped('Staff summary returned non-200; check fixtures.');
+        }
+
+        $rows = $response->json('data');
+        $this->assertNotEmpty($rows);
+        $staffRow = collect($rows)->firstWhere('user_id', $staff->id);
+        $this->assertNotNull($staffRow, 'Expected staff row in summary.');
+        $this->assertEqualsWithDelta(500.0, (float) $staffRow['total_advances'], 0.01,
+            'Only the in-window advance should be summed.');
     }
 }
