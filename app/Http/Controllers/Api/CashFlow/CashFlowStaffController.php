@@ -24,8 +24,12 @@ class CashFlowStaffController extends Controller
 
     /**
      * Get staff advance summary.
+     *
+     * Optional `date_from` / `date_to` query params (ISO `YYYY-MM-DD`) scope
+     * the per-staff totals to a window. Malformed input is dropped silently
+     * — the service treats absent params as "all history".
      */
-    public function staffSummary(): JsonResponse
+    public function staffSummary(Request $request): JsonResponse
     {
 
         try {
@@ -38,13 +42,13 @@ class CashFlowStaffController extends Controller
 
             $accountId = Auth::user()->account_id;
 
-
+            [$dateFrom, $dateTo] = $this->parseDateRange($request);
 
             return response()->json([
 
                 'success' => true,
 
-                'data' => $this->staffAdvanceService->getStaffSummary($accountId),
+                'data' => $this->staffAdvanceService->getStaffSummary($accountId, $dateFrom, $dateTo),
 
             ]);
 
@@ -94,8 +98,11 @@ class CashFlowStaffController extends Controller
 
     /**
      * Get staff ledger (advances + returns for one staff member).
+     *
+     * Same `date_from` / `date_to` contract as `staffSummary` — windows
+     * each list by its own date column.
      */
-    public function staffLedger(int $userId): JsonResponse
+    public function staffLedger(int $userId, Request $request): JsonResponse
     {
 
         try {
@@ -108,13 +115,13 @@ class CashFlowStaffController extends Controller
 
             $accountId = Auth::user()->account_id;
 
-
+            [$dateFrom, $dateTo] = $this->parseDateRange($request);
 
             return response()->json([
 
                 'success' => true,
 
-                'data' => $this->staffAdvanceService->getStaffLedger($userId, $accountId),
+                'data' => $this->staffAdvanceService->getStaffLedger($userId, $accountId, $dateFrom, $dateTo),
 
             ]);
 
@@ -198,6 +205,11 @@ class CashFlowStaffController extends Controller
 
             return $e->render(request());
 
+        } catch (\Illuminate\Validation\ValidationException $e) {
+
+            // Let Laravel's default handler render field-level 422.
+            throw $e;
+
         } catch (\Exception $e) {
 
             \Illuminate\Support\Facades\Log::error($e->getMessage(), ['file' => $e->getFile(), 'line' => $e->getLine()]);
@@ -235,6 +247,11 @@ class CashFlowStaffController extends Controller
 
             return $e->render(request());
 
+        } catch (\Illuminate\Validation\ValidationException $e) {
+
+            // Let Laravel's default handler render field-level 422.
+            throw $e;
+
         } catch (\Exception $e) {
 
             \Illuminate\Support\Facades\Log::error($e->getMessage(), ['file' => $e->getFile(), 'line' => $e->getLine()]);
@@ -266,7 +283,7 @@ class CashFlowStaffController extends Controller
 
                 'pool_id' => 'required|exists:cash_pools,id',
 
-                'description' => 'nullable|string|max:50',
+                'description' => 'nullable|string|max:500',
 
                 'edit_reason' => 'required|string|min:5|max:50',
 
@@ -281,6 +298,11 @@ class CashFlowStaffController extends Controller
         } catch (CashflowException $e) {
 
             return $e->render(request());
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+
+            // Let Laravel's default handler render field-level 422.
+            throw $e;
 
         } catch (\Exception $e) {
 
@@ -342,6 +364,11 @@ class CashFlowStaffController extends Controller
 
             return $e->render(request());
 
+        } catch (\Illuminate\Validation\ValidationException $e) {
+
+            // Let Laravel's default handler render field-level 422.
+            throw $e;
+
         } catch (\Exception $e) {
 
             \Illuminate\Support\Facades\Log::error($e->getMessage(), ['file' => $e->getFile(), 'line' => $e->getLine()]);
@@ -378,6 +405,11 @@ class CashFlowStaffController extends Controller
         } catch (CashflowException $e) {
 
             return $e->render(request());
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+
+            // Let Laravel's default handler render field-level 422.
+            throw $e;
 
         } catch (\Exception $e) {
 
@@ -417,5 +449,32 @@ class CashFlowStaffController extends Controller
 
         }
 
+    }
+
+    /**
+     * Parse `date_from` / `date_to` query params (ISO `YYYY-MM-DD`). Both
+     * must be present and well-formed; any other state returns [null, null]
+     * so the service falls back to "all history". Swaps if `from > to`.
+     */
+    private function parseDateRange(Request $request): array
+    {
+        $rawFrom = $request->input('date_from');
+        $rawTo = $request->input('date_to');
+
+        if (!is_string($rawFrom) || !is_string($rawTo)) {
+            return [null, null];
+        }
+        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $rawFrom)) {
+            return [null, null];
+        }
+        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $rawTo)) {
+            return [null, null];
+        }
+
+        if (strcmp($rawFrom, $rawTo) > 0) {
+            [$rawFrom, $rawTo] = [$rawTo, $rawFrom];
+        }
+
+        return [$rawFrom, $rawTo];
     }
 }

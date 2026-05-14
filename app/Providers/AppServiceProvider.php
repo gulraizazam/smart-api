@@ -12,6 +12,7 @@ use App\Listeners\PermissionActivityListener;
 use App\Models\Appointments;
 use App\Models\CashFlow\CashTransfer;
 use App\Models\CashFlow\Expense;
+use App\Models\CashFlow\ExpenseAttachment;
 use App\Models\CashFlow\StaffAdvance;
 use App\Models\CashFlow\StaffReturn;
 use App\Models\CashFlow\VendorTransaction;
@@ -25,8 +26,12 @@ use App\Models\Patients;
 use App\Models\PlanInvoice;
 use App\Models\Services;
 use App\Models\User;
+use App\Http\Controllers\Api\CashFlow\ExpenseAttachmentsController;
 use App\Observers\ActivityLogObserver;
 use App\Observers\MembershipObserver;
+use App\Observers\R2CleanupObserver;
+use App\Services\Storage\R2DocumentService;
+use Illuminate\Support\Facades\Storage;
 use App\Observers\CashFlow\CashTransferObserver;
 use App\Observers\CashFlow\ExpenseObserver;
 use App\Observers\CashFlow\LocationCashflowObserver;
@@ -81,7 +86,16 @@ class AppServiceProvider extends ServiceProvider
 
     public function register(): void
     {
-        //
+        // Bind R2DocumentService against the private `r2_invoices` disk for
+        // the cash-flow attachments controller. The service itself is
+        // bucket-agnostic; this is the first contextual wiring per its
+        // docblock. Add a sibling `when()->needs()` block when transfers /
+        // vendor purchases adopt the same multi-file pattern.
+        $this->app->when(ExpenseAttachmentsController::class)
+            ->needs(R2DocumentService::class)
+            ->give(static fn (): R2DocumentService => new R2DocumentService(
+                Storage::disk('r2_invoices')
+            ));
     }
 
     public function boot(): void
@@ -336,6 +350,10 @@ class AppServiceProvider extends ServiceProvider
     {
         Locations::observe(LocationCashflowObserver::class);
         Expense::observe(ExpenseObserver::class);
+        // Wipes the R2 blob when a row is force-deleted (orphan-prune
+        // command). Plain delete() / soft-delete is intentionally a no-op
+        // — invoices are kept forever per business policy.
+        ExpenseAttachment::observe(R2CleanupObserver::class);
         CashTransfer::observe(CashTransferObserver::class);
         VendorTransaction::observe(VendorTransactionObserver::class);
         StaffAdvance::observe(StaffAdvanceObserver::class);

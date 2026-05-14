@@ -28,12 +28,12 @@ class CashflowSettingsSeeder extends Seeder
             return;
         }
 
-        // Default settings per spec §25
+        // Default settings per spec §25. backdate_flag_days and
+        // daily_auto_approved_limit were retired 2026-05-13 with their flag
+        // rules.
         $settings = [
             ['key' => 'go_live_date', 'value' => null, 'description' => 'Module go-live date. Patient inflows only counted from this date.'],
             ['key' => 'approval_threshold', 'value' => '10000', 'description' => 'Expense amount above which admin approval is required (PKR).'],
-            ['key' => 'backdate_flag_days', 'value' => '7', 'description' => 'Days after which a backdated expense is auto-flagged.'],
-            ['key' => 'daily_auto_approved_limit', 'value' => '50000', 'description' => 'Daily total auto-approved limit. Exceeding triggers splitting flag (PKR).'],
             ['key' => 'advance_aging_days', 'value' => '15', 'description' => 'Days after which an uncleared staff advance is flagged as aging.'],
             ['key' => 'cumulative_advance_threshold', 'value' => '100000', 'description' => 'Max cumulative advance balance before warning (PKR).'],
             ['key' => 'dormant_vendor_days', 'value' => '90', 'description' => 'Days of inactivity after which a vendor is considered dormant.'],
@@ -51,6 +51,6 @@ class CashflowSettingsSeeder extends Seeder
             ]);
         }
 
-        $this->command->info("Seeded 10 default cashflow settings for account {$accountId}.");
+        $this->command->info('Seeded ' . count($settings) . " default cashflow settings for account {$accountId}.");
     }
 }

@@ -110,6 +110,10 @@ trait RefreshTestDatabase
 
         $this->applyVoucherHardening($pdo);
 
+        $this->ensureExpenseAttachmentsTable($pdo);
+
+        $this->ensureStaffTransfersTable($pdo);
+
         $this->installCashflowAuditLogTriggers($pdo);
 
         RefreshDatabaseState::$migrated = true;
@@ -167,6 +171,84 @@ trait RefreshTestDatabase
                 }
             }
         }
+    }
+
+    /**
+     * Mirror the `create_expense_attachments_table` migration on the test
+     * schema. The dump file predates the migration (2026-05-13), and the
+     * cash-flow service unconditionally joins this table when computing
+     * the Reused-receipt flag, so any test that exercises
+     * `ExpenseService::create()` blows up with "table doesn't exist"
+     * unless we provision it here.
+     *
+     * Keep in lockstep with
+     * database/migrations/2026_05_13_120000_create_expense_attachments_table.php.
+     */
+    protected function ensureExpenseAttachmentsTable(\PDO $pdo): void
+    {
+        // CREATE … IF NOT EXISTS keeps this idempotent across the next
+        // schema-dump regeneration: once the dump carries the table the
+        // statement becomes a no-op, and we can retire this helper.
+        $pdo->exec(<<<'SQL'
+            CREATE TABLE IF NOT EXISTS `expense_attachments` (
+                `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+                `account_id` INT UNSIGNED NOT NULL,
+                `expense_id` BIGINT UNSIGNED NULL,
+                `file_name` VARCHAR(255) NOT NULL,
+                `file_path` VARCHAR(500) NOT NULL,
+                `mime_type` VARCHAR(100) NOT NULL,
+                `file_size` INT UNSIGNED NOT NULL,
+                `sha256` CHAR(64) NOT NULL,
+                `uploaded_by` INT UNSIGNED NOT NULL,
+                `created_at` TIMESTAMP NULL DEFAULT NULL,
+                `updated_at` TIMESTAMP NULL DEFAULT NULL,
+                `deleted_at` TIMESTAMP NULL DEFAULT NULL,
+                PRIMARY KEY (`id`),
+                KEY `expatt_account_expense_idx` (`account_id`, `expense_id`),
+                KEY `expatt_account_sha_idx` (`account_id`, `sha256`),
+                KEY `expatt_expense_idx` (`expense_id`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+            SQL);
+        // FKs are intentionally omitted in the test DB. The dump doesn't
+        // build them for sibling tables either (the `dropStaleSchemaForeignKeys`
+        // helper actively removes some), so emitting them here would just
+        // create one-off divergence — the production migration has the
+        // real FK definitions and that's the contract that matters.
+    }
+
+    /**
+     * Phase-B of Cash Movements ships a brand-new `staff_transfers` table
+     * but the test-DB dump pre-dates it. Mirror the production migration's
+     * shape here so feature tests can write rows. Drop this helper once the
+     * dump is regenerated (the CREATE IF NOT EXISTS makes the call a no-op
+     * once the dump catches up).
+     *
+     * Keep in lockstep with
+     * database/migrations/2026_05_13_130000_create_staff_transfers_table.php.
+     */
+    protected function ensureStaffTransfersTable(\PDO $pdo): void
+    {
+        $pdo->exec(<<<'SQL'
+            CREATE TABLE IF NOT EXISTS `staff_transfers` (
+                `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+                `account_id` BIGINT UNSIGNED NOT NULL,
+                `from_user_id` BIGINT UNSIGNED NOT NULL COMMENT 'Staff handing over the cash',
+                `to_user_id` BIGINT UNSIGNED NOT NULL COMMENT 'Staff receiving the cash',
+                `amount` DECIMAL(15,2) NOT NULL,
+                `description` TEXT NULL,
+                `voided_at` TIMESTAMP NULL DEFAULT NULL,
+                `void_reason` VARCHAR(100) NULL,
+                `voided_by` BIGINT UNSIGNED NULL,
+                `created_by` BIGINT UNSIGNED NOT NULL,
+                `created_at` TIMESTAMP NULL DEFAULT NULL,
+                `updated_at` TIMESTAMP NULL DEFAULT NULL,
+                `deleted_at` TIMESTAMP NULL DEFAULT NULL,
+                PRIMARY KEY (`id`),
+                KEY `stxf_account_from_idx` (`account_id`, `from_user_id`),
+                KEY `stxf_account_to_idx` (`account_id`, `to_user_id`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+            SQL);
+        // FKs intentionally omitted — matches the pattern for expense_attachments.
     }
 
     /**

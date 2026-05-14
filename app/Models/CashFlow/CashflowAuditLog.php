@@ -53,6 +53,7 @@ class CashflowAuditLog extends Model
     const ENTITY_CATEGORY_REQUEST = 'category_request';
     const ENTITY_STAFF_ADVANCE = 'staff_advance';
     const ENTITY_STAFF_RETURN = 'staff_return';
+    const ENTITY_STAFF_TRANSFER = 'staff_transfer';
     const ENTITY_PERIOD_LOCK = 'period_lock';
     const ENTITY_CASH_POOL = 'cash_pool';
     const ENTITY_SETTING = 'setting';

@@ -131,8 +131,6 @@
                                     <option value="flagged">Flagged</option>
                                     <option value="voided">Voided</option>
                                     <option value="edited">Edited</option>
-                                    <option value="my_pending">My Pending</option>
-                                    <option value="my_rejected">My Rejected</option>
                                 </select>
                             </div>
                             {{-- <div class="col-md-2">

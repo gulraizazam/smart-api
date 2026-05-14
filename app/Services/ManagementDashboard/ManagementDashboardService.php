@@ -137,8 +137,16 @@ final class ManagementDashboardService
                     ),
                 ],
             ],
-            'centre_sales' => $this->appointments->salesByCentre($scope, $range),
-            'sales_deltas' => $this->cachedSalesDeltas($scope, $range, (float) $ratios['sales']),
+            // `centre_sales` used to live here, but the SPA never read it —
+            // SalesByCentreSection pulls from /branches with its own pill
+            // toggles. Dropping it skips a locations fetch + a grouped
+            // SUM on package_advances on every overview call.
+            'sales_deltas' => $this->cachedSalesDeltas(
+                $scope,
+                $range,
+                (float) $ratios['sales'],
+                (float) $priorRatios['sales'],
+            ),
         ];
     }
 
@@ -154,8 +162,12 @@ final class ManagementDashboardService
      *
      * @return array<string, mixed>
      */
-    private function cachedSalesDeltas(MetricScope $scope, DateRange $range, float $current): array
-    {
+    private function cachedSalesDeltas(
+        MetricScope $scope,
+        DateRange $range,
+        float $current,
+        float $momPrevious,
+    ): array {
         $cacheKey = 'mgmt_dash:sales_deltas:'
             .$scope->cacheKey()
             .'|'.$range->startString().'..'.$range->endString()
@@ -164,7 +176,7 @@ final class ManagementDashboardService
         return Cache::remember(
             $cacheKey,
             300,
-            fn () => $this->salesDeltas($scope, $range, $current),
+            fn () => $this->salesDeltas($scope, $range, $current, $momPrevious),
         );
     }
 
@@ -184,13 +196,20 @@ final class ManagementDashboardService
      *   yoy: array{previous: float, delta_pct: float|null},
      * }
      */
-    private function salesDeltas(MetricScope $scope, DateRange $range, float $current): array
-    {
+    private function salesDeltas(
+        MetricScope $scope,
+        DateRange $range,
+        float $current,
+        float $momPrevious,
+    ): array {
+        // MoM baseline = prior-period sales (same window, shifted one
+        // calendar month). The caller has already computed this via
+        // priorRatios in overview() — reusing it spares an identical
+        // SalesLedgerQuery::totalNet pass over package_advances.
         $momRange = new DateRange(
             $range->from->subMonthNoOverflow(),
             $range->to->subMonthNoOverflow(),
         );
-        $momPrevious = SalesLedgerQuery::totalNet($scope, $momRange);
 
         $yoyRange = new DateRange(
             $range->from->subYear(),

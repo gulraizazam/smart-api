@@ -16,7 +16,7 @@ class UpdateVendorRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => 'nullable|string|max:255',
+            'name' => 'required|string|max:255',
             'contact_person' => 'required|string|max:255',
             'phone' => 'required|string|max:50',
             'email' => 'nullable|email|max:255',

@@ -358,7 +358,7 @@ class CashFlowVendorsController extends Controller
 
         try {
 
-            if (!Auth::user()->can('cashflow_vendor_transaction')) {
+            if (!Auth::user()->can('cashflow_vendor_transaction_delete')) {
 
                 return response()->json(['success' => false, 'message' => 'Unauthorized.'], 403);
 

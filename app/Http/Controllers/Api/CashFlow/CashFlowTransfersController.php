@@ -96,6 +96,11 @@ class CashFlowTransfersController extends Controller
 
             return $e->render(request());
 
+        } catch (\Illuminate\Validation\ValidationException $e) {
+
+            // Let Laravel's default handler render the field-level 422.
+            throw $e;
+
         } catch (\Exception $e) {
 
             \Illuminate\Support\Facades\Log::error($e->getMessage(), ['file' => $e->getFile(), 'line' => $e->getLine()]);
@@ -141,6 +146,11 @@ class CashFlowTransfersController extends Controller
 
             return $e->render(request());
 
+        } catch (\Illuminate\Validation\ValidationException $e) {
+
+            // Let Laravel's default handler render the field-level 422.
+            throw $e;
+
         } catch (\Exception $e) {
 
             \Illuminate\Support\Facades\Log::error($e->getMessage(), ['file' => $e->getFile(), 'line' => $e->getLine()]);
@@ -178,7 +188,7 @@ class CashFlowTransfersController extends Controller
 
                 'attachment_url' => ['required', 'string', 'max:500'],
 
-                'description' => 'nullable|string|max:50',
+                'description' => 'nullable|string|max:100',
 
                 'edit_reason' => 'required|string|min:5|max:50',
 
@@ -197,6 +207,11 @@ class CashFlowTransfersController extends Controller
         } catch (CashflowException $e) {
 
             return $e->render(request());
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+
+            // Let Laravel's default handler render the field-level 422.
+            throw $e;
 
         } catch (\Exception $e) {
 

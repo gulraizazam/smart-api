@@ -37,6 +37,7 @@ class CashflowLookupsController extends Controller
                     'vendors' => CashflowHelper::getActiveVendors($accountId),
                     'staff' => CashflowHelper::getAdvanceEligibleStaff($accountId),
                     'threshold' => $this->getApprovalThreshold($accountId),
+                    'has_period_locks' => \App\Models\CashFlow\PeriodLock::where('account_id', $accountId)->exists(),
                 ],
             ]);
         } catch (\Exception $e) {

@@ -358,6 +358,17 @@ class VendorService
             throw new CashflowException('This purchase is already marked as delivered.');
         }
 
+        // Period-lock guard — marking delivered credits the vendor balance,
+        // which counts as a state change against the transaction's date. If
+        // the period is closed, block.
+        $txDate = $tx->transaction_date?->format('Y-m-d') ?? $tx->created_at->format('Y-m-d');
+        if (CashflowHelper::isDateInLockedPeriod($txDate, $accountId)) {
+            throw CashflowException::periodLocked(
+                (int) date('n', strtotime($txDate)),
+                (int) date('Y', strtotime($txDate)),
+            );
+        }
+
         $oldValues = $tx->toArray();
 
         DB::transaction(function () use ($tx, $attachmentUrl) {
@@ -393,6 +404,21 @@ class VendorService
 
         if ($tx->expense_id) {
             throw new CashflowException('Cannot edit a payment linked to an expense. Edit the expense instead.');
+        }
+
+        // Period-lock guard — block edits whose CURRENT date OR NEW date falls
+        // in a locked period. The "old" check catches "edit a row from a
+        // closed month"; the "new" check catches "move a row's date INTO a
+        // locked month".
+        $oldDate = $tx->transaction_date?->format('Y-m-d') ?? $tx->created_at->format('Y-m-d');
+        $newDate = $data['transaction_date'] ?? $oldDate;
+        foreach (array_unique([$oldDate, $newDate]) as $checkDate) {
+            if (CashflowHelper::isDateInLockedPeriod($checkDate, $accountId)) {
+                throw CashflowException::periodLocked(
+                    (int) date('n', strtotime($checkDate)),
+                    (int) date('Y', strtotime($checkDate)),
+                );
+            }
         }
 
         $oldValues = $tx->toArray();
@@ -456,12 +482,16 @@ class VendorService
             return $fresh;
         });
 
+        // `data['edit_reason']` is now required on the API edge (see
+        // StoreVendorPurchaseRequest::rules()); pass it through so the audit
+        // log captures the explanation alongside the diff.
         $this->auditService->log(
             CashflowAuditLog::ACTION_UPDATED,
             CashflowAuditLog::ENTITY_VENDOR_TRANSACTION,
             $tx->id,
             $oldValues,
-            $tx->toArray()
+            $tx->toArray(),
+            $data['edit_reason'] ?? null,
         );
 
         $this->clearCache($accountId);
@@ -478,6 +508,17 @@ class VendorService
 
         if ($tx->expense_id) {
             throw new CashflowException('Cannot delete a payment linked to an expense. Void the expense instead.');
+        }
+
+        // Period-lock guard — deleting reverses the vendor balance change
+        // booked against the transaction date. If that month is closed,
+        // block.
+        $txDate = $tx->transaction_date?->format('Y-m-d') ?? $tx->created_at->format('Y-m-d');
+        if (CashflowHelper::isDateInLockedPeriod($txDate, $accountId)) {
+            throw CashflowException::periodLocked(
+                (int) date('n', strtotime($txDate)),
+                (int) date('Y', strtotime($txDate)),
+            );
         }
 
         $oldValues = $tx->toArray();
@@ -590,6 +631,17 @@ class VendorService
     public function recordTransaction(array $data, int $accountId): VendorTransaction
     {
         $vendor = Vendor::forAccount($accountId)->findOrFail($data['vendor_id']);
+
+        // Period-lock guard — refuse to write into a closed month. Mirrors the
+        // same gate Expense and Transfer enforce; without it, vendor purchases
+        // can silently sneak into locked periods and corrupt reconciliation.
+        $txDate = $data['transaction_date'] ?? now()->toDateString();
+        if (CashflowHelper::isDateInLockedPeriod($txDate, $accountId)) {
+            throw CashflowException::periodLocked(
+                (int) date('n', strtotime($txDate)),
+                (int) date('Y', strtotime($txDate)),
+            );
+        }
 
         $transaction = DB::transaction(function () use ($data, $accountId) {
             // Observer handles vendor balance updates

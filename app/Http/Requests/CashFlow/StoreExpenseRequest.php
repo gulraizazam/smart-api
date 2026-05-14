@@ -30,13 +30,18 @@ class StoreExpenseRequest extends FormRequest
             'reference_no' => 'nullable|string|max:100',
             'attachment_url' => ['nullable', 'string', 'max:500', new GoogleDriveUrlRule],
             'notes' => 'nullable|string|max:1000',
+            // New uploaded attachments to bind to this payment. Each id
+            // must already exist in `expense_attachments` and belong to
+            // the current account — the service layer asserts both.
+            // Hard cap: 10 files per expense.
+            'attachment_ids' => 'sometimes|array|max:10',
+            'attachment_ids.*' => 'integer|exists:expense_attachments,id',
         ];
 
-        // Cash payment method requires attachment (Sec 5.5)
-        if ($this->isCashPayment()) {
-            $rules['attachment_url'] = ['required', 'string', 'max:500', new GoogleDriveUrlRule];
-        }
-
+        // Cash payment method requires SOME proof of payment — either a
+        // Google Drive URL (legacy) or at least one uploaded attachment.
+        // Custom `withValidator` below enforces the OR; the per-field
+        // rules stay nullable.
         return $rules;
     }
 
@@ -63,6 +68,16 @@ class StoreExpenseRequest extends FormRequest
             // Must have either a pool or a staff member
             if (!$this->input('paid_from_pool_id') && !$this->input('staff_id')) {
                 $validator->errors()->add('paid_from_pool_id', 'Please select a cash pool or a staff member.');
+            }
+
+            // Cash payment method requires SOME proof of payment — either
+            // a legacy URL or at least one uploaded attachment.
+            if ($this->isCashPayment()) {
+                $hasUrl = !empty($this->input('attachment_url'));
+                $hasFiles = is_array($this->input('attachment_ids')) && count($this->input('attachment_ids')) > 0;
+                if (!$hasUrl && !$hasFiles) {
+                    $validator->errors()->add('attachment_ids', 'Cash payments need at least one receipt — upload a file or paste a Google Drive link.');
+                }
             }
         });
     }

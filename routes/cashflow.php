@@ -4,6 +4,8 @@ use App\Http\Controllers\Api\CashFlow\CashFlowSettingsController;
 use App\Http\Controllers\Api\CashFlow\CashFlowPoolsController;
 use App\Http\Controllers\Api\CashFlow\CashFlowCategoriesController;
 use App\Http\Controllers\Api\CashFlow\CashFlowExpensesController;
+use App\Http\Controllers\Api\CashFlow\ExpenseAttachmentsController;
+use App\Http\Controllers\Api\CashFlow\CashFlowMovementsController;
 use App\Http\Controllers\Api\CashFlow\CashFlowTransfersController;
 use App\Http\Controllers\Api\CashFlow\CashFlowVendorsController;
 use App\Http\Controllers\Api\CashFlow\CashFlowStaffController;
@@ -65,14 +67,27 @@ Route::prefix('cashflow')->name('cashflow.')->group(function () {
         Route::get('data', [CashFlowExpensesController::class, 'expensesData'])->name('data');
         Route::get('form-data', [CashflowLookupsController::class, 'expensesFormData'])->name('form_data');
         Route::post('store', [CashFlowExpensesController::class, 'expensesStore'])->name('store');
-        Route::post('{id}/approve', [CashFlowExpensesController::class, 'expensesApprove'])->name('approve');
-        Route::post('{id}/reject', [CashFlowExpensesController::class, 'expensesReject'])->name('reject');
-        Route::post('{id}/resubmit', [CashFlowExpensesController::class, 'expensesResubmit'])->name('resubmit');
+        // approve / resubmit routes stayed retired 2026-05-13 (Option A).
+        // reject came back 2026-05-14 as a "return to accountant for
+        // fixes" workflow — see ExpenseService::reject + adminEdit.
         Route::post('{id}/edit', [CashFlowExpensesController::class, 'expensesEdit'])->name('edit');
+        Route::post('{id}/reject', [CashFlowExpensesController::class, 'expensesReject'])->name('reject');
         Route::post('{id}/void', [CashFlowExpensesController::class, 'expensesVoid'])->name('void');
         Route::post('{id}/unflag', [CashFlowExpensesController::class, 'expensesUnflag'])->name('unflag');
         Route::get('{id}/audit', [CashFlowExpensesController::class, 'expensesAudit'])->name('audit');
         Route::get('export', [CashFlowExpensesController::class, 'expensesExport'])->name('export');
+
+        // Attachments (slice 1 of the URL-to-upload migration). Permission
+        // gating is enforced by the controller's FormRequest + per-method
+        // checks — no route-level middleware here so the same endpoint can
+        // be reached from both the create and the edit flows without
+        // duplicating slugs.
+        Route::post('attachments', [ExpenseAttachmentsController::class, 'store'])
+            ->name('attachments.store');
+        Route::get('attachments/{id}/signed-url', [ExpenseAttachmentsController::class, 'signedUrl'])
+            ->name('attachments.signed_url');
+        Route::delete('attachments/{id}', [ExpenseAttachmentsController::class, 'destroy'])
+            ->name('attachments.destroy');
     });
 
     // Notifications (lightweight controller to avoid heavy CashFlowController instantiation on every page poll)
@@ -81,8 +96,24 @@ Route::prefix('cashflow')->name('cashflow.')->group(function () {
         Route::post('mark-read', [CashflowNotificationController::class, 'markRead'])->name('mark_read');
     });
 
-    // Transfers
-    Route::prefix('transfers')->name('transfers.')->group(function () {
+    // Cash Movements — unified surface over Transfers + StaffAdvances + StaffReturns.
+    // Phase A: additive route group. Old /transfers and /staff routes stay alive
+    // throughout the shadow-run window so a flag flip restores the legacy UI.
+    // Route-level gate is intentionally permissive (any of the view slugs); each
+    // action's controller method re-checks the per-kind slug before dispatching.
+    Route::prefix('movements')->name('movements.')->middleware('permission:cashflow_transfer_view|cashflow_staff_advance_view|cashflow_staff_advance|cashflow_manage')->group(function () {
+        Route::get('data', [CashFlowMovementsController::class, 'movementsData'])->name('data');
+        Route::get('form-data', [CashFlowMovementsController::class, 'formData'])->name('form_data');
+        Route::post('store', [CashFlowMovementsController::class, 'store'])->name('store');
+        Route::post('{kind}/{id}/void', [CashFlowMovementsController::class, 'void'])->name('void');
+        Route::get('{kind}/{id}/audit', [CashFlowMovementsController::class, 'audit'])->name('audit');
+        Route::get('pool/{poolId}/ledger', [CashFlowMovementsController::class, 'poolLedger'])->name('pool_ledger');
+    });
+
+    // Transfers — defense-in-depth: a route-level gate that fails closed if a
+    // controller ever forgets its inline `Gate::allows` check. Either of the
+    // listed slugs is sufficient (`cashflow_manage` is the super-slug).
+    Route::prefix('transfers')->name('transfers.')->middleware('permission:cashflow_transfer_view|cashflow_manage')->group(function () {
         Route::get('data', [CashFlowTransfersController::class, 'transfersData'])->name('data');
         Route::post('store', [CashFlowTransfersController::class, 'transfersStore'])->name('store');
         Route::post('{id}/void', [CashFlowTransfersController::class, 'transfersVoid'])->name('void');
@@ -93,8 +124,8 @@ Route::prefix('cashflow')->name('cashflow.')->group(function () {
     // Vendor form data (category dropdown)
     Route::get('vendors/form-data', [CashflowLookupsController::class, 'vendorFormData'])->name('vendors.form_data');
 
-    // Vendors
-    Route::prefix('vendors')->name('vendors.')->group(function () {
+    // Vendors — defense-in-depth (see Transfers note above).
+    Route::prefix('vendors')->name('vendors.')->middleware('permission:cashflow_vendor_view|cashflow_vendor_manage|cashflow_manage')->group(function () {
         Route::get('data', [CashFlowVendorsController::class, 'vendorsData'])->name('data');
         Route::get('overview', [CashFlowVendorsController::class, 'vendorsOverview'])->name('overview');
         Route::post('store', [CashFlowVendorsController::class, 'vendorsStore'])->name('store');
@@ -109,16 +140,20 @@ Route::prefix('cashflow')->name('cashflow.')->group(function () {
         Route::get('{id}/ledger/export', [CashFlowVendorsController::class, 'vendorsLedgerExport'])->name('ledger.export');
     });
 
-    // Vendor Requests
-    Route::prefix('vendor-requests')->name('vendor_requests.')->group(function () {
+    // Vendor Requests — defense-in-depth (suggestion store + approve/dismiss).
+    // Any of these slugs admits the user; controller methods still gate
+    // approve/dismiss on `cashflow_vendor_manage` inline.
+    Route::prefix('vendor-requests')->name('vendor_requests.')->middleware('permission:cashflow_vendor_request|cashflow_vendor_manage|cashflow_manage')->group(function () {
         Route::get('data', [CashFlowVendorsController::class, 'vendorRequestsData'])->name('data');
         Route::post('store', [CashFlowVendorsController::class, 'vendorRequestsStore'])->name('store');
         Route::post('{id}/approve', [CashFlowVendorsController::class, 'vendorRequestsApprove'])->name('approve');
         Route::post('{id}/dismiss', [CashFlowVendorsController::class, 'vendorRequestsDismiss'])->name('dismiss');
     });
 
-    // Category Requests
-    Route::prefix('category-requests')->name('category_requests.')->group(function () {
+    // Category Requests — defense-in-depth. Anyone with create-expense can
+    // suggest a category (since that's the surface the UI offers it from);
+    // category-manage admins approve/dismiss.
+    Route::prefix('category-requests')->name('category_requests.')->middleware('permission:cashflow_expense_create|cashflow_category_manage|cashflow_manage')->group(function () {
         Route::get('data', [CashFlowCategoriesController::class, 'categoryRequestsData'])->name('data');
         Route::post('store', [CashFlowCategoriesController::class, 'categoryRequestsStore'])->name('store');
         Route::post('{id}/approve', [CashFlowCategoriesController::class, 'categoryRequestsApprove'])->name('approve');

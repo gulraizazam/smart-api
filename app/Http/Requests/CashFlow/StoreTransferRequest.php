@@ -24,7 +24,7 @@ class StoreTransferRequest extends FormRequest
             'method' => 'required|in:physical_cash,bank_deposit',
             'reference_no' => 'nullable|string|max:100',
             'attachment_url' => ['required', 'string', 'max:500', new GoogleDriveUrlRule],
-            'description' => 'nullable|string|max:50',
+            'description' => 'nullable|string|max:100',
         ];
     }
 

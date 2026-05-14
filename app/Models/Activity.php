@@ -41,6 +41,16 @@ class Activity extends Model
         'deleted_by',
         'rescheduled_by',
         'deleted_date',
+        // Numeric/location columns omitted from earlier fillable list — every
+        // Activity::create() that passed them was silently dropping the value.
+        // Symptom: dashboard activity feed showed "RCVD Rs. 0" for plan
+        // payments (Activity::create wrote amount=NULL → renderer formatted
+        // NULL as Rs. 0). Same applies to invoice_id / location / timestamps.
+        'amount',
+        'location',
+        'invoice_id',
+        'created_at',
+        'updated_at',
     ];
 
     public $timestamps = false;

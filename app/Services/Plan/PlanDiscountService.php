@@ -1478,7 +1478,13 @@ final class PlanDiscountService
             $getServices = GetDiscountService::where('discount_id', $discount_data->id)->get();
             $isCategoryMode = $baseServices->isNotEmpty() && $baseServices->first()->is_category == 1;
             $selectedService = Services::find($data['service_id']);
-            $mergedServices = $baseServices->merge($getServices);
+            // Use concat (not merge): Eloquent Collection::merge dedupes by
+            // primary key, and BaseDiscountService / GetDiscountService have
+            // independent auto-increment IDs that frequently collide. With
+            // merge, any BUY row sharing an id with a GET row got silently
+            // clobbered — the save path then emitted GETs only and the
+            // operator saw "Add row did nothing for the BUY service".
+            $mergedServices = $baseServices->concat($getServices);
 
             // One config_group_id per Buy/Get save call so the SPA can
             // render the resulting bundles together (parent/child layout)

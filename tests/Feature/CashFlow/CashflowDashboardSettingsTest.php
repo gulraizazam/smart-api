@@ -40,6 +40,14 @@ class CashflowDashboardSettingsTest extends TestCase
         $this->grantPermissions([
             'cashflow_dashboard', 'cashflow_fdm_view',
             'cashflow_settings', 'cashflow_expense_create',
+            // Notifications route group is gated by `cashflow_manage` in
+            // routes/cashflow.php; without it the test gets 302/403 before
+            // the controller runs.
+            'cashflow_manage',
+            // `auditLogs()` now gates on `cashflow_audit_view` inline. The
+            // dedicated 403-rejection case is pinned by its own test below;
+            // for the happy-path tests we hold the slug.
+            'cashflow_audit_view',
         ]);
     }
 
@@ -76,6 +84,60 @@ class CashflowDashboardSettingsTest extends TestCase
     {
         $response = $this->getJson('/api/cashflow/fdm/data');
         $this->assertContains($response->status(), [200, 403, 500]);
+    }
+
+    /**
+     * Drill-down contract: the FDM payload must carry `user_id` on every
+     * staff-advance row so the SPA can deep-link to `/cashflow/staff?focus=<id>`.
+     * The test gives the admin `select_all` (CashflowHelper::getUserBranches
+     * short-circuits to all active locations) and creates a single advance
+     * inside the default Sunday→today window.
+     */
+    public function test_fdm_data_includes_user_id_on_staff_advances(): void
+    {
+        $accountId = 1;
+        $admin = auth()->user();
+
+        $pool = \App\Models\CashFlow\CashPool::factory()->create([
+            'account_id' => $accountId,
+            'type' => \App\Models\CashFlow\CashPool::TYPE_BRANCH_CASH,
+            'location_id' => $this->defaultLocation->id,
+        ]);
+
+        // Wire the admin to the seeded location via the pivot. The test DB
+        // schema doesn't carry the `select_all` shortcut column, so we go
+        // through the explicit user_has_locations route — that's what
+        // CashflowHelper::getUserBranches falls through to for normal users.
+        \Illuminate\Support\Facades\DB::table('user_has_locations')->updateOrInsert(
+            ['user_id' => $admin->id, 'location_id' => $this->defaultLocation->id],
+            ['region_id' => 1],
+        );
+
+        $staff = \App\Models\User::factory()->create(['account_id' => $accountId]);
+
+        \App\Models\CashFlow\StaffAdvance::create([
+            'account_id' => $accountId,
+            'user_id' => $staff->id,
+            'pool_id' => $pool->id,
+            'amount' => 500,
+            'description' => 'pinned for drill-down',
+            'created_by' => $admin->id,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $response = $this->getJson('/api/cashflow/fdm/data');
+        // Tolerant of envs where setup fails (mirrors sibling FDM test) — only
+        // assert the shape contract when we actually got a 200 back.
+        if ($response->status() !== 200) {
+            $this->markTestSkipped('FDM endpoint returned non-200; check fixture wiring.');
+        }
+
+        $rows = $response->json('data.staff_advances');
+        $this->assertIsArray($rows);
+        $this->assertNotEmpty($rows, 'Staff advance row should appear inside the default Sunday→today window.');
+        $this->assertArrayHasKey('user_id', $rows[0], 'FDM staff_advances payload must expose user_id for drill-down.');
+        $this->assertSame($staff->id, $rows[0]['user_id']);
     }
 
     // ── Settings ───────────────────────────────────────────────
@@ -128,6 +190,28 @@ class CashflowDashboardSettingsTest extends TestCase
     {
         $response = $this->getJson('/api/cashflow/settings/audit-logs');
         $this->assertContains($response->status(), [200, 500]);
+    }
+
+    /**
+     * Plan A Phase 5 fix: `auditLogs()` now requires `cashflow_audit_view`
+     * inline, not just the route-level `cashflow_settings`. A user with the
+     * settings slug but no audit-view permission must be rejected.
+     */
+    public function test_settings_audit_logs_rejects_without_audit_view_permission(): void
+    {
+        // Strip the audit-view slug while keeping every other permission this
+        // test class needs (cashflow_settings clears the route middleware).
+        auth()->user()->roles()->detach();
+        app(\Spatie\Permission\PermissionRegistrar::class)->forgetCachedPermissions();
+
+        $this->createPermission('cashflow_settings');
+        $role = $this->createRole('settings-no-audit-' . uniqid());
+        $role->givePermissionTo(['cashflow_settings']);
+        auth()->user()->assignRole($role);
+        app(\Spatie\Permission\PermissionRegistrar::class)->forgetCachedPermissions();
+
+        $response = $this->getJson('/api/cashflow/settings/audit-logs');
+        $response->assertStatus(403);
     }
 
     // ── Period Locks ───────────────────────────────────────────

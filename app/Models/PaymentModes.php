@@ -27,6 +27,38 @@ class PaymentModes extends BaseModel
     }
 
     /**
+     * IDs of every payment mode that represents physical cash for the given
+     * account. Replaces the fragile `where('payment_mode', 1)` literals and
+     * `str_contains($name, 'cash')` substring fallbacks that the FDM dashboard
+     * used before — both broke whenever a tenant added a second cash mode
+     * (e.g. "Cash - Petty") or renamed the primary one.
+     *
+     * Detection rule (in priority order):
+     *   1. `payment_type = 1`  — the canonical cash flag if the tenant set it
+     *   2. case-insensitive substring match on "cash" in `name`
+     *
+     * Always returns an array of active rows for the tenant. Returns `[1]`
+     * as a last-resort fallback so legacy callers that assumed id=1 keep
+     * working even on a misconfigured account.
+     */
+    public static function cashIds(int $accountId): array
+    {
+        $ids = self::query()
+            ->where(function ($q) {
+                $q->where('payment_type', 1)
+                    ->orWhereRaw('LOWER(name) LIKE ?', ['%cash%']);
+            })
+            ->where('active', 1)
+            ->pluck('id')
+            ->all();
+
+        // Last-resort fallback: a misconfigured tenant with no cash mode at
+        // all shouldn't cause FDM to silently sum zero. id=1 was the legacy
+        // assumed cash id so it's a safer default than an empty list.
+        return $ids ?: [1];
+    }
+
+    /**
      * Get the package advaances.
      */
     public function packageadvance(): HasMany

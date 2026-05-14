@@ -66,6 +66,25 @@ return [
             'throw' => false,
         ],
 
+        /*
+         * Cash-flow Payments attachments (invoices / receipts). Same R2
+         * account as the HRM bucket above — only the bucket name differs.
+         * Visibility is PRIVATE: every download is fronted by a
+         * short-lived signed URL minted by Laravel, so a leaked URL has
+         * a 15-minute leak window instead of forever.
+         */
+        'r2_invoices' => [
+            'driver' => 's3',
+            'key' => env('CLOUDFLARE_R2_ACCESS_KEY_ID'),
+            'secret' => env('CLOUDFLARE_R2_SECRET_ACCESS_KEY'),
+            'region' => 'auto',
+            'bucket' => env('CLOUDFLARE_R2_INVOICES_BUCKET', 'invoices'),
+            'endpoint' => env('CLOUDFLARE_R2_ENDPOINT'),
+            'use_path_style_endpoint' => false,
+            'visibility' => 'private',
+            'throw' => false,
+        ],
+
     ],
 
     /*

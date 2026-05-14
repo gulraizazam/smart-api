@@ -177,7 +177,10 @@ class InvoicesController extends Controller
             // preloaded values back to the resource via setRelation() —
             // this keeps the Resource's `relationLoaded()` checks honest.
             if ($invoice->location_id) {
-                $location = \App\Models\Locations::find($invoice->location_id);
+                // Include `city` so the SPA print route can compose the
+                // "<City> · <Centre>" line in the receipt header without
+                // making a second request.
+                $location = \App\Models\Locations::with('city:id,name')->find($invoice->location_id);
                 if ($location) {
                     $invoice->setRelation('location', $location);
                 }

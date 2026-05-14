@@ -13,6 +13,7 @@ use App\Models\Appointments;
 use App\Services\Appointment\AppointmentService;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
 
 class AppointmentsController extends Controller

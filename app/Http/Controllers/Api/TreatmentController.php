@@ -483,19 +483,46 @@ final class TreatmentController extends Controller
             // skeleton payload so the SPA can render the "already
             // invoiced" state with reprint links.
             if ($existingInvoice) {
+                // Pull the line-item pricing breakdown off invoice_details so
+                // the printable can show the patient's regular vs. paid amount
+                // (otherwise complimentary invoices print as a row of zeros
+                // and read like a generic consultation receipt — no signal
+                // that a discount was actually applied).
+                $invoiceDetail = DB::table('invoice_details')
+                    ->where('invoice_id', '=', $existingInvoice->id)
+                    ->first();
+                $invoicePriceTax = $invoiceDetail ? (float) $invoiceDetail->tax_exclusive_serviceprice : null;
+                $invoiceTaxRate  = $invoiceDetail ? (float) $invoiceDetail->tax_percentage : null;
+                $invoiceTaxAmt   = $invoiceDetail ? (float) $invoiceDetail->tax_including_price : (float) $existingInvoice->total_price;
+
                 return $this->successResponse('Invoice details.', [
                     'invoice_status' => true,
                     'invoice_id'     => $existingInvoice->id,
                     'appointment_id' => $id,
-                    'price'          => null,
-                    'tax'            => null,
-                    'tax_amt'        => null,
+                    'price'          => $invoiceDetail ? (float) $invoiceDetail->service_price : null,
+                    'tax'            => $invoiceTaxRate,
+                    'tax_amt'        => $invoiceTaxAmt,
                     'settle_amount'  => null,
                     'outstanding'    => null,
                     'cash'           => null,
-                    'price_tax'      => null,
+                    'price_tax'      => $invoicePriceTax,
                     'amount_create'  => null,
                     'tax_create'     => null,
+                    // Per-row discount breakdown so the printable can render
+                    // "Service Price / Discount / Total" instead of a row of
+                    // zeros for complimentary services. Null when no
+                    // invoice_details row exists (legacy invoices).
+                    'invoice_line' => $invoiceDetail ? [
+                        'service_price' => (float) $invoiceDetail->service_price,
+                        'discount_name' => $invoiceDetail->discount_name ?: null,
+                        'discount_type' => $invoiceDetail->discount_type ?: null,
+                        'discount_price' => (float) $invoiceDetail->discount_price,
+                        'net_amount' => (float) $invoiceDetail->net_amount,
+                        'tax_exclusive_serviceprice' => (float) $invoiceDetail->tax_exclusive_serviceprice,
+                        'tax_percentage' => (float) $invoiceDetail->tax_percentage,
+                        'tax_price' => (float) $invoiceDetail->tax_price,
+                        'tax_including_price' => (float) $invoiceDetail->tax_including_price,
+                    ] : null,
                     'packages'       => [],
                     'service_in_plan' => false,
                     'service'        => $service ? [

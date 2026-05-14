@@ -33,12 +33,17 @@ class ExpenseObserver
      * After expense updated: handle balance changes for all edit scenarios.
      *
      * Scenarios handled:
-     * 1. Rejected → reverse pool deduction
-     * 2. Resubmitted (rejected → pending) → re-apply pool deduction
-     * 3. Amount changed (admin edit) → adjust difference
-     * 4. Pool changed (admin edit) → credit old pool, debit new pool
-     * 5. Amount AND pool changed → credit old pool full amount, debit new pool new amount
-     * 6. Voided → SKIP (handled directly in ExpenseService::void() to avoid double-counting)
+     * 1. Amount changed (admin edit) → adjust difference
+     * 2. Pool changed (admin edit) → credit old pool, debit new pool
+     * 3. Amount AND pool changed → credit old pool full amount, debit new pool new amount
+     * 4. Voided → SKIP (handled directly in ExpenseService::void() to avoid double-counting)
+     *
+     * Reject/resubmit are intentionally NOT pool-impacting events
+     * (2026-05-14): in the "reject = send back for revisions" model
+     * the money already left the till; only the record needs fixing,
+     * so the pool stays debited throughout the reject → edit → re-approve
+     * cycle. Use `void` (separate flow) when the entry shouldn't exist
+     * and the cash should be reversed.
      */
     public function updated(Expense $expense): void
     {
@@ -48,34 +53,9 @@ class ExpenseObserver
                 return;
             }
 
-            // --- Status changed to rejected — reverse the pool deduction ---
-            if ($expense->isDirty('status') && $expense->status === ExpenseStatus::Rejected) {
-                if (!$expense->paid_from_pool_id) return;
-                $this->incrementPoolBalance($expense->paid_from_pool_id, $expense->amount);
-                Log::info('CashFlow: Expense rejected, pool reversed', [
-                    'expense_id' => $expense->id, 'pool_id' => $expense->paid_from_pool_id,
-                    'amount' => $expense->amount,
-                ]);
-                return;
-            }
-
-            // --- Status changed from rejected to pending (resubmission) — re-apply deduction ---
-            if ($expense->isDirty('status')
-                && $expense->status === ExpenseStatus::Pending
-                && $expense->getOriginal('status') === ExpenseStatus::Rejected
-            ) {
-                if (!$expense->paid_from_pool_id) return;
-                $this->decrementPoolBalance($expense->paid_from_pool_id, $expense->amount);
-                Log::info('CashFlow: Expense resubmitted, pool re-debited', [
-                    'expense_id' => $expense->id, 'pool_id' => $expense->paid_from_pool_id,
-                    'amount' => $expense->amount,
-                ]);
-                return;
-            }
-
-            // --- Admin edit: amount and/or pool changed on non-rejected, non-voided expense ---
-            if ($expense->isVoided() || $expense->status === ExpenseStatus::Rejected) {
-                return; // no pool impact on voided/rejected expenses
+            // --- Admin edit: amount and/or pool changed on non-voided expense ---
+            if ($expense->isVoided()) {
+                return; // voided rows are immutable from a pool-balance standpoint
             }
 
             $amountChanged = $expense->isDirty('amount');

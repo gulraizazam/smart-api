@@ -10,7 +10,6 @@ use App\Services\CashFlow\CategoryService;
 use App\Services\CashFlow\DashboardService;
 use App\Services\CashFlow\ExportService;
 use App\Services\CashFlow\ExpenseService;
-use App\Services\CashFlow\FlaggingService;
 use App\Services\CashFlow\NotificationService;
 use App\Services\CashFlow\PeriodLockService;
 use App\Services\CashFlow\PoolService;
@@ -40,6 +39,5 @@ class CashFlowController extends Controller
         private readonly ReportService $reportService,
         private readonly ExportService $exportService,
         private readonly PeriodLockService $periodLockService,
-        private readonly FlaggingService $flaggingService,
     ) {}
 }
