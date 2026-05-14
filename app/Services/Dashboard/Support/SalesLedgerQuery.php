@@ -45,11 +45,16 @@ final class SalesLedgerQuery
      */
     public static function forRange(int $accountId, string $startDate, string $endDate): Builder
     {
+        // Compare against literal timestamp bounds rather than whereDate().
+        // whereDate() wraps the column in DATE() which kills index usage on
+        // pa.created_at — the dashboard's stats card was paying for a full
+        // package_advances scan on every call. Plain range comparisons let
+        // MySQL use the (account_id, created_at) index path.
         return DB::table('package_advances as pa')
             ->join('payment_modes as pm', 'pa.payment_mode_id', '=', 'pm.id')
             ->where('pa.account_id', $accountId)
-            ->whereDate('pa.created_at', '>=', $startDate)
-            ->whereDate('pa.created_at', '<=', $endDate)
+            ->where('pa.created_at', '>=', $startDate.' 00:00:00')
+            ->where('pa.created_at', '<=', $endDate.' 23:59:59')
             ->where('pa.is_adjustment', 0)
             ->where('pa.is_tax', 0)
             ->where('pa.is_cancel', 0)

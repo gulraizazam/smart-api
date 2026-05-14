@@ -270,6 +270,15 @@ class ProductService
                 return false;
             }
 
+            // Reject zero/negative receipts up front — they corrupt the
+            // ledger (zero rows clutter the audit log, negatives would
+            // need a separate flow). The legacy controller validator only
+            // checked `< 0`, so a 0-qty submit slipped through.
+            $incomingQty = (int) ($data['quantity'] ?? 0);
+            if ($incomingQty <= 0) {
+                return false;
+            }
+
             // ProductDetail::createRecord reads `inventory_id` from the
             // request payload to link the stock movement back to this
             // inventory row, so make sure the resolved id is in $data
@@ -396,12 +405,35 @@ class ProductService
                     ->lockForUpdate()->first();
             }
 
-            // Deduct from source
-            $minusInventory->update(['quantity' => $minusInventory->quantity - $data['quantity']]);
+            // Deduct from source. Three guards added here:
+            //   1. The source inventory row must exist — previously a
+            //      missing row crashed on $minusInventory->quantity.
+            //   2. Transfer quantity must be positive — zero/negative
+            //      transfers are nonsense and would just shuffle audit
+            //      noise (or worse, silently restore qty on negatives).
+            //   3. The result must not go negative — without this, a
+            //      misconfigured request could push inventories below
+            //      zero, breaking every downstream availability check.
+            $transferQty = (int) ($data['quantity'] ?? 0);
+
+            if (! $minusInventory) {
+                throw new \RuntimeException('Source inventory does not exist at the selected origin.');
+            }
+            if ($transferQty <= 0) {
+                throw new \RuntimeException('Transfer quantity must be greater than zero.');
+            }
+            if ($minusInventory->quantity < $transferQty) {
+                throw new \RuntimeException(
+                    'Insufficient stock at source (available '.(int) $minusInventory->quantity
+                    .', requested '.$transferQty.').'
+                );
+            }
+
+            $minusInventory->update(['quantity' => $minusInventory->quantity - $transferQty]);
 
             // Add to destination
             if ($updateInventory) {
-                $updateInventory->update(['quantity' => $updateInventory->quantity + $data['quantity']]);
+                $updateInventory->update(['quantity' => $updateInventory->quantity + $transferQty]);
             } else {
                 $inventory = new Inventory;
                 $inventory->product_id = $data['product_id'];
@@ -412,9 +444,49 @@ class ProductService
                     $inventory->location_id = $data['to_location_id'];
                 }
 
-                $inventory->quantity = $data['quantity'];
+                $inventory->quantity = $transferQty;
                 $inventory->is_saleable = $productType->product_type === 'for_sale' ? 1 : 0;
                 $inventory->save();
+            }
+
+            // Append the matching audit rows to the `stocks` ledger so
+            // every quantity-changing event is logged. Without this, the
+            // ledger silently diverges from inventories.quantity and
+            // any availability check that consults stocks (Stock::
+            // sumProductQuantity, the inventory reports, validateOrderStock)
+            // returns numbers that don't match what the operator sees.
+            //
+            // The schema's `stocks.location_id` FKs `locations.id`, so we
+            // can only log centre↔centre legs. Warehouse-involved transfers
+            // skip the ledger writes — that gap stays until the schema
+            // grows a polymorphic source/destination.
+            $accountId = Auth::user()->account_id;
+            $transferId = $transferResult['record']->id;
+            $productDetailId = $productDetail->id;
+            $sourceCentreId = empty($data['from_warehouse_id']) ? (int) ($data['from_location_id'] ?? 0) : null;
+            $destCentreId = empty($data['to_warehouse_id']) ? (int) ($data['to_location_id'] ?? 0) : null;
+
+            if ($sourceCentreId) {
+                Stock::create([
+                    'account_id'        => $accountId,
+                    'product_id'        => (int) $data['product_id'],
+                    'product_detail_id' => $productDetailId,
+                    'transfer_id'       => $transferId,
+                    'location_id'       => $sourceCentreId,
+                    'quantity'          => $transferQty,
+                    'stock_type'        => 'out',
+                ]);
+            }
+            if ($destCentreId) {
+                Stock::create([
+                    'account_id'        => $accountId,
+                    'product_id'        => (int) $data['product_id'],
+                    'product_detail_id' => $productDetailId,
+                    'transfer_id'       => $transferId,
+                    'location_id'       => $destCentreId,
+                    'quantity'          => $transferQty,
+                    'stock_type'        => 'in',
+                ]);
             }
 
             return ['success' => true, 'message' => 'Record has been created successfully.'];
