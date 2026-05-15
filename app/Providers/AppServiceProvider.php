@@ -362,6 +362,10 @@ class AppServiceProvider extends ServiceProvider
         StaffAdvance::observe(StaffAdvanceObserver::class);
         StaffReturn::observe(StaffReturnObserver::class);
         PackageAdvances::observe(PackageAdvanceObserver::class);
+        // Reverses the cash-pool credit when an order is hard-deleted.
+        // Order create + refund already write package_advances rows via
+        // OrderService, so the observer only needs the `deleted` hook.
+        \App\Models\Order::observe(\App\Observers\OrderObserver::class);
         // Mirrors a parent membership's end_date edits onto its
         // referrals so the data model stays internally consistent
         // without requiring every read site to look up the parent.

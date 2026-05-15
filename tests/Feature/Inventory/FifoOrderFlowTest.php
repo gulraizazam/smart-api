@@ -9,6 +9,7 @@ use App\Models\Inventory;
 use App\Models\Order;
 use App\Models\OrderDetail;
 use App\Models\OrderRefund;
+use App\Models\PackageAdvances;
 use App\Models\Product;
 use App\Models\Stock;
 use App\Models\User;
@@ -320,5 +321,94 @@ class FifoOrderFlowTest extends TestCase
         $detail = OrderDetail::where('order_id', $order->id)->first();
         $this->assertSame(2, (int) $detail->quantity);
         $this->assertSame(0, OrderRefund::where('order_id', $order->id)->count());
+    }
+
+    /**
+     * The OrderService::writeOrderRevenueLedger path must always pin the
+     * resulting package_advances row to the originating order via
+     * `order_id`. Without this link the OrderObserver delete-cascade
+     * (next test) can't find which ledger row to reverse, and the
+     * General Sales / Revenue Detail reports lose the ability to
+     * distinguish plan revenue from inventory revenue.
+     */
+    public function test_order_create_writes_linked_package_advance(): void
+    {
+        $product = $this->makeProduct();
+        $loc = (int) $this->defaultLocation->id;
+        $this->makeBatch($product->id, $loc, 5, 800);
+
+        $patient = User::factory()->create(['account_id' => 1, 'user_type_id' => 1, 'active' => 1]);
+
+        $order = app(OrderService::class)->createOrder([
+            'sold_to' => 'patient',
+            'patient_id' => $patient->id,
+            'location_id' => $loc,
+            'payment_mode' => (int) $this->cashPaymentMode->id,
+            'product_id' => [$product->id],
+            'quantity' => [2],
+        ]);
+
+        $ledger = PackageAdvances::where('order_id', $order->id)->first();
+        $this->assertNotNull($ledger, 'A package_advances row must be written for every order.');
+        $this->assertSame('in', $ledger->cash_flow);
+        $this->assertSame((float) $order->total_price, (float) $ledger->cash_amount);
+        $this->assertSame($order->id, (int) $ledger->order_id);
+        $this->assertSame(0, (int) $ledger->is_refund);
+    }
+
+    /**
+     * Hard-deleting an order must cascade through `OrderObserver::deleted`
+     * to soft-delete the linked package_advances row(s). That trips
+     * `PackageAdvanceObserver::deleted` which decrements the cash pool.
+     * Also asserts the consumption rows + order_details + stocks ledger
+     * rows tied to the order are cleaned up, and that the FIFO batch's
+     * `remaining_quantity` is restored (otherwise future sales would
+     * silently over-draw).
+     */
+    public function test_order_delete_cascades_to_package_advances_and_restores_batch(): void
+    {
+        $product = $this->makeProduct();
+        $loc = (int) $this->defaultLocation->id;
+        $batch = $this->makeBatch($product->id, $loc, 10, 500);
+        $batchBefore = (int) $batch->fresh()->remaining_quantity;
+
+        $patient = User::factory()->create(['account_id' => 1, 'user_type_id' => 1, 'active' => 1]);
+
+        $order = app(OrderService::class)->createOrder([
+            'sold_to' => 'patient',
+            'patient_id' => $patient->id,
+            'location_id' => $loc,
+            'payment_mode' => (int) $this->cashPaymentMode->id,
+            'product_id' => [$product->id],
+            'quantity' => [3],
+        ]);
+
+        // Sanity checks on the pre-delete state.
+        $this->assertSame($batchBefore - 3, (int) $batch->fresh()->remaining_quantity);
+        $this->assertSame(1, PackageAdvances::where('order_id', $order->id)->count());
+
+        $result = Order::DeleteRecord($order->id);
+        $this->assertTrue($result->get('status'));
+
+        // OrderObserver fired → linked ledger row deleted (soft).
+        $this->assertSame(
+            0,
+            PackageAdvances::where('order_id', $order->id)->whereNull('deleted_at')->count(),
+            'Linked package_advances must be soft-deleted by OrderObserver.',
+        );
+        $this->assertSame(
+            1,
+            PackageAdvances::withTrashed()->where('order_id', $order->id)->count(),
+            'Soft-deleted row must still exist as an audit trail.',
+        );
+
+        // FIFO batch fully restored — otherwise the next sale would
+        // silently consume stock the deleted order had already eaten.
+        $this->assertSame($batchBefore, (int) $batch->fresh()->remaining_quantity);
+
+        // Children cleaned up.
+        $this->assertNull(Order::find($order->id));
+        $this->assertSame(0, OrderDetail::where('order_id', $order->id)->count());
+        $this->assertSame(0, Stock::where('order_id', $order->id)->count());
     }
 }

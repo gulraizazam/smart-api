@@ -50,6 +50,10 @@ class PackageAdvances extends BaseModel
         'package_id',
         'deleted_at',
         'invoice_id',
+        // Inventory-module link — set by OrderService when a sale or
+        // refund writes a ledger row. The OrderObserver uses this for
+        // the delete-cascade reversal (see app/Observers/OrderObserver.php).
+        'order_id',
         'is_cancel',
         'is_tax',
         'is_setteled',

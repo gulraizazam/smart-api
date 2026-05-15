@@ -7,7 +7,6 @@ namespace App\Http\Controllers\Api\CashFlow;
 use App\Exceptions\CashflowException;
 use App\Helpers\CashflowHelper;
 use App\Http\Controllers\Controller;
-use App\Models\Order;
 use App\Models\PaymentModes;
 use App\Services\CashFlow\CashflowSettingService;
 use App\Services\CashFlow\DashboardService;
@@ -195,27 +194,14 @@ class CashFlowDashboardController extends Controller
 
 
 
-            // Add inventory sales since go-live to current balance (cash only for branch pools)
-
+            // Inventory cash sales used to be summed on top of
+            // $currentBalance here. OrderService now writes a
+            // package_advances row on order create/refund and the
+            // PackageAdvanceObserver already credits/debits the matching
+            // branch pool — so $currentBalance (derived from
+            // cash_pools.cached_balance) already reflects them. Adding
+            // an Order::sum on top would double-count.
             $goLiveDate = $this->settingService->getGoLiveDate($accountId) ?? '2026-03-08';
-
-            $branchPoolMap = $pools->pluck('id', 'location_id')->toArray();
-
-            $inventoryCashSales = (float) Order::where('account_id', $accountId)
-                ->where('order_type', 'sale')
-                ->whereIn('payment_mode', $cashModeIds)
-                ->whereIn('location_id', array_keys($branchPoolMap))
-                ->where('created_at', '>=', $goLiveDate . ' 00:00:00')
-                ->sum('total_price');
-
-            $inventoryCashRefunds = (float) Order::where('account_id', $accountId)
-                ->where('order_type', 'refund')
-                ->whereIn('payment_mode', $cashModeIds)
-                ->whereIn('location_id', array_keys($branchPoolMap))
-                ->where('created_at', '>=', $goLiveDate . ' 00:00:00')
-                ->sum('total_price');
-
-            $currentBalance += $inventoryCashSales - $inventoryCashRefunds;
 
             // Week range: defaults to Sunday → today, but the caller can
             // override via `date_from` / `date_to` query params. Plan C-1
@@ -460,23 +446,13 @@ class CashFlowDashboardController extends Controller
                     $openingBalance -= (float) $servicesOut;
                 }
 
-                // Add inventory cash sales
-                $inventorySales = (float) Order::where('account_id', $accountId)
-                    ->where('order_type', 'sale')
-                    ->whereIn('payment_mode', $cashModeIds)
-                    ->whereIn('location_id', array_keys($branchPoolMap))
-                    ->whereBetween('created_at', [$goLiveDate . ' 00:00:00', $lastSaturday])
-                    ->sum('total_price');
-                $openingBalance += $inventorySales;
-
-                // Subtract inventory cash refunds
-                $inventoryRefunds = (float) Order::where('account_id', $accountId)
-                    ->where('order_type', 'refund')
-                    ->whereIn('payment_mode', $cashModeIds)
-                    ->whereIn('location_id', array_keys($branchPoolMap))
-                    ->whereBetween('created_at', [$goLiveDate . ' 00:00:00', $lastSaturday])
-                    ->sum('total_price');
-                $openingBalance -= $inventoryRefunds;
+                // Inventory cash sales/refunds used to be summed from
+                // `orders` here to build the opening balance. Order
+                // create/refund now write to `package_advances`, which
+                // the `$servicesIn` / `$servicesOut` PackageAdvances
+                // sums above already include. Adding an Order::sum on
+                // top would double-count the inventory cash in the
+                // opening balance and break the FDM week-stats view.
 
                 // Subtract expenses
                 $obExpenses = \App\Models\CashFlow\Expense::forAccount($accountId)
@@ -519,13 +495,16 @@ class CashFlowDashboardController extends Controller
                     ->sum('amount');
                 $openingBalance += (float) $obStaffReturns;
 
-                // Debug opening balance calculation
+                // Debug opening balance calculation.
+                // `services_in` / `services_out` now include inventory
+                // revenue too (since OrderService writes package_advances
+                // rows), so the separate inventory_sales / inventory_refunds
+                // entries are dropped — would be zero anyway under the new
+                // single-ledger model.
                 $debugInfo['opening_balance_calc'] = [
                     'static_opening' => (float) $pools->sum('opening_balance'),
                     'services_in' => (float) $servicesIn,
                     'services_out' => (float) $servicesOut,
-                    'inventory_sales' => $inventorySales,
-                    'inventory_refunds' => $inventoryRefunds,
                     'expenses' => (float) $obExpenses,
                     'transfers_out' => (float) $transfersOut,
                     'transfers_in' => (float) $transfersIn,
@@ -560,11 +539,16 @@ class CashFlowDashboardController extends Controller
             $servicesCashInflows = 0;
             $servicesCashInflowsCount = 0;
             if (!empty($cashModeIds)) {
+                // Services KPI — plan/treatment payments only. `whereNull('order_id')`
+                // excludes the package_advances rows that OrderService
+                // writes for inventory sales; those flow into the
+                // inventory KPI below.
                 $svcIn = $sumCount(
                     \App\Models\PackageAdvances::where('account_id', $accountId)
                         ->where('cash_flow', 'in')
                         ->where('is_cancel', 0)
                         ->whereNull('deleted_at')
+                        ->whereNull('order_id')
                         ->where('cash_amount', '>', 0)
                         ->whereIn('payment_mode_id', $cashModeIds)
                         ->whereIn('location_id', array_keys($branchPoolMap))
@@ -579,6 +563,7 @@ class CashFlowDashboardController extends Controller
                         ->where('is_refund', 1)
                         ->where('is_cancel', 0)
                         ->whereNull('deleted_at')
+                        ->whereNull('order_id')
                         ->whereIn('payment_mode_id', $cashModeIds)
                         ->whereIn('location_id', array_keys($branchPoolMap))
                         ->where('system_created_at', '>=', $sundayStart)
@@ -590,29 +575,40 @@ class CashFlowDashboardController extends Controller
                 $servicesCashInflowsCount = $svcIn['count'] + $svcOut['count'];
             }
 
-            // Inventory Cash Inflows (sales minus refunds)
-            $invSales = $sumCount(
-                Order::where('account_id', $accountId)
-                    ->where('order_type', 'sale')
-                    ->whereIn('payment_mode', $cashModeIds)
+            // Inventory KPI — order sales / refunds. Reads from the
+            // same package_advances ledger via `whereNotNull('order_id')`
+            // so the two FDM KPIs (services + inventory) read from a
+            // single source of truth and always sum to the correct total
+            // cash inflow without overlap.
+            $invIn = $sumCount(
+                \App\Models\PackageAdvances::where('account_id', $accountId)
+                    ->where('cash_flow', 'in')
+                    ->where('is_cancel', 0)
+                    ->whereNull('deleted_at')
+                    ->whereNotNull('order_id')
+                    ->whereIn('payment_mode_id', $cashModeIds)
                     ->whereIn('location_id', array_keys($branchPoolMap))
-                    ->where('created_at', '>=', $sundayStart)
-                    ->where('created_at', '<=', $nowEnd),
-                'total_price',
+                    ->where('system_created_at', '>=', $sundayStart)
+                    ->where('system_created_at', '<=', $nowEnd),
+                'cash_amount',
             );
-            $invRefunds = $sumCount(
-                Order::where('account_id', $accountId)
-                    ->where('order_type', 'refund')
-                    ->whereIn('payment_mode', $cashModeIds)
+            $invOut = $sumCount(
+                \App\Models\PackageAdvances::where('account_id', $accountId)
+                    ->where('cash_flow', 'out')
+                    ->where('is_refund', 1)
+                    ->where('is_cancel', 0)
+                    ->whereNull('deleted_at')
+                    ->whereNotNull('order_id')
+                    ->whereIn('payment_mode_id', $cashModeIds)
                     ->whereIn('location_id', array_keys($branchPoolMap))
-                    ->where('created_at', '>=', $sundayStart)
-                    ->where('created_at', '<=', $nowEnd),
-                'total_price',
+                    ->where('system_created_at', '>=', $sundayStart)
+                    ->where('system_created_at', '<=', $nowEnd),
+                'cash_amount',
             );
-            $inventorySalesAmount = $invSales['total'];
-            $inventoryRefundsAmount = $invRefunds['total'];
+            $inventorySalesAmount = $invIn['total'];
+            $inventoryRefundsAmount = $invOut['total'];
             $inventoryCashInflows = $inventorySalesAmount - $inventoryRefundsAmount;
-            $inventoryCashInflowsCount = $invSales['count'] + $invRefunds['count'];
+            $inventoryCashInflowsCount = $invIn['count'] + $invOut['count'];
 
             // Expenses Total (current week)
             $weekExpensesTotal = 0;

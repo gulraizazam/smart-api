@@ -352,7 +352,12 @@ class OrdersController extends Controller
         $pdf = App::make('dompdf.wrapper');
         $pdf->loadHTML($content);
 
-        $filename = 'order-invoice-C-' . $data['invoice_info']->patient_id . '.pdf';
+        // patient_id is nullable since the 2026-05 inventory revamp
+        // (employee sales have it null). Fall back to employee_id or
+        // the order id so the download always has a sensible filename.
+        $info = $data['invoice_info'];
+        $buyerId = $info->patient_id ?: ($info->employee_id ?: $info->id);
+        $filename = 'order-invoice-C-' . $buyerId . '.pdf';
 
         return $download ? $pdf->download($filename) : $pdf->stream($filename);
     }

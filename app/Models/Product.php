@@ -345,14 +345,33 @@ class Product extends BaseModel
                     continue;
                 }
 
-                // Get first inventory for price (ignore inventory quantity)
+                // Get the inventory row id for the modern add-stock /
+                // allocate flows (they pin movements back to inventory_id).
                 $inventory = DB::table('inventories')
                     ->where('product_id', $product->id)
                     ->where('location_id', $location_id)
                     ->orderBy('created_at', 'desc')
                     ->first();
 
-                $salePrice = $inventory ? ($inventory->sale_price ?? $product->sale_price) : $product->sale_price;
+                // Sale price comes from the OLDEST OPEN FIFO batch — that's
+                // the price the server will actually charge on the next
+                // sale of this product, so the dialog preview matches the
+                // real invoice. Previously this read `inventories.sale_price`
+                // which the legacy `addStock` flow overwrites on every
+                // receipt, so the preview drifted to the latest batch price
+                // instead of the next-to-be-consumed one.
+                $fifoBatch = DB::table('stocks')
+                    ->where('product_id', $product->id)
+                    ->where('location_id', $location_id)
+                    ->where('stock_type', 'in')
+                    ->whereNotNull('remaining_quantity')
+                    ->where('remaining_quantity', '>', 0)
+                    ->orderBy('created_at')
+                    ->orderBy('id')
+                    ->first();
+
+                $salePrice = $fifoBatch->sale_price
+                    ?? ($inventory->sale_price ?? $product->sale_price);
 
                 $result->push((object) [
                     'inventory_id' => $inventory?->id,

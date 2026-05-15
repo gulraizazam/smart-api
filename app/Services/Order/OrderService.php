@@ -84,21 +84,48 @@ class OrderService
 
     /**
      * Transform order records for datatable display.
+     *
+     * Buyer column: for `buyer_type='employee'` orders the `patients`
+     * relation is null (patient_id is nullable since the 2026-05
+     * inventory revamp), so we resolve the employee name/phone via a
+     * single batched user lookup and surface it through the same
+     * `patient_name` / `patient_phone` fields the SPA already renders —
+     * keeps the datatable shape symmetric and the row component dumb.
      */
     public function transformForDatatable(\Illuminate\Database\Eloquent\Collection $orders, array $centres): Collection
     {
-        return collect($orders)->map(function ($order) use ($centres) {
+        $employeeIds = $orders
+            ->where('buyer_type', 'employee')
+            ->pluck('employee_id')
+            ->filter()
+            ->unique()
+            ->all();
+
+        $employees = ! empty($employeeIds)
+            ? User::whereIn('id', $employeeIds)->get(['id', 'name', 'phone'])->keyBy('id')
+            : collect();
+
+        return collect($orders)->map(function ($order) use ($centres, $employees) {
             $order->order_have = ($order->location_id !== null && array_key_exists($order->location_id, $centres))
                 ? $centres[$order->location_id]->name
                 : 'N/A';
             $order->status = $order->status == 1 ? 'completed' : 'pending';
 
-            // Surface patient name + phone for the SPA's avatar-style row.
-            // The relation is already eager-loaded above; we flatten it here
-            // so the frontend doesn't have to walk a nested object.
-            $patient = $order->patients;
-            $order->patient_name = $patient?->name;
-            $order->patient_phone = $patient?->phone;
+            $buyerType = $order->buyer_type ?? 'patient';
+            if ($buyerType === 'employee' && $order->employee_id) {
+                $emp = $employees[$order->employee_id] ?? null;
+                $order->patient_name = $emp?->name;
+                $order->patient_phone = $emp?->phone;
+            } else {
+                $patient = $order->patients;
+                $order->patient_name = $patient?->name;
+                $order->patient_phone = $patient?->phone;
+            }
+
+            // Surface buyer_type so the SPA can render an "Employee" badge
+            // next to the name without re-deriving from the (now nullable)
+            // patient_id.
+            $order->buyer_type = $buyerType;
 
             // Flatten the product list so the SPA can render a comma-separated
             // summary in the order row without walking orderDetail[].product.
@@ -444,8 +471,81 @@ class OrderService
             $order->quantity = $totalUnits;
             $order->save();
 
+            // Revenue ledger row — every consultation / treatment payment
+            // writes to `package_advances` and the existing General Sales /
+            // Revenue Detail / Revenue Summary / Gender-Wise reports all
+            // read from there. Writing a parallel row on order create is
+            // how product sales surface in those reports without UNION-ing
+            // through every report query. Same DB::transaction wrap so the
+            // ledger row commits or rolls back together with the order.
+            $this->writeOrderRevenueLedger(
+                order: $order,
+                accountId: $accountId,
+                cashFlow: 'in',
+                isRefund: 0,
+            );
+
             return $order;
         });
+    }
+
+    /**
+     * Write a `package_advances` row representing the cash event for an
+     * order (sale or refund). The legacy revenue reports read from this
+     * table, so this is what makes inventory sales appear in the General
+     * Sales / Revenue Summary / Revenue Detail reports.
+     *
+     * Column choices:
+     *   - `patient_id` is NOT NULL on the table — for employee buyers
+     *     (where `orders.patient_id` is null) we use `employee_id`. Both
+     *     are valid `users.id` values, so `$advance->user` resolves and
+     *     the reports' name/gender lookups don't crash.
+     *   - `appointment_type_id` is left null — there's no existing
+     *     enum value for "product order" and the report's
+     *     `isRevenueTransaction()` only checks the flag columns, not
+     *     this discriminator. Resolved as "Product Sale" / "Product
+     *     Refund" via the transtype label tweak in the report service.
+     *   - `package_id`, `invoice_id`, `appointment_id` are all null —
+     *     orders aren't tied to any of those entities.
+     */
+    private function writeOrderRevenueLedger(Order $order, int $accountId, string $cashFlow, int $isRefund): void
+    {
+        $buyerUserId = $order->patient_id ?: $order->employee_id;
+        if (!$buyerUserId) {
+            // No user to anchor the ledger row to — skip rather than
+            // throw, since the order itself is already committed and we
+            // don't want to roll the whole sale back over a reporting
+            // miss. Should not happen in practice (createOrder above
+            // hard-validates buyer presence) but guarded defensively.
+            return;
+        }
+
+        \App\Models\PackageAdvances::create([
+            'cash_flow' => $cashFlow,
+            'cash_amount' => $order->total_price,
+            'active' => 1,
+            'patient_id' => $buyerUserId,
+            'payment_mode_id' => $order->payment_mode,
+            'account_id' => $accountId,
+            'appointment_type_id' => null,
+            'appointment_id' => null,
+            'location_id' => $order->location_id,
+            'created_by' => $order->created_by ?? Auth::id(),
+            'package_id' => null,
+            'invoice_id' => null,
+            // Pin the ledger row to the originating order so
+            // OrderObserver::deleted() can cascade the reversal cleanly
+            // (delete this row → PackageAdvanceObserver::deleted() →
+            // pool decremented). Without this link the delete-cascade
+            // would have to guess by (location, amount, timestamp).
+            'order_id' => $order->id,
+            'is_cancel' => 0,
+            'is_tax' => 0,
+            'is_setteled' => 0,
+            'is_refund' => $isRefund,
+            'is_adjustment' => 0,
+            'refund_note' => null,
+        ]);
     }
 
     /**
@@ -716,6 +816,22 @@ class OrderService
                 $order->total_price = max(0, (float) $order->total_price - $refundedTotal);
                 $order->save();
 
+                // Revenue ledger — write a refund row to package_advances
+                // so the existing revenue reports net out correctly.
+                // `cash_amount` carries the absolute refund value (positive
+                // number); the report's `categorizeByPaymentMode()`
+                // already places `cash_flow='out'` rows into the refund_out
+                // bucket. Symmetric with the createOrder ledger row above.
+                $refundLedger = clone $order;
+                $refundLedger->total_price = $refundedTotal;
+                $refundLedger->created_by = Auth::id();
+                $this->writeOrderRevenueLedger(
+                    order: $refundLedger,
+                    accountId: $accountId,
+                    cashFlow: 'out',
+                    isRefund: 1,
+                );
+
                 return ['success' => true, 'message' => 'Order has been refunded.'];
             });
         } catch (\Symfony\Component\HttpKernel\Exception\HttpException $e) {
@@ -745,10 +861,19 @@ class OrderService
             ? Locations::find($invoiceInfo->location_id)
             : Warehouse::find($invoiceInfo->warehouse_id);
 
+        // The `patient` key feeds the legacy Blade invoice (PDF download)
+        // — it expects a User-shaped object. For employee sales
+        // patient_id is null since the 2026-05 revamp, so resolve the
+        // employee user instead. The Blade reads `->name` / `->phone`
+        // which both users + employees have.
+        $buyer = $invoiceInfo->patient_id
+            ? User::find($invoiceInfo->patient_id)
+            : ($invoiceInfo->employee_id ? User::find($invoiceInfo->employee_id) : null);
+
         return [
             'invoice_info' => $invoiceInfo,
             'products' => Product::whereIn('id', $productId)->get(),
-            'patient' => User::find($invoiceInfo->patient_id),
+            'patient' => $buyer,
             'account' => Accounts::find($invoiceInfo->account_id),
             'company_phone_number' => Settings::where('slug', '=', 'sys-headoffice')->first(),
             'location_info' => $locationInfo,

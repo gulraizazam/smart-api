@@ -1621,13 +1621,15 @@ CREATE TABLE `package_advances` (
   `updated_by` int(10) unsigned DEFAULT NULL,
   `package_id` int(10) unsigned DEFAULT NULL,
   `invoice_id` int(10) unsigned DEFAULT NULL,
+  `order_id` bigint(20) unsigned DEFAULT NULL,
   `is_setteled` tinyint(1) NOT NULL DEFAULT 0,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   `system_created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `deleted_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
-  KEY `idx_pa_refund_location_pkg` (`is_refund`,`location_id`,`package_id`)
+  KEY `idx_pa_refund_location_pkg` (`is_refund`,`location_id`,`package_id`),
+  KEY `package_advances_order_id_idx` (`order_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `package_bundles`;

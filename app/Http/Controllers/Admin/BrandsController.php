@@ -51,6 +51,7 @@ class BrandsController extends Controller
 
             $params = [
                 'name' => $filters['name'] ?? null,
+                'status' => $filters['status'] ?? null,
                 'apply_filter' => $apply_filter,
             ];
 

@@ -166,6 +166,14 @@ class BrandService
             $where[] = ['name', 'like', '%' . $params['name'] . '%'];
         }
 
+        // Status filter: 0 = inactive, 1 = active, null/'' = no filter.
+        // Compared with `!== null && !== ''` rather than `!empty` because
+        // `0` is a valid (and important) filter value — operators often
+        // narrow to inactive brands for cleanup.
+        if (isset($params['status']) && $params['status'] !== '' && $params['status'] !== null) {
+            $where[] = ['status', (int) $params['status']];
+        }
+
         return Brand::query()
             ->when(!empty($where), fn ($q) => $q->where($where));
     }
