@@ -176,13 +176,15 @@ class CashFlowTransfersController extends Controller
 
 
 
+            $accountId = (int) Auth::user()->account_id;
+
             $request->validate([
 
                 'amount' => 'required|numeric|min:1|integer',
 
-                'from_pool_id' => 'required|exists:cash_pools,id',
+                'from_pool_id' => ['required', \Illuminate\Validation\Rule::exists('cash_pools', 'id')->where('account_id', $accountId)->whereNull('deleted_at')],
 
-                'to_pool_id' => 'required|exists:cash_pools,id|different:from_pool_id',
+                'to_pool_id' => ['required', \Illuminate\Validation\Rule::exists('cash_pools', 'id')->where('account_id', $accountId)->whereNull('deleted_at'), 'different:from_pool_id'],
 
                 'method' => 'required|in:physical_cash,bank_deposit',
 

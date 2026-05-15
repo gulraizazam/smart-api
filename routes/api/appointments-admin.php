@@ -180,7 +180,9 @@ Route::get('finances/{id}/create', [PackageAdvancesController::class, 'create'])
 
 Route::get('finances/getpackages', [PackageAdvancesController::class, 'getpackages'])->name('finances.getpackages');
 
-Route::post('finances/savepackagesadvances', [PackageAdvancesController::class, 'savepackagesadvances'])->name('finances.savepackagesadvances');
+Route::post('finances/savepackagesadvances', [PackageAdvancesController::class, 'savepackagesadvances'])
+    ->middleware(['throttle:60,1', 'idempotent'])
+    ->name('finances.savepackagesadvances');
 
 Route::post('invoicepatient/datatable/&{id}', [InvoicesController::class, 'datatable'])->name('invoicepatient.datatable');
 

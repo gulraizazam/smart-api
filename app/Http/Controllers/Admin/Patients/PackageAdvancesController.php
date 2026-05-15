@@ -18,6 +18,7 @@ use Illuminate\Support\Facades\Config;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\Rule;
 
 class PackageAdvancesController extends Controller
 {
@@ -157,10 +158,33 @@ class PackageAdvancesController extends Controller
 
     /*
      * save the information in packages advances
+     *
+     * NOTE (2026-05-15): this controller method is currently UNROUTED.
+     * The live save path is `App\Http\Controllers\Admin\PackageAdvancesController::savepackagesadvances`
+     * registered at `POST /api/finances/savepackagesadvances`. The
+     * Patients-namespace copy below is preserved (under active work
+     * per recent commits) and DEFENSIVELY HARDENED here so that if a
+     * future route registration goes live, the same auth + tenant +
+     * amount guards apply automatically.
      * */
     public function savepackagesadvances(Request $request): \Illuminate\Http\JsonResponse
     {
-        return DB::transaction(function () use ($request) {
+        if (! Gate::allows('finances_create')) {
+            return response()->json(['status' => false, 'message' => 'Unauthorized.'], 403);
+        }
+
+        $accountId = (int) Auth::user()->account_id;
+
+        // Tenant-scoped + soft-delete-aware FK validation, strict-
+        // positive integer amount. Mirrors the live controller.
+        $request->validate([
+            'cash_amount' => 'required|integer|min:1|max:99999999',
+            'patient_id' => ['required', 'integer', Rule::exists('users', 'id')->where('account_id', $accountId)->whereNull('deleted_at')],
+            'package_id' => ['required', 'integer', Rule::exists('packages', 'id')->where('account_id', $accountId)->whereNull('deleted_at')],
+            'payment_mode_id' => ['required', 'integer', Rule::exists('payment_modes', 'id')->where('account_id', $accountId)->whereNull('deleted_at')],
+        ]);
+
+        return DB::transaction(function () use ($request, $accountId) {
             // Overpayment is a legitimate state (advance / credit) — the
             // cash > total guard used to silently fail the save with
             // status=false, which the SPA surfaces as a generic error.
@@ -169,7 +193,7 @@ class PackageAdvancesController extends Controller
             $data['cash_amount'] = $request->cash_amount;
             $data['patient_id'] = $request->patient_id;
             $data['payment_mode_id'] = $request->payment_mode_id;
-            $data['account_id'] = Auth::user()->account_id;
+            $data['account_id'] = $accountId;
             $data['created_by'] = Auth::user()->id;
             $data['updated_by'] = Auth::user()->id;
             $data['package_id'] = $request->package_id;

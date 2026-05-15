@@ -40,7 +40,6 @@ class StaffAdvanceService
         $returnsQ = StaffReturn::forAccount($accountId)->whereNull('voided_at');
         $expensesQ = Expense::forAccount($accountId)
             ->whereNull('voided_at')
-            ->where('status', '!=', 'rejected')
             ->whereNotNull('staff_id');
 
         if ($dateFrom && $dateTo) {
@@ -117,7 +116,6 @@ class StaffAdvanceService
         $expensesQ = Expense::forAccount($accountId)
             ->where('staff_id', $userId)
             ->whereNull('voided_at')
-            ->where('status', '!=', 'rejected')
             ->with(['category:id,name', 'creator:id,name'])
             ->orderBy('expense_date', 'desc');
 
@@ -335,23 +333,35 @@ class StaffAdvanceService
      */
     public function editAdvance(int $advanceId, array $data, int $accountId): StaffAdvance
     {
-        $advance = StaffAdvance::forAccount($accountId)->findOrFail($advanceId);
+        // Pre-check (cheap, no lock).
+        $preCheck = StaffAdvance::forAccount($accountId)->findOrFail($advanceId);
 
-        if ($advance->isVoided()) {
+        if ($preCheck->isVoided()) {
             throw new CashflowException('Cannot edit a voided advance.');
         }
 
         // Period-lock guard — editing reshapes the pool deduction booked
         // against the advance's creation date. If that month is closed, block.
-        $createdAt = $advance->created_at->format('Y-m-d');
+        $createdAt = $preCheck->created_at->format('Y-m-d');
         if (CashflowHelper::isDateInLockedPeriod($createdAt, $accountId)) {
             throw CashflowException::periodLocked(
-                (int) $advance->created_at->month,
-                (int) $advance->created_at->year,
+                (int) $preCheck->created_at->month,
+                (int) $preCheck->created_at->year,
             );
         }
 
-        return DB::transaction(function () use ($advance, $data) {
+        return DB::transaction(function () use ($advanceId, $data, $accountId) {
+            // Lock the row inside the transaction so concurrent edits
+            // can't both read the same `oldAmount`/`oldPoolId` and apply
+            // overlapping pool deltas.
+            $advance = StaffAdvance::forAccount($accountId)
+                ->lockForUpdate()
+                ->findOrFail($advanceId);
+
+            if ($advance->isVoided()) {
+                throw new CashflowException('Cannot edit a voided advance.');
+            }
+
             $auditRelations = ['staffUser:id,name', 'pool:id,name', 'creator:id,name'];
             $advance->load($auditRelations);
             $oldValues = $advance->toArray();
@@ -449,7 +459,6 @@ class StaffAdvanceService
         $expenses = \App\Models\CashFlow\Expense::forAccount($accountId)
             ->where('staff_id', $userId)
             ->whereNull('voided_at')
-            ->where('status', '!=', 'rejected')
             ->sum('amount');
 
         $transfersOut = StaffTransfer::forAccount($accountId)
@@ -511,7 +520,6 @@ class StaffAdvanceService
         $expenses = Expense::forAccount($accountId)
             ->whereIn('staff_id', $userIds)
             ->whereNull('voided_at')
-            ->where('status', '!=', 'rejected')
             ->select('staff_id', DB::raw('SUM(amount) as total'))
             ->groupBy('staff_id')
             ->pluck('total', 'staff_id')

@@ -13,6 +13,7 @@ use App\Models\Locations;
 use App\Models\PaymentModes;
 use App\Models\Services;
 use App\Models\UserTypes;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -52,6 +53,14 @@ trait UsesFinancialFixtures
      */
     protected function seedFinancialFixtures(): void
     {
+        // Flush the cache before seeding so test N+1 doesn't read a
+        // stale value left behind by test N — most painful with
+        // `Cache::remember`-backed search results (e.g.
+        // `Patients::getPatientSearchOptimized`) keyed only by query +
+        // account, which would otherwise return cached-empty across
+        // tests that should each see a freshly-seeded row.
+        Cache::flush();
+
         $this->seedDefaultAccount();
         $this->seedRegionsAndCities();
         $this->seedTaxTreatmentTypes();
@@ -260,18 +269,34 @@ trait UsesFinancialFixtures
 
     protected function seedPaymentModes(): void
     {
-        $modes = ['Cash', 'Card', 'Cheque', 'Bank Transfer'];
+        // Pin ids to match the hardcoded constants in InvoiceGenerationService
+        // (PAYMENT_MODE_CASH=1, PAYMENT_MODE_CARD=2, PAYMENT_MODE_BANK=4). The
+        // numeric gap at id=3 mirrors production where PayPal was soft-deleted
+        // but its id slot is reserved. firstOrCreate-without-id silently broke
+        // these tests across runs because MySQL doesn't reset AUTO_INCREMENT
+        // on rolled-back transactions — Cash drifted to id=9+ after a few
+        // tests had reserved low ids.
+        $modes = [
+            1 => 'Cash',
+            2 => 'Card',
+            4 => 'Bank Transfer',
+            5 => 'Cheque',
+        ];
 
-        foreach ($modes as $mode) {
-            $created = PaymentModes::query()->firstOrCreate(
-                ['name' => $mode],
-                ['active' => 1, 'account_id' => 1]
+        foreach ($modes as $id => $name) {
+            DB::table('payment_modes')->updateOrInsert(
+                ['id' => $id],
+                [
+                    'name' => $name,
+                    'active' => 1,
+                    'account_id' => 1,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ],
             );
-
-            if ($mode === 'Cash') {
-                $this->cashPaymentMode = $created;
-            }
         }
+
+        $this->cashPaymentMode = PaymentModes::query()->find(1);
     }
 
     protected function seedAppointmentLookups(): void

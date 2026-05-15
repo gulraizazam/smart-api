@@ -18,8 +18,10 @@ use Tests\TestCase;
  *
  * Pins:
  *   1. Empty fixture returns an empty Collection (not null / array).
- *   2. The service honors the centreId filter — when a non-existent
- *      centre is passed, the result is still a Collection (empty).
+ *   2. The service honors the centreIds filter (renamed from singular
+ *      `centreId` when the API widened to multi-centre selection) —
+ *      when a non-existent centre is passed, the result is still a
+ *      Collection (empty).
  *   3. The service honors the createdBy filter the same way.
  */
 class AppointmentSummaryReportTest extends TestCase
@@ -50,13 +52,13 @@ class AppointmentSummaryReportTest extends TestCase
         $this->assertTrue($result->isEmpty());
     }
 
-    public function test_generate_honors_the_centre_id_filter(): void
+    public function test_generate_honors_the_centre_ids_filter(): void
     {
         $result = $this->service->generate(
             startDate: now()->subWeek()->format('Y-m-d 00:00:00'),
             endDate: now()->format('Y-m-d 23:59:59'),
             timeInterval: 60,
-            centreId: 99_999,
+            centreIds: [99_999],
         );
 
         $this->assertInstanceOf(Collection::class, $result);

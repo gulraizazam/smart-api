@@ -335,10 +335,13 @@ class PoolService
             }
         }
 
-        // Step 4: Expenses — debit pools (non-voided, non-rejected)
+        // Step 4: Expenses — debit pools for every non-voided row
+        // regardless of approval status (Model B, 2026-05-14): the
+        // cash event happened at creation; reject/approve are workflow
+        // metadata that don't move money. Only `void` reverses the
+        // debit (filtered out here via `voided_at IS NULL`).
         $expenses = \App\Models\CashFlow\Expense::forAccount($accountId)
             ->whereNull('voided_at')
-            ->where('status', '!=', 'rejected')
             ->where('system_created_at', '>=', $goLiveDate)
             ->get(['amount', 'paid_from_pool_id']);
 
@@ -504,11 +507,12 @@ class PoolService
             }
         }
 
-        // Step 4: Expenses (non-voided, non-rejected, with pool)
+        // Step 4: Expenses (non-voided, with pool). Model B: reject
+        // doesn't move money — every non-voided row debits its pool
+        // regardless of approval status.
         $totalExpenses = 0.0;
         $expenses = \App\Models\CashFlow\Expense::forAccount($accountId)
             ->whereNull('voided_at')
-            ->where('status', '!=', 'rejected')
             ->where('system_created_at', '>=', $goLiveDate)
             ->get(['amount', 'paid_from_pool_id']);
 

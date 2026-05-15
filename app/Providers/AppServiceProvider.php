@@ -27,9 +27,12 @@ use App\Models\PlanInvoice;
 use App\Models\Services;
 use App\Models\User;
 use App\Http\Controllers\Api\CashFlow\ExpenseAttachmentsController;
+use App\Models\BusinessClosure;
+use App\Models\WorkingDayException;
 use App\Observers\ActivityLogObserver;
 use App\Observers\MembershipObserver;
 use App\Observers\R2CleanupObserver;
+use App\Observers\Schedule\OperatingDaysVersionObserver;
 use App\Services\Storage\R2DocumentService;
 use Illuminate\Support\Facades\Storage;
 use App\Observers\CashFlow\CashTransferObserver;
@@ -363,5 +366,12 @@ class AppServiceProvider extends ServiceProvider
         // referrals so the data model stays internally consistent
         // without requiring every read site to look up the parent.
         Membership::observe(MembershipObserver::class);
+
+        // Bumps the per-account OperatingDays version counter on every
+        // schedule write so downstream caches (BenchmarkCalculator's
+        // per-doctor revenue pool) invalidate immediately rather than
+        // waiting for their natural TTL — see App\Support\OperatingDays::bumpVersion().
+        BusinessClosure::observe(OperatingDaysVersionObserver::class);
+        WorkingDayException::observe(OperatingDaysVersionObserver::class);
     }
 }

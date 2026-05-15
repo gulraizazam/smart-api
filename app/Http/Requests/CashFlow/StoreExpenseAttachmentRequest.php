@@ -48,7 +48,14 @@ class StoreExpenseAttachmentRequest extends FormRequest
                 'mimes:pdf,jpg,jpeg,png,heic,heif,webp',
                 'mimetypes:application/pdf,image/jpeg,image/png,image/heic,image/heif,image/webp',
             ],
-            'expense_id' => 'nullable|integer|exists:expenses,id',
+            // expense_id (when supplied) MUST belong to the caller's
+            // tenant. The bare `exists:expenses,id` rule accepts any
+            // expense id — without scoping, a user could upload a file
+            // and bind it to another tenant's expense ID, creating a
+            // dangling cross-tenant attachment row.
+            'expense_id' => ['nullable', 'integer', \Illuminate\Validation\Rule::exists('expenses', 'id')
+                ->where('account_id', (int) Auth::user()->account_id)
+                ->whereNull('deleted_at')],
         ];
     }
 

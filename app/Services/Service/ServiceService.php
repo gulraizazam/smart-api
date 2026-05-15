@@ -428,7 +428,10 @@ final class ServiceService
         }
 
         return DB::transaction(function () use ($service, $id, $accountId): bool {
-            if ($service->parent_id === 0) {
+            // Use the isParent accessor so both legacy parent_id=0 rows and
+            // the normalised NULL rows trigger the cascade. The raw `=== 0`
+            // check missed NULL parents and silently dropped child cascade.
+            if ($service->isParent) {
                 // Parent service: cascade to all children
                 $childIds = Services::where('parent_id', $id)->pluck('id')->toArray();
                 Services::where('parent_id', $id)->update(['active' => 0]);

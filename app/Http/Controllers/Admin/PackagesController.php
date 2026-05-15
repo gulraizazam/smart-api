@@ -1348,13 +1348,43 @@ class PackagesController extends Controller
     }
 
     /*
-     * $edit the cash that enter in package advances
+     * Fetch a package_advance row + its payment-mode list for the
+     * edit-payment dialog. Tenant-scoped to prevent IDOR.
      */
     public function editpackageadvancescashindex(int $id, int $package_id): JsonResponse
     {
-        $pack_adv_info = PackageAdvances::find($id);
+        // Require finances_edit to even READ the payment for editing —
+        // anything that reveals an advance's amount + payment mode +
+        // patient is sensitive. Before 2026-05-15 this endpoint was
+        // unguarded and returned ANY tenant's payment by id.
+        if (! \Illuminate\Support\Facades\Gate::allows('finances_edit')) {
+            return $this->errorResponse('Unauthorized.', 403);
+        }
 
-        $paymentmodes = PaymentModes::where('type', '=', 'application')->get();
+        $accountId = (int) \Illuminate\Support\Facades\Auth::user()->account_id;
+
+        // Tenant-scoped fetch — bare ::find() let an attacker fetch any
+        // tenant's payment by guessing the id. firstOrFail throws 404
+        // (Laravel exception handler) for both "doesn't exist" and
+        // "belongs to another tenant", so no existence-leak.
+        $pack_adv_info = PackageAdvances::query()
+            ->where('id', $id)
+            ->where('account_id', $accountId)
+            ->whereNull('deleted_at')
+            ->firstOrFail();
+
+        // Same scope for the package_id route param — prevents the
+        // attacker from confirming another tenant's plan id even when
+        // the advance id check passes.
+        if ((int) $pack_adv_info->package_id !== (int) $package_id) {
+            return $this->errorResponse('Payment does not belong to that plan.', 404);
+        }
+
+        $paymentmodes = PaymentModes::query()
+            ->where('account_id', $accountId)
+            ->where('type', 'application')
+            ->whereNull('deleted_at')
+            ->get();
 
         return $this->successResponse('data found', [
             'pack_adv_info' => $pack_adv_info,
@@ -1364,11 +1394,32 @@ class PackagesController extends Controller
     }
 
     /*
-     * Store the cash that is request to change
+     * Save an edit on an existing package_advance row (cash_amount and/
+     * or payment_mode). Tenant + permission + amount validation enforced
+     * here; `PlanService::storePayment` does the heavy lifting.
      */
-
     public function storepackageadvancescash(Request $request): JsonResponse
     {
+        if (! \Illuminate\Support\Facades\Gate::allows('finances_edit')) {
+            return $this->errorResponse('Unauthorized.', 403);
+        }
+
+        $accountId = (int) \Illuminate\Support\Facades\Auth::user()->account_id;
+
+        // Tenant-scoped + soft-delete-aware FK validation. Strict-positive
+        // amount: cash_amount must be a whole rupee > 0 (`integer` rejects
+        // scientific notation, fractional, and negative values). Without
+        // this, a malicious / careless caller could drop an advance to
+        // 0 and silently cancel the payment, or flip the amount negative
+        // and drain the pool via the observer.
+        $request->validate([
+            'package_advances_id' => ['required', 'integer', \Illuminate\Validation\Rule::exists('package_advances', 'id')->where('account_id', $accountId)->whereNull('deleted_at')],
+            'package_id' => ['required', 'integer', \Illuminate\Validation\Rule::exists('packages', 'id')->where('account_id', $accountId)->whereNull('deleted_at')],
+            'payment_mode_id' => ['required', 'integer', \Illuminate\Validation\Rule::exists('payment_modes', 'id')->where('account_id', $accountId)->whereNull('deleted_at')],
+            'cash_amount' => 'required|integer|min:1|max:99999999',
+            'created_at' => 'required|date|before_or_equal:today',
+        ]);
+
         $result = $this->planService->storePayment($request->all());
 
         if ($result['success']) {
@@ -1379,10 +1430,33 @@ class PackagesController extends Controller
     }
 
     /*
-     * Delete the cash that reqquire to delete
+     * Delete an existing package_advance row. Tenant + permission gated;
+     * additional SoD check (creator ≠ deleter) blocks an operator from
+     * silently erasing a payment they entered themselves.
      */
     public function deletepackageadvancescash(Request $request): JsonResponse
     {
+        if (! \Illuminate\Support\Facades\Gate::allows('finances_manage')) {
+            return $this->errorResponse('Unauthorized.', 403);
+        }
+
+        $accountId = (int) \Illuminate\Support\Facades\Auth::user()->account_id;
+
+        $request->validate([
+            'package_advance_id' => ['required', 'integer', \Illuminate\Validation\Rule::exists('package_advances', 'id')->where('account_id', $accountId)->whereNull('deleted_at')],
+        ]);
+
+        // Separation of duties — the operator who recorded the payment
+        // must not be the one to delete it. Mirrors the cancel() SoD
+        // check on PackageAdvancesController.
+        $advance = PackageAdvances::where(['id' => $request->package_advance_id, 'account_id' => $accountId])->first();
+        if ($advance && (int) $advance->created_by === (int) \Illuminate\Support\Facades\Auth::user()->id) {
+            return $this->errorResponse(
+                'You cannot delete a payment you created. Another admin must delete it.',
+                403,
+            );
+        }
+
         $result = $this->planService->deletePayment($request->all());
 
         if ($result['success']) {

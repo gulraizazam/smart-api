@@ -6,6 +6,7 @@ namespace App\Http\Requests\CashFlow;
 use App\Rules\GoogleDriveUrlRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
 
 class StoreExpenseRequest extends FormRequest
 {
@@ -16,16 +17,34 @@ class StoreExpenseRequest extends FormRequest
 
     public function rules(): array
     {
+        // Every foreign-key field is scoped to the caller's tenant AND
+        // excludes soft-deleted rows. Laravel's `Rule::exists()` queries
+        // the table directly (no model scope), so without the explicit
+        // `deleted_at IS NULL` guard a soft-deleted pool / vendor /
+        // category would still satisfy the rule. The FK constraint at
+        // the DB level happily resolves to a deleted row — the result
+        // is an expense bound to a non-existent (from the UI's pov)
+        // pool, breaking reconciliation.
+        $accountId = (int) Auth::user()->account_id;
+        $forAccountAlive = fn (string $table) => Rule::exists($table, 'id')
+            ->where('account_id', $accountId)
+            ->whereNull('deleted_at');
+
         $rules = [
             'expense_date' => 'required|date|before_or_equal:today|after_or_equal:' . now()->subDays(7)->toDateString(),
             'amount' => 'required|numeric|min:1|max:99999999|integer',
-            'category_id' => 'required|exists:expense_categories,id',
-            'paid_from_pool_id' => 'nullable|exists:cash_pools,id',
-            'for_branch_id' => 'nullable|exists:locations,id',
+            'category_id' => ['required', $forAccountAlive('expense_categories')],
+            'paid_from_pool_id' => ['nullable', $forAccountAlive('cash_pools')],
+            'for_branch_id' => ['nullable', $forAccountAlive('locations')],
             'is_for_general' => 'nullable|boolean',
-            'payment_method_id' => 'required|exists:payment_modes,id',
-            'vendor_id' => 'nullable|exists:cashflow_vendors,id',
-            'staff_id' => 'nullable|exists:users,id',
+            'payment_method_id' => ['required', $forAccountAlive('payment_modes')],
+            'vendor_id' => ['nullable', $forAccountAlive('cashflow_vendors')],
+            // staff_id MUST point to a non-patient, non-deleted user.
+            // See above for the deleted_at / type-filter rationale.
+            'staff_id' => ['nullable', Rule::exists('users', 'id')
+                ->where('account_id', $accountId)
+                ->whereNull('deleted_at')
+                ->whereNot('user_type_id', (int) \Illuminate\Support\Facades\Config::get('constants.patient_id', 3))],
             'description' => 'required|string|min:3|max:100',
             'reference_no' => 'nullable|string|max:100',
             'attachment_url' => ['nullable', 'string', 'max:500', new GoogleDriveUrlRule],

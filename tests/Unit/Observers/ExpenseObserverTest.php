@@ -57,8 +57,13 @@ class ExpenseObserverTest extends TestCase
         $this->assertSame(5000.00, (float) $pool->fresh()->cached_balance);
     }
 
-    public function test_rejecting_an_expense_credits_the_pool_back(): void
+    public function test_rejecting_an_expense_does_not_touch_the_pool(): void
     {
+        // 2026-05-14 — Model B (substance-over-form): reject is a
+        // record-correction workflow. The cash event already happened
+        // at creation; status reflects record-validity, not whether
+        // the spend occurred. Pool stays put through Approved →
+        // Rejected. Only `void` (separate flow) actually refunds.
         $pool = CashPool::factory()->withOpeningBalance(10000)->create();
         $expense = Expense::factory()->create([
             'paid_from_pool_id' => $pool->id,
@@ -71,29 +76,39 @@ class ExpenseObserverTest extends TestCase
         $expense->update(['status' => ExpenseStatus::Rejected]);
 
         $this->assertSame(
-            10000.00,
+            8000.00,
             (float) $pool->fresh()->cached_balance,
-            'Rejecting an expense must credit the full original amount back to the paying pool.'
+            'Reject is metadata-only — the pool stays debited because the cash event already happened.',
         );
     }
 
-    public function test_resubmitting_a_rejected_expense_re_debits_the_pool(): void
+    public function test_status_round_trip_between_pending_and_rejected_does_not_touch_the_pool(): void
     {
+        // Whether the accountant resubmits (Rejected → Pending) or
+        // the admin re-rejects (Pending → Rejected), the pool stays
+        // put. Only `void` removes money from the books.
         $pool = CashPool::factory()->withOpeningBalance(10000)->create();
         $expense = Expense::factory()->create([
             'paid_from_pool_id' => $pool->id,
             'amount' => 2000,
             'status' => ExpenseStatus::Pending,
         ]);
+
         $expense->update(['status' => ExpenseStatus::Rejected]);
-        $this->assertSame(10000.00, (float) $pool->fresh()->cached_balance);
+        $this->assertSame(8000.00, (float) $pool->fresh()->cached_balance);
 
         $expense->update(['status' => ExpenseStatus::Pending]);
-
         $this->assertSame(
             8000.00,
             (float) $pool->fresh()->cached_balance,
-            'Resubmitting a rejected expense must re-debit the pool with the same amount.'
+            'Resubmit (Rejected → Pending) is metadata-only — pool unchanged.',
+        );
+
+        $expense->update(['status' => ExpenseStatus::Rejected]);
+        $this->assertSame(
+            8000.00,
+            (float) $pool->fresh()->cached_balance,
+            'Re-reject (Pending → Rejected) is metadata-only — pool unchanged.',
         );
     }
 

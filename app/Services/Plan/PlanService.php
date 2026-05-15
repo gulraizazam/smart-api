@@ -513,7 +513,26 @@ final class PlanService
         $deleted = 0;
         $skipped = 0;
 
-        $packages = Packages::whereIn('id', $ids)
+        // Cross-tenant detection: silently dropping foreign ids is
+        // user-hostile (the caller sees "deleted N records" without
+        // knowing some ids belonged to another tenant). Surface the
+        // discrepancy as a hard error so an audit reviewer can spot
+        // probing attempts.
+        $foundIds = Packages::whereIn('id', $ids)
+            ->where('account_id', $accountId)
+            ->pluck('id')
+            ->all();
+        $missing = array_diff($ids, $foundIds);
+        if (! empty($missing)) {
+            return [
+                'deleted' => 0,
+                'skipped' => 0,
+                'message' => 'One or more plan ids do not belong to your tenant or do not exist; refusing the bulk operation.',
+                'cross_tenant_ids' => array_values($missing),
+            ];
+        }
+
+        $packages = Packages::whereIn('id', $foundIds)
             ->where('account_id', $accountId)
             ->get();
 

@@ -36,6 +36,21 @@ class Patients extends BaseModel
         static::addGlobalScope('patients_only', function (Builder $builder): void {
             $builder->where('users.user_type_id', self::$USER_TYPE);
         });
+
+        // Keep `phone_normalized` in lockstep with `phone`, mirroring
+        // the hook on `User::booted()` (User.php:125-131). The Patients
+        // model shares the `users` table but extends BaseModel, not
+        // User, so the User hook never fired on Patient creates — every
+        // patient inserted via Patients::create() had a NULL
+        // phone_normalized, silently breaking phone search (which
+        // queries `WHERE phone_normalized LIKE '302%'`).
+        static::saving(function (Patients $patient): void {
+            if ($patient->isDirty('phone')) {
+                $raw = (string) ($patient->phone ?? '');
+                $digits = preg_replace('/\D+/', '', $raw) ?? '';
+                $patient->phone_normalized = $digits === '' ? null : $digits;
+            }
+        });
     }
 
     protected static array $_fillable = [

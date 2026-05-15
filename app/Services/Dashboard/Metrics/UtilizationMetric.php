@@ -8,6 +8,7 @@ use App\Services\Dashboard\Contracts\Metric;
 use App\Services\Dashboard\Support\DoctorResolver;
 use App\Services\Dashboard\ValueObjects\DateRange;
 use App\Services\Dashboard\ValueObjects\MetricScope;
+use App\Support\OperatingDays;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 
@@ -1240,161 +1241,54 @@ final class UtilizationMetric implements Metric
      * represents a global closure (applies to every branch) — callers
      * check both $map[branch_id][$date] and $map[0][$date].
      *
-     * A closure is global when it has no linked locations OR when all of
-     * its linked locations have names starting with "All " (the pseudo-
-     * location pattern used throughout this codebase for company-wide
-     * rows — see filterBranches controller filter).
+     * Delegates to OperatingDays (the shared source of truth used by
+     * InvoiceGenerationService too); only the branch-scope intersection
+     * trim is applied here because it depends on MetricScope.
      *
      * @return array<int, array<string, true>>
      */
     private function closedBranchDates(MetricScope $scope, DateRange $range): array
     {
-        $closures = DB::table('business_closures as bc')
-            ->leftJoin('business_closure_locations as bcl', 'bcl.business_closure_id', '=', 'bc.id')
-            ->leftJoin('locations as l', 'l.id', '=', 'bcl.location_id')
-            ->where('bc.account_id', $scope->accountId)
-            ->whereNull('bc.deleted_at')
-            ->where('bc.start_date', '<=', $range->endString())
-            ->where('bc.end_date', '>=', $range->startString())
-            ->select([
-                'bc.id',
-                'bc.start_date',
-                'bc.end_date',
-                'bcl.location_id',
-                'l.name as location_name',
-            ])
-            ->get();
+        $map = OperatingDays::closedBranchDates(
+            $scope->accountId,
+            $range->startString(),
+            $range->endString(),
+        );
 
-        if ($closures->isEmpty()) {
-            return [];
-        }
-
-        // Group pivot rows per closure id so we can tell "global" from
-        // "branch-specific" without guessing.
-        $byClosure = [];
-        foreach ($closures as $row) {
-            $byClosure[$row->id]['start'] = (string) $row->start_date;
-            $byClosure[$row->id]['end'] = (string) $row->end_date;
-            if ($row->location_id !== null) {
-                $byClosure[$row->id]['locations'][] = [
-                    'id' => (int) $row->location_id,
-                    'name' => (string) ($row->location_name ?? ''),
-                ];
-            }
-        }
-
-        $map = [];
-        $from = CarbonImmutable::parse($range->startString())->startOfDay();
-        $to = CarbonImmutable::parse($range->endString())->startOfDay();
-
-        foreach ($byClosure as $closure) {
-            $start = CarbonImmutable::parse($closure['start'])->startOfDay();
-            $end = CarbonImmutable::parse($closure['end'])->startOfDay();
-            // Clamp to the query window so we don't iterate long historic
-            // closures unnecessarily.
-            $iterStart = $start->lt($from) ? $from : $start;
-            $iterEnd = $end->gt($to) ? $to : $end;
-            if ($iterStart->gt($iterEnd)) {
-                continue;
-            }
-
-            $locations = $closure['locations'] ?? [];
-            $isGlobal = $locations === []
-                || $this->allLocationsArePseudo($locations);
-
-            $branchIds = $isGlobal
-                ? [0]
-                : array_values(array_unique(array_map(
-                    static fn (array $l): int => $l['id'],
-                    $locations,
-                )));
-
-            // Skip branch-specific closures that don't intersect scope —
-            // cheap early exit for unrelated branches in big accounts.
-            if (! $isGlobal && $scope->isBranchScoped() && $scope->branchIds !== null) {
-                $branchIds = array_values(array_intersect($branchIds, $scope->branchIds));
-                if ($branchIds === []) {
-                    continue;
+        // Cheap early exit for unrelated branches in big accounts — drop
+        // branch-specific entries that don't intersect the scope. The
+        // global key (0) always stays so date-level checks still see it.
+        if ($scope->isBranchScoped() && $scope->branchIds !== null) {
+            $scoped = [];
+            foreach ($map as $branchId => $dates) {
+                if ($branchId === 0 || in_array($branchId, $scope->branchIds, true)) {
+                    $scoped[$branchId] = $dates;
                 }
             }
-
-            for ($d = $iterStart; $d->lte($iterEnd); $d = $d->addDay()) {
-                $date = $d->format('Y-m-d');
-                foreach ($branchIds as $branchId) {
-                    $map[$branchId][$date] = true;
-                }
-            }
+            return $scoped;
         }
 
         return $map;
     }
 
     /**
-     * Non-working dates in the window for this account. Combines the
-     * weekly pattern from `settings.business_working_days` (JSON map of
-     * {monday: true, …, sunday: false}) with per-date overrides from
-     * `working_day_exceptions` (is_working = 1 forces open, = 0 forces
-     * closed). Returns a map keyed by YYYY-MM-DD where the value is true
-     * for any date the account considers non-working.
+     * Non-working dates in the window for this account — weekly pattern
+     * from `settings.business_working_days` combined with per-date
+     * overrides from `working_day_exceptions`. Business closures are
+     * layered separately via closedBranchDates().
      *
-     * Matches the check the rota UI already does — see
-     * AppointmentsController::getBusinessWorkingDays() for the settings
-     * shape and WorkingDayException::isWorkingDay() for the merge logic.
+     * Delegates to OperatingDays so InvoiceGenerationService and other
+     * callers share the same merge rules.
      *
      * @return array<string, true>
      */
     private function nonWorkingDates(MetricScope $scope, DateRange $range): array
     {
-        $settingsJson = DB::table('settings')
-            ->where('account_id', $scope->accountId)
-            ->where('slug', 'business_working_days')
-            ->value('data');
-
-        $working = [
-            'monday' => true,
-            'tuesday' => true,
-            'wednesday' => true,
-            'thursday' => true,
-            'friday' => true,
-            'saturday' => true,
-            'sunday' => false,
-        ];
-        if (is_string($settingsJson) && $settingsJson !== '') {
-            $decoded = json_decode($settingsJson, true);
-            if (is_array($decoded)) {
-                $working = array_merge($working, $decoded);
-            }
-        }
-
-        $exceptions = DB::table('working_day_exceptions')
-            ->where('account_id', $scope->accountId)
-            ->whereBetween('exception_date', [$range->startString(), $range->endString()])
-            ->pluck('is_working', 'exception_date')
-            ->toArray();
-
-        $dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
-        $out = [];
-        $cursor = CarbonImmutable::parse($range->startString())->startOfDay();
-        $end = CarbonImmutable::parse($range->endString())->startOfDay();
-
-        while ($cursor->lte($end)) {
-            $date = $cursor->format('Y-m-d');
-            if (array_key_exists($date, $exceptions)) {
-                // Exception overrides default — is_working=0 means closed,
-                // is_working=1 means explicitly open even on a default-off day.
-                if ((int) $exceptions[$date] === 0) {
-                    $out[$date] = true;
-                }
-            } else {
-                $dayName = $dayNames[(int) $cursor->dayOfWeek];
-                if (empty($working[$dayName])) {
-                    $out[$date] = true;
-                }
-            }
-            $cursor = $cursor->addDay();
-        }
-
-        return $out;
+        return OperatingDays::nonWorkingDates(
+            $scope->accountId,
+            $range->startString(),
+            $range->endString(),
+        );
     }
 
     /**

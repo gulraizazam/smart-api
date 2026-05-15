@@ -17,6 +17,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\Rule;
 
 class PackageAdvancesController extends Controller
 {
@@ -149,21 +150,49 @@ class PackageAdvancesController extends Controller
      * */
     public function savepackagesadvances(Request $request): \Illuminate\Http\JsonResponse
     {
-        return DB::transaction(function () use ($request) {
+        // Permission gate — was missing entirely until 2026-05-15. This
+        // endpoint writes to the cash ledger and triggers pool
+        // adjustment via PackageAdvanceObserver; an authenticated user
+        // without `finances_create` must not reach it.
+        if (! Gate::allows('finances_create')) {
+            return $this->errorResponse('Unauthorized.', 403);
+        }
+
+        $accountId = (int) Auth::user()->account_id;
+
+        // Tenant-scoped + soft-delete-aware FK validation. Before this,
+        // patient_id / package_id / payment_mode_id were copied raw from
+        // the request — an attacker could pass another tenant's plan id
+        // and record a payment against it. `cash_amount` is enforced
+        // strictly positive: overpayment IS allowed (the ledger is
+        // signed and treats excess as a credit), but a negative amount
+        // would flip the ledger direction and let the caller drain a
+        // pool while pretending to make a payment.
+        $request->validate([
+            // `integer` rejects fractional + scientific notation; `min:1` enforces
+// strictly positive (cash flow direction is server-controlled to `in`
+// in this method — a negative amount would invert the ledger sign and
+// drain the pool while logging an "income" event). Matches the cashflow
+// module's contract pinned by CashflowAmountValidationTest.
+'cash_amount' => 'required|integer|min:1|max:99999999',
+            'patient_id' => ['required', 'integer', Rule::exists('users', 'id')->where('account_id', $accountId)->whereNull('deleted_at')],
+            'package_id' => ['required', 'integer', Rule::exists('packages', 'id')->where('account_id', $accountId)->whereNull('deleted_at')],
+            'payment_mode_id' => ['required', 'integer', Rule::exists('payment_modes', 'id')->where('account_id', $accountId)->whereNull('deleted_at')],
+        ]);
+
+        return DB::transaction(function () use ($request, $accountId) {
             // Overpayment is a legitimate state — operators routinely
             // collect deposits / advances that exceed the current plan
-            // total. Earlier this endpoint rejected with "Cash amount
-            // should be less than or equal to total amount" which forced
-            // operators to under-record real cash. The cash ledger
-            // (`package_advances`) is signed: any excess simply lands
-            // as a credit (negative balance) and surfaces in the
-            // dashboards' credit column.
+            // total. The cash ledger (`package_advances`) is signed:
+            // any excess simply lands as a credit (negative balance) and
+            // surfaces in the dashboards' credit column. See
+            // ConcurrentPackageAdvanceTest for the pinned contract.
 
             $data['cash_flow'] = 'in';
             $data['cash_amount'] = $request->cash_amount;
             $data['patient_id'] = $request->patient_id;
             $data['payment_mode_id'] = $request->payment_mode_id;
-            $data['account_id'] = Auth::user()->account_id;
+            $data['account_id'] = $accountId;
             $data['created_by'] = Auth::user()->id;
             $data['updated_by'] = Auth::user()->id;
             $data['package_id'] = $request->package_id;
@@ -395,12 +424,37 @@ class PackageAdvancesController extends Controller
      * */
     public function updatepackagesadvances(Request $request): \Illuminate\Http\JsonResponse
     {
-        return DB::transaction(function () use ($request) {
+        // Permission gate — was missing entirely. Mirrors savepackagesadvances.
+        if (! Gate::allows('finances_edit')) {
+            return $this->errorResponse('Unauthorized.', 403);
+        }
+
+        $accountId = (int) Auth::user()->account_id;
+
+        // Tenant-scoped + soft-delete-aware FK validation +
+        // strict-positive amount. Same rationale as savepackagesadvances.
+        // package_advance_id is the row being mutated and must belong
+        // to the caller's tenant — bare ::find() previously let an
+        // attacker target another tenant's advance by id.
+        $request->validate([
+            'package_advance_id' => ['required', 'integer', Rule::exists('package_advances', 'id')->where('account_id', $accountId)->whereNull('deleted_at')],
+            // `integer` rejects fractional + scientific notation; `min:1` enforces
+// strictly positive (cash flow direction is server-controlled to `in`
+// in this method — a negative amount would invert the ledger sign and
+// drain the pool while logging an "income" event). Matches the cashflow
+// module's contract pinned by CashflowAmountValidationTest.
+'cash_amount' => 'required|integer|min:1|max:99999999',
+            'patient_id' => ['required', 'integer', Rule::exists('users', 'id')->where('account_id', $accountId)->whereNull('deleted_at')],
+            'package_id' => ['required', 'integer', Rule::exists('packages', 'id')->where('account_id', $accountId)->whereNull('deleted_at')],
+            'payment_mode_id' => ['required', 'integer', Rule::exists('payment_modes', 'id')->where('account_id', $accountId)->whereNull('deleted_at')],
+        ]);
+
+        return DB::transaction(function () use ($request, $accountId) {
             $data['cash_flow'] = 'in';
             $data['cash_amount'] = $request->cash_amount;
             $data['patient_id'] = $request->patient_id;
             $data['payment_mode_id'] = $request->payment_mode_id;
-            $data['account_id'] = Auth::user()->account_id;
+            $data['account_id'] = $accountId;
             $data['created_by'] = Auth::user()->id;
             $data['updated_by'] = Auth::user()->id;
             $data['package_id'] = $request->package_id;
@@ -442,7 +496,19 @@ class PackageAdvancesController extends Controller
         if (! Gate::allows('finances_manage')) {
             return abort(401);
         }
-        $packageadvances = PackageAdvances::CancelRecord($id, Auth::user()->account_id);
+
+        // Separation of duties — the operator who recorded a payment
+        // must not be the one to cancel it. Without this, an operator
+        // who pocketed cash could create + cancel the same advance and
+        // the audit trail would only show "created by X, cancelled by
+        // X" — a normal-looking pair. A second pair of eyes is required.
+        $accountId = (int) Auth::user()->account_id;
+        $original = PackageAdvances::where(['id' => $id, 'account_id' => $accountId])->first();
+        if ($original && (int) $original->created_by === (int) Auth::user()->id) {
+            abort(403, 'You cannot cancel a payment you created. Another admin must cancel it.');
+        }
+
+        $packageadvances = PackageAdvances::CancelRecord($id, $accountId);
 
         $package_advnaces = (PackageAdvances::find($id))->toArray();
         if ($package_advnaces['cash_flow'] == 'in') {
@@ -458,25 +524,4 @@ class PackageAdvancesController extends Controller
         return redirect()->route('admin.packagesadvances.index');
     }
 
-    /*
-     * Function for update location id in package advances
-     */
-
-    public function update_record_final(): \Illuminate\Http\RedirectResponse
-    {
-        $package_adavances_data = PackageAdvances::get();
-        foreach ($package_adavances_data as $package_advance) {
-            if ($package_advance->package_id) {
-                $location_id = $package_advance->package->location_id;
-                $package_advance->update(['location_id' => $location_id]);
-            } else {
-                if ($package_advance->appointment_id) {
-                    $location_id = $package_advance->appointment->location_id;
-                    $package_advance->update(['location_id' => $location_id]);
-                }
-            }
-        }
-
-        return redirect()->route('admin.packagesadvances.index');
-    }
 }
