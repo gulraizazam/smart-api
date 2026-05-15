@@ -94,6 +94,11 @@ class BusinessWorkingDaysController extends Controller
                 ],
             );
 
+            // Bump the OperatingDays version so any cached "best per-day
+            // revenue" benchmark invalidates immediately. Settings doesn't
+            // have a domain observer; we bump explicitly here.
+            \App\Support\OperatingDays::bumpVersion($accountId);
+
             return $this->successResponse(
                 'Business working days updated successfully.',
                 ['working_days' => $workingDays],

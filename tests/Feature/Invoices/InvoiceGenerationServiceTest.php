@@ -51,6 +51,38 @@ class InvoiceGenerationServiceTest extends TestCase
         ], $overrides);
     }
 
+    /**
+     * Drop one cash package_advance row on each named date so the
+     * revenue-filter inside InvoiceGenerationService keeps those dates
+     * in the working-days list. The amount is large enough to clear the
+     * cash-percent threshold without touching the pool math the other
+     * tests care about.
+     */
+    private function seedRevenueForDates(array $dates): void
+    {
+        $location = \App\Models\Locations::first();
+        $patient = \App\Models\Patients::factory()->create();
+        $package = \App\Models\Packages::factory()->create([
+            'patient_id' => $patient->id,
+            'location_id' => $location->id,
+            'total_price' => 100000,
+        ]);
+        $cash = \App\Models\PaymentModes::query()->where('name', 'Cash')->firstOrFail();
+
+        foreach ($dates as $date) {
+            \App\Models\PackageAdvances::factory()->create([
+                'cash_flow' => 'in',
+                'cash_amount' => 20000,
+                'patient_id' => $patient->id,
+                'package_id' => $package->id,
+                'location_id' => $location->id,
+                'payment_mode_id' => $cash->id,
+                'created_at' => \Carbon\Carbon::parse($date)->setTime(10, 0),
+                'updated_at' => \Carbon\Carbon::parse($date)->setTime(10, 0),
+            ]);
+        }
+    }
+
     public function test_return_structure_has_all_required_top_level_keys(): void
     {
         try {
@@ -84,8 +116,15 @@ class InvoiceGenerationServiceTest extends TestCase
 
     public function test_capacity_working_days_excludes_sundays(): void
     {
+        // Mon-Sun range. Seed one cash payment on each Mon-Sat so the
+        // revenue-filter inside calculateDailyRevenue() doesn't zero the
+        // list out (capacity.working_days reports the post-revenue count).
+        $this->seedRevenueForDates([
+            '2026-01-05', '2026-01-06', '2026-01-07',
+            '2026-01-08', '2026-01-09', '2026-01-10',
+        ]);
+
         try {
-            // 2026-01-05 (Mon) to 2026-01-11 (Sun) = 6 working days (Mon-Sat).
             $result = $this->service->generateExemptInvoices($this->baseParams([
                 'date_from' => '2026-01-05',
                 'date_to' => '2026-01-11',
@@ -96,7 +135,68 @@ class InvoiceGenerationServiceTest extends TestCase
 
         $this->assertArrayHasKey('working_days', $result['capacity']);
         $this->assertSame(6, $result['capacity']['working_days'],
-            'Mon-Sun range should yield 6 working days (Sundays excluded).');
+            'Mon-Sun range should yield 6 operating days (Sunday default-off).');
+    }
+
+    public function test_capacity_working_days_subtracts_business_closure(): void
+    {
+        // Six revenue-active Mon-Sat days, but Wed/Thu of that week are
+        // covered by an "Eid Holidays" closure. Even though revenue exists
+        // on those days, OperatingDays must subtract them and the capacity
+        // number must drop accordingly.
+        $this->seedRevenueForDates([
+            '2026-01-05', '2026-01-06', '2026-01-07',
+            '2026-01-08', '2026-01-09', '2026-01-10',
+        ]);
+        \Illuminate\Support\Facades\DB::table('business_closures')->insert([
+            'account_id' => 1,
+            'title' => 'Eid Holidays',
+            'start_date' => '2026-01-07',
+            'end_date' => '2026-01-08',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        try {
+            $result = $this->service->generateExemptInvoices($this->baseParams([
+                'date_from' => '2026-01-05',
+                'date_to' => '2026-01-11',
+            ]));
+        } catch (\TypeError $e) {
+            $this->markTestSkipped('InvoiceGenerationService type mismatch — see test_return_structure test.');
+        }
+
+        $this->assertSame(4, $result['capacity']['working_days'],
+            'Closure must remove Wed + Thu from the operating-day denominator.');
+    }
+
+    public function test_capacity_working_days_honours_forced_open_sunday_exception(): void
+    {
+        // Mon-Sun range with revenue on every day. A working_day_exception
+        // forces Sunday open. Result: all 7 days count.
+        $this->seedRevenueForDates([
+            '2026-01-05', '2026-01-06', '2026-01-07', '2026-01-08',
+            '2026-01-09', '2026-01-10', '2026-01-11',
+        ]);
+        \Illuminate\Support\Facades\DB::table('working_day_exceptions')->insert([
+            'account_id' => 1,
+            'exception_date' => '2026-01-11',
+            'is_working' => 1,
+            'title' => 'Special Sunday',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        try {
+            $result = $this->service->generateExemptInvoices($this->baseParams([
+                'date_from' => '2026-01-05',
+                'date_to' => '2026-01-11',
+            ]));
+        } catch (\TypeError $e) {
+            $this->markTestSkipped('InvoiceGenerationService type mismatch — see test_return_structure test.');
+        }
+
+        $this->assertSame(7, $result['capacity']['working_days']);
     }
 
     public function test_empty_revenue_period_produces_safe_output(): void
@@ -148,8 +248,10 @@ class InvoiceGenerationServiceTest extends TestCase
 
     public function test_single_day_range_produces_valid_output(): void
     {
+        // Seed revenue for the single day so the revenue-filter keeps it.
+        $this->seedRevenueForDates(['2026-01-05']);
+
         try {
-            // Edge case: a single working day.
             $result = $this->service->generateExemptInvoices($this->baseParams([
                 'date_from' => '2026-01-05', // Monday
                 'date_to' => '2026-01-05',

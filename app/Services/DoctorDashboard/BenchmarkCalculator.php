@@ -6,6 +6,8 @@ namespace App\Services\DoctorDashboard;
 use App\Enums\AppointmentType;
 use App\Helpers\DoctorDashboardHelper;
 use App\Models\DoctorGoogleReview;
+use App\Support\OperatingDays;
+use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
@@ -142,7 +144,7 @@ class BenchmarkCalculator
         $googleReviews = $this->getGoogleReviewsPerDoctor($qualifiedDoctorIds, $accountId);
 
         // Revenue per working day per doctor
-        $revenuePerDay = $this->getRevenuePerDayPerDoctor($revenueData, $startDate, $endDate);
+        $revenuePerDay = $this->getRevenuePerDayPerDoctor($revenueData, $startDate, $endDate, $accountId);
 
         return [
             'doctor_count' => count($qualifiedDoctorIds),
@@ -363,22 +365,19 @@ class BenchmarkCalculator
     }
 
     /**
-     * Get revenue per working day per doctor.
-     * Divides each doctor's revenue by Mon-Sat days elapsed in the period.
+     * Get revenue per operating day per doctor. Operating days are the
+     * shared denominator across the doctor pool — closures and per-date
+     * exceptions narrow the count via OperatingDays (the same primitive
+     * the per-doctor `getRevenuePerDay` and invoicing use).
      */
-    private function getRevenuePerDayPerDoctor(array $revenueData, string $startDate, string $endDate): array
+    private function getRevenuePerDayPerDoctor(array $revenueData, string $startDate, string $endDate, int $accountId): array
     {
-        // Count Mon-Sat days in the period (same for all doctors)
-        $start = \Carbon\Carbon::parse($startDate)->startOfDay();
-        $end = \Carbon\Carbon::parse($endDate)->startOfDay();
-        $workingDays = 0;
-        $day = $start->copy();
-        while ($day->lte($end)) {
-            if ($day->dayOfWeek !== \Carbon\Carbon::SUNDAY) {
-                $workingDays++;
-            }
-            $day->addDay();
-        }
+        $workingDays = count(OperatingDays::datesInRange(
+            $accountId,
+            [],
+            CarbonImmutable::parse($startDate),
+            CarbonImmutable::parse($endDate),
+        ));
 
         if ($workingDays === 0) {
             return [];
@@ -500,12 +499,19 @@ class BenchmarkCalculator
 
     /**
      * Build cache key for the benchmark data.
+     *
+     * The trailing `OperatingDays::version($accountId)` segment makes the
+     * cache effectively self-invalidating: any closure / working-day
+     * exception / weekly-pattern setting change for this account bumps
+     * the counter via OperatingDaysVersionObserver, which changes the
+     * cache key and forces a fresh recompute on the next read. No cron,
+     * no manual flush, no waiting for the 1-hour TTL.
      */
     private function buildCacheKey(string $startDate, int $accountId): string
     {
-        // Cache per month + account. Version suffix forces cache invalidation after logic changes.
         $yearMonth = substr($startDate, 0, 7); // e.g. "2026-03"
-        return "doctor_benchmark_v2_{$accountId}_{$yearMonth}";
+        $version = OperatingDays::version($accountId);
+        return "doctor_benchmark_v3_{$accountId}_{$yearMonth}_v{$version}";
     }
 
     /**

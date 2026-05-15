@@ -8,7 +8,9 @@ use App\Models\DoctorGoogleReview;
 use App\Models\SystemTarget;
 use App\Models\CentertargetMeta;
 use App\Enums\AppointmentType;
+use App\Support\OperatingDays;
 use Carbon\Carbon;
+use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 
 class DoctorDashboardService
@@ -86,9 +88,11 @@ class DoctorDashboardService
             $lastConversion['total_converted']
         );
 
-        // Working days for daily-average MoM on accumulating metrics
-        $currentWorkingDays = $this->countWorkingDays($startDate, $endDate);
-        $lastWorkingDays = $this->countWorkingDays($lastStartDate, $lastEndDate);
+        // Working days for daily-average MoM on accumulating metrics —
+        // route through OperatingDays so closures and per-date exceptions
+        // shrink the denominator the same way they do for invoicing.
+        $currentWorkingDays = $this->countWorkingDays($startDate, $endDate, $accountId);
+        $lastWorkingDays = $this->countWorkingDays($lastStartDate, $lastEndDate, $accountId);
 
         return [
             'period' => ['start' => $startDate, 'end' => $endDate],
@@ -265,9 +269,9 @@ class DoctorDashboardService
 
         $percentage = $target > 0 ? round(($branchRevenue / $target) * 100, 1) : 0;
 
-        // Working days remaining: total working days - Mon-Sat days elapsed
-        // For past months, always 0
-        $daysRemaining = $this->getWorkingDaysRemaining($totalWorkingDays, $startDate, $endDate);
+        // Working days remaining: total working days - operating days elapsed
+        // (closures/exceptions respected via OperatingDays). For past months, always 0.
+        $daysRemaining = $this->getWorkingDaysRemaining($totalWorkingDays, $startDate, $endDate, $accountId);
 
         // Color rules
         $color = 'red';
@@ -339,27 +343,25 @@ class DoctorDashboardService
      * @param string $endDate period end
      * @return int
      */
-    private function getWorkingDaysRemaining(int $totalWorkingDays, string $startDate, string $endDate): int
+    private function getWorkingDaysRemaining(int $totalWorkingDays, string $startDate, string $endDate, int $accountId): int
     {
         $now = Carbon::now()->startOfDay();
         $periodEnd = Carbon::parse($endDate)->startOfDay();
 
-        // Past month — no days remaining
+        // Past month — no days remaining.
         if ($periodEnd->lt($now)) {
             return 0;
         }
 
-        $startOfMonth = Carbon::parse($startDate)->startOfDay();
-
-        // Count Mon-Sat days elapsed from 1st to today (inclusive)
-        $elapsed = 0;
-        $day = $startOfMonth->copy();
-        while ($day->lte($now)) {
-            if ($day->dayOfWeek !== Carbon::SUNDAY) {
-                $elapsed++;
-            }
-            $day->addDay();
-        }
+        // Operating days elapsed from start to today (inclusive) — uses
+        // OperatingDays so holidays and per-date exceptions don't inflate
+        // the "elapsed" count.
+        $elapsed = count(OperatingDays::datesInRange(
+            $accountId,
+            [],
+            CarbonImmutable::parse($startDate),
+            CarbonImmutable::parse($now->format('Y-m-d')),
+        ));
 
         return max(0, $totalWorkingDays - $elapsed);
     }
@@ -600,18 +602,10 @@ class DoctorDashboardService
      */
     private function getRevenuePerDay(int $doctorId, string $startDate, string $endDate, int $accountId, float $revenue): array
     {
-        $start = Carbon::parse($startDate)->startOfDay();
-        $end = Carbon::parse($endDate)->startOfDay();
-
-        // Count Mon-Sat days in the period
-        $workingDaysElapsed = 0;
-        $day = $start->copy();
-        while ($day->lte($end)) {
-            if ($day->dayOfWeek !== Carbon::SUNDAY) {
-                $workingDaysElapsed++;
-            }
-            $day->addDay();
-        }
+        // Denominator must be operating days, not Mon-Sat days — a clinic
+        // closed for Eid still earns no revenue, but it shouldn't dilute
+        // the per-day average. Single source of truth via OperatingDays.
+        $workingDaysElapsed = $this->countWorkingDays($startDate, $endDate, $accountId);
 
         $revenuePerDay = $workingDaysElapsed > 0 ? round($revenue / $workingDaysElapsed, 0) : 0;
 
@@ -634,23 +628,19 @@ class DoctorDashboardService
     }
 
     /**
-     * Count Mon-Sat working days in a date range (inclusive).
+     * Count operating days in a date range (inclusive). Delegates to
+     * OperatingDays so closures + per-date exceptions are honoured —
+     * pre-2026-05-15 this was a raw Mon-Sat loop which over-counted on
+     * Eid / training / branch-closure weeks.
      */
-    private function countWorkingDays(string $startDate, string $endDate): int
+    private function countWorkingDays(string $startDate, string $endDate, int $accountId): int
     {
-        $start = Carbon::parse($startDate)->startOfDay();
-        $end = Carbon::parse($endDate)->startOfDay();
-        $count = 0;
-        $day = $start->copy();
-
-        while ($day->lte($end)) {
-            if ($day->dayOfWeek !== Carbon::SUNDAY) {
-                $count++;
-            }
-            $day->addDay();
-        }
-
-        return $count;
+        return count(OperatingDays::datesInRange(
+            $accountId,
+            [],
+            CarbonImmutable::parse($startDate),
+            CarbonImmutable::parse($endDate),
+        ));
     }
 
     /**
