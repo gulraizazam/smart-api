@@ -346,7 +346,15 @@ class AppointmentStatuses extends BaseModel
 
         $record = self::create($data);
 
-        $record->update(['sort_no' => $record->id]);
+        // sort_no is `tinyint(3) unsigned` (max 255) — coupling it to
+        // `$record->id` works in production (status count stays ~20) but
+        // crashes under tests where AUTO_INCREMENT climbs across rolled-
+        // back transactions. Use per-account max+1 so the value is bound
+        // to row COUNT (≤20 in prod), not to row ID drift.
+        $nextSort = (int) self::query()
+            ->where('account_id', $account_id)
+            ->max('sort_no');
+        $record->update(['sort_no' => $nextSort + 1]);
 
         AuditTrails::addEventLogger(self::$_table, 'create', $data, self::$_fillable, $record);
 

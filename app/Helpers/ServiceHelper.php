@@ -125,6 +125,23 @@ final class ServiceHelper
             ? $data['tax_treatment_type_id']
             : self::DEFAULT_TAX_TREATMENT_TYPE;
 
+        // Coerce parent_id at the persistence seam. The legacy form
+        // convention is "0 = make this a parent category" (and some flows
+        // submit '' for the same intent), but `services.parent_id` is a
+        // nullable self-ref FK — 0 / '' violate the constraint because
+        // no `services.id = 0` row exists, and MariaDB rejects '' as an
+        // integer. Normalise both to NULL so a parent service persists
+        // cleanly and child rows still get their real parent id.
+        if (array_key_exists('parent_id', $data)) {
+            $parentId = $data['parent_id'];
+
+            if ($parentId === null || $parentId === '' || $parentId === 0 || $parentId === '0') {
+                $data['parent_id'] = null;
+            } else {
+                $data['parent_id'] = (int) $parentId;
+            }
+        }
+
         return $data;
     }
 

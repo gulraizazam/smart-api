@@ -89,4 +89,49 @@ class PatientGlobalScopeTest extends TestCase
 
         $this->assertSame(3, $rawCount);
     }
+
+    public function test_saving_a_patient_populates_phone_normalized_from_phone(): void
+    {
+        // 2026-05-15 regression: Patients extends BaseModel, not User,
+        // so the `phone_normalized` `saving` hook on User never fired
+        // for patients. Production patient phone-search queries
+        // `WHERE phone_normalized LIKE '302%'` and silently returned
+        // nothing because the column was NULL on every Patient row.
+        $patient = User::factory()->patient()->create([
+            'phone' => '+92-310 555 1234',
+        ]);
+
+        // Re-query via Patients to ensure the hook fires on the
+        // patient-scoped model (the model owning the new `saving` hook).
+        $row = Patients::find($patient->id);
+        $row->phone = '+92-310 555 1234';
+        $row->save();
+
+        $this->assertSame(
+            '923105551234',
+            $row->fresh()->phone_normalized,
+            'phone_normalized must hold the digits-only form of phone after save.',
+        );
+    }
+
+    public function test_clearing_phone_clears_phone_normalized(): void
+    {
+        $patient = User::factory()->patient()->create([
+            'phone' => '0314-1234567',
+        ]);
+
+        $row = Patients::find($patient->id);
+        // Trigger the saving hook on first save.
+        $row->phone = '0314-1234567';
+        $row->save();
+        $this->assertSame('03141234567', $row->fresh()->phone_normalized);
+
+        $row->phone = '';
+        $row->save();
+
+        $this->assertNull(
+            $row->fresh()->phone_normalized,
+            'Empty phone must null out phone_normalized so partial-match search drops the row.',
+        );
+    }
 }

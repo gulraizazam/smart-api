@@ -183,6 +183,8 @@ class PatientSearchService
             return [];
         }
 
+        // Prefix path first — hits the B-tree index on phone_normalized,
+        // matches the canonical Pakistani-format variants. Fast.
         $query = DB::table('users')
             ->where('user_type_id', 3)
             ->where(function ($q) use ($candidates): void {
@@ -195,7 +197,33 @@ class PatientSearchService
             $query->where('account_id', $accountId);
         }
 
-        return $query->limit(200)
+        $ids = $query->limit(200)
+            ->pluck('id')
+            ->map(fn ($v): int => (int) $v)
+            ->all();
+
+        if ($ids !== []) {
+            return $ids;
+        }
+
+        // Substring fallback — operators routinely search by the trailing
+        // 7 digits ("1234567" for stored "3001234567") because that's the
+        // part they remember. Defeats the index (leading-% wildcard) but
+        // is bounded by user_type_id + account scope, so the scan is
+        // small per tenant.
+        $fallback = DB::table('users')
+            ->where('user_type_id', 3)
+            ->where(function ($q) use ($candidates): void {
+                foreach ($candidates as $c) {
+                    $q->orWhere('phone_normalized', 'LIKE', '%'.$c.'%');
+                }
+            });
+
+        if ($accountId !== null) {
+            $fallback->where('account_id', $accountId);
+        }
+
+        return $fallback->limit(200)
             ->pluck('id')
             ->map(fn ($v): int => (int) $v)
             ->all();
@@ -269,8 +297,38 @@ class PatientSearchService
             $query->where('account_id', $accountId);
         }
 
-        return $query
+        $ids = $query
             ->orderByRaw('MATCH(name) AGAINST (? IN BOOLEAN MODE) DESC', [$expression])
+            ->limit(200)
+            ->pluck('id')
+            ->map(fn ($v): int => (int) $v)
+            ->all();
+
+        if ($ids !== []) {
+            return $ids;
+        }
+
+        // LIKE fallback when MATCH returns nothing. Two real cases hit
+        // this path:
+        //   1. A patient that was JUST created in the current request's
+        //      transaction. MariaDB updates the FULLTEXT index after the
+        //      commit so the FT scan briefly can't see the new row —
+        //      meanwhile receptionists can already see the row in the
+        //      list and type its name into the typeahead.
+        //   2. Names with diacritics or transliteration drift that the
+        //      FT analyzer collapses differently than the operator typed.
+        // AND-semantics across tokens to keep "Charlotte Test" matching
+        // only multi-token names that include every token.
+        $fallback = DB::table('users')->where('user_type_id', 3);
+        foreach ($longEnough as $token) {
+            $safe = addcslashes($token, '\\%_');
+            $fallback->where('name', 'LIKE', '%'.$safe.'%');
+        }
+        if ($accountId !== null) {
+            $fallback->where('account_id', $accountId);
+        }
+
+        return $fallback->orderBy('name')
             ->limit(200)
             ->pluck('id')
             ->map(fn ($v): int => (int) $v)

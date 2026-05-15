@@ -45,10 +45,22 @@ class AuthenticateApiDual
         }
 
         foreach (['api_passport', 'sanctum'] as $guard) {
-            if (auth()->guard($guard)->check()) {
-                Auth::setDefaultDriver($guard);
+            // Each guard is wrapped in its own try so a misconfigured
+            // adapter (e.g. Passport's `league/oauth2-server` throwing
+            // "Invalid key supplied" when the OAuth keypair isn't
+            // present — common in test envs and during cutover) falls
+            // through to the next guard instead of crashing the whole
+            // request with a 500.
+            try {
+                if (auth()->guard($guard)->check()) {
+                    Auth::setDefaultDriver($guard);
 
-                return $next($request);
+                    return $next($request);
+                }
+            } catch (\Throwable) {
+                // Swallow + try the next guard. The final 401 below
+                // is the right outcome if every guard fails.
+                continue;
             }
         }
 

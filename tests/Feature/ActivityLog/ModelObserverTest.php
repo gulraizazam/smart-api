@@ -9,13 +9,17 @@ use App\Models\Activity;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use Tests\Concerns\RefreshTestDatabase as RefreshDatabase;
+use Tests\Concerns\UsesFinancialFixtures;
 use Tests\TestCase;
 
 /**
  * Contract tests for App\Observers\ActivityLogObserver + App\Traits\LogsModelActivity,
  * pinned via the User model.
  *
- *   - Create writes a security-tier row with action=created.
+ *   - Create writes a SecurityAudit-tier row with action=created.
+ *     (Tier was renamed from `Security` during the HIPAA reclassification —
+ *     see App\Enums\ActivityLogTier docblock; old `Security` case is kept
+ *     only for legacy rows.)
  *   - Password-only update writes nothing (password is in the global denylist).
  *   - Name update writes a row whose description names the changed field
  *     but NOT the before/after value (activityLogMaskValues defaults true).
@@ -26,6 +30,19 @@ use Tests\TestCase;
 class ModelObserverTest extends TestCase
 {
     use RefreshDatabase;
+    use UsesFinancialFixtures;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        // The User factory writes account_id=1 + user_type_id=1; the test
+        // schema dump is structure-only and the FK constraints reject the
+        // insert unless those parent rows exist. Seed the canonical
+        // fixture once so every test in this class gets a clean baseline
+        // instead of accidentally piggy-backing on transaction-state
+        // leakage from a sibling test.
+        $this->seedFinancialFixtures();
+    }
 
     public function test_user_create_writes_security_tier_row(): void
     {
@@ -42,7 +59,7 @@ class ModelObserverTest extends TestCase
         $row = Activity::orderByDesc('id')->first();
         $this->assertSame('created', $row->action);
         $this->assertSame('user_created', $row->activity_type);
-        $this->assertSame(ActivityLogTier::Security->value, $row->log_tier);
+        $this->assertSame(ActivityLogTier::SecurityAudit->value, $row->log_tier);
         $this->assertStringContainsString('User#'.$user->id, (string) $row->description);
     }
 
@@ -114,6 +131,6 @@ class ModelObserverTest extends TestCase
         $row = Activity::orderByDesc('id')->first();
         $this->assertSame('deleted', $row->action);
         $this->assertSame('user_deleted', $row->activity_type);
-        $this->assertSame(ActivityLogTier::Security->value, $row->log_tier);
+        $this->assertSame(ActivityLogTier::SecurityAudit->value, $row->log_tier);
     }
 }

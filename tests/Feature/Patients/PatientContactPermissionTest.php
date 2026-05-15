@@ -46,7 +46,12 @@ class PatientContactPermissionTest extends TestCase
         $this->actingAsUserWithoutContact();
         $patient = Patients::factory()->create(['phone' => '3009876543']);
 
-        $payload = (new PatientResource($patient))->toArray(new Request);
+        // resolve() is what Laravel calls during response serialization — it
+        // runs ConditionallyLoadsAttributes::filter() over the result of
+        // toArray() and strips MissingValue entries. The raw toArray() leaves
+        // them in place, so a test that asserts "phone key absent" must go
+        // through resolve() to exercise the same code path the API does.
+        $payload = (new PatientResource($patient))->resolve(new Request);
 
         $this->assertArrayNotHasKey(
             'phone',
@@ -60,7 +65,7 @@ class PatientContactPermissionTest extends TestCase
         $this->actingAsUserWithContact();
         $patient = Patients::factory()->create(['phone' => '3001234567']);
 
-        $payload = (new PatientResource($patient))->toArray(new Request);
+        $payload = (new PatientResource($patient))->resolve(new Request);
 
         $this->assertArrayHasKey('phone', $payload);
         $this->assertSame('3001234567', $payload['phone']);
@@ -75,7 +80,7 @@ class PatientContactPermissionTest extends TestCase
             'phone' => '3005550000',
         ]);
 
-        $payload = (new LeadResource($lead))->toArray(new Request);
+        $payload = (new LeadResource($lead))->resolve(new Request);
 
         $this->assertArrayNotHasKey('phone', $payload);
     }
@@ -144,6 +149,21 @@ class PatientContactPermissionTest extends TestCase
 
         $user = User::factory()->create(['account_id' => 1]);
         $this->assignRoleWithPivot($user, $role);
+
+        // Give the user an "All Centres" virtual assignment so
+        // PatientAccessScope doesn't pre-empt the search with 1=0. These
+        // tests are about the `contact` permission specifically, not the
+        // centre-scoping rule — without this the patient-access filter
+        // empties every result before the permission check can run.
+        $allCentres = \App\Models\Locations::factory()->create([
+            'name' => 'All Centres',
+            'account_id' => 1,
+        ]);
+        \Illuminate\Support\Facades\DB::table('user_has_locations')->insert([
+            'user_id' => $user->id,
+            'location_id' => $allCentres->id,
+            'region_id' => 1, // seeded via seedRegionsAndCities()
+        ]);
 
         app(PermissionRegistrar::class)->forgetCachedPermissions();
         $this->actingAs($user);
