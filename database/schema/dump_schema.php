@@ -21,7 +21,7 @@
  */
 
 $host = '127.0.0.1';
-$port = 3307;
+$port = (int) (getenv('SCHEMA_DUMP_PORT') ?: 3306);
 $user = 'root';
 $pass = '';
 $db = 'crm';

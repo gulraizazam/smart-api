@@ -11,6 +11,7 @@ use App\Models\Locations;
 use App\Models\Product;
 use App\Models\ProductDetail;
 use App\Models\RoleHasUsers;
+use App\Models\Stock;
 use App\Models\TransferProduct;
 use App\Models\User;
 use App\Models\UserHasLocations;
@@ -150,74 +151,158 @@ class TransferProductService
     /**
      * Create a transfer product with inventory adjustments.
      *
+     * Wrapped in a single DB transaction so the transfer record, the
+     * source decrement, and the destination increment either all commit
+     * together or all roll back. Source/destination inventory rows are
+     * locked via `lockForUpdate()` before the math so two concurrent
+     * transfers cannot interleave reads with writes on the same row —
+     * previously the same product could be over-transferred from the
+     * same centre by two clerks racing.
+     *
+     * Stock ledger rows (`stock_type='in'`/`'out'`) are written for both
+     * sides — sales reports and `Stock::sumProductQuantity` rely on the
+     * ledger, so a transfer that only touched the `inventories` mirror
+     * silently diverged availability totals from the ledger.
+     *
+     * TODO(fifo-batches-on-transfer): the destination batch shape is
+     * still a single new IN row carrying the product's global sale_price.
+     * The proper bridge moves source FIFO batches (preserving original
+     * `sale_price` and `created_at`) across to the destination. Tracked
+     * as a follow-up — for now transferred stock at the destination is
+     * treated as a fresh batch at the current product price, which is
+     * acceptable when transfers happen at-cost and the SPA shows the
+     * product's current price anyway.
+     *
      * @return array{success: bool, message: string}
      */
     public function store(array $data): array
     {
+        $accountId = (int) Auth::user()->account_id;
+        $productId = (int) $data['product_id'];
+        $quantity = (int) $data['quantity'];
+
+        if ($quantity <= 0) {
+            return ['success' => false, 'message' => 'Please add valid product quantity.'];
+        }
+
+        // Account-scope guard — the request comes from the SPA and the
+        // SPA's pickers are scoped by ACL, but a hand-rolled API caller
+        // can pass any product_id. Block products belonging to a
+        // different tenant outright so we don't leak inventory across
+        // accounts.
+        $product = Product::where('id', $productId)->where('account_id', $accountId)->first();
+        if (! $product) {
+            return ['success' => false, 'message' => 'Product not found for this organization.'];
+        }
+
         $data['type'] = 'product_transfer_create';
         $data['message'] = 'Transfer Product create';
 
-        $request = new Request($data);
-        $accountId = Auth::user()->account_id;
+        try {
+            return DB::transaction(function () use ($data, $accountId, $productId, $quantity, $product): array {
+                $request = new Request($data);
 
-        $transferResult = TransferProduct::createRecord($request, $accountId);
+                $transferResult = TransferProduct::createRecord($request, $accountId);
 
-        if (! $transferResult['record']) {
-            $message = $transferResult['message'] ?? 'Something went wrong, please try again later.';
+                if (! $transferResult['record']) {
+                    return [
+                        'success' => false,
+                        'message' => $transferResult['message'] ?? 'Something went wrong, please try again later.',
+                    ];
+                }
 
-            return ['success' => false, 'message' => $message];
+                $productDetail = ProductDetail::createRecordTransferProduct($transferResult['data'], $accountId);
+
+                if (! $productDetail) {
+                    throw new \RuntimeException('Failed to create product detail.');
+                }
+
+                TransferProduct::where(['id' => $transferResult['record']->id])
+                    ->update(['product_detail_id' => $productDetail->id]);
+
+                // Resolve & LOCK source inventory. The lock blocks any
+                // other writer until this transaction commits.
+                $sourceQuery = Inventory::where('product_id', $productId);
+                if (! empty($data['from_warehouse_id'])) {
+                    $sourceQuery->where('warehouse_id', $data['from_warehouse_id']);
+                } else {
+                    $sourceQuery->where('location_id', $data['from_location_id']);
+                }
+                $sourceInventory = $sourceQuery->lockForUpdate()->first();
+
+                if (! $sourceInventory || (int) $sourceInventory->quantity < $quantity) {
+                    throw new \Symfony\Component\HttpKernel\Exception\HttpException(
+                        422,
+                        'Source stock is no longer available — refresh and try again.',
+                    );
+                }
+
+                $sourceInventory->update([
+                    'quantity' => (int) $sourceInventory->quantity - $quantity,
+                ]);
+
+                // Destination inventory — lock if it exists, otherwise
+                // create. Use the same row-level guard so two clerks
+                // transferring into the same centre don't both create
+                // duplicate inventory rows.
+                $destQuery = Inventory::where('product_id', $productId);
+                if (! empty($data['to_warehouse_id'])) {
+                    $destQuery->where('warehouse_id', $data['to_warehouse_id']);
+                } else {
+                    $destQuery->where('location_id', $data['to_location_id']);
+                }
+                $destInventory = $destQuery->lockForUpdate()->first();
+
+                if ($destInventory) {
+                    $destInventory->update([
+                        'quantity' => (int) $destInventory->quantity + $quantity,
+                    ]);
+                } else {
+                    $destInventory = new Inventory();
+                    $destInventory->product_id = $productId;
+                    if (! empty($data['to_warehouse_id'])) {
+                        $destInventory->warehouse_id = $data['to_warehouse_id'];
+                    } else {
+                        $destInventory->location_id = $data['to_location_id'];
+                    }
+                    $destInventory->quantity = $quantity;
+                    $destInventory->is_saleable = $product->product_type === 'for_sale' ? 1 : 0;
+                    $destInventory->save();
+                }
+
+                // Source OUT ledger row — keeps Stock-based reports
+                // (Stock::sumProductQuantity) net consistent with the
+                // inventories cache.
+                Stock::create([
+                    'account_id' => $accountId,
+                    'product_id' => $productId,
+                    'quantity' => $quantity,
+                    'stock_type' => 'out',
+                    'location_id' => $data['from_location_id'] ?? null,
+                    'warehouse_id' => $data['from_warehouse_id'] ?? null,
+                ]);
+
+                // Destination IN ledger row — also seeds a FIFO batch at
+                // the destination so subsequent sales can draw from it.
+                // See the TODO above re: bridging source-batch prices.
+                Stock::create([
+                    'account_id' => $accountId,
+                    'product_id' => $productId,
+                    'quantity' => $quantity,
+                    'stock_type' => 'in',
+                    'sale_price' => $product->sale_price,
+                    'remaining_quantity' => $quantity,
+                    'location_id' => $data['to_location_id'] ?? null,
+                    'warehouse_id' => $data['to_warehouse_id'] ?? null,
+                ]);
+
+                return ['success' => true, 'message' => 'Record has been created successfully.'];
+            });
+        } catch (\Symfony\Component\HttpKernel\Exception\HttpException $e) {
+            return ['success' => false, 'message' => $e->getMessage()];
+        } catch (\Throwable $e) {
+            return ['success' => false, 'message' => $e->getMessage()];
         }
-
-        $productDetail = ProductDetail::createRecordTransferProduct($transferResult['data'], $accountId);
-
-        if (! $productDetail) {
-            return ['success' => false, 'message' => 'Failed to create product detail.'];
-        }
-
-        TransferProduct::where(['id' => $transferResult['record']->id])
-            ->update(['product_detail_id' => $productDetail->id]);
-
-        $productType = Product::find($data['product_id']);
-
-        // Resolve source inventory
-        if (! empty($data['from_warehouse_id'])) {
-            $minusInventory = Inventory::where('product_id', $data['product_id'])
-                ->where('warehouse_id', $data['from_warehouse_id'])->first();
-
-            $updateInventory = ! empty($data['to_warehouse_id'])
-                ? Inventory::where('product_id', $data['product_id'])->where('warehouse_id', $data['to_warehouse_id'])->first()
-                : Inventory::where('product_id', $data['product_id'])->where('location_id', $data['to_location_id'])->first();
-        } else {
-            $minusInventory = Inventory::where('product_id', $data['product_id'])
-                ->where('location_id', $data['from_location_id'])->first();
-
-            $updateInventory = ! empty($data['to_warehouse_id'])
-                ? Inventory::where('product_id', $data['product_id'])->where('warehouse_id', $data['to_warehouse_id'])->first()
-                : Inventory::where('product_id', $data['product_id'])->where('location_id', $data['to_location_id'])->first();
-        }
-
-        // Deduct from source
-        $minusInventory->update(['quantity' => $minusInventory->quantity - $data['quantity']]);
-
-        // Add to destination
-        if ($updateInventory) {
-            $updateInventory->update(['quantity' => $updateInventory->quantity + $data['quantity']]);
-        } else {
-            $inventory = new Inventory;
-            $inventory->product_id = $data['product_id'];
-
-            if (! empty($data['to_warehouse_id'])) {
-                $inventory->warehouse_id = $data['to_warehouse_id'];
-            } else {
-                $inventory->location_id = $data['to_location_id'];
-            }
-
-            $inventory->quantity = $data['quantity'];
-            $inventory->is_saleable = $productType->product_type === 'for_sale' ? 1 : 0;
-            $inventory->save();
-        }
-
-        return ['success' => true, 'message' => 'Record has been created successfully.'];
     }
 
     /**

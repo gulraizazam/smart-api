@@ -805,15 +805,30 @@ class ProductService
         ];
     }
 
+    /**
+     * On-hand quantity for the product at the source location/warehouse.
+     *
+     * Returns 0 when no inventory row exists for the (product, source)
+     * pair — previously it dereferenced `$record->quantity` on a null
+     * Eloquent result and crashed the transfer-validation flow. Callers
+     * downstream interpret 0 as "out of stock", which is the right
+     * behaviour for the "not allocated to this centre yet" case.
+     */
     public static function inventoryCheck(mixed $request): int|float
     {
         if ($request->from_location_id) {
-            $record = Inventory::where(['product_id' => $request->product_id, 'location_id' => $request->from_location_id])->first();
+            $record = Inventory::where([
+                'product_id' => $request->product_id,
+                'location_id' => $request->from_location_id,
+            ])->first();
         } else {
-            $record = Inventory::where(['product_id' => $request->product_id, 'warehouse_id' => $request->from_warehouse_id])->first();
+            $record = Inventory::where([
+                'product_id' => $request->product_id,
+                'warehouse_id' => $request->from_warehouse_id,
+            ])->first();
         }
 
-        return $record->quantity;
+        return $record ? (int) $record->quantity : 0;
     }
 
     public static function stockC(int|string $id): int|float

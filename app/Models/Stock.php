@@ -23,7 +23,18 @@ class Stock extends Model
         // silently dropped it for callers that didn't fall back to direct
         // property assignment. Per-location availability calculations
         // require the column to be populated on every insert.
-        'location_id',
+        'location_id', 'warehouse_id',
+        // FIFO batch fields (2026-05-15 inventory revamp). Only populated
+        // on stock_type='in' rows — `sale_price` captures the unit price
+        // set at receipt time; `remaining_quantity` is decremented by the
+        // FIFO consumer as orders draw from this batch.
+        'sale_price', 'remaining_quantity',
+    ];
+
+    protected $casts = [
+        'sale_price' => 'decimal:2',
+        'quantity' => 'integer',
+        'remaining_quantity' => 'integer',
     ];
 
     protected $table = 'stocks';

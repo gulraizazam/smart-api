@@ -29,14 +29,14 @@ return new class extends Migration
         Schema::create('staff_transfers', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('account_id');
-            $table->unsignedBigInteger('from_user_id')->comment('Staff handing over the cash');
-            $table->unsignedBigInteger('to_user_id')->comment('Staff receiving the cash');
+            $table->unsignedInteger('from_user_id')->comment('Staff handing over the cash');
+            $table->unsignedInteger('to_user_id')->comment('Staff receiving the cash');
             $table->decimal('amount', 15, 2);
             $table->text('description')->nullable();
             $table->timestamp('voided_at')->nullable();
             $table->string('void_reason', 100)->nullable();
-            $table->unsignedBigInteger('voided_by')->nullable();
-            $table->unsignedBigInteger('created_by');
+            $table->unsignedInteger('voided_by')->nullable();
+            $table->unsignedInteger('created_by');
             $table->timestamps();
             $table->softDeletes();
 

@@ -289,16 +289,27 @@ class InventoryReportService
         ];
     }
 
+    /**
+     * Product sales report.
+     *
+     * Returns one row per order with both the gross (pre-discount) and
+     * net (post-discount) totals so the UI can show the impact of the
+     * auto-discount system (employee 20% / membership 10%) introduced
+     * by the 2026-05 inventory revamp.
+     *
+     * Employee buyers don't have a row in `patients` — the report falls
+     * back to the user record on `orders.employee_id` for the display
+     * name, with `buyer_type` flagging which kind of buyer the row is.
+     */
     public function loadSalesReport(array $params): array
     {
         [$startDate, $endDate] = $this->parseDateRangeWithTimeBounds($params['date_range']);
-        // Get filters
         $centreIds = $this->resolveCentreIds($params['centre_id'] ?? null);
         $locationId = ! empty($centreIds) ? $centreIds : ACL::getUserCentres();
 
-        // Build query
         $query = Order::query()
-            ->with(['orderDetail.product', 'centre', 'patients']) // Include related models
+            ->with(['orderDetail.product', 'centre', 'patients'])
+            ->where('orders.order_type', 'sale')
             ->when($locationId, function ($q) use ($locationId) {
                 $q->whereIn('orders.location_id', $locationId);
             })
@@ -306,39 +317,68 @@ class InventoryReportService
                 $q->whereBetween('orders.created_at', [$startDate, $endDate]);
             });
 
-        // Fetch data
         $orders = $query->get();
 
-        // Aggregate data
-        $reportData = $orders->map(function ($order) {
-            $totalRevenue = $order->orderDetail->sum(fn ($detail) => $detail->quantity * $detail->sale_price);
-            $productNames = $order->orderDetail->map(fn ($detail) => $detail->product->name ?? 'N/A')->unique()->join(', '); // Join multiple product names if needed
-            $quantity = $order->orderDetail->map(fn ($detail) => $detail->quantity ?? 'N/A')->join(', '); // No unique() to avoid filtering out duplicate quantities
+        // Resolve employee names in a single batched query rather than
+        // N+1 lookups per row.
+        $employeeIds = $orders->pluck('employee_id')->filter()->unique()->all();
+        $employees = ! empty($employeeIds)
+            ? \App\Models\User::whereIn('id', $employeeIds)->pluck('name', 'id')
+            : collect();
+
+        $reportData = $orders->map(function ($order) use ($employees) {
+            $lines = $order->orderDetail;
+
+            $gross = $lines->sum(fn ($d) => (float) $d->sale_price * (int) $d->quantity);
+            $discount = $lines->sum(fn ($d) => (float) ($d->discount_price ?? 0) * (int) $d->quantity);
+            $net = $lines->sum(fn ($d) => (float) ($d->sale_price_after_discount ?? $d->sale_price) * (int) $d->quantity);
+
+            $productNames = $lines->map(fn ($d) => $d->product->name ?? 'N/A')->unique()->join(', ');
+            $quantityList = $lines->map(fn ($d) => $d->quantity ?? 0)->join(', ');
+
+            $buyerType = $order->buyer_type ?? 'patient';
+            $purchasedBy = $buyerType === 'employee'
+                ? ($employees[$order->employee_id] ?? 'Employee')
+                : ($order->patients->name ?? 'N/A');
 
             return [
                 'order_id' => $order->id,
                 'location_name' => $order->centre->name ?? 'N/A',
                 'order_date' => $order->created_at,
-                'total_revenue' => $totalRevenue,
-                'purchased_by' => $order->patients->name ?? 'N/A',
+                'buyer_type' => $buyerType,
+                'purchased_by' => $purchasedBy,
                 'patient_id' => $order->patient_id,
-                'product_name' => $productNames ?? 'N/A',
-                'quantity' => $quantity,
+                'employee_id' => $order->employee_id,
+                'product_name' => $productNames ?: 'N/A',
+                'quantity' => $quantityList,
+                'gross_revenue' => round($gross, 2),
+                'discount_total' => round($discount, 2),
+                'net_revenue' => round($net, 2),
+                'auto_discount_type' => $order->auto_discount_type ?? 'none',
+                'auto_discount_percent' => (float) ($order->auto_discount_percent ?? 0),
                 'payment_mode' => $order->payment_mode,
+                'is_refunded' => (int) ($order->is_refunded ?? 0),
+                // Legacy alias kept so existing exports / blade views that
+                // reference `total_revenue` continue to work.
+                'total_revenue' => round($net, 2),
             ];
         });
-        $cashTotal = $reportData->where('payment_mode', 1)->sum('total_revenue');
-        $cardTotal = $reportData->where('payment_mode', 2)->sum('total_revenue');
-        $bankTransferTotal = $reportData->where('payment_mode', 3)->sum('total_revenue');
-        // Calculate overall totals
-        $overallTotal = $reportData->sum('total_revenue');
+
+        $cashTotal = $reportData->where('payment_mode', 1)->sum('net_revenue');
+        $cardTotal = $reportData->where('payment_mode', 2)->sum('net_revenue');
+        $bankTransferTotal = $reportData->where('payment_mode', 3)->sum('net_revenue');
+        $overallTotal = $reportData->sum('net_revenue');
+        $grossTotal = $reportData->sum('gross_revenue');
+        $discountTotal = $reportData->sum('discount_total');
 
         return [
             'reportData' => $reportData,
-            'cashTotal' => $cashTotal,
-            'cardTotal' => $cardTotal,
-            'bankTransferTotal' => $bankTransferTotal,
-            'overallTotal' => $overallTotal,
+            'cashTotal' => round($cashTotal, 2),
+            'cardTotal' => round($cardTotal, 2),
+            'bankTransferTotal' => round($bankTransferTotal, 2),
+            'overallTotal' => round($overallTotal, 2),
+            'grossTotal' => round($grossTotal, 2),
+            'discountTotal' => round($discountTotal, 2),
         ];
     }
 

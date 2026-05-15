@@ -12,11 +12,13 @@ use App\Helpers\TelenorSMSAPI;
 use App\Models\Accounts;
 use App\Models\Discounts;
 use App\Models\DoctorHasLocations;
+use App\Models\Inventory;
 use App\Models\Locations;
 use App\Models\Order;
 use App\Models\OrderDetail;
 use App\Models\OrderRefund;
 use App\Models\OrderRefundDetail;
+use App\Models\Patients;
 use App\Models\Product;
 use App\Models\RoleHasUsers;
 use App\Models\Settings;
@@ -27,6 +29,8 @@ use App\Models\User;
 use App\Models\UserHasLocations;
 use App\Models\UserOperatorSettings;
 use App\Models\Warehouse;
+use App\Services\Inventory\FifoConsumptionService;
+use App\Services\Inventory\InsufficientStockException;
 use App\Services\Reports\Concerns\ParsesDateRange;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
@@ -39,6 +43,25 @@ use Illuminate\Support\Facades\Gate;
 class OrderService
 {
     use ParsesDateRange;
+
+    /**
+     * Employee discount in percent. Applied automatically when buyer_type
+     * is 'employee'. Centralised here so any report that needs to invert
+     * the discount has one place to read it from.
+     */
+    public const EMPLOYEE_DISCOUNT_PERCENT = 20.0;
+
+    /**
+     * Discount in percent applied to a patient with an active membership.
+     * Mutually exclusive with the employee discount (employee wins the
+     * tiebreaker — see {@see resolveAutoDiscount}).
+     */
+    public const MEMBERSHIP_DISCOUNT_PERCENT = 10.0;
+
+    public function __construct(
+        private readonly FifoConsumptionService $fifo = new FifoConsumptionService(),
+    ) {
+    }
 
     // ---------------------------------------------------------------
     // Order Datatable
@@ -200,9 +223,15 @@ class OrderService
     // ---------------------------------------------------------------
 
     /**
-     * Validate order stock availability.
+     * Pre-flight check for the SPA: do the requested quantities fit the
+     * available FIFO stock at the chosen location?
      *
-     * @return string|null Error message or null if valid
+     * NB: this is a lock-free preview only. The authoritative check
+     * happens inside {@see createOrder}'s transaction via
+     * {@see FifoConsumptionService::consume}, which acquires row locks
+     * and throws {@see InsufficientStockException} if oversold during the
+     * write. Treat the return value of this method as a UX hint, not a
+     * security boundary.
      */
     public function validateOrderStock(array $data): ?string
     {
@@ -210,32 +239,23 @@ class OrderService
             return 'Please select any product';
         }
 
+        $locationId = (int) ($data['location_id'] ?? 0);
+        if ($locationId <= 0) {
+            return 'Please select a location for the order.';
+        }
+
         foreach ($data['product_id'] as $index => $productId) {
-            $quantity = $data['quantity'][$index];
+            $quantity = (int) ($data['quantity'][$index] ?? 0);
 
             if ($quantity <= 0) {
                 return 'Quantity must be greater than 0';
             }
 
-            $totalAdditions = DB::table('stocks')
-                ->where('product_id', $productId)
-                ->where('location_id', $data['location_id'])
-                ->where('stock_type', 'in')
-                ->sum('quantity');
+            $available = $this->fifo->availableQuantity((int) $productId, $locationId);
 
-            $totalSales = DB::table('order_details')
-                ->join('orders', 'orders.id', '=', 'order_details.order_id')
-                ->where('order_details.product_id', $productId)
-                ->where('orders.location_id', $data['location_id'])
-                ->sum('order_details.quantity');
-
-            $availableQuantity = $totalAdditions - $totalSales;
-
-            $product = Product::find($productId);
-            $productName = $product?->name ?? 'Product';
-
-            if ($availableQuantity < $quantity) {
-                return $productName.' quantity is out of stock (Available: '.$availableQuantity.')';
+            if ($available < $quantity) {
+                $name = Product::where('id', $productId)->value('name') ?? 'Product';
+                return $name.' is out of stock (Available: '.$available.')';
             }
         }
 
@@ -243,31 +263,215 @@ class OrderService
     }
 
     /**
-     * Create an order with details and send SMS.
+     * Create an order with FIFO batch consumption.
+     *
+     * The full write — order header, order_detail split lines, FIFO
+     * batch decrements, ledger OUT rows, consumption tracking rows — is
+     * wrapped in a single transaction so a partial failure cannot leave
+     * an orphan header without lines or a stock decrement without an
+     * order to point at.
+     *
+     * Server-side pricing: the unit price on each order_detail row comes
+     * from the batch the units were drawn from, NOT from any
+     * client-supplied price. The client field is ignored. The grand
+     * total is re-derived from those server-side prices and the
+     * auto-discount.
+     *
+     * Auto-discount: 20% for buyer_type=employee, 10% for a patient with
+     * an active membership, none otherwise. Mutually exclusive — see
+     * {@see resolveAutoDiscount}.
      */
     public function createOrder(array $data): ?Order
     {
-        $request = new Request($data);
-        $accountId = Auth::user()->account_id;
-        $products = array_combine($data['product_id'], $data['quantity']);
+        $accountId = (int) Auth::user()->account_id;
+        $locationId = (int) $data['location_id'];
+        $paymentMode = $data['payment_mode'] ?? null;
 
-        $order = Order::createRecord($request, $accountId, $products);
+        // Buyer resolution: `sold_to` distinguishes patient vs employee.
+        // The legacy form sent both patient_id and employee_id in the
+        // same payload and inferred the buyer from which was populated;
+        // we now trust the explicit `sold_to` flag and zero the irrelevant
+        // side to avoid foreign-key confusion downstream.
+        $soldTo = strtolower((string) ($data['sold_to'] ?? 'patient'));
+        $buyerType = $soldTo === 'employee' ? 'employee' : 'patient';
+        $patientId = $buyerType === 'patient' ? ($data['patient_id'] ?? null) : null;
+        $employeeId = $buyerType === 'employee' ? ($data['employee_id'] ?? null) : null;
 
-        if (! $order) {
-            return null;
+        // Patient creation is owned by consultation booking — refuse to
+        // accept a phone for an unknown patient on this endpoint. Memory
+        // rule: project_patient_creation_rule.
+        if ($buyerType === 'patient' && empty($patientId) && !empty($data['phone'])) {
+            $existing = Patients::where('phone', $data['phone'])->first();
+            if (!$existing) {
+                throw new \Symfony\Component\HttpKernel\Exception\HttpException(
+                    422,
+                    'No registered patient with this phone. Book a consultation first to register the patient.',
+                );
+            }
+            $patientId = $existing->id;
         }
 
-        // Send SMS
-        $this->sendOrderSMS($data, $order);
-
-        // Create order details
-        $detailResult = OrderDetail::createRecord($request, $accountId, $order->id);
-
-        if (! $detailResult) {
-            return null;
+        if ($buyerType === 'patient' && empty($patientId)) {
+            throw new \Symfony\Component\HttpKernel\Exception\HttpException(
+                422,
+                'Please select a patient for this order.',
+            );
+        }
+        if ($buyerType === 'employee' && empty($employeeId)) {
+            throw new \Symfony\Component\HttpKernel\Exception\HttpException(
+                422,
+                'Please select an employee for this order.',
+            );
         }
 
-        return $order;
+        $autoDiscount = $this->resolveAutoDiscount($buyerType, $patientId !== null ? (int) $patientId : null);
+
+        // Iterate lines first to fail fast on shape errors before opening
+        // the transaction; FifoConsumptionService still enforces the real
+        // availability under lock.
+        $productIds = (array) ($data['product_id'] ?? []);
+        $quantities = (array) ($data['quantity'] ?? []);
+        if (empty($productIds)) {
+            throw new \Symfony\Component\HttpKernel\Exception\HttpException(422, 'No products selected.');
+        }
+        if (count($productIds) !== count($quantities)) {
+            throw new \Symfony\Component\HttpKernel\Exception\HttpException(
+                422,
+                'Product and quantity arrays must align.',
+            );
+        }
+
+        return DB::transaction(function () use (
+            $accountId,
+            $locationId,
+            $paymentMode,
+            $buyerType,
+            $patientId,
+            $employeeId,
+            $autoDiscount,
+            $productIds,
+            $quantities,
+            $data,
+        ): Order {
+            // Header first; lines reference order_id. total_price is
+            // updated at the end once we know the server-derived total.
+            $order = new Order();
+            $order->account_id = $accountId;
+            $order->buyer_type = $buyerType;
+            $order->patient_id = $patientId;
+            $order->employee_id = $employeeId;
+            $order->location_id = $locationId;
+            $order->payment_mode = $paymentMode;
+            $order->prescribed_by = $data['doctor_id'] ?? null;
+            $order->order_type = 'sale';
+            $order->status = 1;
+            $order->created_by = Auth::id();
+            $order->auto_discount_type = $autoDiscount['type'];
+            $order->auto_discount_percent = $autoDiscount['percent'];
+            // total_price + quantity are stamped once we walk the lines.
+            $order->total_price = 0;
+            $order->quantity = 0;
+            $order->discount = 0;
+            $order->save();
+
+            $grossTotal = 0.0;
+            $netTotal = 0.0;
+            $totalUnits = 0;
+
+            foreach ($productIds as $index => $productId) {
+                $productId = (int) $productId;
+                $qty = (int) $quantities[$index];
+
+                if ($qty <= 0) {
+                    continue;
+                }
+
+                // FIFO draw — may return multiple batches if the line
+                // spans more than one. Each returned batch becomes its
+                // own order_detail row (split-line invoicing) so the
+                // sale_price recorded is the actual batch price, not a
+                // weighted average.
+                $consumed = $this->fifo->consume($productId, $locationId, $qty, $accountId);
+
+                foreach ($consumed as $batch) {
+                    $unitPrice = (float) $batch->salePrice;
+                    $discountUnit = round($unitPrice * ($autoDiscount['percent'] / 100), 2);
+                    $netUnit = round($unitPrice - $discountUnit, 2);
+
+                    $detail = OrderDetail::create([
+                        'order_id' => $order->id,
+                        'product_id' => $productId,
+                        'inventory_id' => $batch->stockId,
+                        'quantity' => $batch->quantity,
+                        'sale_price' => $unitPrice,
+                        'discount_price' => $discountUnit,
+                        'sale_price_after_discount' => $netUnit,
+                        'order_type' => 'sale',
+                        'account_id' => $accountId,
+                    ]);
+
+                    // Pin the draw to the originating batch so refunds
+                    // restore qty back to the same row (FIFO-symmetric).
+                    DB::table('order_detail_consumption')->insert([
+                        'order_detail_id' => $detail->id,
+                        'stock_id' => $batch->stockId,
+                        'quantity' => $batch->quantity,
+                        'sale_price' => $unitPrice,
+                        'account_id' => $accountId,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+
+                    // Ledger OUT row — one per batch consumed so the
+                    // existing stocks-based reports (sumProductQuantity)
+                    // continue to net out correctly.
+                    Stock::create([
+                        'account_id' => $accountId,
+                        'product_id' => $productId,
+                        'order_id' => $order->id,
+                        'quantity' => $batch->quantity,
+                        'stock_type' => 'out',
+                        'location_id' => $locationId,
+                    ]);
+
+                    $grossTotal += $unitPrice * $batch->quantity;
+                    $netTotal += $netUnit * $batch->quantity;
+                    $totalUnits += $batch->quantity;
+                }
+            }
+
+            $order->total_price = round($netTotal, 2);
+            $order->quantity = $totalUnits;
+            $order->save();
+
+            return $order;
+        });
+    }
+
+    /**
+     * Resolve the auto-discount to apply to a new order.
+     *
+     * Rules: employee XOR membership, no manual stacking. Employee wins
+     * the tiebreaker if the same human is both an employee and a
+     * membership-bearing patient (employee is a stronger signal — they
+     * almost certainly bought it for themselves).
+     *
+     * @return array{type: string, percent: float}
+     */
+    private function resolveAutoDiscount(string $buyerType, ?int $patientId): array
+    {
+        if ($buyerType === 'employee') {
+            return ['type' => 'employee', 'percent' => self::EMPLOYEE_DISCOUNT_PERCENT];
+        }
+
+        if ($patientId !== null) {
+            $membership = $this->checkMembership($patientId);
+            if (!empty($membership['has_active_membership'])) {
+                return ['type' => 'membership', 'percent' => self::MEMBERSHIP_DISCOUNT_PERCENT];
+            }
+        }
+
+        return ['type' => 'none', 'percent' => 0.0];
     }
 
     /**
@@ -306,36 +510,232 @@ class OrderService
     }
 
     /**
+     * Refund part or all of an order, restoring stock back to the same
+     * FIFO batches it was drawn from.
+     *
+     * Wrapped in a single DB transaction so the refund header, the
+     * detail rows, the order_detail quantity decrements, and the batch
+     * remaining_quantity restorations either all succeed or all roll
+     * back together. Previously these ran without a transaction wrapper
+     * and a mid-flow failure could leave an `is_refunded=1` flag set
+     * with stock not restored.
+     *
+     * The refund payload is the legacy SPA shape — `product_id[]` plus
+     * `quantity[]`. For each refunded product we walk the original
+     * order's `order_detail` rows (latest-id first so we restore the
+     * most recently consumed batch first — symmetric with FIFO out)
+     * and:
+     *   - decrement `order_detail.quantity` by the share refunded
+     *   - locate the matching `order_detail_consumption` row, restore
+     *     that share's `quantity` to the originating `stocks` batch and
+     *     to the `inventories` mirror cache
+     *   - write a `stocks` row with `stock_type='refund'` so the
+     *     existing ledger reports net out correctly
+     *   - record the refund line in `order_refund_details`
+     *
      * @return array{success: bool, message: string}
      */
     public function processRefund(int $orderId, array $data): array
     {
-        $order = Order::where('id', $orderId)->first();
+        $order = Order::find($orderId);
 
-        if ($order->is_refunded == 1) {
-            return ['success' => false, 'message' => 'This Order is already refunded!'];
+        if (!$order) {
+            return ['success' => false, 'message' => 'Order not found.'];
+        }
+        if ((int) $order->is_refunded === 1) {
+            return ['success' => false, 'message' => 'This order is already refunded.'];
         }
 
-        if (array_sum($data['quantity']) == 0) {
-            return ['success' => false, 'message' => 'You do not have refunded any product.'];
+        $productIds = (array) ($data['product_id'] ?? []);
+        $quantities = (array) ($data['quantity'] ?? []);
+
+        $refundQtyByProduct = [];
+        foreach ($productIds as $i => $pid) {
+            $q = (int) ($quantities[$i] ?? 0);
+            if ($q > 0) {
+                $refundQtyByProduct[(int) $pid] = ($refundQtyByProduct[(int) $pid] ?? 0) + $q;
+            }
         }
 
-        $request = new Request($data);
-        $orderRefund = OrderRefund::refund($orderId, $request);
-
-        if ($orderRefund) {
-            OrderRefundDetail::refund($order->location_id, $orderId, $orderRefund->id, $request, Auth::user()->account_id);
-
-            return ['success' => true, 'message' => 'Order has been refunded.'];
+        if (empty($refundQtyByProduct)) {
+            return ['success' => false, 'message' => 'No quantities selected to refund.'];
         }
 
-        return ['success' => false, 'message' => 'Something went wrong.'];
+        try {
+            return DB::transaction(function () use ($order, $refundQtyByProduct) {
+                $accountId = (int) Auth::user()->account_id;
+
+                // Refund header. total_price is computed from the actual
+                // per-batch sale prices we walk below, not from a
+                // client-supplied price.
+                $refund = new OrderRefund();
+                $refund->account_id = $accountId;
+                $refund->order_id = $order->id;
+                $refund->patient_id = $order->patient_id;
+                $refund->buyer_type = $order->buyer_type ?? 'patient';
+                $refund->employee_id = $order->employee_id;
+                $refund->location_id = $order->location_id;
+                $refund->payment_mode = $order->payment_mode;
+                $refund->created_by = Auth::id();
+                $refund->total_price = 0;
+                $refund->quantity = 0;
+                $refund->save();
+
+                $refundedTotal = 0.0;
+                $refundedUnits = 0;
+                $perDetailRefunded = []; // order_detail_id => qty refunded
+
+                foreach ($refundQtyByProduct as $productId => $qtyToRefund) {
+                    $remaining = $qtyToRefund;
+
+                    // Walk the order's lines for this product latest-id
+                    // first. This is the symmetric reversal of FIFO
+                    // consumption: the most recently drawn batch is the
+                    // first to be returned.
+                    $lines = OrderDetail::where('order_id', $order->id)
+                        ->where('product_id', $productId)
+                        ->where('quantity', '>', 0)
+                        ->orderBy('id', 'desc')
+                        ->lockForUpdate()
+                        ->get();
+
+                    foreach ($lines as $line) {
+                        if ($remaining <= 0) {
+                            break;
+                        }
+
+                        $take = min($remaining, (int) $line->quantity);
+                        $unitPrice = (float) $line->sale_price;
+                        $netUnit = (float) $line->sale_price_after_discount;
+
+                        // Decrement the line's quantity — fixes the
+                        // commented-out behaviour that previously allowed
+                        // the same units to be refunded multiple times.
+                        $line->quantity = (int) $line->quantity - $take;
+                        $line->save();
+
+                        // Restore stock back to the originating batch via
+                        // the consumption row. There may be one
+                        // consumption row per detail (new flow) or none
+                        // (legacy orders pre-revamp) — handle both.
+                        $consumptions = DB::table('order_detail_consumption')
+                            ->where('order_detail_id', $line->id)
+                            ->orderBy('id', 'desc')
+                            ->get();
+
+                        if ($consumptions->isNotEmpty()) {
+                            $restoreLeft = $take;
+                            foreach ($consumptions as $cons) {
+                                if ($restoreLeft <= 0) {
+                                    break;
+                                }
+                                $restoreTake = min($restoreLeft, (int) $cons->quantity);
+
+                                Stock::where('id', $cons->stock_id)
+                                    ->lockForUpdate()
+                                    ->update([
+                                        'remaining_quantity' => DB::raw('remaining_quantity + '.(int) $restoreTake),
+                                    ]);
+
+                                $restoreLeft -= $restoreTake;
+                            }
+                        } else {
+                            // Legacy order without consumption tracking —
+                            // restore to the oldest batch at the
+                            // location. Best-effort; this branch only
+                            // runs for orders placed before the revamp.
+                            $batch = Stock::where('product_id', $productId)
+                                ->where('location_id', $order->location_id)
+                                ->where('stock_type', 'in')
+                                ->whereNotNull('remaining_quantity')
+                                ->orderBy('created_at')
+                                ->lockForUpdate()
+                                ->first();
+                            if ($batch) {
+                                $batch->remaining_quantity = (int) $batch->remaining_quantity + $take;
+                                $batch->save();
+                            }
+                        }
+
+                        // Mirror the restoration to the inventories
+                        // cache so list pages match.
+                        $inv = Inventory::where('product_id', $productId)
+                            ->where('location_id', $order->location_id)
+                            ->orderBy('id')
+                            ->lockForUpdate()
+                            ->first();
+                        if ($inv) {
+                            $inv->quantity = (int) $inv->quantity + $take;
+                            $inv->save();
+                        }
+
+                        // Ledger refund row — keeps Stock::sumProductQuantity
+                        // net consistent with the inventories cache.
+                        Stock::create([
+                            'account_id' => $accountId,
+                            'product_id' => $productId,
+                            'order_id' => $order->id,
+                            'quantity' => $take,
+                            'stock_type' => 'refund',
+                            'location_id' => $order->location_id,
+                        ]);
+
+                        OrderRefundDetail::create([
+                            'account_id' => $accountId,
+                            'order_refund_id' => $refund->id,
+                            'product_id' => $productId,
+                            'quantity' => $take,
+                            'sale_price' => $unitPrice,
+                        ]);
+
+                        $refundedTotal += $netUnit * $take;
+                        $refundedUnits += $take;
+                        $perDetailRefunded[$line->id] = ($perDetailRefunded[$line->id] ?? 0) + $take;
+                        $remaining -= $take;
+                    }
+
+                    if ($remaining > 0) {
+                        // Asked to refund more than was sold on this order
+                        // for this product — abort the whole transaction.
+                        throw new \Symfony\Component\HttpKernel\Exception\HttpException(
+                            422,
+                            'Cannot refund more than the original sold quantity for product '.$productId.'.',
+                        );
+                    }
+                }
+
+                $refund->total_price = round($refundedTotal, 2);
+                $refund->quantity = $refundedUnits;
+                $refund->save();
+
+                // Mark the order fully refunded once every line is zero.
+                $remainingOnOrder = (int) OrderDetail::where('order_id', $order->id)->sum('quantity');
+                if ($remainingOnOrder === 0) {
+                    $order->is_refunded = 1;
+                }
+                $order->total_price = max(0, (float) $order->total_price - $refundedTotal);
+                $order->save();
+
+                return ['success' => true, 'message' => 'Order has been refunded.'];
+            });
+        } catch (\Symfony\Component\HttpKernel\Exception\HttpException $e) {
+            return ['success' => false, 'message' => $e->getMessage()];
+        }
     }
 
     // ---------------------------------------------------------------
     // Invoice
     // ---------------------------------------------------------------
 
+    /**
+     * Legacy invoice payload (Blade + PDF views).
+     *
+     * The legacy `admin.orders.displayInvoice` Blade and the dompdf-
+     * rendered invoice PDF both pull from this method and reference the
+     * keys `invoice_info`, `patient`, `products`, `company_phone_number`,
+     * `location_info`, `account`. Changing this shape will crash both
+     * views — use {@see getInvoiceJson} for the SPA-friendly payload.
+     */
     public function getInvoiceData(int $orderId): array
     {
         $invoiceInfo = Order::with('orderDetail')->where(['id' => $orderId])->first();
@@ -352,6 +752,125 @@ class OrderService
             'account' => Accounts::find($invoiceInfo->account_id),
             'company_phone_number' => Settings::where('slug', '=', 'sys-headoffice')->first(),
             'location_info' => $locationInfo,
+        ];
+    }
+
+    /**
+     * Build the SPA-friendly order invoice payload.
+     *
+     * Shape mirrors the consultation + treatment invoice payloads so the
+     * SPA can render all three through a single shared invoice template:
+     *
+     *   {
+     *     invoice: {
+     *       id, created_at, payment_mode, buyer_type, auto_discount_type,
+     *       auto_discount_percent,
+     *       subtotal, discount_total, total,
+     *     },
+     *     buyer: { type: 'patient'|'employee', id, name, phone, ... },
+     *     lines: [
+     *       { product_id, product_name, quantity, sale_price,
+     *         discount_price, sale_price_after_discount, line_total },
+     *       ...
+     *     ],
+     *     location: { id, name, address, phone },
+     *     account: { id, name, ... },
+     *     branding: { head_office_phone },
+     *   }
+     *
+     * Lines reflect the FIFO split — one row per batch consumed — so
+     * the printed invoice itemises each batch price the buyer paid.
+     */
+    public function getInvoiceJson(int $orderId): array
+    {
+        $order = Order::with(['orderDetail.product'])->findOrFail($orderId);
+
+        $lines = $order->orderDetail->map(function ($detail) {
+            $qty = (int) $detail->quantity;
+            $sale = (float) $detail->sale_price;
+            $disc = (float) ($detail->discount_price ?? 0);
+            $net = (float) ($detail->sale_price_after_discount ?? $sale);
+
+            return [
+                'product_id' => (int) $detail->product_id,
+                'product_name' => $detail->product?->name ?? '—',
+                'quantity' => $qty,
+                'sale_price' => round($sale, 2),
+                'discount_price' => round($disc, 2),
+                'sale_price_after_discount' => round($net, 2),
+                'line_total' => round($net * $qty, 2),
+            ];
+        })->values();
+
+        $subtotal = round($lines->sum(fn ($l) => $l['sale_price'] * $l['quantity']), 2);
+        $discountTotal = round($lines->sum(fn ($l) => $l['discount_price'] * $l['quantity']), 2);
+        $netTotal = round($lines->sum(fn ($l) => $l['line_total']), 2);
+
+        $buyer = null;
+        $buyerType = $order->buyer_type ?? 'patient';
+        if ($buyerType === 'employee' && $order->employee_id) {
+            $emp = User::find($order->employee_id);
+            if ($emp) {
+                $buyer = [
+                    'type' => 'employee',
+                    'id' => (int) $emp->id,
+                    'name' => $emp->name,
+                    'phone' => $emp->phone,
+                ];
+            }
+        } elseif ($order->patient_id) {
+            $patient = User::find($order->patient_id);
+            if ($patient) {
+                $buyer = [
+                    'type' => 'patient',
+                    'id' => (int) $patient->id,
+                    'name' => $patient->name,
+                    'phone' => $patient->phone,
+                ];
+            }
+        }
+
+        $location = $order->location_id !== null ? Locations::find($order->location_id) : null;
+        $warehouse = $location === null && $order->warehouse_id !== null
+            ? Warehouse::find($order->warehouse_id)
+            : null;
+
+        $account = Accounts::find($order->account_id);
+        $headOffice = Settings::where('slug', 'sys-headoffice')->first();
+
+        return [
+            'invoice' => [
+                'id' => (int) $order->id,
+                'created_at' => optional($order->created_at)->toIso8601String(),
+                'payment_mode' => $order->payment_mode,
+                'buyer_type' => $buyerType,
+                'auto_discount_type' => $order->auto_discount_type ?? 'none',
+                'auto_discount_percent' => (float) ($order->auto_discount_percent ?? 0),
+                'subtotal' => $subtotal,
+                'discount_total' => $discountTotal,
+                'total' => $netTotal,
+                'is_refunded' => (int) ($order->is_refunded ?? 0),
+            ],
+            'buyer' => $buyer,
+            'lines' => $lines,
+            'location' => $location ? [
+                'id' => (int) $location->id,
+                'name' => $location->name,
+                'address' => $location->address ?? null,
+                'phone' => $location->phone ?? null,
+            ] : ($warehouse ? [
+                'id' => (int) $warehouse->id,
+                'name' => $warehouse->name,
+                'address' => $warehouse->address ?? null,
+                'phone' => $warehouse->phone ?? null,
+            ] : null),
+            'account' => $account ? [
+                'id' => (int) $account->id,
+                'name' => $account->name ?? null,
+            ] : null,
+            'branding' => [
+                'head_office_phone' => $headOffice->data ?? null,
+            ],
         ];
     }
 
