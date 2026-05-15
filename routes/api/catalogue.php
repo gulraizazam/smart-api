@@ -121,7 +121,9 @@ Route::get('refunds/plans-for-patient/{patientId}', [ApiRefundsController::class
 Route::get('refunds/history/{packageId}', [ApiRefundsController::class, 'history'])->name('refunds.history');
 Route::get('refunds/edit/{id}', [AdminPackagesController::class, 'editRefund'])->name('refunds.edit_api');
 Route::post('refunds/update', [AdminPackagesController::class, 'updateRefund'])->name('refunds.update_api');
-Route::post('refunds', [ApiRefundsController::class, 'store'])->name('refunds.store');
+Route::post('refunds', [ApiRefundsController::class, 'store'])
+    ->middleware('idempotent')
+    ->name('refunds.store');
 
 Route::resource('feedbacks', FeedbackController::class)->only(['store', 'edit', 'update', 'destroy']);
 // Discount Routes (Refactored — using API controller)
@@ -220,13 +222,21 @@ Route::put('centre_targets/{id}', [CentreTargetsController::class, 'update'])->n
 // Package Advance route start
 Route::post('packagesadvances/datatable', [PackageAdvancesController::class, 'datatable'])->name('packagesadvances.datatable');
 Route::post('packagesadvances/status', [PackageAdvancesController::class, 'status'])->name('packagesadvances.status');
-Route::post('packagesadvances/cancel/{id}', [PackageAdvancesController::class, 'cancel'])->name('packagesadvances.cancel');
+Route::post('packagesadvances/cancel/{id}', [PackageAdvancesController::class, 'cancel'])
+    ->middleware(['throttle:60,1', 'idempotent'])
+    ->name('packagesadvances.cancel');
 Route::get('packagesadvances/getpackages', [PackageAdvancesController::class, 'getpackages'])->name('packagesadvances.getpackages');
 Route::get('packagesadvances/getpackagesinfo', [PackageAdvancesController::class, 'getpackagesinfo'])->name('packagesadvances.getpackagesinfo');
 Route::get('packagesadvances/getpackagesinfo_update', [PackageAdvancesController::class, 'getpackagesinfo_update'])->name('packagesadvances.getpackagesinfo_update');
-Route::get('packagesadvances/savepackagesadvances', [PackageAdvancesController::class, 'savepackagesadvances'])->name('packagesadvances.savepackagesadvances');
-Route::get('packagesadvances/updatepackagesadvances', [PackageAdvancesController::class, 'updatepackagesadvances'])->name('packagesadvances.updatepackagesadvances');
-Route::get('packagesadvances/update_record_final', [PackageAdvancesController::class, 'update_record_final'])->name('packagesadvances.update_record_final');
+// CSRF-bypass cleanup (2026-05-15): the three GET routes that used to
+// register here mutated `package_advances` via the controller's
+// `savepackagesadvances` / `updatepackagesadvances` / `update_record_final`
+// methods. Laravel's VerifyCsrfToken middleware excludes GET by design —
+// any `<img src="...">` on an attacker page would trigger the write with
+// the operator's session cookie. The orphaned routes had no SPA caller;
+// the live POST path is in routes/api/appointments-admin.php
+// (finances.savepackagesadvances). The standalone POST routes on
+// Route::resource below cover the remaining REST surface.
 Route::resource('packagesadvances', PackageAdvancesController::class)->except('index');
 
 // Business Closures Management

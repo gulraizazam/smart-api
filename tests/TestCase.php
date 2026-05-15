@@ -30,10 +30,38 @@ abstract class TestCase extends BaseTestCase
     /**
      * Act as a Super-Admin user. Use for tests of broad management screens
      * that should not be gated by per-resource permissions.
+     *
+     * Ensures the `Super-Admin` Spatie role exists and is assigned, so
+     * code that checks `hasRole('Super-Admin')` (e.g. PatientAccessScope,
+     * the global Gate::before bypass in AppServiceProvider) treats this
+     * user as super. Otherwise the test user gets an auto-incremented id
+     * that's not 1, and any id=1-style fallback misses them.
      */
     protected function actingAsAdmin(): User
     {
         $user = User::factory()->admin()->create();
+
+        // Spatie's Role::findOrCreate uses Eloquent fillable, but this
+        // codebase's `roles` table has a custom non-nullable `commission`
+        // column with no default. Insert via DB::table so we can supply
+        // the value the schema requires.
+        $roleId = (int) DB::table('roles')
+            ->where(['name' => 'Super-Admin', 'guard_name' => 'web'])
+            ->value('id');
+        if ($roleId === 0) {
+            $roleId = (int) DB::table('roles')->insertGetId([
+                'name' => 'Super-Admin',
+                'guard_name' => 'web',
+                'commission' => 0,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        }
+        // Clear Spatie's cached registrar so the just-created role is
+        // visible to hasRole() in this request.
+        app(\Spatie\Permission\PermissionRegistrar::class)->forgetCachedPermissions();
+        $user->assignRole('Super-Admin');
+
         $this->actingAs($user);
 
         return $user;

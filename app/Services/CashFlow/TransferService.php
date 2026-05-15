@@ -108,24 +108,38 @@ class TransferService
      */
     public function edit(int $transferId, array $data, int $accountId): CashTransfer
     {
-        $transfer = CashTransfer::forAccount($accountId)->findOrFail($transferId);
+        // Pre-check (cheap, no lock).
+        $preCheck = CashTransfer::forAccount($accountId)->findOrFail($transferId);
 
-        if ($transfer->isVoided()) {
+        if ($preCheck->isVoided()) {
             throw new CashflowException('Cannot edit a voided transfer.');
         }
 
-        if (CashflowHelper::isDateInLockedPeriod($transfer->transfer_date->format('Y-m-d'), $accountId)) {
-            throw CashflowException::periodLocked($transfer->transfer_date->month, $transfer->transfer_date->year);
+        if (CashflowHelper::isDateInLockedPeriod($preCheck->transfer_date->format('Y-m-d'), $accountId)) {
+            throw CashflowException::periodLocked($preCheck->transfer_date->month, $preCheck->transfer_date->year);
         }
 
-        // Validate from != to
-        $newFromPool = $data['from_pool_id'] ?? $transfer->from_pool_id;
-        $newToPool = $data['to_pool_id'] ?? $transfer->to_pool_id;
+        // Validate from != to (using request-provided values; re-validated
+        // inside the lock too).
+        $newFromPool = $data['from_pool_id'] ?? $preCheck->from_pool_id;
+        $newToPool = $data['to_pool_id'] ?? $preCheck->to_pool_id;
         if ($newFromPool == $newToPool) {
             throw new CashflowException('Source and destination pools cannot be the same.');
         }
 
-        return DB::transaction(function () use ($transfer, $data, $accountId) {
+        return DB::transaction(function () use ($transferId, $data, $accountId) {
+            // Lock the row inside the transaction so two concurrent edits
+            // can't both read the same `oldAmount`/`oldFromPoolId` and
+            // apply overlapping pool deltas. The second request waits on
+            // this lock and re-reads after the first commit.
+            $transfer = CashTransfer::forAccount($accountId)
+                ->lockForUpdate()
+                ->findOrFail($transferId);
+
+            if ($transfer->isVoided()) {
+                throw new CashflowException('Cannot edit a voided transfer.');
+            }
+
             $transfer->load(['fromPool:id,name', 'toPool:id,name', 'creator:id,name']);
             $oldValues = $transfer->toArray();
 

@@ -5,6 +5,7 @@ namespace App\Http\Requests\CashFlow;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
 
 class StoreVendorTransactionRequest extends FormRequest
 {
@@ -16,7 +17,7 @@ class StoreVendorTransactionRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'vendor_id' => 'required|exists:cashflow_vendors,id',
+            'vendor_id' => ['required', Rule::exists('cashflow_vendors', 'id')->where('account_id', (int) Auth::user()->account_id)->whereNull('deleted_at')],
             'type' => 'required|in:purchase,payment',
             'amount' => 'required|numeric|min:0.01|max:99999999.99',
             'description' => 'nullable|string|max:500',

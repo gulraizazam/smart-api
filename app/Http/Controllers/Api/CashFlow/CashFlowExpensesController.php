@@ -194,13 +194,43 @@ class CashFlowExpensesController extends Controller
 
     }
 
-    // expensesApprove / expensesResubmit stayed retired 2026-05-13
-    // (Option A — every payment posts as Approved by default).
+    // expensesResubmit stays retired (Option A).
     //
     // `expensesReject` came back 2026-05-14 as the "return to accountant
     // for revisions" workflow: admin rejects with a reason, the row's
-    // creator gains edit rights even without the global edit slug, and
-    // a successful save auto-re-approves. See ExpenseService::reject.
+    // creator gains edit rights even without the global edit slug, the
+    // accountant's save moves the row to Pending, and `expensesApprove`
+    // closes the loop. See ExpenseService::reject / approve.
+    public function expensesApprove(int $id): JsonResponse
+    {
+        if (! Auth::user()->can('cashflow_expense_approve')) {
+            abort(403);
+        }
+        $accountId = (int) Auth::user()->account_id;
+        try {
+            $expense = $this->expenseService->approve($id, $accountId);
+            return response()->json([
+                'success' => true,
+                'data' => $expense,
+                'message' => 'Payment approved.',
+            ]);
+        } catch (CashflowException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 422);
+        } catch (\Throwable $e) {
+            \Log::error('cashflow.expense.approve_failed', [
+                'expense_id' => $id,
+                'error' => $e->getMessage(),
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'An error occurred. Please try again.',
+            ], 500);
+        }
+    }
+
     public function expensesReject(RejectExpenseRequest $request, int $id): JsonResponse
     {
         $user = Auth::user();

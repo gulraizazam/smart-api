@@ -324,35 +324,44 @@ class ExpenseService
 
     /**
      * Admin edit of an expense (requires reason).
+     *
+     * The expense row is fetched with `lockForUpdate()` INSIDE the
+     * transaction so two concurrent edits can't both compute their
+     * pool delta from the same baseline `amount`. Without the lock,
+     * the observer's `$expense->getOriginal('amount')` returns the
+     * pre-edit value seen by EACH request — so two edits would both
+     * subtract their own delta from the same starting point, leaving
+     * the pool double-debited.
      */
     public function adminEdit(int $expenseId, array $data, int $accountId): Expense
     {
         $auditRelations = ['category:id,name', 'paidFromPool:id,name', 'paymentMethod:id,name', 'forBranch:id,name', 'vendor:id,name', 'staff:id,name'];
-        $expense = Expense::forAccount($accountId)->with($auditRelations)->findOrFail($expenseId);
 
-        if ($expense->isVoided()) {
+        // Cheap pre-checks before opening the transaction. These can
+        // run on a non-locked read because the answers don't change
+        // under concurrent edits (voided is sticky; period-lock is
+        // per-date).
+        $existing = Expense::forAccount($accountId)->findOrFail($expenseId);
+
+        if ($existing->isVoided()) {
             throw new CashflowException('Voided expenses cannot be edited.');
         }
 
-        if (CashflowHelper::isDateInLockedPeriod($expense->expense_date->format('Y-m-d'), $accountId)) {
-            throw CashflowException::periodLocked($expense->expense_date->month, $expense->expense_date->year);
+        if (CashflowHelper::isDateInLockedPeriod($existing->expense_date->format('Y-m-d'), $accountId)) {
+            throw CashflowException::periodLocked($existing->expense_date->month, $existing->expense_date->year);
         }
-
-        $oldValues = $expense->toArray();
-        $oldVendorId = $expense->vendor_id;
-        $oldAmount = (float) $expense->amount;
 
         $allowed = ['expense_date', 'amount', 'category_id', 'paid_from_pool_id', 'payment_method_id', 'description', 'reference_no', 'attachment_url', 'notes', 'vendor_id', 'staff_id'];
         $updateData = ['edit_reason' => $data['edit_reason']];
 
-        // Auto re-approve a Rejected row when the accountant saves their
-        // fix. Clears the rejection reason and stamps a fresh verified_by
-        // so the audit trail records who closed the loop. Reject → fix
-        // → approve is a single cycle; admin can reject again if needed.
-        if ($expense->status === ExpenseStatus::Rejected) {
-            $updateData['status'] = ExpenseStatus::Approved;
+        // Editing a Rejected row submits the fix back to admin for
+        // re-approval — status flips to Pending, NOT Approved. Pool
+        // stays refunded (still uncounted) until admin approves the
+        // fixed version. Clears rejection_reason since the cycle moved
+        // forward; verified_by stays null until the approval lands.
+        if ($existing->status === ExpenseStatus::Rejected) {
+            $updateData['status'] = ExpenseStatus::Pending;
             $updateData['rejection_reason'] = null;
-            $updateData['verified_by'] = Auth::id();
         }
 
         // Handle merged branch/general field
@@ -391,7 +400,26 @@ class ExpenseService
             $updateData['attachment_url'] = null;
         }
 
-        return DB::transaction(function () use ($expense, $updateData, $auditRelations, $oldValues, $oldVendorId, $oldAmount, $data, $accountId) {
+        return DB::transaction(function () use ($expenseId, $updateData, $auditRelations, $data, $accountId) {
+            // Lock the expense row inside the transaction so concurrent
+            // admin-edits to the same row serialise. The second request
+            // waits on this lock and re-reads $oldAmount AFTER the first
+            // commit, so the observer's amount-delta math stays correct.
+            $expense = Expense::forAccount($accountId)
+                ->with($auditRelations)
+                ->lockForUpdate()
+                ->findOrFail($expenseId);
+
+            // Re-check inside the lock — another request could have
+            // voided the row between the pre-check and now.
+            if ($expense->isVoided()) {
+                throw new CashflowException('Voided expenses cannot be edited.');
+            }
+
+            $oldValues = $expense->toArray();
+            $oldVendorId = $expense->vendor_id;
+            $oldAmount = (float) $expense->amount;
+
             $expense->update($updateData);
 
             $newVendorId = $expense->fresh()->vendor_id;
@@ -492,21 +520,44 @@ class ExpenseService
      */
     public function void(int $expenseId, string $reason, int $accountId): Expense
     {
-        $expense = Expense::forAccount($accountId)->findOrFail($expenseId);
+        // Pre-check (cheap, no lock).
+        $preCheck = Expense::forAccount($accountId)->findOrFail($expenseId);
 
-        if ($expense->isVoided()) {
-            throw new CashflowException('Expense is already voided.');
+        if (CashflowHelper::isDateInLockedPeriod($preCheck->expense_date->format('Y-m-d'), $accountId)) {
+            throw CashflowException::periodLocked($preCheck->expense_date->month, $preCheck->expense_date->year);
         }
 
-        if (CashflowHelper::isDateInLockedPeriod($expense->expense_date->format('Y-m-d'), $accountId)) {
-            throw CashflowException::periodLocked($expense->expense_date->month, $expense->expense_date->year);
-        }
+        return DB::transaction(function () use ($expenseId, $reason, $accountId) {
+            // Lock the row inside the transaction so two concurrent voids
+            // can't both refund the pool. The second request waits on
+            // this lock, then re-reads voided_at AFTER the first commit
+            // and short-circuits on the isVoided() check.
+            $expense = Expense::forAccount($accountId)
+                ->lockForUpdate()
+                ->findOrFail($expenseId);
 
-        $oldValues = $expense->only(['voided_at', 'voided_by', 'void_reason', 'is_flagged', 'flag_reason']);
+            if ($expense->isVoided()) {
+                throw new CashflowException('Expense is already voided.');
+            }
 
-        return DB::transaction(function () use ($expense, $reason, $accountId, $oldValues) {
-            // Reverse pool balance: increment pool (give money back)
-            if ($expense->status !== ExpenseStatus::Rejected && $expense->paid_from_pool_id) {
+            // Separation of duties on void — same rationale as approve.
+            // void() refunds the pool, so an attacker who could both
+            // create and self-void would have a primitive for churning
+            // pool balance through "shell" expenses without an audit
+            // co-signer. Block it.
+            if ((int) $expense->created_by === (int) Auth::id()) {
+                throw new CashflowException(
+                    'You cannot void an expense you created. Another admin must void it.',
+                );
+            }
+
+            $oldValues = $expense->only(['voided_at', 'voided_by', 'void_reason', 'is_flagged', 'flag_reason']);
+            // Reverse pool balance: increment pool (give money back).
+            // Under Model B (2026-05-14) the pool is debited at creation
+            // and stays debited through every non-void status — so void
+            // is the only path that refunds, regardless of the source
+            // status (Approved, Pending, or Rejected).
+            if ($expense->paid_from_pool_id) {
                 DB::table('cash_pools')
                     ->where('id', $expense->paid_from_pool_id)
                     ->increment('cached_balance', $expense->amount);
@@ -545,16 +596,85 @@ class ExpenseService
     }
 
     /**
-     * Reject an Approved expense and send it back to its creator for
-     * fixes (2026-05-14). Unlike a void, the pool balance is NOT
-     * reversed — the money still left the till from the org's view;
-     * the accountant just needs to correct something about the record
-     * (wrong category, wrong vendor, missing receipt, etc.).
+     * Approve a Pending or Rejected expense.
+     *
+     * Two entry paths converge here:
+     *   • Pending → Approved (accountant submitted a fix; admin
+     *     signed off on the revision).
+     *   • Rejected → Approved (admin is overriding the reject — e.g.
+     *     they rejected by mistake, or they decided no accountant
+     *     intervention is needed).
+     *
+     * Pool balance is NOT touched (Model B / substance-over-form):
+     * the cash event happened at creation time; status reflects
+     * record-validity, not whether the spend occurred. Use `void`
+     * when the entry shouldn't exist and the cash should be
+     * reversed. `rejection_reason` is cleared if the row was rejected.
+     */
+    public function approve(int $expenseId, int $accountId): Expense
+    {
+        $expense = Expense::forAccount($accountId)->findOrFail($expenseId);
+
+        if ($expense->isVoided()) {
+            throw new CashflowException('Voided expenses cannot be approved.');
+        }
+        if ($expense->status === ExpenseStatus::Approved) {
+            throw new CashflowException('Expense is already approved.');
+        }
+        if (! in_array($expense->status, [ExpenseStatus::Pending, ExpenseStatus::Rejected], true)) {
+            throw new CashflowException('Only pending or rejected expenses can be approved.');
+        }
+
+        // Separation of duties: an approver MUST be a different user
+        // than the creator on the post-reject path. Otherwise an admin
+        // who created and self-approved an expense, then had it
+        // rejected by a second admin, could just edit + re-approve
+        // their own row and undo the rejection without any second
+        // review. The audit log would show "approved by A" both times,
+        // hiding the bypass.
+        if ((int) $expense->created_by === (int) Auth::id()) {
+            throw new CashflowException(
+                'You cannot approve an expense you created. Another admin must approve it.',
+            );
+        }
+
+        $oldValues = $expense->only(['status', 'verified_by', 'rejection_reason']);
+
+        return DB::transaction(function () use ($expense, $oldValues) {
+            $expense->update([
+                'status' => ExpenseStatus::Approved,
+                'verified_by' => Auth::id(),
+                'rejection_reason' => null, // clear stale reason if coming from Rejected
+            ]);
+
+            $this->auditService->log(
+                CashflowAuditLog::ACTION_APPROVED,
+                CashflowAuditLog::ENTITY_EXPENSE,
+                $expense->id,
+                $oldValues,
+                [
+                    'status' => ExpenseStatus::Approved->value,
+                    'verified_by' => Auth::id(),
+                ],
+                null,
+            );
+
+            return $expense->fresh();
+        });
+    }
+
+    /**
+     * Reject an Approved-or-Pending expense and send it back to its
+     * creator for fixes (2026-05-14, Model B). This is a record-
+     * correction workflow — pool balance is intentionally NOT
+     * touched because the cash event already happened. Use `void`
+     * when the entry shouldn't exist on the books at all.
      *
      * The row's creator then gets to edit it without needing the
      * global `cashflow_expense_edit` slug (see `UpdateExpenseRequest`
-     * + `adminEdit` for the elevation path). On successful save, the
-     * row auto-flips back to Approved and `rejection_reason` clears.
+     * + `adminEdit`). On successful save the row moves to Pending
+     * (awaiting admin approval), and `approve()` closes the loop by
+     * flipping back to Approved.
      */
     public function reject(int $expenseId, string $reason, int $accountId): Expense
     {
@@ -565,6 +685,23 @@ class ExpenseService
         }
         if ($expense->status === ExpenseStatus::Rejected) {
             throw new CashflowException('Expense is already rejected.');
+        }
+        if (! in_array($expense->status, [ExpenseStatus::Approved, ExpenseStatus::Pending], true)) {
+            throw new CashflowException('Only approved or pending revisions can be rejected.');
+        }
+
+        // Separation of duties — same rule that approve and void enforce.
+        // Without this, a single admin could create → reject → edit →
+        // re-approve a row entirely on their own, with the audit trail
+        // showing two normal-looking state changes by the same user.
+        // Reject itself doesn't change the pool (Model B), but it kicks
+        // the row back to the creator for re-edit, and if that creator
+        // is the SAME person who rejected, the SoD bypass on approve
+        // (which we DO block) becomes reachable via this loop.
+        if ((int) $expense->created_by === (int) Auth::id()) {
+            throw new CashflowException(
+                'You cannot reject an expense you created. Another admin must review it.',
+            );
         }
 
         $oldValues = $expense->only(['status', 'rejection_reason', 'verified_by']);
@@ -887,7 +1024,7 @@ class ExpenseService
         if (!$expense->vendor_id && $expense->category) {
             $cat = $expense->category;
             if ($cat->vendor_emphasis) {
-                $flags[] = 'Vendor pending';
+                $flags[] = 'Vendor missing';
             }
         }
 

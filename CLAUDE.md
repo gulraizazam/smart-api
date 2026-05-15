@@ -100,6 +100,7 @@ Default thought order: **business logic preserved → security → data integrit
 - Test Service behaviour, not Eloquent internals. Don't assert on query SQL or internal Eloquent state.
 - Bug fix ships with a regression test that fails before the fix.
 - Use **database transactions** (`RefreshDatabase` / `LazilyRefreshDatabase`) — never hit a shared dev DB from tests.
+- **Never run `vendor/bin/pest` in parallel against `cutera_test`.** The custom `RefreshTestDatabase` trait wipes and reloads the schema at startup; two concurrent pest processes (multi-terminal, parallel CI, parallel AI agents) will stomp on each other's tables mid-run and produce non-reproducible "Table X doesn't exist" failures. If you need agents in parallel, give them other work — not pest runs. If you ever need true test parallelism, plumb a per-process DB suffix (e.g. `cutera_test_<pid>`) into the connection config instead.
 - Use **`Http::fake()`**, **`Queue::fake()`**, **`Mail::fake()`**, **`Event::fake()`**, **`Storage::fake()`** to isolate from external systems.
 - **Architecture tests** (Pest `arch()`) enforce structural rules: no controller imports DB facade, no model imports HTTP request, services don't depend on Blade, etc.
 
@@ -180,3 +181,10 @@ A task is "done" only when **all** of the following are true:
 - Permissions: routes + policies authoritative; `@can` mirrors them. On any permission rename (e.g., `2026_04_12_130400_restructure_appointment_permissions.php`), audit every call site before declaring done.
 - Cashflow, HR, consultancy, treatment, patient modules handle sensitive data — apply logging/PII rules strictly.
 - Migrations change often here; review recent ones before writing a new one.
+
+## Single source of truth — canonical helpers
+
+Some questions about the business have one and only one answer-producing path. Re-use these helpers. If you find yourself rewriting their logic in a new feature, stop and call the helper instead — divergence here ships subtle financial bugs.
+
+- **"Is the clinic operating on date X (optionally at branch Y)?" → `App\Support\OperatingDays`.**
+  Composes weekly pattern (`settings.business_working_days`) + per-date overrides (`working_day_exceptions`) + date-range closures (`business_closures` + pivot). Used by InvoiceGenerationService (working-days denominator), UtilizationMetric (rota merge), DoctorDashboard (per-day revenue, days-remaining goal bar), BenchmarkCalculator (per-doctor revenue pool denominator). **Never re-implement Mon-Sat / dayOfWeek loops.** If your feature needs a per-day average, an operating-day count, or a list of "is this date open" — call `OperatingDays::datesInRange()` (org or branch-scoped) or one of the lower-level methods (`nonWorkingDates`, `closedBranchDates`). Three Mon-Sat loops drifted from this rule between 2026-04 and 2026-05-15 and were silently wrong on closure weeks; that's the failure mode to avoid.

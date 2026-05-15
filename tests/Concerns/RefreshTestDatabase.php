@@ -44,6 +44,13 @@ trait RefreshTestDatabase
     /**
      * Drop all tables in the current connection's database and execute the
      * SQL dump file. Idempotent — safe to call multiple times.
+     *
+     * NOT SAFE under concurrent pest processes against the same database.
+     * Two pest invocations sharing `cutera_test` will stomp on each other:
+     * the second process drops tables the first is actively running tests
+     * against. The fix is "don't run parallel pest on the same DB" — see
+     * CLAUDE.md for the convention. A per-process DB or CI-level locking
+     * would be needed if we ever want true parallel test execution.
      */
     protected function loadTestSchemaFromDump(): void
     {
@@ -111,6 +118,8 @@ trait RefreshTestDatabase
         $this->applyVoucherHardening($pdo);
 
         $this->ensureExpenseAttachmentsTable($pdo);
+
+        $this->ensurePasswordResetTokensTable($pdo);
 
         $this->ensureStaffTransfersTable($pdo);
 
@@ -214,6 +223,27 @@ trait RefreshTestDatabase
         // helper actively removes some), so emitting them here would just
         // create one-off divergence — the production migration has the
         // real FK definitions and that's the contract that matters.
+    }
+
+    /**
+     * Laravel's default password-reset table — never landed in the
+     * dev `crm` schema (the project predates Laravel's built-in
+     * notification flow, and we use a curated schema dump rather
+     * than running framework migrations). Tests that exercise the
+     * password-reset flow fail with "Table doesn't exist" without it.
+     *
+     * Matches `framework/database/migrations/0001_01_01_000000_create_users_table.php`.
+     */
+    protected function ensurePasswordResetTokensTable(\PDO $pdo): void
+    {
+        $pdo->exec(<<<'SQL'
+            CREATE TABLE IF NOT EXISTS `password_reset_tokens` (
+                `email` VARCHAR(255) NOT NULL,
+                `token` VARCHAR(255) NOT NULL,
+                `created_at` TIMESTAMP NULL DEFAULT NULL,
+                PRIMARY KEY (`email`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+            SQL);
     }
 
     /**

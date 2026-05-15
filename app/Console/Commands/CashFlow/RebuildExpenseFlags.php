@@ -73,11 +73,11 @@ class RebuildExpenseFlags extends Command
         $this->info(($dryRun ? '[dry-run] ' : '') . "Cleared flag state on {$terminalCount} voided rows.");
 
         // ─── Step 2: re-evaluate every live row ──────────────────────
-        // Every live (non-voided) row in the Option-A world is Approved
-        // status — there's no Pending / Rejected distinction anymore.
-        // Re-run the rule set so retired rules drop off, new rules
-        // (Above threshold, etc.) apply, and reason strings match the
-        // current short-form vocabulary.
+        // Re-run the rule set on every non-voided row so retired
+        // rules drop off, new rules apply, and reason strings match
+        // the current vocabulary. Approved / Pending / Rejected rows
+        // all get evaluated identically — flagging is independent of
+        // the reject/approve workflow.
         $liveQuery = Expense::query()->whereNull('voided_at');
         if ($accountId !== null) {
             $liveQuery->where('account_id', $accountId);

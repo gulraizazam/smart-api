@@ -340,8 +340,6 @@ class CashFlowDashboardController extends Controller
 
                     ->whereNull('voided_at')
 
-                    ->where('status', '!=', 'rejected')
-
                     ->whereIn('paid_from_pool_id', $poolIds)
 
                     ->whereBetween('expense_date', [$sevenDaysAgo, $today])
@@ -483,7 +481,6 @@ class CashFlowDashboardController extends Controller
                 // Subtract expenses
                 $obExpenses = \App\Models\CashFlow\Expense::forAccount($accountId)
                     ->whereNull('voided_at')
-                    ->where('status', '!=', 'rejected')
                     ->whereIn('paid_from_pool_id', $poolIds)
                     ->whereBetween('expense_date', [\Carbon\Carbon::parse($goLiveDate)->toDateString(), $lastSaturday->toDateString()])
                     ->sum('amount');
@@ -624,7 +621,6 @@ class CashFlowDashboardController extends Controller
                 $exp = $sumCount(
                     \App\Models\CashFlow\Expense::forAccount($accountId)
                         ->whereNull('voided_at')
-                        ->where('status', '!=', 'rejected')
                         ->whereIn('paid_from_pool_id', $poolIds)
                         ->whereBetween('expense_date', [$sunday, $today]),
                     'amount',

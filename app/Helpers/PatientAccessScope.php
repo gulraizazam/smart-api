@@ -36,7 +36,17 @@ class PatientAccessScope
         }
 
         $user = Auth::user();
-        if ($user->id === 1) {
+
+        // Super-Admin escape — role-based primary, id=1 retained as a
+        // fallback for legacy bootstrapped accounts where the root user
+        // pre-dates the role rollout. Role check mirrors the global Gate
+        // bypass in AppServiceProvider::configureAuthorization() so an
+        // operator can't be Super-Admin for permission gates but blocked
+        // here.
+        if (method_exists($user, 'hasRole') && $user->hasRole('Super-Admin')) {
+            return $cache[$userId] = null;
+        }
+        if ((int) $user->id === 1) {
             return $cache[$userId] = null;
         }
 

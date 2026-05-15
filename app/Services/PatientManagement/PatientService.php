@@ -703,13 +703,26 @@ class PatientService
         // query so every cloned branch (id, phone, name) inherits it.
         PatientAccessScope::applyTo($baseQuery);
 
+        // Mirror the contact-permission redaction already implemented in
+        // Patients::getPatientSearchOptimized — callers without `contact`
+        // must receive rows with the phone key entirely absent (not
+        // masked, not blank) so downstream renderers don't show a column.
+        $canViewContact = Gate::allows('contact');
+
         if ($shape['type'] === 'patient_code' || $shape['type'] === 'short_id') {
             $row = (clone $baseQuery)
                 ->where('id', (int) $shape['digits'])
                 ->select('name', 'id', 'phone')
                 ->first();
 
-            return $row ? [$row->toArray()] : [];
+            if (! $row) {
+                return [];
+            }
+            $arr = $row->toArray();
+            if (! $canViewContact) {
+                unset($arr['phone']);
+            }
+            return [$arr];
         }
 
         $candidateIds = $shape['type'] === 'phone'
@@ -724,13 +737,22 @@ class PatientService
         // phone. Without FIELD() MariaDB would re-order by primary key.
         $orderExpr = 'FIELD(id, '.implode(',', array_fill(0, count($candidateIds), '?')).')';
 
-        return (clone $baseQuery)
+        $rows = (clone $baseQuery)
             ->whereIn('id', $candidateIds)
             ->select('name', 'id', 'phone')
             ->orderByRaw($orderExpr, $candidateIds)
             ->limit(20)
             ->get()
             ->toArray();
+
+        if (! $canViewContact) {
+            $rows = array_map(static function (array $row): array {
+                unset($row['phone']);
+                return $row;
+            }, $rows);
+        }
+
+        return $rows;
     }
 
     /*

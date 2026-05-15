@@ -25,9 +25,11 @@ use Tests\TestCase;
  *   2. Valid credentials return 200, a Sanctum plain-text token, and
  *      reset the user's `failed_login_attempts` counter.
  *   3. Wrong password returns 401 and increments the failed counter.
- *   4. Inactive accounts return 403 and are counted against the
- *      lockout policy (so enumeration across active/inactive state
- *      is impossible).
+ *   4. Inactive accounts return 401 and are counted against the
+ *      lockout policy. Returning the same 401 as "wrong password"
+ *      prevents an attacker from probing which emails belong to
+ *      disabled accounts vs. active ones (OWASP user-enumeration
+ *      guidance: collapse credential-stage failures to one status).
  */
 class ApiAuthTest extends TestCase
 {
@@ -106,7 +108,7 @@ class ApiAuthTest extends TestCase
         );
     }
 
-    public function test_login_refuses_inactive_account_with_403(): void
+    public function test_login_refuses_inactive_account_with_401(): void
     {
         User::factory()->admin()->create([
             'email' => 'disabled@example.test',
@@ -119,7 +121,10 @@ class ApiAuthTest extends TestCase
             'password' => 'Secret123!',
         ]);
 
-        $response->assertStatus(403);
+        // 401 (not 403) so the response shape matches "wrong password" —
+        // an attacker probing the form gets no signal about which emails
+        // map to disabled accounts vs. unknown ones.
+        $response->assertStatus(401);
         $response->assertJson(['success' => false]);
     }
 

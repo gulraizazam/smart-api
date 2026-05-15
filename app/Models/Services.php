@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Helpers\NodesTree;
+use App\Helpers\ServiceHelper;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -54,6 +55,42 @@ class Services extends BaseModel
             'sort_no'               => 'integer',
             'sort_number'           => 'integer',
         ];
+    }
+
+    /**
+     * Persistence-seam coercions for paths that bypass
+     * ServiceHelper::prepareServiceData() — direct $model->save() calls
+     * and legacy admin controllers. Two invariants:
+     *
+     *   1. `parent_id` 0 / '' must land as NULL on every write. The
+     *      self-ref FK `fk_services_parent_id` rejects 0 (no
+     *      `services.id = 0` row) and MariaDB rejects '' as an integer
+     *      outright.
+     *   2. `tax_treatment_type_id` is NOT NULL with no default in
+     *      production. Default to ServiceHelper::DEFAULT_TAX_TREATMENT_TYPE
+     *      on create when the caller hasn't supplied one — don't rewrite
+     *      legitimate values on update (factories deliberately seed id=1).
+     */
+    protected static function booted(): void
+    {
+        static::saving(function (self $service): void {
+            $parentId = $service->getAttribute('parent_id');
+
+            if ($parentId === '' || $parentId === 0 || $parentId === '0') {
+                $service->setAttribute('parent_id', null);
+            }
+        });
+
+        static::creating(function (self $service): void {
+            $taxId = $service->getAttribute('tax_treatment_type_id');
+
+            if ($taxId === null || $taxId === '' || (int) $taxId === 0) {
+                $service->setAttribute(
+                    'tax_treatment_type_id',
+                    ServiceHelper::DEFAULT_TAX_TREATMENT_TYPE,
+                );
+            }
+        });
     }
 
     public function scopeRootServices(Builder $query): Builder

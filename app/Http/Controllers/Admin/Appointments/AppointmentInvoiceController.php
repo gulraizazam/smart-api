@@ -180,6 +180,28 @@ class AppointmentInvoiceController extends AppointmentBaseController
 
     public function saveinvoice(Request $request): JsonResponse
     {
+        // Hard validation gate on the money-touching fields. Before this
+        // (pre-2026-05-15), `$request->cash` flowed unchecked into
+        // `package_advances.cash_amount` via `createRecord_forinvoice`
+        // at lines 380 & 409. A POST with `cash: -999999` would have
+        // written a negative income row that the observer translates
+        // into a pool DRAIN — a direct money-stealing primitive that
+        // bypassed every other defence on the create / edit paths.
+        //
+        // `integer` rejects scientific notation, fractional values,
+        // strings, and negatives that bypass the eventual cast. `min:0`
+        // (not min:1) allows legitimate zero-cash invoicing (the rest
+        // of the method handles the zero case explicitly at line 431
+        // and elsewhere). Outstanding-related fields validated for the
+        // same reason.
+        $request->validate([
+            'cash' => 'sometimes|integer|min:0|max:99999999',
+            'settle' => 'sometimes|integer|min:0|max:99999999',
+            'cash_create' => 'sometimes|integer|min:0|max:99999999',
+            'outstanding_for_zero' => 'sometimes|integer|min:0|max:99999999',
+            'price_create' => 'sometimes|integer|min:0|max:99999999',
+        ]);
+
         $check_is_setteled = PackageAdvances::where([
             ['cash_flow', '=', 'out'],
             ['cash_amount', '>', 0],
@@ -246,7 +268,18 @@ class AppointmentInvoiceController extends AppointmentBaseController
 
         $paymentmode_settle = PaymentModes::where('payment_type', '=', Config::get('constants.payment_type_settle'))->first();
         $invoicestatus = InvoiceStatuses::where('slug', '=', 'paid')->first();
-        $appointmentinfo = Appointments::find($request->appointment_id);
+        // Tenant-scope the appointment fetch — bare `Appointments::find`
+        // accepts any id, letting an attacker who knew another tenant's
+        // appointment_id trigger an invoice + cash-write against that
+        // appointment in the attacker's account ledger. `firstOrFail()`
+        // throws `ModelNotFoundException` → Laravel's exception handler
+        // renders 404, which doesn't leak existence (same response for
+        // "doesn't exist" and "belongs to another tenant").
+        $appointmentinfo = Appointments::query()
+            ->where('id', $request->appointment_id)
+            ->where('account_id', (int) Auth::user()->account_id)
+            ->whereNull('deleted_at')
+            ->firstOrFail();
 
         if (isset($request->appointment_id_consultancy)) {
             // Now we need to work our tag appointment for upselling

@@ -66,13 +66,33 @@ Route::prefix('cashflow')->name('cashflow.')->group(function () {
     Route::prefix('expenses')->name('expenses.')->group(function () {
         Route::get('data', [CashFlowExpensesController::class, 'expensesData'])->name('data');
         Route::get('form-data', [CashflowLookupsController::class, 'expensesFormData'])->name('form_data');
-        Route::post('store', [CashFlowExpensesController::class, 'expensesStore'])->name('store');
-        // approve / resubmit routes stayed retired 2026-05-13 (Option A).
-        // reject came back 2026-05-14 as a "return to accountant for
-        // fixes" workflow — see ExpenseService::reject + adminEdit.
-        Route::post('{id}/edit', [CashFlowExpensesController::class, 'expensesEdit'])->name('edit');
-        Route::post('{id}/reject', [CashFlowExpensesController::class, 'expensesReject'])->name('reject');
-        Route::post('{id}/void', [CashFlowExpensesController::class, 'expensesVoid'])->name('void');
+        // Write endpoints rate-limited per-user per-minute to bound the
+        // damage of a stolen credential or runaway script. 60/min is
+        // well above any legitimate human cadence; legitimate batch
+        // operations (CSV import, mass approve) live on separate
+        // endpoints if/when they ship.
+        Route::post('store', [CashFlowExpensesController::class, 'expensesStore'])
+            ->middleware(['throttle:60,1', 'idempotent'])
+            ->name('store');
+        // approve + reject (2026-05-14 revised cycle): admin rejects an
+        // approved row → status=Rejected, pool refunded. Creator edits
+        // → status=Pending. Admin approves → status=Approved, pool
+        // re-debited. See ExpenseService::approve / reject.
+        Route::post('{id}/edit', [CashFlowExpensesController::class, 'expensesEdit'])
+            ->middleware('throttle:60,1')
+            ->name('edit');
+        // Permission slug check at the route layer — defence in depth.
+        // FormRequest::authorize() and controller-inline Gate calls are
+        // also present; a forgotten inline check still gets caught here.
+        Route::post('{id}/approve', [CashFlowExpensesController::class, 'expensesApprove'])
+            ->middleware(['permission:cashflow_expense_approve', 'throttle:60,1'])
+            ->name('approve');
+        Route::post('{id}/reject', [CashFlowExpensesController::class, 'expensesReject'])
+            ->middleware(['permission:cashflow_expense_reject', 'throttle:60,1'])
+            ->name('reject');
+        Route::post('{id}/void', [CashFlowExpensesController::class, 'expensesVoid'])
+            ->middleware(['permission:cashflow_void', 'throttle:60,1'])
+            ->name('void');
         Route::post('{id}/unflag', [CashFlowExpensesController::class, 'expensesUnflag'])->name('unflag');
         Route::get('{id}/audit', [CashFlowExpensesController::class, 'expensesAudit'])->name('audit');
         Route::get('export', [CashFlowExpensesController::class, 'expensesExport'])->name('export');
@@ -104,7 +124,9 @@ Route::prefix('cashflow')->name('cashflow.')->group(function () {
     Route::prefix('movements')->name('movements.')->middleware('permission:cashflow_transfer_view|cashflow_staff_advance_view|cashflow_staff_advance|cashflow_manage')->group(function () {
         Route::get('data', [CashFlowMovementsController::class, 'movementsData'])->name('data');
         Route::get('form-data', [CashFlowMovementsController::class, 'formData'])->name('form_data');
-        Route::post('store', [CashFlowMovementsController::class, 'store'])->name('store');
+        Route::post('store', [CashFlowMovementsController::class, 'store'])
+            ->middleware('idempotent')
+            ->name('store');
         Route::post('{kind}/{id}/void', [CashFlowMovementsController::class, 'void'])->name('void');
         Route::get('{kind}/{id}/audit', [CashFlowMovementsController::class, 'audit'])->name('audit');
         Route::get('pool/{poolId}/ledger', [CashFlowMovementsController::class, 'poolLedger'])->name('pool_ledger');
@@ -115,7 +137,9 @@ Route::prefix('cashflow')->name('cashflow.')->group(function () {
     // listed slugs is sufficient (`cashflow_manage` is the super-slug).
     Route::prefix('transfers')->name('transfers.')->middleware('permission:cashflow_transfer_view|cashflow_manage')->group(function () {
         Route::get('data', [CashFlowTransfersController::class, 'transfersData'])->name('data');
-        Route::post('store', [CashFlowTransfersController::class, 'transfersStore'])->name('store');
+        Route::post('store', [CashFlowTransfersController::class, 'transfersStore'])
+            ->middleware('idempotent')
+            ->name('store');
         Route::post('{id}/void', [CashFlowTransfersController::class, 'transfersVoid'])->name('void');
         Route::post('{id}/edit', [CashFlowTransfersController::class, 'transfersEdit'])->name('edit');
         Route::get('{id}/audit', [CashFlowTransfersController::class, 'transfersAudit'])->name('audit');
@@ -166,11 +190,15 @@ Route::prefix('cashflow')->name('cashflow.')->group(function () {
         Route::get('recent-activity', [CashFlowStaffController::class, 'staffRecentActivity'])->name('recent_activity');
         Route::get('{userId}/ledger', [CashFlowStaffController::class, 'staffLedger'])->name('ledger');
         Route::get('eligible', [CashFlowStaffController::class, 'staffEligible'])->name('eligible');
-        Route::post('advance/store', [CashFlowStaffController::class, 'staffAdvanceStore'])->name('advance.store');
+        Route::post('advance/store', [CashFlowStaffController::class, 'staffAdvanceStore'])
+            ->middleware('idempotent')
+            ->name('advance.store');
         Route::post('advance/{id}/void', [CashFlowStaffController::class, 'staffAdvanceVoid'])->name('advance.void');
         Route::post('advance/{id}/update', [CashFlowStaffController::class, 'staffAdvanceUpdate'])->name('advance.update');
         Route::get('advance/{id}/audit', [CashFlowStaffController::class, 'staffAdvanceAudit'])->name('advance.audit');
-        Route::post('return/store', [CashFlowStaffController::class, 'staffReturnStore'])->name('return.store');
+        Route::post('return/store', [CashFlowStaffController::class, 'staffReturnStore'])
+            ->middleware('idempotent')
+            ->name('return.store');
         Route::post('return/{id}/void', [CashFlowStaffController::class, 'staffReturnVoid'])->name('return.void');
         Route::get('return/{id}/audit', [CashFlowStaffController::class, 'staffReturnAudit'])->name('return.audit');
     });

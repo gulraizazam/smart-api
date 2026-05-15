@@ -128,12 +128,19 @@ Route::get('packages/deleteplanrowtem', [PackagesController::class, 'deleteplanr
     Route::get('packages/getdiscountinfocustom_for_plan', [PackagesController::class, 'getdiscountinfocustom_for_plan'])->name('packages.getdiscountinfocustom_for_plan');
     Route::get('packages/savepackages_service_for_plan', [PackagesController::class, 'savepackages_service_for_plan'])->name('packages.savepackages_service_for_plan');
 
-    /*Routes for editing the cash in treatment plan*/
+    /*Routes for editing the cash in treatment plan — the edit-payment
+      surface. Idempotent middleware on the two write routes catches
+      double-click + network-retry double-submits the same way it does
+      on the create flow. */
     Route::get('packages/edit_cash/{id}/{package_id}', [PackagesController::class, 'editpackageadvancescashindex'])->name('packages.edit_cash');
 
-    Route::post('packages/delete/cash', [PackagesController::class, 'deletepackageadvancescash'])->name('packages.delete_cash');
+    Route::post('packages/delete/cash', [PackagesController::class, 'deletepackageadvancescash'])
+        ->middleware(['throttle:60,1', 'idempotent'])
+        ->name('packages.delete_cash');
 
-    Route::put('packages/edit_cash/store', [PackagesController::class, 'storepackageadvancescash'])->name('packages.edit_cash.store');
+    Route::put('packages/edit_cash/store', [PackagesController::class, 'storepackageadvancescash'])
+        ->middleware(['throttle:60,1', 'idempotent'])
+        ->name('packages.edit_cash.store');
     /*End*/
 
     // Route for Sms log start

@@ -8,6 +8,7 @@ use App\Models\CashFlow\Expense;
 use App\Rules\GoogleDriveUrlRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
 
 class UpdateExpenseRequest extends FormRequest
 {
@@ -19,15 +20,17 @@ class UpdateExpenseRequest extends FormRequest
         if ($user->can('cashflow_expense_edit')) {
             return true;
         }
-        // Creator escape hatch (2026-05-14): when their own payment has
-        // been rejected, they can edit it to apply the requested fixes
-        // even without the global edit slug. The service auto-flips the
-        // row back to Approved on successful save.
+        // Creator escape hatch (2026-05-14): the row's creator can
+        // edit their OWN payment when it's been rejected OR is in
+        // pending re-approval. Rejected → edit moves it to Pending;
+        // Pending stays editable in case the creator wants to tweak
+        // before admin sign-off. Anyone else is still gated on the
+        // global slug.
         $id = $this->route('id');
         if (! $id) return false;
         $expense = Expense::forAccount((int) $user->account_id)->find($id);
         return $expense
-            && $expense->status === ExpenseStatus::Rejected
+            && in_array($expense->status, [ExpenseStatus::Rejected, ExpenseStatus::Pending], true)
             && (int) $expense->created_by === (int) $user->id;
     }
 
@@ -38,16 +41,28 @@ class UpdateExpenseRequest extends FormRequest
         // so genuinely old rows (legacy imports, payments needing a
         // correction weeks later, etc.) must still be editable — otherwise
         // the user gets stuck unable to fix a typo on a 3-week-old row.
+        //
+        // Tenant scope + soft-delete exclusion on every FK. See
+        // StoreExpenseRequest for the full explanation.
+        $accountId = (int) Auth::user()->account_id;
+        $forAccountAlive = fn (string $table) => Rule::exists($table, 'id')
+            ->where('account_id', $accountId)
+            ->whereNull('deleted_at');
+
         return [
             'expense_date' => 'required|date|before_or_equal:today',
             'amount' => 'required|numeric|min:1|max:99999999|integer',
-            'category_id' => 'required|exists:expense_categories,id',
-            'paid_from_pool_id' => 'nullable|exists:cash_pools,id',
-            'payment_method_id' => 'required|exists:payment_modes,id',
-            'for_branch_id' => 'nullable|exists:locations,id',
+            'category_id' => ['required', $forAccountAlive('expense_categories')],
+            'paid_from_pool_id' => ['nullable', $forAccountAlive('cash_pools')],
+            'payment_method_id' => ['required', $forAccountAlive('payment_modes')],
+            'for_branch_id' => ['nullable', $forAccountAlive('locations')],
             'is_for_general' => 'nullable|boolean',
-            'vendor_id' => 'nullable',
-            'staff_id' => 'nullable|exists:users,id',
+            'vendor_id' => ['nullable', $forAccountAlive('cashflow_vendors')],
+            // staff_id MUST point to a non-patient, non-deleted user.
+            'staff_id' => ['nullable', Rule::exists('users', 'id')
+                ->where('account_id', $accountId)
+                ->whereNull('deleted_at')
+                ->whereNot('user_type_id', (int) \Illuminate\Support\Facades\Config::get('constants.patient_id', 3))],
             'description' => 'required|string|min:3|max:100',
             'reference_no' => 'nullable|string|max:100',
             'attachment_url' => ['nullable', 'string', 'max:500', new GoogleDriveUrlRule],
