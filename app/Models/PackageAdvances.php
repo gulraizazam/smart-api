@@ -247,7 +247,27 @@ class PackageAdvances extends BaseModel
 
     public static function updateRecordFinanceedit(array $input, int $accountId, bool $amountStatus): ?bool
     {
-        $oldData = self::findOrFail($input['package_advances_id'])->toArray();
+        // Tenant-scoped fetch + row lock in a single statement. Two
+        // benefits over the previous "bare findOrFail then re-scoped
+        // where" pattern:
+        //   1. The cross-tenant case never populates `$oldData`, so
+        //      another tenant's amount / patient / mode can't appear in
+        //      exception traces or audit logs.
+        //   2. `lockForUpdate` serialises concurrent edits to the same
+        //      advance row — without it, two simultaneous edits could
+        //      both read the same baseline amount and both fire the
+        //      observer's pool-delta logic, double-applying the change.
+        $record = self::query()
+            ->where('id', $input['package_advances_id'])
+            ->where('account_id', $accountId)
+            ->lockForUpdate()
+            ->first();
+
+        if (! $record) {
+            return null;
+        }
+
+        $oldData = $record->toArray();
 
         $data = [
             'payment_mode_id' => $input['payment_mode_id'],
@@ -257,15 +277,6 @@ class PackageAdvances extends BaseModel
 
         if ($amountStatus) {
             $data['cash_amount'] = $input['cash_amount'];
-        }
-
-        $record = self::where([
-            'id' => $input['package_advances_id'],
-            'account_id' => $accountId,
-        ])->first();
-
-        if (! $record) {
-            return null;
         }
 
         $record->update($data);

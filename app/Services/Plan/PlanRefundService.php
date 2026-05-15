@@ -186,6 +186,55 @@ final class PlanRefundService
      */
     public function processRefund(array $data): array
     {
+        // Cap the refund amount at "total paid in minus other refunds"
+        // for this package. Before this, the caller could pass any
+        // `refund_amount` and the service would happily store it,
+        // letting an operator refund more cash than was ever received.
+        // The pool observer would then drain the till by the inflated
+        // amount.
+        //
+        // The check uses the SAME filters the getRefundFormData widget
+        // uses to display the "available to refund" number (line 74-79),
+        // so the UI and the server agree on the same bound.
+        $requested = (float) ($data['refund_amount'] ?? 0);
+        if ($requested <= 0) {
+            return ['success' => false, 'message' => 'Refund amount must be positive.', 'data' => []];
+        }
+
+        $totalPaidIn = (float) PackageAdvances::where([
+            ['package_id', '=', $data['package_id']],
+            ['cash_flow', '=', 'in'],
+            ['is_cancel', '=', '0'],
+        ])->sum('cash_amount');
+
+        // Existing refund rows on this package, excluding the row we
+        // are about to update (`record_id` — the same row's old amount
+        // shouldn't double-count against the cap).
+        $existingRefunds = (float) PackageAdvances::where([
+            ['package_id', '=', $data['package_id']],
+            ['cash_flow', '=', 'out'],
+            ['is_refund', '=', '1'],
+            ['is_cancel', '=', '0'],
+            ['is_tax', '=', '0'],
+        ])
+            ->when(! empty($data['record_id']), fn ($q) => $q->where('id', '!=', $data['record_id']))
+            ->sum('cash_amount');
+
+        $available = $totalPaidIn - $existingRefunds;
+        if ($requested > $available) {
+            return [
+                'success' => false,
+                'message' => sprintf(
+                    'Refund amount (%s) exceeds available balance (%s) — total paid in: %s, already refunded: %s.',
+                    number_format($requested, 2),
+                    number_format($available, 2),
+                    number_format($totalPaidIn, 2),
+                    number_format($existingRefunds, 2),
+                ),
+                'data' => [],
+            ];
+        }
+
         return DB::transaction(function () use ($data): array {
         $latestRefund = PackageAdvances::where([
             ['package_id', '=', $data['package_id']],

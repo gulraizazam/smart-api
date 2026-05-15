@@ -277,19 +277,19 @@ class CashFlowStaffController extends Controller
 
 
 
+            $accountId = Auth::user()->account_id;
+
             $request->validate([
 
                 'amount' => 'required|numeric|min:1|integer',
 
-                'pool_id' => 'required|exists:cash_pools,id',
+                'pool_id' => ['required', \Illuminate\Validation\Rule::exists('cash_pools', 'id')->where('account_id', $accountId)->whereNull('deleted_at')],
 
                 'description' => 'nullable|string|max:500',
 
                 'edit_reason' => 'required|string|min:5|max:50',
 
             ]);
-
-            $accountId = Auth::user()->account_id;
 
             $advance = $this->staffAdvanceService->editAdvance($id, $request->all(), $accountId);
 

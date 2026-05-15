@@ -68,6 +68,26 @@ class StoreMovementRequest extends FormRequest
         $isStaffToPool = $this->input('source_type') === 'staff' && $this->input('dest_type') === 'pool';
         $isStaffToStaff = $this->input('source_type') === 'staff' && $this->input('dest_type') === 'staff';
 
+        // Tenant scope + soft-delete exclusion on every FK. See
+        // StoreExpenseRequest for the cross-tenant + soft-delete
+        // injection rationale.
+        $accountId = (int) Auth::user()->account_id;
+        $poolExists = Rule::exists('cash_pools', 'id')
+            ->where('account_id', $accountId)
+            ->whereNull('deleted_at');
+        // Movement's user reference is always staff (advance/return/staff-
+        // transfer). Filter out patients and deleted users.
+        $userExists = Rule::exists('users', 'id')
+            ->where('account_id', $accountId)
+            ->whereNull('deleted_at')
+            ->whereNot('user_type_id', (int) \Illuminate\Support\Facades\Config::get('constants.patient_id', 3));
+
+        // pool→pool inherits the transfer rules (7-day backdate window,
+        // method, attachment, reference). The form's text limits drop to
+        // 100 chars here to mirror StoreTransferRequest exactly. Inline
+        // ternaries (not `Rule::when`) so the result is a plain array
+        // safe to array_merge — Rule::when returns a ConditionalRules
+        // object that array_merge rejects in Laravel 11+.
         return array_merge(
             [
                 'source_type' => 'required|in:pool,staff',
@@ -77,30 +97,27 @@ class StoreMovementRequest extends FormRequest
                 'amount' => 'required|integer|min:1|max:99999999',
                 'description' => 'nullable|string|max:500',
             ],
-            // pool→pool inherits the transfer rules (7-day backdate window,
-            // method, attachment, reference). The form's text limits drop
-            // to 100 chars here to mirror StoreTransferRequest exactly.
-            Rule::when($isPoolToPool, [
+            $isPoolToPool ? [
                 'transfer_date' => 'required|date|before_or_equal:today|after_or_equal:' . now()->subDays(7)->toDateString(),
                 'method' => 'required|in:physical_cash,bank_deposit',
                 'reference_no' => 'nullable|string|max:100',
                 'attachment_url' => ['required', 'string', 'max:500', new GoogleDriveUrlRule],
                 'description' => 'nullable|string|max:100',
-                'source_id' => 'required|integer|exists:cash_pools,id',
-                'dest_id' => ['required', 'integer', 'exists:cash_pools,id', 'different:source_id'],
-            ]),
-            Rule::when($isPoolToStaff, [
-                'source_id' => 'required|integer|exists:cash_pools,id',
-                'dest_id' => 'required|integer|exists:users,id',
-            ]),
-            Rule::when($isStaffToPool, [
-                'source_id' => 'required|integer|exists:users,id',
-                'dest_id' => 'required|integer|exists:cash_pools,id',
-            ]),
-            Rule::when($isStaffToStaff, [
-                'source_id' => 'required|integer|exists:users,id',
-                'dest_id' => ['required', 'integer', 'exists:users,id', 'different:source_id'],
-            ]),
+                'source_id' => ['required', 'integer', $poolExists],
+                'dest_id' => ['required', 'integer', $poolExists, 'different:source_id'],
+            ] : [],
+            $isPoolToStaff ? [
+                'source_id' => ['required', 'integer', $poolExists],
+                'dest_id' => ['required', 'integer', $userExists],
+            ] : [],
+            $isStaffToPool ? [
+                'source_id' => ['required', 'integer', $userExists],
+                'dest_id' => ['required', 'integer', $poolExists],
+            ] : [],
+            $isStaffToStaff ? [
+                'source_id' => ['required', 'integer', $userExists],
+                'dest_id' => ['required', 'integer', $userExists, 'different:source_id'],
+            ] : [],
         );
     }
 

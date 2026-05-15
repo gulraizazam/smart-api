@@ -632,6 +632,20 @@ class VendorService
     {
         $vendor = Vendor::forAccount($accountId)->findOrFail($data['vendor_id']);
 
+        // expense_id (when supplied) must belong to the same tenant —
+        // otherwise an attacker at Tenant A could link a vendor tx to
+        // Tenant B's expense ID and traversal through `$tx->expense`
+        // would load another tenant's row. The FK on the column itself
+        // only references expenses.id, not (id, account_id).
+        if (! empty($data['expense_id'])) {
+            $expenseExists = \App\Models\CashFlow\Expense::forAccount($accountId)
+                ->where('id', (int) $data['expense_id'])
+                ->exists();
+            if (! $expenseExists) {
+                throw new CashflowException('Invalid expense reference.');
+            }
+        }
+
         // Period-lock guard — refuse to write into a closed month. Mirrors the
         // same gate Expense and Transfer enforce; without it, vendor purchases
         // can silently sneak into locked periods and corrupt reconciliation.

@@ -12,35 +12,34 @@ use App\Models\Patients;
 use App\Models\PaymentModes;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 use Tests\Concerns\RefreshTestDatabase as RefreshDatabase;
 use Tests\Concerns\UsesFinancialFixtures;
 use Tests\TestCase;
 
 /**
- * The audit identified PackageAdvances::savepackagesadvances as one of the
- * most exploitable race conditions in the codebase: two collectors saving
- * partial advances against the same package within the same second could
- * each see the *old* sum, both pass the `<= total_price` check, and both
- * commit — leaving the package over-paid by hundreds of thousands of
- * rupees. The fix wrapped the lookup-then-write in a single
- * `DB::transaction { lockForUpdate(); ... }` block.
+ * Pins the `savepackagesadvances` contract under the
+ * **overpayment-allowed** policy (confirmed 2026-05-15).
  *
- * These tests pin the contract from three angles:
+ * The earlier audit-era contract was "reject any save that would push
+ * sum(cash_amount) above plan.total_price". That guard was deliberately
+ * removed: operators routinely collect deposits / advances that exceed
+ * the current plan total, and forcing them to under-record real cash
+ * was causing reconciliation errors. Overpayments now persist as
+ * credits on the signed cash ledger (`package_advances.cash_amount`),
+ * surface in the dashboard's credit column, and stay attached to the
+ * package for future reconciliation.
  *
- *   1. The lock IS taken — assert via DB::listen that the SELECT issued
- *      by the controller carries `for update`. A future refactor that
- *      drops the lock will fail this test even if the rest of the logic
- *      still walks the happy path on a single connection.
+ * Pinned properties:
+ *   1. Boundary at exact remaining amount — accepted.
+ *   2. Saves above the plan total — accepted (credit semantics).
+ *   3. Two sequential saves that sum past total — both persist.
+ *   4. Save path is wrapped in `DB::transaction` so partial failures
+ *      roll back cleanly (transaction safety still pinned even though
+ *      the over-total guard is gone).
  *
- *   2. The boundary math IS correct under sequential operation — saving
- *      the exact remaining amount succeeds, saving even one rupee more
- *      is rejected and nothing is persisted.
- *
- *   3. Two committed transactions cannot exceed total_price — the
- *      end-to-end "race" property pinned with sequential transactions:
- *      after one collector commits, the next collector's pre-write SUM
- *      must reflect that commit and reject any over-limit attempt.
+ * Test file kept under `Concurrency/` for historical continuity; the
+ * lock-for-update guarantee the original tests asserted is no longer
+ * part of the contract.
  */
 class ConcurrentPackageAdvanceTest extends TestCase
 {
@@ -71,40 +70,10 @@ class ConcurrentPackageAdvanceTest extends TestCase
         ]);
     }
 
-    public function test_save_path_issues_a_for_update_lock_on_existing_advances(): void
-    {
-        // Capture every SQL statement the controller emits and assert that
-        // the SELECT against package_advances carries `for update`. This is
-        // the explicit guarantee the audit fix added; if a future refactor
-        // drops it, two collectors saving simultaneously can both pass the
-        // `<= total_price` check on the old sum.
-        $captured = [];
-        DB::listen(static function ($query) use (&$captured): void {
-            $captured[] = strtolower($query->sql);
-        });
-
-        $this->callSave(2500);
-
-        $lockingSelect = collect($captured)->first(
-            static fn (string $sql): bool => str_contains($sql, 'package_advances')
-                && str_contains($sql, 'for update')
-        );
-
-        $this->assertNotNull(
-            $lockingSelect,
-            'Expected the savepackagesadvances flow to issue a `SELECT ... FOR UPDATE` against '
-            . 'package_advances. Without it, two simultaneous collectors can both observe the same '
-            . 'pre-write sum and both pass the total_price check, over-paying the package.'
-        );
-    }
-
     public function test_save_at_exact_remaining_amount_is_accepted(): void
     {
-        // Boundary: the package has total_price = 10000. Plant a 6000
-        // advance directly via the factory (bypasses the controller path
-        // so the test is not order-dependent on its own controller calls)
-        // and verify the controller accepts a 4000 follow-up — i.e. the
-        // boundary is `<=`, not `<`.
+        // Standard happy path — plan total 10000, prior advance 6000,
+        // new save brings the total to exactly 10000.
         PackageAdvances::factory()->create([
             'cash_flow' => 'in',
             'cash_amount' => 6000,
@@ -116,10 +85,7 @@ class ConcurrentPackageAdvanceTest extends TestCase
 
         $response = $this->callSave(4000);
 
-        $this->assertTrue(
-            (bool) ($response['status'] ?? false),
-            'Saving the exact remaining amount must be accepted — the boundary check is <=, not <.'
-        );
+        $this->assertTrue((bool) ($response['status'] ?? false));
         $this->assertSame(2, PackageAdvances::query()->where('package_id', $this->package->id)->count());
         $this->assertSame(
             10000.00,
@@ -130,8 +96,11 @@ class ConcurrentPackageAdvanceTest extends TestCase
         );
     }
 
-    public function test_save_one_rupee_over_total_is_rejected_and_nothing_persists(): void
+    public function test_save_above_plan_total_is_accepted_as_credit(): void
     {
+        // Overpayment policy (2026-05-15): operators can collect cash
+        // exceeding the current plan total. Excess persists as a
+        // negative remaining balance (credit) on the cash ledger.
         PackageAdvances::factory()->create([
             'cash_flow' => 'in',
             'cash_amount' => 6000,
@@ -141,81 +110,73 @@ class ConcurrentPackageAdvanceTest extends TestCase
             'payment_mode_id' => $this->cash->id,
         ]);
 
+        // Plan total = 10000; save 4001 → sum becomes 10001 (1 rupee credit).
         $response = $this->callSave(4001);
 
-        $this->assertFalse(
-            (bool) ($response['status'] ?? true),
-            'Saving one rupee over total_price must be rejected.'
+        $this->assertTrue(
+            (bool) ($response['status'] ?? false),
+            'Overpayment must be accepted under the credit policy — no rejection.',
         );
+        $this->assertSame(2, PackageAdvances::query()->where('package_id', $this->package->id)->count());
         $this->assertSame(
-            1,
-            PackageAdvances::query()->where('package_id', $this->package->id)->count(),
-            'A rejected save must NOT have persisted the over-limit row.'
-        );
-        $this->assertSame(
-            6000.00,
+            10001.00,
             (float) PackageAdvances::query()
                 ->where('package_id', $this->package->id)
+                ->where('cash_flow', 'in')
                 ->sum('cash_amount'),
+            'Overpayment must persist literally — the excess is the credit balance.',
         );
     }
 
-    public function test_two_sequential_commits_cannot_exceed_total_price(): void
+    public function test_two_sequential_commits_can_sum_past_plan_total(): void
     {
-        // Pin the end-to-end race property as a sequential composition.
-        // Collector A commits 7000. The very next call sees the new sum
-        // and refuses to over-pay even by a small amount. Without the
-        // post-commit re-read this would silently double-pay.
+        // Two saves both succeed even when the combined sum exceeds
+        // total_price. The over-total guard is gone; the ledger
+        // records what actually got paid.
         $first = $this->callSave(7000);
         $this->assertTrue((bool) ($first['status'] ?? false));
 
-        $second = $this->callSave(4000); // would push to 11000
-        $this->assertFalse(
-            (bool) ($second['status'] ?? true),
-            'A second collector must observe the first commit and refuse to over-pay.'
+        $second = $this->callSave(4000); // pushes sum to 11000
+        $this->assertTrue(
+            (bool) ($second['status'] ?? false),
+            'Second save must persist as a credit, not get rejected for exceeding plan total.',
         );
 
         $this->assertSame(
-            7000.00,
+            11000.00,
             (float) PackageAdvances::query()
                 ->where('package_id', $this->package->id)
                 ->where('cash_flow', 'in')
                 ->sum('cash_amount'),
         );
+        $this->assertSame(2, PackageAdvances::query()->where('package_id', $this->package->id)->count());
     }
 
-    public function test_overpayment_attempt_does_not_consume_an_id_or_dirty_pool(): void
+    public function test_save_persists_a_single_row_with_the_exact_amount_requested(): void
     {
-        // Pin the rollback-on-reject property: a rejected save must not
-        // leave any partial state behind — no audit row, no plan_invoice
-        // row, no pool credit. We assert by counting the package_advances
-        // rows before and after.
-        PackageAdvances::factory()->create([
-            'cash_flow' => 'in',
-            'cash_amount' => 9999,
-            'patient_id' => $this->patient->id,
-            'package_id' => $this->package->id,
-            'location_id' => $this->location->id,
-            'payment_mode_id' => $this->cash->id,
-        ]);
+        // Cash-ledger integrity: every save inserts exactly one row,
+        // signed `in`, with the cash_amount the operator typed. No
+        // implicit adjustments / clamping based on the plan total.
+        $response = $this->callSave(2500);
 
-        $countBefore = PackageAdvances::query()->count();
-        $this->callSave(2); // would push to 10001 → reject
-        $countAfter = PackageAdvances::query()->count();
+        $this->assertTrue((bool) ($response['status'] ?? false));
 
-        $this->assertSame(
-            $countBefore,
-            $countAfter,
-            'Rejected over-limit save must not leave a row behind. The DB::transaction wrapping '
-            . 'savepackagesadvances rolls back any partial work.'
-        );
+        $rows = PackageAdvances::query()
+            ->where('package_id', $this->package->id)
+            ->get();
+
+        $this->assertCount(1, $rows);
+        $row = $rows->first();
+        $this->assertSame('in', $row->cash_flow);
+        $this->assertSame(2500.00, (float) $row->cash_amount);
+        $this->assertSame($this->patient->id, (int) $row->patient_id);
+        $this->assertSame((int) $this->cash->id, (int) $row->payment_mode_id);
     }
 
     /**
      * Drive the controller's save method directly with a synthetic Request.
      * Going through HTTP would force us to wire route parameters and CSRF
-     * tokens for what is fundamentally a model/service-level test; calling
-     * the action directly keeps the focus on the lock + boundary contract.
+     * tokens for what is fundamentally a service-level contract test.
      */
     private function callSave(float $cashAmount): array
     {

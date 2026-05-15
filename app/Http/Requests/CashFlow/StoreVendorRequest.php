@@ -5,6 +5,7 @@ namespace App\Http\Requests\CashFlow;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
 
 class StoreVendorRequest extends FormRequest
 {
@@ -15,6 +16,8 @@ class StoreVendorRequest extends FormRequest
 
     public function rules(): array
     {
+        $accountId = (int) Auth::user()->account_id;
+
         return [
             'name' => 'required|string|max:255',
             'contact_person' => 'required|string|max:255',
@@ -23,7 +26,7 @@ class StoreVendorRequest extends FormRequest
             'address' => 'nullable|string|max:1000',
             'payment_terms' => 'nullable|in:upfront,net_7,net_15,net_30,custom',
             'category' => 'nullable|string|max:255',
-            'category_id' => 'required|integer|exists:expense_categories,id',
+            'category_id' => ['required', 'integer', Rule::exists('expense_categories', 'id')->where('account_id', $accountId)->whereNull('deleted_at')],
             'opening_balance' => 'nullable|numeric|min:0',
             'notes' => 'nullable|string|max:1000',
         ];

@@ -74,6 +74,12 @@ return Application::configure(basePath: dirname(__DIR__))
             'auth.api.dual' => AuthenticateApiDual::class,
             'permission' => CheckPermission::class,
             'check.ip.restriction' => CheckIpRestriction::class,
+            // Opt-in Idempotency-Key support. Routes that opt in (write
+            // endpoints on the cashflow + plan surfaces) will serve a
+            // cached response for replayed requests carrying the same
+            // header. See App\Http\Middleware\EnsureIdempotency for the
+            // contract — and tests/Feature/Plan/IdempotencyMiddlewareTest.
+            'idempotent' => \App\Http\Middleware\EnsureIdempotency::class,
         ]);
     })
     ->withSchedule(function (Schedule $schedule): void {

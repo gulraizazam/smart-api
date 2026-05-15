@@ -6,6 +6,7 @@ namespace App\Http\Requests\CashFlow;
 use App\Rules\GoogleDriveUrlRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
 
 class StoreTransferRequest extends FormRequest
 {
@@ -16,11 +17,17 @@ class StoreTransferRequest extends FormRequest
 
     public function rules(): array
     {
+        // Tenant scope + soft-delete exclusion. See StoreExpenseRequest.
+        $accountId = (int) Auth::user()->account_id;
+        $poolAlive = Rule::exists('cash_pools', 'id')
+            ->where('account_id', $accountId)
+            ->whereNull('deleted_at');
+
         return [
             'transfer_date' => 'required|date|before_or_equal:today|after_or_equal:' . now()->subDays(7)->toDateString(),
             'amount' => 'required|numeric|min:1|max:99999999|integer',
-            'from_pool_id' => 'required|exists:cash_pools,id',
-            'to_pool_id' => 'required|exists:cash_pools,id|different:from_pool_id',
+            'from_pool_id' => ['required', $poolAlive],
+            'to_pool_id' => ['required', $poolAlive, 'different:from_pool_id'],
             'method' => 'required|in:physical_cash,bank_deposit',
             'reference_no' => 'nullable|string|max:100',
             'attachment_url' => ['required', 'string', 'max:500', new GoogleDriveUrlRule],

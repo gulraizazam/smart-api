@@ -5,6 +5,7 @@ namespace App\Http\Requests\CashFlow;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
 
 class UpdateVendorRequest extends FormRequest
 {
@@ -23,7 +24,7 @@ class UpdateVendorRequest extends FormRequest
             'address' => 'nullable|string|max:1000',
             'payment_terms' => 'nullable|in:upfront,net_7,net_15,net_30,custom',
             'category' => 'nullable|string|max:255',
-            'category_id' => 'required|integer|exists:expense_categories,id',
+            'category_id' => ['required', 'integer', Rule::exists('expense_categories', 'id')->where('account_id', (int) Auth::user()->account_id)->whereNull('deleted_at')],
             'opening_balance' => 'nullable|numeric|min:0',
             'notes' => 'nullable|string|max:1000',
             'is_active' => 'nullable|boolean',
