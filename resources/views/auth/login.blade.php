@@ -72,12 +72,16 @@
         letter-spacing: 0;
     }
 
-    .allura-auth__brand-mark img {
-        display: block;
-        height: 56px;
+    .allura-auth__brand-mark img,
+    .allura-auth__logo {
+        max-height: 42px;
         width: auto;
-        max-width: 100%;
+        display: block;
         mix-blend-mode: lighten;
+    }
+
+    .allura-auth__brand-mark img {
+        margin-inline-start: 25px;
     }
 
     .allura-auth__brand-quote {
@@ -157,10 +161,12 @@
         justify-content: center;
         margin-block-end: 1.25rem;
     }
-    .allura-auth__mobile-mark img {
-        height: 40px;
-        width: auto;
-        display: block;
+    .allura-auth__mobile-mark .allura-auth__logo-wrap {
+        background: var(--allura-brand-bg);
+        padding-block: 0.75rem;
+        padding-inline: 1.25rem;
+        border-radius: 10px;
+        display: inline-flex;
     }
 
     .allura-auth__heading h1 {
@@ -368,7 +374,7 @@
         <div class="allura-auth__brand-glow"></div>
         <div class="allura-auth__brand-inner">
             <a href="/" class="allura-auth__brand-mark">
-                <img src="{{ asset('allura-logo2_processed.jpg') }}" alt="Allura Aesthetics" />
+                <img src="{{ asset('allura-logo2_processed.jpg') }}" alt="Allura Aesthetics" class="allura-auth__logo" />
             </a>
 
             <div>
@@ -388,7 +394,9 @@
     <section class="allura-auth__panel">
         <div class="allura-auth__card">
             <div class="allura-auth__mobile-mark">
-                <img src="{{ asset('allura-logo2_processed.jpg') }}" alt="Allura" width="96" height="40" fetchpriority="high" />
+                <div class="allura-auth__logo-wrap">
+                    <img src="{{ asset('allura-logo2_processed.jpg') }}" alt="Allura Aesthetics" class="allura-auth__logo" width="120" height="42" fetchpriority="high" />
+                </div>
             </div>
 
             <header class="allura-auth__heading">
