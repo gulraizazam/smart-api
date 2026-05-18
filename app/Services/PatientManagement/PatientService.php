@@ -500,6 +500,103 @@ class PatientService
         ];
     }
 
+    /**
+     * Resolve the centre to launch the "New consultation" calendar at
+     * for a patient: the location of their most recent ARRIVED
+     * consultation; failing that, the most recent consultation of any
+     * status; null when the patient has no consultation history.
+     *
+     * @return array{location_id:int,location_name:?string,location_slug:?string,last_appointment_at:?string}|null
+     */
+    public function consultationLaunchLocation(int $patientId): ?array
+    {
+        return $this->launchLocationForType(
+            $patientId,
+            (int) Config::get('constants.appointment_type_consultancy'),
+        );
+    }
+
+    /**
+     * Treatment twin of consultationLaunchLocation(): the centre of the
+     * patient's last ARRIVED treatment, falling back to their most recent
+     * treatment of any status; null when they have no treatment history.
+     * Drives the patient card's "New treatment" button.
+     *
+     * @return array{location_id:int,location_name:?string,location_slug:?string,last_appointment_at:?string}|null
+     */
+    public function treatmentLaunchLocation(int $patientId): ?array
+    {
+        return $this->launchLocationForType(
+            $patientId,
+            (int) Config::get('constants.appointment_type_service'),
+        );
+    }
+
+    /**
+     * Shared resolver for the "New {consultation,treatment}" launch
+     * buttons: the location of the patient's most recent ARRIVED
+     * appointment of the given type; failing that, the most recent of
+     * any status; null when they have no history of that type.
+     *
+     * "Most recent" is by scheduled_date (the visit date operators
+     * reason in), tie-broken by id. Account- and type-scoped the same
+     * way as getPatientAppointmentsByType so it can't surface
+     * cross-account rows. Uses the live `appointment_type_*` constants
+     * rather than the empty legacy `consultancy_id` the deprecated
+     * lastAppointmentLocation() relies on.
+     *
+     * @return array{location_id:int,location_name:?string,location_slug:?string,last_appointment_at:?string}|null
+     */
+    private function launchLocationForType(int $patientId, int $appointmentTypeId): ?array
+    {
+        $accountId = Auth::user()->account_id;
+
+        $base = Appointments::with('location:id,name,slug')
+            ->where('patient_id', $patientId)
+            ->where('account_id', $accountId)
+            ->where('appointment_type_id', $appointmentTypeId)
+            ->whereNull('deleted_at');
+
+        $arrivedStatusIds = DB::table('appointment_statuses')
+            ->where('account_id', $accountId)
+            ->where('is_arrived', 1)
+            ->pluck('id')
+            ->all();
+
+        // Prefer the last ARRIVED appointment. When no arrived status
+        // is configured the whereIn is skipped, which collapses this to
+        // the same query as the fallback — harmless (idempotent).
+        $appointment = (clone $base)
+            ->when($arrivedStatusIds !== [], fn ($q) => $q->whereIn('appointment_status_id', $arrivedStatusIds))
+            ->orderByDesc('scheduled_date')
+            ->orderByDesc('id')
+            ->first();
+
+        // No arrived appointment → fall back to the most recent of any
+        // status (product decision).
+        if (! $appointment) {
+            $appointment = (clone $base)
+                ->orderByDesc('scheduled_date')
+                ->orderByDesc('id')
+                ->first();
+        }
+
+        if (! $appointment?->location_id) {
+            return null;
+        }
+
+        $location = $appointment->location;
+
+        return [
+            'location_id' => (int) $appointment->location_id,
+            'location_name' => $location?->getAttribute('name'),
+            'location_slug' => $location?->getAttribute('slug'),
+            'last_appointment_at' => $appointment->scheduled_date
+                ? Carbon::parse($appointment->scheduled_date)->utc()->toIso8601String()
+                : null,
+        ];
+    }
+
     public function getTabCounts(int $patientId): ?array
     {
         $patient = $this->findPatient($patientId);
@@ -931,6 +1028,51 @@ class PatientService
             'status' => true,
             'message' => 'Document updated successfully.',
             'document' => $document,
+        ];
+    }
+
+    public function listDocuments(int $patientId): array
+    {
+        $patient = $this->findPatient($patientId);
+        if (! $patient) {
+            return ['status' => false, 'message' => 'Patient not found.', 'code' => 404];
+        }
+
+        // Scoped to the (account-checked) patient via user_id, exactly
+        // like updateDocument's lookup. SoftDeletes already excludes
+        // trashed rows. Newest first so the tab shows recent uploads on top.
+        $documents = Documents::where('user_id', $patient->id)
+            ->orderByDesc('id')
+            ->get();
+
+        return [
+            'status' => true,
+            'message' => 'Documents retrieved successfully.',
+            'documents' => $documents,
+        ];
+    }
+
+    public function deleteDocument(int $patientId, int $documentId): array
+    {
+        $patient = $this->findPatient($patientId);
+        if (! $patient) {
+            return ['status' => false, 'message' => 'Patient not found.', 'code' => 404];
+        }
+
+        $document = Documents::where('id', $documentId)->where('user_id', $patient->id)->first();
+        if (! $document) {
+            return ['status' => false, 'message' => 'Document not found.', 'code' => 404];
+        }
+
+        // Best-effort physical-file removal, then soft-delete the row
+        // (Documents uses SoftDeletes). Mirrors updateDocument's
+        // deleteOldFile() handling of the new/legacy storage paths.
+        $this->deleteOldFile($document->url);
+        $document->delete();
+
+        return [
+            'status' => true,
+            'message' => 'Document deleted successfully.',
         ];
     }
 

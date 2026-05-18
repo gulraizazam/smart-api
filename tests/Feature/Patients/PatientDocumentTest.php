@@ -214,4 +214,93 @@ class PatientDocumentTest extends TestCase
         $this->assertFalse($result['status']);
         $this->assertSame(404, $result['code']);
     }
+
+    public function test_list_documents_returns_only_the_patients_own_documents(): void
+    {
+        // Regression: GET /api/patients/{id}/documents was a 404 (the
+        // route never existed); the SPA documents tab was dead. This
+        // pins the list contract and its per-patient scoping.
+        $patientA = Patients::factory()->create();
+        $patientB = Patients::factory()->create();
+
+        $this->service->uploadDocument(
+            $patientA->id,
+            UploadedFile::fake()->create('a1.pdf', 5, 'application/pdf'),
+            'lab-result',
+        );
+        $this->service->uploadDocument(
+            $patientA->id,
+            UploadedFile::fake()->create('a2.pdf', 5, 'application/pdf'),
+            'consent_form',
+        );
+        $this->service->uploadDocument(
+            $patientB->id,
+            UploadedFile::fake()->create('b1.pdf', 5, 'application/pdf'),
+            'lab-result',
+        );
+
+        $result = $this->service->listDocuments($patientA->id);
+
+        $this->assertTrue($result['status']);
+        $this->assertCount(
+            2,
+            $result['documents'],
+            'listDocuments must return exactly patient A\'s documents — not patient B\'s.',
+        );
+        $this->assertEqualsCanonicalizing(
+            ['a1.pdf', 'a2.pdf'],
+            $result['documents']->pluck('name')->all(),
+        );
+    }
+
+    public function test_list_documents_returns_404_envelope_for_an_unknown_patient(): void
+    {
+        $result = $this->service->listDocuments(999999);
+
+        $this->assertFalse($result['status']);
+        $this->assertSame(404, $result['code']);
+    }
+
+    public function test_delete_document_removes_the_row(): void
+    {
+        $patient = Patients::factory()->create();
+        $r = $this->service->uploadDocument(
+            $patient->id,
+            UploadedFile::fake()->create('gone.pdf', 5, 'application/pdf'),
+            'lab-result',
+        );
+        $documentId = $r['document']->id;
+
+        $result = $this->service->deleteDocument($patient->id, $documentId);
+
+        $this->assertTrue($result['status']);
+        $this->assertNull(
+            Documents::query()->find($documentId),
+            'deleteDocument must soft-delete the row so it no longer surfaces in the tab.',
+        );
+    }
+
+    public function test_delete_document_rejects_a_document_that_belongs_to_another_patient(): void
+    {
+        // Same IDOR sweep the update path pins — the (patientId,
+        // documentId) tuple must match before anything is deleted.
+        $patientA = Patients::factory()->create();
+        $patientB = Patients::factory()->create();
+
+        $r = $this->service->uploadDocument(
+            $patientA->id,
+            UploadedFile::fake()->create('a.pdf', 5, 'application/pdf'),
+            'lab-result',
+        );
+        $documentOfA = $r['document'];
+
+        $result = $this->service->deleteDocument($patientB->id, $documentOfA->id);
+
+        $this->assertFalse($result['status']);
+        $this->assertSame(404, $result['code']);
+        $this->assertNotNull(
+            Documents::query()->find($documentOfA->id),
+            'A cross-patient delete attempt must leave the document intact.',
+        );
+    }
 }

@@ -207,6 +207,64 @@ class PatientController extends Controller
         }
     }
 
+    /**
+     * Centre to launch the "New consultation" calendar at: the location
+     * of the patient's last arrived consultation, falling back to their
+     * most recent consultation of any status. 404 when the patient has
+     * no consultation history (the SPA then opens the calendar with no
+     * location pre-selected).
+     */
+    public function consultationLaunchLocation(int $id): JsonResponse
+    {
+        try {
+            if (! Gate::allows('patients_manage')) {
+                return $this->unauthorized();
+            }
+
+            $data = $this->patientService->consultationLaunchLocation($id);
+
+            if ($data === null) {
+                return $this->respond(false, 'No previous consultation found.', null, 404);
+            }
+
+            return $this->success(
+                'Consultation launch location retrieved.',
+                new PatientLastAppointmentLocationResource($data),
+            );
+        } catch (Exception $e) {
+            return $this->exceptionToResponse($e);
+        }
+    }
+
+    /**
+     * Treatment twin of consultationLaunchLocation(): the location of the
+     * patient's last arrived treatment, falling back to their most recent
+     * treatment of any status. 404 when the patient has no treatment
+     * history (the SPA then opens the calendar with no location
+     * pre-selected). Drives the patient card's "New treatment" button.
+     */
+    public function treatmentLaunchLocation(int $id): JsonResponse
+    {
+        try {
+            if (! Gate::allows('patients_manage')) {
+                return $this->unauthorized();
+            }
+
+            $data = $this->patientService->treatmentLaunchLocation($id);
+
+            if ($data === null) {
+                return $this->respond(false, 'No previous treatment found.', null, 404);
+            }
+
+            return $this->success(
+                'Treatment launch location retrieved.',
+                new PatientLastAppointmentLocationResource($data),
+            );
+        } catch (Exception $e) {
+            return $this->exceptionToResponse($e);
+        }
+    }
+
     /*
     |--------------------------------------------------------------------------
     | Image
@@ -335,6 +393,40 @@ class PatientController extends Controller
     | Documents
     |--------------------------------------------------------------------------
     */
+
+    public function documents(int $id): JsonResponse
+    {
+        try {
+            if (!Gate::allows('patients_document_manage')) {
+                return $this->forbidden();
+            }
+
+            $result = $this->patientService->listDocuments($id);
+
+            return $result['status']
+                ? $this->success($result['message'], PatientDocumentResource::collection($result['documents']))
+                : $this->respond(false, $result['message'], null, $result['code'] ?? 400);
+        } catch (Exception $e) {
+            return $this->exceptionToResponse($e);
+        }
+    }
+
+    public function deleteDocument(int $id, int $documentId): JsonResponse
+    {
+        try {
+            if (!Gate::allows('patients_document_destroy')) {
+                return $this->forbidden();
+            }
+
+            $result = $this->patientService->deleteDocument($id, $documentId);
+
+            return $result['status']
+                ? $this->success($result['message'], null)
+                : $this->respond(false, $result['message'], null, $result['code'] ?? 400);
+        } catch (Exception $e) {
+            return $this->exceptionToResponse($e);
+        }
+    }
 
     public function uploadDocument(int $id, PatientDocumentRequest $request): JsonResponse
     {

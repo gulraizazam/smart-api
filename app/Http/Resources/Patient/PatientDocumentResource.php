@@ -15,7 +15,16 @@ class PatientDocumentResource extends JsonResource
             'id' => $this->id,
             'name' => $this->name,
             'document_type' => $this->document_type,
-            'url' => $this->url,
+            // Relative path to the authenticated streaming route (note
+            // the `false` 3rd arg → no host). The SPA fetches this via
+            // its api client (forwarding the bearer/passport token or
+            // Sanctum cookie) and opens the blob — a plain absolute
+            // <a href> would carry no token and 401 "Unauthenticated".
+            // Mirrors the EmployeeResource preview/download convention.
+            'url' => $this->url
+                ? route('admin.files.patient_image_api', ['filename' => basename($this->url)], false)
+                : null,
+            'created_at' => $this->created_at,
         ];
     }
 }

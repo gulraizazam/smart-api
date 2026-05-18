@@ -287,8 +287,12 @@ class ConsultancyController extends Controller
                     ?? ActivityLogRenderer::render($a);
 
                 $timestamp = $a->updated_at ?? $a->created_at;
+                // Stored under config('app.timezone') (no DB-level UTC
+                // conversion), so it's already local wall-clock time.
+                // Parsing as UTC then converting double-applied the +5h
+                // offset — see ActivityLogService for the full note.
                 $localTs = $timestamp
-                    ? Carbon::parse((string) $timestamp, 'UTC')->setTimezone(config('app.timezone'))
+                    ? Carbon::parse((string) $timestamp)
                     : null;
 
                 return [

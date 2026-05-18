@@ -268,8 +268,15 @@ class ActivityLogService
                 $description = self::appendActor($activity, $description);
             }
 
-            $localTs = Carbon::parse((string) $timestamp, 'UTC')
-                ->setTimezone(config('app.timezone'));
+            // `activities.created_at/updated_at` are written by Eloquent
+            // under config('app.timezone') (Asia/Karachi) — the DB
+            // connection has no UTC conversion — so the stored value is
+            // already local wall-clock time. Parsing it AS UTC and then
+            // setTimezone()-ing to Karachi double-applied the +5h offset
+            // (activity feed showed times 5 hours ahead). Carbon::parse()
+            // defaults to the app timezone, which is exactly how it was
+            // stored — no conversion needed.
+            $localTs = Carbon::parse((string) $timestamp);
 
             $data[] = [
                 'type' => $activity->activity_type ?? $activity->action ?? 'unknown',

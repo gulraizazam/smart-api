@@ -56,6 +56,10 @@ Route::prefix('patients')->name('patients.')->group(function () {
     Route::match(['get', 'post'], '{id}/consultations-datatable', [PatientController::class, 'consultationsDatatable'])->name('consultationsDatatable');
     Route::match(['get', 'post'], '{id}/treatments-datatable', [PatientController::class, 'treatmentsDatatable'])->name('treatmentsDatatable');
     Route::match(['get', 'post'], '{id}/vouchers-datatable', [UserVouchersController::class, 'datatable'])->name('vouchersDatatable');
+    // Patient documents — list/delete drive the SPA documents tab; the
+    // {id}/documents GET was missing entirely (404), update/upload existed.
+    Route::get('{id}/documents', [PatientController::class, 'documents'])->name('documents');
+    Route::delete('{id}/documents/{documentId}', [PatientController::class, 'deleteDocument'])->name('deleteDocument');
     // Optimized document upload
     Route::post('{id}/upload-document', [PatientController::class, 'uploadDocument'])->name('uploadDocument');
     Route::post('{id}/update-document/{documentId}', [PatientController::class, 'updateDocument'])->name('updateDocument');
@@ -67,6 +71,14 @@ Route::prefix('patients')->name('patients.')->group(function () {
     Route::get('{id}/tab-counts', [PatientController::class, 'getTabCounts'])->name('tabCounts');
     // Last appointment location (mirrors web /admin/patients/{id}/last-appointment-location)
     Route::get('{id}/last-appointment-location', [PatientController::class, 'lastAppointmentLocation'])->name('lastAppointmentLocation');
+    // Centre to open the "New consultation" calendar at (last arrived
+    // consultation → fallback latest consultation). Drives the patient
+    // card's New Consultation button.
+    Route::get('{id}/consultation-launch-location', [PatientController::class, 'consultationLaunchLocation'])->name('consultationLaunchLocation');
+    // Centre to open the "New treatment" calendar at (last arrived
+    // treatment → fallback latest treatment). Drives the patient
+    // card's New Treatment button.
+    Route::get('{id}/treatment-launch-location', [PatientController::class, 'treatmentLaunchLocation'])->name('treatmentLaunchLocation');
     // Patient notes
     Route::get('{id}/notes', [PatientController::class, 'getNotes'])->name('notes');
     Route::post('{id}/notes', [PatientController::class, 'addNote'])->name('addNote');

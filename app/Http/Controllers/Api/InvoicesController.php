@@ -41,8 +41,10 @@ class InvoicesController extends Controller
      * ACL allows (same `ACL::getUserCentres()` gate the legacy datatable
      * uses). Supports common filters — `search` matches the numeric
      * invoice id prefix; pass `patient_id`, `location_id`,
-     * `invoice_status_id`, `appointment_type_id`, `created_from`,
-     * `created_to` to narrow results.
+     * `invoice_status_id`, `invoice_status_slug`, `appointment_type_id`,
+     * `created_from`, `created_to` to narrow results. `invoice_status_slug`
+     * is the stable, tenant-independent way to target a status (e.g. the
+     * "Cancelled" quick filter) since status ids can differ per tenant.
      *
      * Permission: `invoices_manage`.
      */
@@ -59,6 +61,7 @@ class InvoicesController extends Controller
                 'location_id' => ['nullable', 'integer'],
                 'service_id' => ['nullable', 'integer'],
                 'invoice_status_id' => ['nullable', 'integer'],
+                'invoice_status_slug' => ['nullable', 'string', 'max:50'],
                 'appointment_type_id' => ['nullable', 'integer'],
                 'created_from' => ['nullable', 'date'],
                 'created_to' => ['nullable', 'date', 'after_or_equal:created_from'],
@@ -97,6 +100,13 @@ class InvoicesController extends Controller
 
             if ($request->filled('invoice_status_id')) {
                 $query->where('invoice_status_id', (int) $request->integer('invoice_status_id'));
+            }
+
+            if ($request->filled('invoice_status_slug')) {
+                // Slug is the stable cross-tenant key (status ids drift per
+                // tenant), mirroring how CancelRecord resolves 'cancelled'.
+                $slug = trim((string) $request->string('invoice_status_slug'));
+                $query->whereHas('invoicestatus', fn ($q) => $q->where('slug', $slug));
             }
 
             if ($request->filled('appointment_type_id')) {
