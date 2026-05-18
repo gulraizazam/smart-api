@@ -57,6 +57,8 @@
         letter-spacing: 0.01em;
         color: inherit;
         text-decoration: none;
+        background: var(--allura-brand-bg);
+        isolation: isolate;
     }
 
     .allura-auth__brand-mark .mark {
@@ -167,6 +169,7 @@
         padding-inline: 1.25rem;
         border-radius: 10px;
         display: inline-flex;
+        isolation: isolate;
     }
 
     .allura-auth__heading h1 {
