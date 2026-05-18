@@ -244,49 +244,91 @@ class Order extends BaseModel
         if (! $order) {
             return collect(['status' => false, 'message' => 'Resource not found.']);
         }
-        if ($order->order_type == 'refund') {
-            $old_order = Order::where(['id' => $order->refund_order_id])->first();
-            $old_order->update([
-                'refund_order_id' => null,
-                'total_price' => $order->total_price,
-            ]);
-            $old_detail_records = OrderDetail::where('order_id', $id)->get();
-            foreach ($old_detail_records as $data) {
-                $quantity = $data->quantity;
-                $order_detail = OrderDetail::where(['order_id' => $order->refund_order_id, 'product_id' => $data->product_id])->first();
-                $order_detail->update([
-                    'quantity' => $order_detail->quantity + $quantity,
-                ]);
-
-            }
-        }
-
-        // Check if child records exists or not, If exist then disallow to delete it.
         if (self::isChildExists($id, Auth::user()->account_id)) {
             return collect(['status' => false, 'message' => 'Child records exist, unable to delete resource']);
         }
-        $detail_records = OrderDetail::where('order_id', $id)->get();
-        if (! $detail_records->isEmpty()) {
+
+        return \Illuminate\Support\Facades\DB::transaction(function () use ($order, $id) {
+            // Legacy refund-pair handling — if this is a refund record,
+            // unlink it from the original order and restore the original's
+            // line quantities. Kept as-is from the pre-revamp behaviour;
+            // the inventory module's refunds now go through
+            // OrderService::processRefund instead.
+            if ($order->order_type == 'refund') {
+                $old_order = Order::where(['id' => $order->refund_order_id])->first();
+                if ($old_order) {
+                    $old_order->update([
+                        'refund_order_id' => null,
+                        'total_price' => $order->total_price,
+                    ]);
+                    $old_detail_records = OrderDetail::where('order_id', $id)->get();
+                    foreach ($old_detail_records as $data) {
+                        $original = OrderDetail::where([
+                            'order_id' => $order->refund_order_id,
+                            'product_id' => $data->product_id,
+                        ])->first();
+                        if ($original) {
+                            $original->update(['quantity' => $original->quantity + $data->quantity]);
+                        }
+                    }
+                }
+            }
+
+            $detail_records = OrderDetail::where('order_id', $id)->get();
+
             foreach ($detail_records as $detail_record) {
+                // Restore FIFO batch remaining_quantity from the
+                // consumption ledger. Without this, deleting an order
+                // would leave the batches showing those units as
+                // consumed even though the order is gone, so future
+                // FIFO sales would silently over-draw.
+                $consumptions = \Illuminate\Support\Facades\DB::table('order_detail_consumption')
+                    ->where('order_detail_id', $detail_record->id)
+                    ->get();
+
+                foreach ($consumptions as $cons) {
+                    Stock::where('id', $cons->stock_id)
+                        ->update([
+                            'remaining_quantity' => \Illuminate\Support\Facades\DB::raw(
+                                'remaining_quantity + '.(int) $cons->quantity,
+                            ),
+                        ]);
+                }
+
+                // Drop the consumption rows now that their batches are
+                // restored — otherwise the FK constraint blocks the
+                // detail delete below.
+                \Illuminate\Support\Facades\DB::table('order_detail_consumption')
+                    ->where('order_detail_id', $detail_record->id)
+                    ->delete();
+
+                // Mirror the inventory cache so list pages stay accurate.
+                // Match the legacy behaviour: restore by the detail's
+                // remaining quantity (post-refund), not the original.
                 $inventory = Inventory::where('product_id', $detail_record->product_id)
-                    ->where('location_id', $order->location_id)->first();
-                $updated_quantity = $inventory->quantity + $detail_record->quantity;
-                $inventory->update(['quantity' => $updated_quantity]);
+                    ->where('location_id', $order->location_id)
+                    ->first();
+                if ($inventory) {
+                    $inventory->update([
+                        'quantity' => (int) $inventory->quantity + (int) $detail_record->quantity,
+                    ]);
+                }
+
                 $detail_record->delete();
-
             }
 
-        }
-        $stock_records = Stock::where('order_id', $id)->get();
-        if (! $stock_records->isEmpty()) {
-            foreach ($stock_records as $stock_record) {
-                $stock_record->delete();
-            }
-        }
+            // Drop the ledger OUT rows we wrote on sale + any in/refund
+            // rows from refunds tied to this order.
+            Stock::where('order_id', $id)->delete();
 
-        $record = $order->delete();
+            // The order delete fires OrderObserver::deleted() which
+            // cascades to the linked package_advances rows — that's how
+            // the cash-pool credit is reversed (see
+            // app/Observers/OrderObserver.php).
+            $order->delete();
 
-        return collect(['status' => true, 'message' => 'Record has been deleted successfully.']);
+            return collect(['status' => true, 'message' => 'Record has been deleted successfully.']);
+        });
     }
 
     public static function refund($id, $request)

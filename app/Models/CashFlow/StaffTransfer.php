@@ -3,11 +3,14 @@
 declare(strict_types=1);
 namespace App\Models\CashFlow;
 
+use App\Models\Concerns\FiltersByDateRange;
+use App\Models\Concerns\GuardsTenantBoundary;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * Phase B of Cash Movements — represents a peer cash handover between
@@ -22,11 +25,19 @@ class StaffTransfer extends Model
 {
     use HasFactory;
     use SoftDeletes;
+    use FiltersByDateRange;
+    use GuardsTenantBoundary;
+
+    /** {@see FiltersByDateRange} — list/ledger filters on the handover date. */
+    protected function dateRangeColumn(): string
+    {
+        return 'transfer_date';
+    }
 
     protected $table = 'staff_transfers';
 
     protected $fillable = [
-        'account_id', 'from_user_id', 'to_user_id', 'amount', 'description', 'created_by',
+        'account_id', 'from_user_id', 'to_user_id', 'amount', 'transfer_date', 'description', 'created_by',
         'voided_at', 'void_reason', 'voided_by',
     ];
 
@@ -34,6 +45,7 @@ class StaffTransfer extends Model
     {
         return [
             'amount' => 'decimal:2',
+            'transfer_date' => 'date:Y-m-d',
             'voided_at' => 'datetime',
         ];
     }
@@ -56,6 +68,16 @@ class StaffTransfer extends Model
     public function voidedByUser(): BelongsTo
     {
         return $this->belongsTo(User::class, 'voided_by')->withTrashed();
+    }
+
+    /**
+     * Drop-zone attachments (added 2026-05-15) — polymorphic via
+     * `movement_attachments.movement_kind = staff_transfer`.
+     */
+    public function attachments(): HasMany
+    {
+        return $this->hasMany(MovementAttachment::class, 'movement_id')
+            ->where('movement_kind', MovementAttachment::KIND_STAFF_TRANSFER);
     }
 
     public function isVoided(): bool

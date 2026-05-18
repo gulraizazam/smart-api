@@ -204,4 +204,79 @@ class StaffAdvanceLifecycleTest extends TestCase
             'user_id' => $staff->id, 'pool_id' => $pool->id, 'amount' => 5000,
         ], accountId: 1);
     }
+
+    public function test_advance_persists_supplied_date_and_defaults_to_today(): void
+    {
+        $pool = CashPool::factory()->withOpeningBalance(20000)->create();
+        $staff = User::factory()->create([
+            'account_id' => 1,
+            'is_advance_eligible' => 1,
+        ]);
+
+        // Backdated by 3 days — well inside the 7-day window the SPA
+        // form exposes. Should persist exactly as supplied.
+        $backdated = now()->subDays(3)->toDateString();
+        $advance = $this->service->createAdvance([
+            'user_id' => $staff->id,
+            'pool_id' => $pool->id,
+            'amount' => 1000,
+            'advance_date' => $backdated,
+        ], accountId: 1);
+        $this->assertSame($backdated, $advance->advance_date->format('Y-m-d'));
+
+        // Default behaviour: omitting the key writes today's date.
+        $today = $this->service->createAdvance([
+            'user_id' => $staff->id,
+            'pool_id' => $pool->id,
+            'amount' => 500,
+        ], accountId: 1);
+        $this->assertSame(now()->toDateString(), $today->advance_date->format('Y-m-d'));
+    }
+
+    public function test_return_persists_supplied_date_and_defaults_to_today(): void
+    {
+        $pool = CashPool::factory()->withOpeningBalance(20000)->create();
+        $staff = User::factory()->create([
+            'account_id' => 1,
+            'is_advance_eligible' => 1,
+        ]);
+        $this->service->createAdvance([
+            'user_id' => $staff->id, 'pool_id' => $pool->id, 'amount' => 5000,
+        ], accountId: 1);
+
+        $backdated = now()->subDays(2)->toDateString();
+        $return = $this->service->createReturn([
+            'user_id' => $staff->id,
+            'pool_id' => $pool->id,
+            'amount' => 1500,
+            'return_date' => $backdated,
+        ], accountId: 1);
+        $this->assertSame($backdated, $return->return_date->format('Y-m-d'));
+    }
+
+    /**
+     * getStaffSummary must not scale queries with staff count. It was an
+     * N+1 (getOutstanding() per user = 5 SUM queries each) on every
+     * Movements page load; now it batches via getOutstandingForUsers.
+     * With 6 staff the old path fired 30+ queries — assert a flat
+     * ceiling that the per-user loop would blow past.
+     */
+    public function test_get_staff_summary_query_count_is_flat_not_n_plus_1(): void
+    {
+        $pool = CashPool::factory()->withOpeningBalance(500000)->create(['account_id' => 1]);
+        for ($i = 0; $i < 6; $i++) {
+            $staff = User::factory()->create(['account_id' => 1, 'is_advance_eligible' => 1]);
+            StaffAdvance::factory()->create([
+                'account_id' => 1,
+                'user_id' => $staff->id,
+                'pool_id' => $pool->id,
+                'amount' => 1000,
+            ]);
+        }
+
+        $this->assertQueryCountAtMost(
+            15,
+            fn () => $this->service->getStaffSummary(1),
+        );
+    }
 }

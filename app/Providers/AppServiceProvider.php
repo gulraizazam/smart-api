@@ -27,6 +27,7 @@ use App\Models\PlanInvoice;
 use App\Models\Services;
 use App\Models\User;
 use App\Http\Controllers\Api\CashFlow\ExpenseAttachmentsController;
+use App\Http\Controllers\Api\CashFlow\VendorTransactionAttachmentsController;
 use App\Models\BusinessClosure;
 use App\Models\WorkingDayException;
 use App\Observers\ActivityLogObserver;
@@ -95,6 +96,14 @@ class AppServiceProvider extends ServiceProvider
         // docblock. Add a sibling `when()->needs()` block when transfers /
         // vendor purchases adopt the same multi-file pattern.
         $this->app->when(ExpenseAttachmentsController::class)
+            ->needs(R2DocumentService::class)
+            ->give(static fn (): R2DocumentService => new R2DocumentService(
+                Storage::disk('r2_invoices')
+            ));
+
+        // Vendor transactions adopted the same multi-file pattern
+        // (2026-05-17) — same private `invoices` bucket.
+        $this->app->when(VendorTransactionAttachmentsController::class)
             ->needs(R2DocumentService::class)
             ->give(static fn (): R2DocumentService => new R2DocumentService(
                 Storage::disk('r2_invoices')
@@ -362,6 +371,10 @@ class AppServiceProvider extends ServiceProvider
         StaffAdvance::observe(StaffAdvanceObserver::class);
         StaffReturn::observe(StaffReturnObserver::class);
         PackageAdvances::observe(PackageAdvanceObserver::class);
+        // Reverses the cash-pool credit when an order is hard-deleted.
+        // Order create + refund already write package_advances rows via
+        // OrderService, so the observer only needs the `deleted` hook.
+        \App\Models\Order::observe(\App\Observers\OrderObserver::class);
         // Mirrors a parent membership's end_date edits onto its
         // referrals so the data model stays internally consistent
         // without requiring every read site to look up the parent.

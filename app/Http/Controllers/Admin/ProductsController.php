@@ -338,6 +338,60 @@ class ProductsController extends Controller
         ]);
     }
 
+    /**
+     * FIFO batches for a product across locations.
+     *
+     * Returns one row per `stocks` IN batch with remaining_quantity > 0,
+     * ordered oldest-first within each location so the SPA can show
+     * which batch will be drawn first on the next sale.
+     */
+    public function productBatches(Request $request, int $id): JsonResponse
+    {
+        if (! Gate::allows('product_stock_detail')) {
+            return $this->errorResponse('You are not authorized to access this resource.', 401);
+        }
+
+        $rows = \DB::table('stocks as s')
+            ->leftJoin('locations as l', 'l.id', '=', 's.location_id')
+            ->leftJoin('warehouses as w', 'w.id', '=', 's.warehouse_id')
+            ->where('s.product_id', $id)
+            ->where('s.stock_type', 'in')
+            ->whereNotNull('s.remaining_quantity')
+            ->where('s.remaining_quantity', '>', 0)
+            ->orderBy('s.location_id')
+            ->orderBy('s.created_at')
+            ->orderBy('s.id')
+            ->select([
+                's.id as batch_id',
+                's.location_id',
+                's.warehouse_id',
+                's.quantity as received_quantity',
+                's.remaining_quantity',
+                's.sale_price',
+                's.created_at',
+                'l.name as location_name',
+                'w.name as warehouse_name',
+            ])
+            ->get()
+            ->map(fn ($r) => [
+                'batch_id' => (int) $r->batch_id,
+                'location_id' => $r->location_id !== null ? (int) $r->location_id : null,
+                'location_name' => $r->location_name,
+                'warehouse_id' => $r->warehouse_id !== null ? (int) $r->warehouse_id : null,
+                'warehouse_name' => $r->warehouse_name,
+                'received_quantity' => (int) $r->received_quantity,
+                'remaining_quantity' => (int) $r->remaining_quantity,
+                'sale_price' => (float) $r->sale_price,
+                'received_at' => $r->created_at,
+            ])
+            ->all();
+
+        return response()->json([
+            'success' => true,
+            'data' => $rows,
+        ]);
+    }
+
     public function status(Request $request): JsonResponse
     {
         if (! Gate::allows('product_active')) {

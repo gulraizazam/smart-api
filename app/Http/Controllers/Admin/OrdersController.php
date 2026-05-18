@@ -14,6 +14,7 @@ use App\Models\OrderRefundDetail;
 use App\Models\Product;
 use App\Models\User;
 use App\Models\Warehouse;
+use App\Services\Inventory\InsufficientStockException;
 use App\Services\Order\OrderService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -199,6 +200,12 @@ class OrdersController extends Controller
             }
 
             return $this->errorResponse('Something went wrong, please try again later.', 404);
+        } catch (InsufficientStockException $e) {
+            // The FIFO consumer hit the floor mid-transaction — another
+            // order claimed the units we previewed as available. Surface
+            // a precise 422 with the new on-hand so the operator can
+            // retry against the updated total.
+            return $this->errorResponse($e->getMessage(), 422);
         } catch (\Exception $e) {
             return $this->handleException($e, 'OrdersController');
         }
@@ -286,6 +293,29 @@ class OrdersController extends Controller
     }
 
     /**
+     * JSON invoice payload for the SPA print page.
+     *
+     * Shape matches what consultation + treatment invoice endpoints
+     * return so a single shared invoice template can render all three.
+     * The legacy `displayInvoiceAppointment` Blade endpoint still
+     * exists for direct-link / PDF rendering.
+     */
+    public function invoiceJson(int $id): JsonResponse
+    {
+        if (! Gate::allows('order_manage')) {
+            return $this->errorResponse('You are not authorized to access this resource.', 401);
+        }
+
+        try {
+            $payload = $this->orderService->getInvoiceJson($id);
+
+            return $this->successResponse('Invoice retrieved.', $payload);
+        } catch (\Throwable $e) {
+            return $this->handleException($e, 'OrdersController');
+        }
+    }
+
+    /**
      * Display the order invoice as PDF.
      *
      * Always returns a PDF binary. `$download` truthy → save-as dialog
@@ -322,7 +352,12 @@ class OrdersController extends Controller
         $pdf = App::make('dompdf.wrapper');
         $pdf->loadHTML($content);
 
-        $filename = 'order-invoice-C-' . $data['invoice_info']->patient_id . '.pdf';
+        // patient_id is nullable since the 2026-05 inventory revamp
+        // (employee sales have it null). Fall back to employee_id or
+        // the order id so the download always has a sensible filename.
+        $info = $data['invoice_info'];
+        $buyerId = $info->patient_id ?: ($info->employee_id ?: $info->id);
+        $filename = 'order-invoice-C-' . $buyerId . '.pdf';
 
         return $download ? $pdf->download($filename) : $pdf->stream($filename);
     }

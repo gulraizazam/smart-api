@@ -581,6 +581,30 @@ CREATE TABLE `cash_pools` (
   CONSTRAINT `fk_cash_pools_account_id` FOREIGN KEY (`account_id`) REFERENCES `accounts` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+DROP TABLE IF EXISTS `cash_transfer_attachments`;
+CREATE TABLE `cash_transfer_attachments` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `account_id` int(10) unsigned NOT NULL,
+  `cash_transfer_id` bigint(20) unsigned DEFAULT NULL COMMENT 'NULL = orphan upload — bound on transfer submit, pruned by command if it stays orphan past TTL.',
+  `file_name` varchar(255) NOT NULL COMMENT 'Original filename as uploaded; for display only.',
+  `file_path` varchar(500) NOT NULL COMMENT 'R2 object key — content-addressed by SHA-256.',
+  `mime_type` varchar(100) NOT NULL,
+  `file_size` int(10) unsigned NOT NULL COMMENT 'Bytes; capped at 10 MB by the upload endpoint.',
+  `sha256` char(64) NOT NULL COMMENT 'Lowercase hex SHA-256 of the file bytes — drives dedup + content-addressed key.',
+  `uploaded_by` int(10) unsigned NOT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  `deleted_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `cash_transfer_attachments_uploaded_by_foreign` (`uploaded_by`),
+  KEY `ctatt_account_transfer_idx` (`account_id`,`cash_transfer_id`),
+  KEY `ctatt_account_sha_idx` (`account_id`,`sha256`),
+  KEY `ctatt_transfer_idx` (`cash_transfer_id`),
+  CONSTRAINT `cash_transfer_attachments_account_id_foreign` FOREIGN KEY (`account_id`) REFERENCES `accounts` (`id`),
+  CONSTRAINT `cash_transfer_attachments_cash_transfer_id_foreign` FOREIGN KEY (`cash_transfer_id`) REFERENCES `cash_transfers` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `cash_transfer_attachments_uploaded_by_foreign` FOREIGN KEY (`uploaded_by`) REFERENCES `users` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 DROP TABLE IF EXISTS `cash_transfers`;
 CREATE TABLE `cash_transfers` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
@@ -589,7 +613,7 @@ CREATE TABLE `cash_transfers` (
   `amount` decimal(15,2) NOT NULL,
   `from_pool_id` bigint(20) unsigned NOT NULL,
   `to_pool_id` bigint(20) unsigned NOT NULL,
-  `method` enum('physical_cash','bank_deposit') NOT NULL,
+  `method` enum('physical_cash','bank_deposit') DEFAULT NULL,
   `reference_no` varchar(255) DEFAULT NULL,
   `attachment_url` varchar(255) DEFAULT NULL,
   `description` text DEFAULT NULL,
@@ -608,6 +632,7 @@ CREATE TABLE `cash_transfers` (
   KEY `cash_transfers_account_id_transfer_date_index` (`account_id`,`transfer_date`),
   KEY `cash_transfers_account_id_from_pool_id_index` (`account_id`,`from_pool_id`),
   KEY `cash_transfers_account_id_to_pool_id_index` (`account_id`,`to_pool_id`),
+  KEY `cash_transfers_account_voided_idx` (`account_id`,`voided_at`),
   CONSTRAINT `fk_cash_transfers_account_id` FOREIGN KEY (`account_id`) REFERENCES `accounts` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -630,6 +655,7 @@ CREATE TABLE `cashflow_audit_logs` (
   KEY `audit_action_idx` (`account_id`,`action`),
   KEY `audit_user_idx` (`account_id`,`user_id`),
   KEY `cashflow_audit_logs_created_at_index` (`created_at`),
+  KEY `cf_audit_entity_action_idx` (`entity_type`,`entity_id`,`action`),
   CONSTRAINT `fk_cashflow_audit_logs_account_id` FOREIGN KEY (`account_id`) REFERENCES `accounts` (`id`),
   CONSTRAINT `cashflow_audit_logs_chk_1` CHECK (json_valid(`old_values`)),
   CONSTRAINT `cashflow_audit_logs_chk_2` CHECK (json_valid(`new_values`))
@@ -1904,6 +1930,29 @@ CREATE TABLE `model_has_roles` (
   KEY `model_has_roles_model_type_model_id_index` (`model_type`,`model_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+DROP TABLE IF EXISTS `movement_attachments`;
+CREATE TABLE `movement_attachments` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `account_id` int(10) unsigned NOT NULL,
+  `movement_kind` enum('staff_advance','staff_return','staff_transfer') DEFAULT NULL COMMENT 'Discriminator for which staff table the attachment ultimately binds to. NULL = orphan upload.',
+  `movement_id` bigint(20) unsigned DEFAULT NULL COMMENT 'FK target inside the table named by movement_kind. NULL while orphan; populated on form submit.',
+  `file_name` varchar(255) NOT NULL,
+  `file_path` varchar(500) NOT NULL COMMENT 'R2 object key — content-addressed by SHA-256.',
+  `mime_type` varchar(100) NOT NULL,
+  `file_size` int(10) unsigned NOT NULL,
+  `sha256` char(64) NOT NULL,
+  `uploaded_by` int(10) unsigned NOT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  `deleted_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `movement_attachments_uploaded_by_foreign` (`uploaded_by`),
+  KEY `movatt_account_kind_id_idx` (`account_id`,`movement_kind`,`movement_id`),
+  KEY `movatt_account_sha_idx` (`account_id`,`sha256`),
+  CONSTRAINT `movement_attachments_account_id_foreign` FOREIGN KEY (`account_id`) REFERENCES `accounts` (`id`),
+  CONSTRAINT `movement_attachments_uploaded_by_foreign` FOREIGN KEY (`uploaded_by`) REFERENCES `users` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 DROP TABLE IF EXISTS `oauth_access_tokens`;
 CREATE TABLE `oauth_access_tokens` (
   `id` char(80) NOT NULL,
@@ -1975,6 +2024,24 @@ CREATE TABLE `oauth_refresh_tokens` (
   KEY `oauth_refresh_tokens_access_token_id_index` (`access_token_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+DROP TABLE IF EXISTS `order_detail_consumption`;
+CREATE TABLE `order_detail_consumption` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `order_detail_id` bigint(20) unsigned NOT NULL,
+  `stock_id` bigint(20) unsigned NOT NULL COMMENT 'stocks.id, stock_type=in (batch row)',
+  `quantity` int(11) NOT NULL,
+  `sale_price` decimal(10,2) NOT NULL COMMENT 'Frozen at consumption time — used for refund symmetry and reporting',
+  `account_id` bigint(20) unsigned NOT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `odc_order_detail_idx` (`order_detail_id`),
+  KEY `odc_stock_idx` (`stock_id`),
+  KEY `odc_account_idx` (`account_id`),
+  CONSTRAINT `order_detail_consumption_order_detail_id_foreign` FOREIGN KEY (`order_detail_id`) REFERENCES `order_details` (`id`),
+  CONSTRAINT `order_detail_consumption_stock_id_foreign` FOREIGN KEY (`stock_id`) REFERENCES `stocks` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 DROP TABLE IF EXISTS `order_details`;
 CREATE TABLE `order_details` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
@@ -2028,7 +2095,9 @@ CREATE TABLE `order_refunds` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `account_id` int(10) unsigned NOT NULL,
   `order_id` bigint(20) unsigned NOT NULL,
-  `patient_id` int(10) unsigned NOT NULL,
+  `patient_id` int(10) unsigned DEFAULT NULL,
+  `buyer_type` enum('patient','employee') NOT NULL DEFAULT 'patient',
+  `employee_id` bigint(20) unsigned DEFAULT NULL,
   `total_price` decimal(8,2) NOT NULL,
   `status` tinyint(4) NOT NULL DEFAULT 1,
   `created_by` bigint(20) unsigned NOT NULL,
@@ -2044,8 +2113,7 @@ CREATE TABLE `order_refunds` (
   KEY `fk_order_refunds_patient_id` (`patient_id`),
   CONSTRAINT `fk_order_refunds_account_id` FOREIGN KEY (`account_id`) REFERENCES `accounts` (`id`),
   CONSTRAINT `fk_order_refunds_location_id` FOREIGN KEY (`location_id`) REFERENCES `locations` (`id`),
-  CONSTRAINT `fk_order_refunds_order_id` FOREIGN KEY (`order_id`) REFERENCES `orders` (`id`),
-  CONSTRAINT `fk_order_refunds_patient_id` FOREIGN KEY (`patient_id`) REFERENCES `users` (`id`)
+  CONSTRAINT `fk_order_refunds_order_id` FOREIGN KEY (`order_id`) REFERENCES `orders` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `orders`;
@@ -2053,7 +2121,10 @@ CREATE TABLE `orders` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `account_id` int(10) unsigned NOT NULL,
   `patient_id` int(10) unsigned DEFAULT NULL,
+  `buyer_type` enum('patient','employee') NOT NULL DEFAULT 'patient',
   `total_price` decimal(8,2) DEFAULT NULL,
+  `auto_discount_type` enum('none','employee','membership') NOT NULL DEFAULT 'none',
+  `auto_discount_percent` decimal(5,2) NOT NULL DEFAULT 0.00,
   `refund_order_id` bigint(20) unsigned DEFAULT NULL,
   `order_type` enum('sale','refund') NOT NULL,
   `status` tinyint(4) NOT NULL DEFAULT 1,
@@ -2075,6 +2146,8 @@ CREATE TABLE `orders` (
   KEY `idx_orders_created_at` (`created_at`),
   KEY `fk_orders_creator` (`created_by`),
   KEY `fk_orders_employee_id` (`employee_id`),
+  KEY `orders_employee_id_idx` (`employee_id`),
+  KEY `orders_buyer_type_idx` (`buyer_type`,`created_at`),
   CONSTRAINT `fk_orders_account` FOREIGN KEY (`account_id`) REFERENCES `accounts` (`id`),
   CONSTRAINT `fk_orders_creator` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`),
   CONSTRAINT `fk_orders_employee_id` FOREIGN KEY (`employee_id`) REFERENCES `users` (`id`) ON DELETE SET NULL,
@@ -2103,6 +2176,7 @@ CREATE TABLE `package_advances` (
   `updated_by` int(10) unsigned DEFAULT NULL,
   `package_id` int(10) unsigned DEFAULT NULL,
   `invoice_id` int(10) unsigned DEFAULT NULL,
+  `order_id` bigint(20) unsigned DEFAULT NULL,
   `is_setteled` int(11) NOT NULL DEFAULT 0,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
@@ -2119,7 +2193,8 @@ CREATE TABLE `package_advances` (
   KEY `idx_pa_account_created` (`account_id`,`created_at`),
   KEY `idx_pa_patient_account` (`patient_id`,`account_id`),
   KEY `idx_pa_appt_patient_cashflow` (`appointment_id`,`patient_id`,`cash_flow`),
-  KEY `idx_pa_cashflow_patient_amount` (`cash_flow`,`patient_id`,`cash_amount`)
+  KEY `idx_pa_cashflow_patient_amount` (`cash_flow`,`patient_id`,`cash_amount`),
+  KEY `package_advances_order_id_idx` (`order_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `package_bundles`;
@@ -2878,6 +2953,7 @@ CREATE TABLE `staff_advances` (
   `user_id` int(10) unsigned NOT NULL COMMENT 'Staff receiving advance',
   `pool_id` bigint(20) unsigned NOT NULL COMMENT 'Cash pool advance given from',
   `amount` decimal(15,2) NOT NULL,
+  `advance_date` date DEFAULT NULL COMMENT 'Date the advance was issued — backdating up to 7 days is allowed by StaffAdvanceService.',
   `description` text DEFAULT NULL,
   `created_by` int(10) unsigned NOT NULL,
   `voided_at` timestamp NULL DEFAULT NULL,
@@ -2892,6 +2968,8 @@ CREATE TABLE `staff_advances` (
   KEY `staff_advances_pool_id_foreign` (`pool_id`),
   KEY `staff_advances_created_by_foreign` (`created_by`),
   KEY `staff_advances_account_id_user_id_index` (`account_id`,`user_id`),
+  KEY `staff_advances_account_date_idx` (`account_id`,`advance_date`),
+  KEY `staff_advances_account_voided_idx` (`account_id`,`voided_at`),
   CONSTRAINT `fk_staff_advances_account_id` FOREIGN KEY (`account_id`) REFERENCES `accounts` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -2902,6 +2980,7 @@ CREATE TABLE `staff_returns` (
   `user_id` int(10) unsigned NOT NULL COMMENT 'Staff returning cash',
   `pool_id` bigint(20) unsigned NOT NULL COMMENT 'Cash pool return deposited to',
   `amount` decimal(15,2) NOT NULL,
+  `return_date` date DEFAULT NULL COMMENT 'Date the return was received — backdating up to 7 days is allowed by StaffAdvanceService.',
   `description` text DEFAULT NULL,
   `created_by` int(10) unsigned NOT NULL,
   `voided_at` timestamp NULL DEFAULT NULL,
@@ -2916,6 +2995,8 @@ CREATE TABLE `staff_returns` (
   KEY `staff_returns_pool_id_foreign` (`pool_id`),
   KEY `staff_returns_created_by_foreign` (`created_by`),
   KEY `staff_returns_account_id_user_id_index` (`account_id`,`user_id`),
+  KEY `staff_returns_account_date_idx` (`account_id`,`return_date`),
+  KEY `staff_returns_account_voided_idx` (`account_id`,`voided_at`),
   CONSTRAINT `fk_staff_returns_account_id` FOREIGN KEY (`account_id`) REFERENCES `accounts` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -2980,6 +3061,7 @@ CREATE TABLE `staff_transfers` (
   `from_user_id` bigint(20) unsigned NOT NULL COMMENT 'Staff handing over the cash',
   `to_user_id` bigint(20) unsigned NOT NULL COMMENT 'Staff receiving the cash',
   `amount` decimal(15,2) NOT NULL,
+  `transfer_date` date DEFAULT NULL COMMENT 'Date the handover happened — backdating up to 7 days is allowed by StaffTransferService.',
   `description` text DEFAULT NULL,
   `voided_at` timestamp NULL DEFAULT NULL,
   `void_reason` varchar(100) DEFAULT NULL,
@@ -2988,7 +3070,9 @@ CREATE TABLE `staff_transfers` (
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   `deleted_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `staff_transfers_account_date_idx` (`account_id`,`transfer_date`),
+  KEY `staff_transfers_account_voided_idx` (`account_id`,`voided_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `stocks`;
@@ -2999,8 +3083,11 @@ CREATE TABLE `stocks` (
   `product_detail_id` int(10) unsigned DEFAULT NULL,
   `order_id` bigint(20) unsigned DEFAULT NULL,
   `quantity` int(11) NOT NULL,
+  `sale_price` decimal(10,2) DEFAULT NULL,
+  `remaining_quantity` int(11) DEFAULT NULL,
   `stock_type` enum('in','out','refund') NOT NULL,
   `location_id` int(10) unsigned DEFAULT NULL,
+  `warehouse_id` bigint(20) unsigned DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
@@ -3009,6 +3096,8 @@ CREATE TABLE `stocks` (
   KEY `fk_stocks_account` (`account_id`),
   KEY `fk_stocks_order` (`order_id`),
   KEY `fk_stocks_product_detail_id` (`product_detail_id`),
+  KEY `stocks_fifo_idx` (`product_id`,`location_id`,`stock_type`,`remaining_quantity`,`created_at`),
+  KEY `stocks_location_id_idx` (`location_id`),
   CONSTRAINT `fk_stocks_account` FOREIGN KEY (`account_id`) REFERENCES `accounts` (`id`),
   CONSTRAINT `fk_stocks_location` FOREIGN KEY (`location_id`) REFERENCES `locations` (`id`) ON DELETE SET NULL,
   CONSTRAINT `fk_stocks_order` FOREIGN KEY (`order_id`) REFERENCES `orders` (`id`) ON DELETE SET NULL,
@@ -3295,6 +3384,30 @@ CREATE TABLE `vendor_requests` (
   KEY `fk_vendor_requests_category_id` (`category_id`),
   CONSTRAINT `fk_vendor_requests_account_id` FOREIGN KEY (`account_id`) REFERENCES `accounts` (`id`),
   CONSTRAINT `fk_vendor_requests_category_id` FOREIGN KEY (`category_id`) REFERENCES `expense_categories` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+DROP TABLE IF EXISTS `vendor_transaction_attachments`;
+CREATE TABLE `vendor_transaction_attachments` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `account_id` int(10) unsigned NOT NULL,
+  `vendor_transaction_id` bigint(20) unsigned DEFAULT NULL COMMENT 'NULL = orphan upload — bound to a vendor transaction on form submit, pruned by command if it stays orphan past the TTL.',
+  `file_name` varchar(255) NOT NULL COMMENT 'Original filename as uploaded; for display only.',
+  `file_path` varchar(500) NOT NULL COMMENT 'R2 object key — content-addressed by SHA-256.',
+  `mime_type` varchar(100) NOT NULL,
+  `file_size` int(10) unsigned NOT NULL COMMENT 'Bytes; capped at 10 MB by the upload endpoint.',
+  `sha256` char(64) NOT NULL COMMENT 'Lowercase hex SHA-256 of the file bytes — drives dedup.',
+  `uploaded_by` int(10) unsigned NOT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  `deleted_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `vendor_transaction_attachments_uploaded_by_foreign` (`uploaded_by`),
+  KEY `vtxatt_account_tx_idx` (`account_id`,`vendor_transaction_id`),
+  KEY `vtxatt_account_sha_idx` (`account_id`,`sha256`),
+  KEY `vtxatt_tx_idx` (`vendor_transaction_id`),
+  CONSTRAINT `vendor_transaction_attachments_account_id_foreign` FOREIGN KEY (`account_id`) REFERENCES `accounts` (`id`),
+  CONSTRAINT `vendor_transaction_attachments_uploaded_by_foreign` FOREIGN KEY (`uploaded_by`) REFERENCES `users` (`id`),
+  CONSTRAINT `vendor_transaction_attachments_vendor_transaction_id_foreign` FOREIGN KEY (`vendor_transaction_id`) REFERENCES `vendor_transactions` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `vendor_transactions`;

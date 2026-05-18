@@ -44,11 +44,17 @@ class MovementService
      * Paginated list of movements across all three tables.
      *
      * Filters:
-     *   - date_from / date_to:    ISO YYYY-MM-DD; filters transfer_date for
-     *                             transfers, DATE(created_at) for staff legs.
+     *   - date_from / date_to:    ISO YYYY-MM-DD, applied via the shared
+     *                             null-safe FiltersByDateRange scope on
+     *                             each kind's own date column (transfer_date
+     *                             / advance_date / return_date). Either
+     *                             bound may be omitted (open-ended range).
      *   - source_type / source_id, dest_type / dest_id: scope to a wallet.
-     *   - kind:                   transfer | staff_advance | staff_return.
-     *   - search:                 description / reference_no LIKE.
+     *   - kind:                   transfer | staff_advance | staff_return
+     *                             | staff_transfer.
+     *   - search:                 LIKE across description, reference_no
+     *                             (transfers), counterparty pool/staff
+     *                             names, and amount.
      *   - voided:                 'active' | 'voided' (omitted = both).
      *
      * Implementation: each kind is queried independently with relations
@@ -111,27 +117,60 @@ class MovementService
         $destType = $data['dest_type'] ?? null;
 
         if ($sourceType === self::SOURCE_POOL && $destType === self::SOURCE_POOL) {
+            // method + reference_no + attachment_url are nullable since
+            // 2026-05-15 (SPA dropped them; backend may still receive
+            // them from legacy callers). New SPA uploads come through
+            // `attachment_ids` and bind below.
             $transfer = $this->transferService->create([
                 'transfer_date' => $data['transfer_date'],
                 'amount' => $data['amount'],
                 'from_pool_id' => (int) $data['source_id'],
                 'to_pool_id' => (int) $data['dest_id'],
-                'method' => $data['method'],
+                'method' => $data['method'] ?? null,
                 'reference_no' => $data['reference_no'] ?? null,
-                'attachment_url' => $data['attachment_url'],
+                'attachment_url' => $data['attachment_url'] ?? null,
                 'description' => $data['description'] ?? null,
             ], $accountId);
 
+            $attachmentIds = $data['attachment_ids'] ?? [];
+            if (is_array($attachmentIds) && count($attachmentIds) > 0) {
+                // Bind orphan attachments to this transfer. Scoped to
+                // account + still-orphan + not-deleted so a malicious
+                // payload can't steal another tenant's attachment or
+                // re-bind one that already belongs to a different
+                // transfer.
+                \App\Models\CashFlow\CashTransferAttachment::query()
+                    ->where('account_id', $accountId)
+                    ->whereIn('id', $attachmentIds)
+                    ->whereNull('cash_transfer_id')
+                    ->whereNull('deleted_at')
+                    ->update(['cash_transfer_id' => $transfer->id]);
+            }
+
             return $this->mapTransfer($transfer);
         }
+
+        // The SPA ships a single `transfer_date` field for every combo;
+        // we route it to the appropriate per-table column. Default to
+        // today so legacy callers that never send a date keep working.
+        $movementDate = $data['transfer_date'] ?? now()->toDateString();
+
+        // Staff-side attachments — orphan rows in `movement_attachments`.
+        // We bind them to the freshly-created row's (kind, id) after each
+        // per-kind service call. Tenant + orphan checks already ran in
+        // StoreMovementRequest, so the update here is just a kind+id flip.
+        $attachmentIds = is_array($data['attachment_ids'] ?? null) ? $data['attachment_ids'] : [];
 
         if ($sourceType === self::SOURCE_POOL && $destType === self::SOURCE_STAFF) {
             $advance = $this->staffAdvanceService->createAdvance([
                 'user_id' => (int) $data['dest_id'],
                 'pool_id' => (int) $data['source_id'],
                 'amount' => $data['amount'],
+                'advance_date' => $movementDate,
                 'description' => $data['description'] ?? null,
             ], $accountId);
+
+            $this->bindStaffAttachments($attachmentIds, $accountId, self::KIND_STAFF_ADVANCE, (int) $advance->id);
 
             return $this->mapStaffAdvance($advance);
         }
@@ -141,8 +180,11 @@ class MovementService
                 'user_id' => (int) $data['source_id'],
                 'pool_id' => (int) $data['dest_id'],
                 'amount' => $data['amount'],
+                'return_date' => $movementDate,
                 'description' => $data['description'] ?? null,
             ], $accountId);
+
+            $this->bindStaffAttachments($attachmentIds, $accountId, self::KIND_STAFF_RETURN, (int) $return->id);
 
             return $this->mapStaffReturn($return);
         }
@@ -152,8 +194,11 @@ class MovementService
                 'from_user_id' => (int) $data['source_id'],
                 'to_user_id' => (int) $data['dest_id'],
                 'amount' => $data['amount'],
+                'transfer_date' => $movementDate,
                 'description' => $data['description'] ?? null,
             ], $accountId);
+
+            $this->bindStaffAttachments($attachmentIds, $accountId, self::KIND_STAFF_TRANSFER, (int) $transfer->id);
 
             return $this->mapStaffTransfer($transfer);
         }
@@ -208,21 +253,23 @@ class MovementService
             ->where(function ($q) use ($poolId) {
                 $q->where('from_pool_id', $poolId)->orWhere('to_pool_id', $poolId);
             })
-            ->with(['fromPool:id,name', 'toPool:id,name', 'creator:id,name'])
-            ->when(!empty($filters['date_from']) && !empty($filters['date_to']), fn ($q) =>
-                $q->inDateRange($filters['date_from'], $filters['date_to']))
+            ->with(['fromPool:id,name', 'toPool:id,name', 'creator:id,name', 'attachments'])
+            ->inDateRange($filters['date_from'] ?? null, $filters['date_to'] ?? null)
             ->orderBy('transfer_date', 'desc')
             ->get();
         foreach ($transfers as $t) {
             $rows->push($this->mapTransfer($t));
         }
 
-        // Outbound advances from this pool.
+        // Outbound advances from this pool. advance_date / return_date
+        // were added 2026-05-15 — sort by them so a backdated entry
+        // doesn't jump to "now" in the ledger; date-range filters use
+        // the same column for the same reason.
         $advances = StaffAdvance::forAccount($accountId)
             ->where('pool_id', $poolId)
-            ->with(['staffUser:id,name', 'pool:id,name', 'creator:id,name'])
-            ->when(!empty($filters['date_from']) && !empty($filters['date_to']), fn ($q) =>
-                $q->whereBetween('created_at', [$filters['date_from'] . ' 00:00:00', $filters['date_to'] . ' 23:59:59']))
+            ->with(['staffUser:id,name', 'pool:id,name', 'creator:id,name', 'attachments'])
+            ->inDateRange($filters['date_from'] ?? null, $filters['date_to'] ?? null)
+            ->orderBy('advance_date', 'desc')
             ->orderBy('created_at', 'desc')
             ->get();
         foreach ($advances as $a) {
@@ -232,9 +279,9 @@ class MovementService
         // Inbound returns into this pool.
         $returns = StaffReturn::forAccount($accountId)
             ->where('pool_id', $poolId)
-            ->with(['staffUser:id,name', 'pool:id,name', 'creator:id,name'])
-            ->when(!empty($filters['date_from']) && !empty($filters['date_to']), fn ($q) =>
-                $q->whereBetween('created_at', [$filters['date_from'] . ' 00:00:00', $filters['date_to'] . ' 23:59:59']))
+            ->with(['staffUser:id,name', 'pool:id,name', 'creator:id,name', 'attachments'])
+            ->inDateRange($filters['date_from'] ?? null, $filters['date_to'] ?? null)
+            ->orderBy('return_date', 'desc')
             ->orderBy('created_at', 'desc')
             ->get();
         foreach ($returns as $r) {
@@ -250,20 +297,43 @@ class MovementService
     // Per-table query helpers — applied independently before the merge.
     // ---------------------------------------------------------------------
 
+    /**
+     * Shared movement search predicate: matches `description` + `amount`
+     * (CAST so "5000" finds 5000.00) + each given counterparty-name
+     * relation, plus `reference_no` when the table has one. One place so
+     * the columns the search spans can't drift per kind. No-op on an
+     * empty term.
+     *
+     * @param  list<string>  $nameRelations  belongsTo relations matched on `name`
+     */
+    private function applyMovementSearch(
+        $query,
+        ?string $s,
+        array $nameRelations,
+        bool $hasReference = false,
+    ): void {
+        if (empty($s)) {
+            return;
+        }
+        $query->where(function ($q) use ($s, $nameRelations, $hasReference) {
+            if ($hasReference) {
+                $q->orWhere('reference_no', 'like', "%{$s}%");
+            }
+            $q->orWhere('description', 'like', "%{$s}%")
+                ->orWhereRaw('CAST(amount AS CHAR) LIKE ?', ["%{$s}%"]);
+            foreach ($nameRelations as $rel) {
+                $q->orWhereHas($rel, fn ($r) => $r->where('name', 'like', "%{$s}%"));
+            }
+        });
+    }
+
     private function queryTransfers(int $accountId, array $filters): Collection
     {
         $query = CashTransfer::forAccount($accountId)
-            ->with(['fromPool:id,name', 'toPool:id,name', 'creator:id,name']);
+            ->with(['fromPool:id,name', 'toPool:id,name', 'creator:id,name', 'attachments']);
 
-        if (!empty($filters['date_from']) && !empty($filters['date_to'])) {
-            $query->inDateRange($filters['date_from'], $filters['date_to']);
-        }
-        if (!empty($filters['search'])) {
-            $s = $filters['search'];
-            $query->where(function ($q) use ($s) {
-                $q->where('reference_no', 'like', "%{$s}%")->orWhere('description', 'like', "%{$s}%");
-            });
-        }
+        $query->inDateRange($filters['date_from'] ?? null, $filters['date_to'] ?? null);
+        $this->applyMovementSearch($query, $filters['search'] ?? null, ['fromPool', 'toPool'], true);
         if (($filters['voided'] ?? null) === 'active') {
             $query->whereNull('voided_at');
         } elseif (($filters['voided'] ?? null) === 'voided') {
@@ -276,14 +346,13 @@ class MovementService
     private function queryStaffAdvances(int $accountId, array $filters): Collection
     {
         $query = StaffAdvance::forAccount($accountId)
-            ->with(['staffUser:id,name', 'pool:id,name', 'creator:id,name']);
+            ->with(['staffUser:id,name', 'pool:id,name', 'creator:id,name', 'attachments']);
 
-        if (!empty($filters['date_from']) && !empty($filters['date_to'])) {
-            $query->whereBetween('created_at', [$filters['date_from'] . ' 00:00:00', $filters['date_to'] . ' 23:59:59']);
-        }
-        if (!empty($filters['search'])) {
-            $query->where('description', 'like', '%' . $filters['search'] . '%');
-        }
+        // Date filter runs against `advance_date` (added 2026-05-15) —
+        // backdated rows must show up in their target month, not their
+        // bookkeeping month.
+        $query->inDateRange($filters['date_from'] ?? null, $filters['date_to'] ?? null);
+        $this->applyMovementSearch($query, $filters['search'] ?? null, ['staffUser', 'pool']);
         if (($filters['voided'] ?? null) === 'active') {
             $query->whereNull('voided_at');
         } elseif (($filters['voided'] ?? null) === 'voided') {
@@ -296,14 +365,10 @@ class MovementService
     private function queryStaffReturns(int $accountId, array $filters): Collection
     {
         $query = StaffReturn::forAccount($accountId)
-            ->with(['staffUser:id,name', 'pool:id,name', 'creator:id,name']);
+            ->with(['staffUser:id,name', 'pool:id,name', 'creator:id,name', 'attachments']);
 
-        if (!empty($filters['date_from']) && !empty($filters['date_to'])) {
-            $query->whereBetween('created_at', [$filters['date_from'] . ' 00:00:00', $filters['date_to'] . ' 23:59:59']);
-        }
-        if (!empty($filters['search'])) {
-            $query->where('description', 'like', '%' . $filters['search'] . '%');
-        }
+        $query->inDateRange($filters['date_from'] ?? null, $filters['date_to'] ?? null);
+        $this->applyMovementSearch($query, $filters['search'] ?? null, ['staffUser', 'pool']);
         if (($filters['voided'] ?? null) === 'active') {
             $query->whereNull('voided_at');
         } elseif (($filters['voided'] ?? null) === 'voided') {
@@ -316,14 +381,10 @@ class MovementService
     private function queryStaffTransfers(int $accountId, array $filters): Collection
     {
         $query = StaffTransfer::forAccount($accountId)
-            ->with(['fromUser:id,name', 'toUser:id,name', 'creator:id,name']);
+            ->with(['fromUser:id,name', 'toUser:id,name', 'creator:id,name', 'attachments']);
 
-        if (!empty($filters['date_from']) && !empty($filters['date_to'])) {
-            $query->whereBetween('created_at', [$filters['date_from'] . ' 00:00:00', $filters['date_to'] . ' 23:59:59']);
-        }
-        if (!empty($filters['search'])) {
-            $query->where('description', 'like', '%' . $filters['search'] . '%');
-        }
+        $query->inDateRange($filters['date_from'] ?? null, $filters['date_to'] ?? null);
+        $this->applyMovementSearch($query, $filters['search'] ?? null, ['fromUser', 'toUser']);
         if (($filters['voided'] ?? null) === 'active') {
             $query->whereNull('voided_at');
         } elseif (($filters['voided'] ?? null) === 'voided') {
@@ -353,12 +414,64 @@ class MovementService
         return $rows;
     }
 
+    /**
+     * Bind orphan staff-side attachments (movement_attachments rows with
+     * NULL kind+id) to the freshly-created movement row. Scoped to the
+     * caller's tenant + still-orphan so a hostile payload can't steal
+     * another tenant's attachment or re-bind one that already belongs
+     * somewhere. The StoreMovementRequest's `exists` rule already does
+     * this check up-front; the WHERE clauses here are defense in depth.
+     */
+    private function bindStaffAttachments(array $ids, int $accountId, string $kind, int $movementId): void
+    {
+        if (empty($ids)) {
+            return;
+        }
+        \App\Models\CashFlow\MovementAttachment::query()
+            ->where('account_id', $accountId)
+            ->whereIn('id', $ids)
+            ->whereNull('movement_id')
+            ->whereNull('deleted_at')
+            ->update([
+                'movement_kind' => $kind,
+                'movement_id' => $movementId,
+            ]);
+    }
+
+    /**
+     * Lightweight attachment summary for a Movement DTO. The `attachments`
+     * relation on each staff model already scopes to the right kind, so
+     * reading from `$row->attachments` (eager-loaded by list queries) is
+     * safe — falls back to a single fetch when the relation isn't loaded.
+     */
+    private function summariseAttachments($row): array
+    {
+        $attachments = $row->relationLoaded('attachments')
+            ? $row->attachments
+            : $row->attachments()->get();
+        return $attachments
+            ->map(fn ($a) => [
+                'id' => (int) $a->id,
+                'file_name' => $a->file_name,
+                'mime_type' => $a->mime_type,
+                'file_size' => (int) $a->file_size,
+            ])
+            ->values()
+            ->all();
+    }
+
     // ---------------------------------------------------------------------
     // Normalisers — one per source table → Movement DTO array.
     // ---------------------------------------------------------------------
 
     private function mapTransfer(CashTransfer $t): array
     {
+        // Drop-zone attachments live here as a lightweight summary —
+        // signed URLs are short-lived (15 min) so we mint them on demand
+        // via the per-attachment signed-url endpoint, not on every list
+        // serialise. The legacy `attachment_url` column stays in the
+        // payload so pre-cutover rows keep rendering their drive link
+        // alongside any new attachments.
         return [
             'id' => $t->id,
             'kind' => self::KIND_TRANSFER,
@@ -378,6 +491,7 @@ class MovementService
             'reference_no' => $t->reference_no,
             'method' => $t->method,
             'attachment_url' => $t->attachment_url,
+            'attachments' => $this->summariseAttachments($t),
             'status' => $t->voided_at ? 'voided' : 'active',
             'voided_at' => $t->voided_at?->toIso8601String(),
             'void_reason' => $t->void_reason,
@@ -389,10 +503,18 @@ class MovementService
 
     private function mapStaffAdvance(StaffAdvance $a): array
     {
+        // advance_date is the persisted movement date (added 2026-05-15);
+        // pre-cutover rows backfilled to DATE(created_at) by migration,
+        // but defend against any NULL stragglers.
+        $date = $a->advance_date
+            ? $a->advance_date->format('Y-m-d')
+            : ($a->created_at?->format('Y-m-d') ?? '');
+        $attachments = $this->summariseAttachments($a);
         return [
             'id' => $a->id,
             'kind' => self::KIND_STAFF_ADVANCE,
-            'date' => $a->created_at->format('Y-m-d'),
+            'attachments' => $attachments,
+            'date' => $date,
             'amount' => (float) $a->amount,
             'source' => [
                 'type' => self::SOURCE_POOL,
@@ -419,10 +541,15 @@ class MovementService
 
     private function mapStaffReturn(StaffReturn $r): array
     {
+        $date = $r->return_date
+            ? $r->return_date->format('Y-m-d')
+            : ($r->created_at?->format('Y-m-d') ?? '');
+        $attachments = $this->summariseAttachments($r);
         return [
             'id' => $r->id,
             'kind' => self::KIND_STAFF_RETURN,
-            'date' => $r->created_at->format('Y-m-d'),
+            'attachments' => $attachments,
+            'date' => $date,
             'amount' => (float) $r->amount,
             'source' => [
                 'type' => self::SOURCE_STAFF,
@@ -449,10 +576,15 @@ class MovementService
 
     private function mapStaffTransfer(StaffTransfer $t): array
     {
+        $date = $t->transfer_date
+            ? $t->transfer_date->format('Y-m-d')
+            : ($t->created_at?->format('Y-m-d') ?? '');
+        $attachments = $this->summariseAttachments($t);
         return [
             'id' => $t->id,
             'kind' => self::KIND_STAFF_TRANSFER,
-            'date' => $t->created_at->format('Y-m-d'),
+            'attachments' => $attachments,
+            'date' => $date,
             'amount' => (float) $t->amount,
             'source' => [
                 'type' => self::SOURCE_STAFF,

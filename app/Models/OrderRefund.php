@@ -23,6 +23,8 @@ class OrderRefund extends Model
         'account_id',
         'order_id',
         'patient_id',
+        'buyer_type',
+        'employee_id',
         'total_price',
         'status',
         'created_by',

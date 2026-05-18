@@ -42,13 +42,12 @@ class StaffAdvanceService
             ->whereNull('voided_at')
             ->whereNotNull('staff_id');
 
-        if ($dateFrom && $dateTo) {
-            $start = $dateFrom . ' 00:00:00';
-            $end = $dateTo . ' 23:59:59';
-            $advancesQ->whereBetween('created_at', [$start, $end]);
-            $returnsQ->whereBetween('created_at', [$start, $end]);
-            $expensesQ->whereBetween('expense_date', [$dateFrom, $dateTo]);
-        }
+        // Null-safe, movement-date scope (advance_date / return_date /
+        // expense_date) — open-ended ranges work, and the window keys
+        // on the movement date, not bookkeeping created_at.
+        $advancesQ->inDateRange($dateFrom, $dateTo);
+        $returnsQ->inDateRange($dateFrom, $dateTo);
+        $expensesQ->inDateRange($dateFrom, $dateTo);
 
         $advances = $advancesQ
             ->select('user_id', DB::raw('SUM(amount) as total_advances'))
@@ -67,8 +66,11 @@ class StaffAdvanceService
 
         $userIds = $advances->keys()->merge($returns->keys())->merge($expenses->keys())->unique();
         $users = User::whereIn('id', $userIds)->get(['id', 'name', 'is_advance_eligible']);
+        // One batched set of GROUP BY queries instead of getOutstanding()
+        // per user (was 5 SUM queries × N staff on every Movements load).
+        $outstanding = $this->getOutstandingForUsers($userIds->all(), $accountId);
 
-        return $users->map(function ($user) use ($advances, $returns, $expenses, $accountId) {
+        return $users->map(function ($user) use ($advances, $returns, $expenses, $outstanding) {
             $totalAdvances = $advances->get($user->id, 0);
             $totalReturns = $returns->get($user->id, 0);
             $totalExpenses = $expenses->get($user->id, 0);
@@ -79,7 +81,7 @@ class StaffAdvanceService
                 'total_advances' => (float) $totalAdvances,
                 'total_returns' => (float) $totalReturns,
                 'total_expenses' => (float) $totalExpenses,
-                'outstanding' => $this->getOutstanding($user->id, $accountId),
+                'outstanding' => $outstanding[$user->id] ?? 0,
             ];
         })->filter(fn($item) => $item['total_advances'] != 0 || $item['total_returns'] != 0 || $item['total_expenses'] != 0)
           ->values();
@@ -103,14 +105,19 @@ class StaffAdvanceService
         ?string $dateFrom = null,
         ?string $dateTo = null,
     ): array {
+        // Order by the movement date (created_at only breaks ties /
+        // orders pre-2026-05-15 nulls) so the staff ledger sorts the
+        // same as the All-movements list and pool ledger.
         $advancesQ = StaffAdvance::forAccount($accountId)
             ->forStaff($userId)
             ->with(['pool:id,name', 'creator:id,name'])
+            ->orderBy('advance_date', 'desc')
             ->orderBy('created_at', 'desc');
 
         $returnsQ = StaffReturn::forAccount($accountId)
             ->forStaff($userId)
             ->with(['pool:id,name', 'creator:id,name'])
+            ->orderBy('return_date', 'desc')
             ->orderBy('created_at', 'desc');
 
         $expensesQ = Expense::forAccount($accountId)
@@ -123,23 +130,24 @@ class StaffAdvanceService
             ->where('to_user_id', $userId)
             ->whereNull('voided_at')
             ->with(['fromUser:id,name', 'creator:id,name'])
+            ->orderBy('transfer_date', 'desc')
             ->orderBy('created_at', 'desc');
 
         $transfersOutQ = StaffTransfer::forAccount($accountId)
             ->where('from_user_id', $userId)
             ->whereNull('voided_at')
             ->with(['toUser:id,name', 'creator:id,name'])
+            ->orderBy('transfer_date', 'desc')
             ->orderBy('created_at', 'desc');
 
-        if ($dateFrom && $dateTo) {
-            $start = $dateFrom . ' 00:00:00';
-            $end = $dateTo . ' 23:59:59';
-            $advancesQ->whereBetween('created_at', [$start, $end]);
-            $returnsQ->whereBetween('created_at', [$start, $end]);
-            $expensesQ->whereBetween('expense_date', [$dateFrom, $dateTo]);
-            $transfersInQ->whereBetween('created_at', [$start, $end]);
-            $transfersOutQ->whereBetween('created_at', [$start, $end]);
-        }
+        // Null-safe, movement-date scope on every leg (advance_date /
+        // return_date / transfer_date / expense_date) — open-ended
+        // ranges work and the window keys on the movement date.
+        $advancesQ->inDateRange($dateFrom, $dateTo);
+        $returnsQ->inDateRange($dateFrom, $dateTo);
+        $expensesQ->inDateRange($dateFrom, $dateTo);
+        $transfersInQ->inDateRange($dateFrom, $dateTo);
+        $transfersOutQ->inDateRange($dateFrom, $dateTo);
 
         $advances = $advancesQ->get();
         $returns = $returnsQ->get();
@@ -177,6 +185,11 @@ class StaffAdvanceService
 
     /**
      * Create a staff advance.
+     *
+     * `advance_date` (added 2026-05-15) defaults to today; backdating
+     * up to 7 days is allowed by the form. The period-lock guard runs
+     * against the chosen date, not always `now()`, so a backdated entry
+     * still respects a closed prior month.
      */
     public function createAdvance(array $data, int $accountId): StaffAdvance
     {
@@ -186,15 +199,12 @@ class StaffAdvanceService
             throw new CashflowException('This staff member is not eligible for cash advances.');
         }
 
-        // Period-lock guard — advances inherit today's date implicitly (no
-        // advance_date column on the model). Refuse to write into a closed
-        // current month so locking the month-end actually freezes new advances.
-        $today = now()->toDateString();
-        if (CashflowHelper::isDateInLockedPeriod($today, $accountId)) {
-            throw CashflowException::periodLocked(
-                (int) now()->month,
-                (int) now()->year,
-            );
+        $advanceDate = !empty($data['advance_date'])
+            ? (string) $data['advance_date']
+            : now()->toDateString();
+        if (CashflowHelper::isDateInLockedPeriod($advanceDate, $accountId)) {
+            $d = \Illuminate\Support\Carbon::parse($advanceDate);
+            throw CashflowException::periodLocked((int) $d->month, (int) $d->year);
         }
 
         // Check cumulative threshold
@@ -215,6 +225,7 @@ class StaffAdvanceService
             'user_id' => $data['user_id'],
             'pool_id' => $data['pool_id'],
             'amount' => $data['amount'],
+            'advance_date' => $advanceDate,
             'description' => $data['description'] ?? null,
             'created_by' => Auth::id(),
         ]);
@@ -238,6 +249,10 @@ class StaffAdvanceService
 
     /**
      * Create a staff return (cash returned by staff).
+     *
+     * `return_date` (added 2026-05-15) follows the same backdating
+     * window as advances — defaults today, up to 7 days back, period-
+     * lock checked against the chosen date.
      */
     public function createReturn(array $data, int $accountId): StaffReturn
     {
@@ -250,13 +265,12 @@ class StaffAdvanceService
             );
         }
 
-        // Period-lock guard — returns are dated today (no explicit date column).
-        $today = now()->toDateString();
-        if (CashflowHelper::isDateInLockedPeriod($today, $accountId)) {
-            throw CashflowException::periodLocked(
-                (int) now()->month,
-                (int) now()->year,
-            );
+        $returnDate = !empty($data['return_date'])
+            ? (string) $data['return_date']
+            : now()->toDateString();
+        if (CashflowHelper::isDateInLockedPeriod($returnDate, $accountId)) {
+            $d = \Illuminate\Support\Carbon::parse($returnDate);
+            throw CashflowException::periodLocked((int) $d->month, (int) $d->year);
         }
 
         // Observer handles pool balance increment
@@ -265,6 +279,7 @@ class StaffAdvanceService
             'user_id' => $data['user_id'],
             'pool_id' => $data['pool_id'],
             'amount' => $data['amount'],
+            'return_date' => $returnDate,
             'description' => $data['description'] ?? null,
             'created_by' => Auth::id(),
         ]);
@@ -292,12 +307,16 @@ class StaffAdvanceService
         }
 
         // Period-lock guard — voiding rewinds the pool deduction, which
-        // counts as a write against the advance's original month.
-        $createdAt = $advance->created_at->format('Y-m-d');
-        if (CashflowHelper::isDateInLockedPeriod($createdAt, $accountId)) {
+        // counts as a write against the advance's movement month. Guard
+        // on advance_date (the persisted movement date), NOT created_at:
+        // a backdated advance can sit in a now-locked prior month while
+        // created_at is today. Fall back to created_at only for any
+        // pre-2026-05-15 NULL straggler (mirrors mapStaffAdvance).
+        $movementDate = $advance->advance_date ?? $advance->created_at;
+        if (CashflowHelper::isDateInLockedPeriod($movementDate->format('Y-m-d'), $accountId)) {
             throw CashflowException::periodLocked(
-                (int) $advance->created_at->month,
-                (int) $advance->created_at->year,
+                (int) $movementDate->month,
+                (int) $movementDate->year,
             );
         }
 
@@ -341,12 +360,14 @@ class StaffAdvanceService
         }
 
         // Period-lock guard — editing reshapes the pool deduction booked
-        // against the advance's creation date. If that month is closed, block.
-        $createdAt = $preCheck->created_at->format('Y-m-d');
-        if (CashflowHelper::isDateInLockedPeriod($createdAt, $accountId)) {
+        // against the advance's movement month. Guard on advance_date,
+        // not created_at (a backdated advance can sit in a now-locked
+        // month); fall back to created_at only for pre-2026-05-15 nulls.
+        $movementDate = $preCheck->advance_date ?? $preCheck->created_at;
+        if (CashflowHelper::isDateInLockedPeriod($movementDate->format('Y-m-d'), $accountId)) {
             throw CashflowException::periodLocked(
-                (int) $preCheck->created_at->month,
-                (int) $preCheck->created_at->year,
+                (int) $movementDate->month,
+                (int) $movementDate->year,
             );
         }
 
@@ -407,13 +428,15 @@ class StaffAdvanceService
             throw new CashflowException('This return is already voided.');
         }
 
-        // Period-lock guard — voiding reverses the pool credit that was booked
-        // against the return's creation date. If the month is closed, block.
-        $createdAt = $return->created_at->format('Y-m-d');
-        if (CashflowHelper::isDateInLockedPeriod($createdAt, $accountId)) {
+        // Period-lock guard — voiding reverses the pool credit booked
+        // against the return's movement month. Guard on return_date,
+        // not created_at (a backdated return can sit in a now-locked
+        // month); fall back to created_at only for pre-2026-05-15 nulls.
+        $movementDate = $return->return_date ?? $return->created_at;
+        if (CashflowHelper::isDateInLockedPeriod($movementDate->format('Y-m-d'), $accountId)) {
             throw CashflowException::periodLocked(
-                (int) $return->created_at->month,
-                (int) $return->created_at->year,
+                (int) $movementDate->month,
+                (int) $movementDate->year,
             );
         }
 

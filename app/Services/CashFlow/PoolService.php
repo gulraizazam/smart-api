@@ -8,7 +8,6 @@ use App\Models\CashFlow\CashflowAuditLog;
 use App\Models\CashFlow\CashPool;
 use App\Models\CashFlow\PeriodLock;
 use App\Models\Locations;
-use App\Models\Order;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -21,77 +20,27 @@ class PoolService
 
     /**
      * Get all pools for account with location info.
-     * For branch_cash pools, adds inventory cash sales since go-live to cached_balance for display.
+     *
+     * Pool balances are now sourced exclusively from `cached_balance` —
+     * the cash-pool aggregate that `PackageAdvanceObserver` maintains
+     * via per-row credit/debit events. Since the 2026-05 inventory
+     * revamp, order create + refund also write `package_advances` rows
+     * so order revenue flows through the same observer chain.
+     *
+     * The previous behaviour layered an `Order::sum()` aggregate on top
+     * of `cached_balance` at display time. That was a workaround from
+     * before orders had their own ledger writes — now it double-counts
+     * inventory sales (once in cached_balance via the observer, once in
+     * the runtime sum on top). Removed; the observer is the single
+     * source of truth.
      */
     public function getAllPools(int $accountId): \Illuminate\Database\Eloquent\Collection
     {
-        $pools = CashPool::forAccount($accountId)
+        return CashPool::forAccount($accountId)
             ->with('location:id,name')
             ->orderByRaw("FIELD(type, 'branch_cash', 'head_office_cash', 'bank_account')")
             ->orderBy('name')
             ->get();
-
-        // Get go-live date
-        $goLiveDate = app(CashflowSettingService::class)->getGoLiveDate($accountId);
-        if (!$goLiveDate) {
-            return $pools;
-        }
-
-        // Add inventory sales since go-live to pool balances (display only)
-        $branchPools = $pools->where('type', CashPool::TYPE_BRANCH_CASH)->where('location_id', '!=', null);
-        if ($branchPools->isNotEmpty()) {
-            $locationIds = $branchPools->pluck('location_id')->toArray();
-
-            // Cash inventory sales → branch pools
-            $inventoryCashSales = Order::where('account_id', $accountId)
-                ->where('order_type', 'sale')
-                ->where('payment_mode', 1)
-                ->whereIn('location_id', $locationIds)
-                ->where('created_at', '>=', $goLiveDate . ' 00:00:00')
-                ->selectRaw('location_id, SUM(total_price) as total')
-                ->groupBy('location_id')
-                ->pluck('total', 'location_id');
-
-            // Cash inventory refunds → subtract from branch pools
-            $inventoryCashRefunds = Order::where('account_id', $accountId)
-                ->where('order_type', 'refund')
-                ->where('payment_mode', 1)
-                ->whereIn('location_id', $locationIds)
-                ->where('created_at', '>=', $goLiveDate . ' 00:00:00')
-                ->selectRaw('location_id, SUM(total_price) as total')
-                ->groupBy('location_id')
-                ->pluck('total', 'location_id');
-
-            foreach ($branchPools as $pool) {
-                $salesAmount = (float) ($inventoryCashSales[$pool->location_id] ?? 0);
-                $refundAmount = (float) ($inventoryCashRefunds[$pool->location_id] ?? 0);
-                $pool->cached_balance = (float) $pool->cached_balance + $salesAmount - $refundAmount;
-            }
-        }
-
-        // Non-cash inventory sales (card/bank) → bank account pools
-        $bankPools = $pools->where('type', CashPool::TYPE_BANK_ACCOUNT);
-        if ($bankPools->isNotEmpty()) {
-            $nonCashSales = (float) Order::where('account_id', $accountId)
-                ->where('order_type', 'sale')
-                ->where('payment_mode', '!=', 1)
-                ->where('created_at', '>=', $goLiveDate . ' 00:00:00')
-                ->sum('total_price');
-
-            $nonCashRefunds = (float) Order::where('account_id', $accountId)
-                ->where('order_type', 'refund')
-                ->where('payment_mode', '!=', 1)
-                ->where('created_at', '>=', $goLiveDate . ' 00:00:00')
-                ->sum('total_price');
-
-            $nonCashNet = $nonCashSales - $nonCashRefunds;
-
-            if ($nonCashNet != 0 && $bankPools->count() > 0) {
-                $bankPools->first()->cached_balance = (float) $bankPools->first()->cached_balance + $nonCashNet;
-            }
-        }
-
-        return $pools;
     }
 
     /**
@@ -291,12 +240,11 @@ class PoolService
             }
         }
 
-        // Build cash payment mode IDs
-        $cashModeIds = \App\Models\PaymentModes::where('active', 1)
-            ->get()
-            ->filter(fn($pm) => str_contains(strtolower($pm->name), 'cash'))
-            ->pluck('id')
-            ->toArray();
+        // Cash payment-mode IDs via the centralized classifier
+        // (PaymentModes::cashIds = payment_type OR name-match + safe
+        // fallback). Single source of truth, shared with FDM pool-
+        // balance display — do not re-implement inline.
+        $cashModeIds = \App\Models\PaymentModes::cashIds($accountId);
 
         // Step 1: Reset all pools to opening_balance
         $balances = [];
@@ -458,11 +406,11 @@ class PoolService
             }
         }
 
-        $cashModeIds = \App\Models\PaymentModes::where('active', 1)
-            ->get()
-            ->filter(fn($pm) => str_contains(strtolower($pm->name), 'cash'))
-            ->pluck('id')
-            ->toArray();
+        // Cash payment-mode IDs via the centralized classifier
+        // (PaymentModes::cashIds = payment_type OR name-match + safe
+        // fallback). Single source of truth, shared with FDM pool-
+        // balance display — do not re-implement inline.
+        $cashModeIds = \App\Models\PaymentModes::cashIds($accountId);
 
         // Step 1: Reset all pools to opening_balance
         $balances = [];

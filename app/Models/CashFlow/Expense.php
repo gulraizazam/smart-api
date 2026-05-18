@@ -4,6 +4,8 @@ declare(strict_types=1);
 namespace App\Models\CashFlow;
 
 use App\Enums\ExpenseStatus;
+use App\Models\Concerns\FiltersByDateRange;
+use App\Models\Concerns\GuardsTenantBoundary;
 use App\Models\Locations;
 use App\Models\PaymentModes;
 use App\Models\User;
@@ -19,8 +21,16 @@ class Expense extends Model
 {
     use HasFactory;
     use SoftDeletes;
+    use FiltersByDateRange;
+    use GuardsTenantBoundary;
 
     protected $table = 'expenses';
+
+    /** {@see FiltersByDateRange} — reports/list filter on the expense date. */
+    protected function dateRangeColumn(): string
+    {
+        return 'expense_date';
+    }
 
     protected $fillable = [
         'account_id', 'expense_date', 'amount', 'category_id', 'paid_from_pool_id',
@@ -153,7 +163,7 @@ class Expense extends Model
             ->where('entity_type', 'expense')
             ->where('action', CashflowAuditLog::ACTION_UPDATED)
             ->with('user:id,name')
-            ->latest();
+            ->latestOfMany();
     }
 
     // Scopes
@@ -199,11 +209,6 @@ class Expense extends Model
             return $query->where('is_for_general', 1);
         }
         return $query->where('for_branch_id', $branchId);
-    }
-
-    public function scopeInDateRange($query, $startDate, $endDate): Builder
-    {
-        return $query->whereBetween('expense_date', [$startDate, $endDate]);
     }
 
     // Helpers

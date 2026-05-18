@@ -23,14 +23,18 @@ class StoreTransferRequest extends FormRequest
             ->where('account_id', $accountId)
             ->whereNull('deleted_at');
 
+        // method + reference_no were dropped from the unified create form
+        // 2026-05-15 (method = noise; reference_no had 0% real-world usage).
+        // Attachment is no longer required. Both fields remain accepted in
+        // case any legacy caller still sends them.
         return [
             'transfer_date' => 'required|date|before_or_equal:today|after_or_equal:' . now()->subDays(7)->toDateString(),
             'amount' => 'required|numeric|min:1|max:99999999|integer',
             'from_pool_id' => ['required', $poolAlive],
             'to_pool_id' => ['required', $poolAlive, 'different:from_pool_id'],
-            'method' => 'required|in:physical_cash,bank_deposit',
+            'method' => 'nullable|in:physical_cash,bank_deposit',
             'reference_no' => 'nullable|string|max:100',
-            'attachment_url' => ['required', 'string', 'max:500', new GoogleDriveUrlRule],
+            'attachment_url' => ['nullable', 'string', 'max:500', new GoogleDriveUrlRule],
             'description' => 'nullable|string|max:100',
         ];
     }
@@ -39,7 +43,6 @@ class StoreTransferRequest extends FormRequest
     {
         return [
             'to_pool_id.different' => 'Source and destination pools must be different.',
-            'attachment_url.required' => 'Transfer receipt/attachment is required.',
-                    ];
+        ];
     }
 }

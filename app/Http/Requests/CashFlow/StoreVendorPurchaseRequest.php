@@ -29,7 +29,13 @@ class StoreVendorPurchaseRequest extends FormRequest
             'amount'           => 'required|numeric|min:1|max:99999999|integer',
             'description'      => 'required|string|min:3|max:100',
             'reference_no'     => 'nullable|string|max:100',
-            'attachment_url'   => $isDelivered ? 'required|url|max:500' : 'nullable|url|max:500',
+            // Legacy single Drive URL — retired on the SPA but kept
+            // writable for backward compat. When delivered it's only
+            // required if no uploaded attachments are supplied.
+            'attachment_url'   => $isDelivered ? 'required_without:attachment_ids|nullable|url|max:500' : 'nullable|url|max:500',
+            // R2-backed multi-file uploads (mirror of expense attachments).
+            'attachment_ids'   => 'nullable|array',
+            'attachment_ids.*' => 'integer',
             'transaction_date' => 'required|date|before_or_equal:today|after_or_equal:' . now()->subDays(7)->toDateString(),
             'for_branch_id'    => 'nullable',
             'is_for_general'   => 'nullable|boolean',

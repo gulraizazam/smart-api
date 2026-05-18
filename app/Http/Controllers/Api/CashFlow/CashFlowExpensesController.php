@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api\CashFlow;
 
+use App\Enums\ExpenseStatus;
 use App\Exceptions\CashflowException;
 use App\Helpers\CashflowHelper;
 use App\Http\Controllers\Controller;
@@ -49,7 +50,7 @@ class CashFlowExpensesController extends Controller
 
                 'status', 'branch_id', 'pool_id', 'category_id', 'date_from', 'date_to',
 
-                'flagged', 'voided', 'search',
+                'flagged', 'voided', 'search', 'id',
 
             ]);
 
@@ -168,17 +169,14 @@ class CashFlowExpensesController extends Controller
 
 
             return response()->json([
-
                 'success' => true,
-
                 'data' => $expense,
-
-                'message' => $expense->status === 'approved'
-
+                // $expense->status is cast to the ExpenseStatus enum —
+                // comparing it to a raw string is always false (that bug
+                // made every create say "submitted for approval").
+                'message' => $expense->status === ExpenseStatus::Approved
                     ? 'Expense recorded and auto-approved.'
-
                     : 'Expense submitted for approval.',
-
             ]);
 
         } catch (CashflowException $e) {

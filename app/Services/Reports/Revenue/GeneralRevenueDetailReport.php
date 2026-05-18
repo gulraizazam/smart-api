@@ -288,6 +288,27 @@ class GeneralRevenueDetailReport
             $transtype = Config::get('constants.trans_type.tax_out');
         }
 
+        // Inventory-module sales: a package_advances row written by
+        // OrderService::createOrder / processRefund carries no
+        // package_id / invoice_id / appointment_id and no flags besides
+        // (optionally) is_refund. Label them so they read as "Product
+        // Sale" / "Product Refund" in the report instead of an empty
+        // transaction type. Falls through after the legacy checks above
+        // so any future package_advances shape with one of those
+        // discriminators keeps its existing label.
+        if ($transtype === ''
+            && empty($advance->package_id)
+            && empty($advance->invoice_id)
+            && empty($advance->appointment_id)
+            && $advance->is_adjustment != '1'
+            && $advance->is_cancel != '1'
+            && $advance->is_tax != '1'
+        ) {
+            $transtype = $advance->cash_flow === 'out'
+                ? 'Product Refund'
+                : 'Product Sale';
+        }
+
         return $transtype;
     }
 

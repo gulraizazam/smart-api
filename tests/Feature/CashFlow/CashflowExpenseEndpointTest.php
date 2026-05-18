@@ -246,6 +246,42 @@ class CashflowExpenseEndpointTest extends TestCase
         $this->assertContains($byAmount->id, $ids);
     }
 
+    public function test_expense_data_endpoint_filters_by_explicit_id(): void
+    {
+        // The SPA's "open this exact payment" path (fetchExpenseById →
+        // ?id=<n>&per_page=1) — used by the cash-movements staff ledger
+        // expense rows AND the Reused-receipt jump — needs the `id`
+        // filter to reach the service. With per_page=1 a dropped filter
+        // silently returns the NEWEST expense instead of the requested
+        // one (regression fixed 2026-05-16: controller was stripping
+        // `id` from $request->only()).
+        $pool = CashPool::factory()->withOpeningBalance(50000)->create();
+        $target = Expense::factory()->create([
+            'paid_from_pool_id' => $pool->id,
+            'amount' => 1234,
+            'description' => 'The requested row',
+            'status' => ExpenseStatus::Approved,
+        ]);
+        // Created after the target → wins the default id-desc ordering,
+        // so it would be the (wrong) row returned if `id` were dropped.
+        Expense::factory()->create([
+            'paid_from_pool_id' => $pool->id,
+            'amount' => 999,
+            'description' => 'Newer unrelated row',
+            'status' => ExpenseStatus::Approved,
+        ]);
+
+        $response = $this->getJson('/api/cashflow/expenses/data?' . http_build_query([
+            'id' => $target->id,
+            'per_page' => 1,
+        ]));
+
+        $response->assertStatus(200);
+        $response->assertJsonCount(1, 'data');
+        $ids = collect($response->json('data'))->pluck('id')->all();
+        $this->assertSame([$target->id], array_values($ids));
+    }
+
     /**
      * Phase-1 fix: SPA now sends `pool_id` to the export endpoint, and the
      * export endpoint now reads it. Prior to this change the export silently
@@ -613,5 +649,39 @@ class CashflowExpenseEndpointTest extends TestCase
         // the date rule) is acceptable — the contract this test pins
         // is "no 422 from the date floor".
         $this->assertContains($response->status(), [200, 500]);
+    }
+
+    /**
+     * Regression: a successful create auto-approves (the Pending
+     * workflow is retired), so the response message must say so.
+     * `$expense->status` is an ExpenseStatus enum — the old
+     * `=== 'approved'` string compare was always false, so every
+     * create wrongly said "submitted for approval".
+     */
+    public function test_successful_expense_create_reports_auto_approved(): void
+    {
+        // The store path is gated until the module's go-live date is
+        // configured — set it in the past so create proceeds.
+        app(\App\Services\CashFlow\CashflowSettingService::class)
+            ->set('go_live_date', now()->subDay()->toDateString(), 1);
+
+        $pool = CashPool::factory()->withOpeningBalance(50000)->create(['account_id' => 1]);
+        $category = \App\Models\CashFlow\ExpenseCategory::factory()->create(['account_id' => 1]);
+
+        $response = $this->postJson('/api/cashflow/expenses/store', [
+            'expense_date' => now()->format('Y-m-d'),
+            'amount' => 1000,
+            'category_id' => $category->id,
+            'paid_from_pool_id' => $pool->id,
+            'payment_method_id' => $this->cashPaymentMode->id,
+            'description' => 'Auto-approved on create',
+            'is_for_general' => true,
+            'attachment_url' => 'https://drive.google.com/file/d/abc/view',
+        ]);
+
+        $response->assertStatus(200)->assertJson([
+            'success' => true,
+            'message' => 'Expense recorded and auto-approved.',
+        ]);
     }
 }

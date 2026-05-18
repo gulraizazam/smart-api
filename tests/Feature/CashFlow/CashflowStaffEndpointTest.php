@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\CashFlow;
 
+use App\Models\CashFlow\StaffTransfer;
 use App\Models\User;
 use Tests\Concerns\RefreshTestDatabase as RefreshDatabase;
 use Tests\Concerns\UsesFinancialFixtures;
@@ -232,9 +233,11 @@ class CashflowStaffEndpointTest extends TestCase
             'is_advance_eligible' => 1,
         ]);
 
-        // Two advances: one inside the window, one well before it. Insert
-        // via DB::table to keep the explicit `created_at` — Eloquent's
-        // timestamp auto-fill would otherwise rewrite both to "now".
+        // The summary windows by the MOVEMENT date (advance_date), not
+        // created_at. Cross the two so the test proves it: the in-window
+        // row is backdated in created_at (out of window), the
+        // out-of-window row has an in-window created_at — only
+        // advance_date must decide membership.
         \Illuminate\Support\Facades\DB::table('staff_advances')->insert([
             [
                 'account_id' => $accountId,
@@ -243,8 +246,9 @@ class CashflowStaffEndpointTest extends TestCase
                 'amount' => 500,
                 'description' => 'inside window',
                 'created_by' => $admin->id,
-                'created_at' => '2026-05-10 12:00:00',
-                'updated_at' => '2026-05-10 12:00:00',
+                'advance_date' => '2026-05-10',
+                'created_at' => '2026-04-01 12:00:00',
+                'updated_at' => '2026-04-01 12:00:00',
             ],
             [
                 'account_id' => $accountId,
@@ -253,8 +257,9 @@ class CashflowStaffEndpointTest extends TestCase
                 'amount' => 9000,
                 'description' => 'before window',
                 'created_by' => $admin->id,
-                'created_at' => '2026-04-01 12:00:00',
-                'updated_at' => '2026-04-01 12:00:00',
+                'advance_date' => '2026-04-01',
+                'created_at' => '2026-05-10 12:00:00',
+                'updated_at' => '2026-05-10 12:00:00',
             ],
         ]);
 
@@ -269,5 +274,59 @@ class CashflowStaffEndpointTest extends TestCase
         $this->assertNotNull($staffRow, 'Expected staff row in summary.');
         $this->assertEqualsWithDelta(500.0, (float) $staffRow['total_advances'], 0.01,
             'Only the in-window advance should be summed.');
+    }
+
+    /**
+     * Regression: the unified void endpoint must authorize handovers via
+     * the dedicated `cashflow_staff_transfer_void` slug. canVoidMovement
+     * previously had no `staff_transfer` case (default => false), so a
+     * handover was un-voidable for anyone without `cashflow_manage` —
+     * a hard 403 on the only UI path.
+     */
+    public function test_voiding_a_handover_requires_staff_transfer_void_slug_not_manage(): void
+    {
+        $from = User::factory()->create(['account_id' => 1, 'is_advance_eligible' => true]);
+        $to = User::factory()->create(['account_id' => 1, 'is_advance_eligible' => true]);
+        $handover = StaffTransfer::create([
+            'account_id' => 1,
+            'from_user_id' => $from->id,
+            'to_user_id' => $to->id,
+            'amount' => 100,
+            'transfer_date' => now()->toDateString(),
+            'created_by' => $from->id,
+        ]);
+
+        // A NON-super-admin (the seeded admin is Super-Admin and bypasses
+        // every Gate via AppServiceProvider::Gate::before, so it can't
+        // exercise the per-kind void map). Give it just the movements
+        // group-view slug — enough to pass the route middleware and
+        // reach canVoidMovement, but NOT manage / staff_transfer_void.
+        $registrar = app(\Spatie\Permission\PermissionRegistrar::class);
+        $registrar->forgetCachedPermissions();
+        $this->createPermission('cashflow_staff_advance_view');
+        $this->createPermission('cashflow_staff_transfer_void');
+        $role = $this->createRole('handover-voider-' . uniqid());
+        $role->givePermissionTo('cashflow_staff_advance_view');
+        $user = User::factory()->create(['account_id' => 1]);
+        $user->assignRole($role);
+        $registrar->forgetCachedPermissions();
+        $this->actingAs($user);
+
+        // No staff_transfer_void, no manage → 403 (the bug: there was no
+        // staff_transfer case in canVoidMovement, default => false).
+        $denied = $this->postJson("/api/cashflow/movements/staff_transfer/{$handover->id}/void", [
+            'void_reason' => 'Reversing this handover',
+        ]);
+        $this->assertSame(403, $denied->status());
+
+        // Grant only the dedicated slug (still NOT cashflow_manage) →
+        // the gate now passes (no longer 403; any non-auth domain
+        // outcome is acceptable for this assertion).
+        $role->givePermissionTo('cashflow_staff_transfer_void');
+        $registrar->forgetCachedPermissions();
+        $allowed = $this->postJson("/api/cashflow/movements/staff_transfer/{$handover->id}/void", [
+            'void_reason' => 'Reversing this handover',
+        ]);
+        $this->assertNotSame(403, $allowed->status());
     }
 }

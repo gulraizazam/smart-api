@@ -19,8 +19,8 @@ use Illuminate\Support\Facades\DB;
  *   - Source staff's outstanding decreases by amount; destination's
  *     increases by the same amount. Total outstanding across the tenant
  *     is conserved.
- *   - Period-lock guard runs against today (no `transfer_date` column —
- *     handovers are physical, can't be backdated).
+ *   - Period-lock guard runs against `transfer_date` (the persisted
+ *     movement date; backdatable within the window) on create and void.
  *   - No eligibility check (the cash already exists outside the pool
  *     system once it's in a staff member's hand). No cumulative threshold
  *     either — total exposure doesn't grow.
@@ -51,12 +51,16 @@ class StaffTransferService
         $fromUser = User::where('account_id', $accountId)->findOrFail($fromUserId);
         $toUser = User::where('account_id', $accountId)->findOrFail($toUserId);
 
-        $today = now()->toDateString();
-        if (CashflowHelper::isDateInLockedPeriod($today, $accountId)) {
-            throw CashflowException::periodLocked(
-                (int) now()->month,
-                (int) now()->year,
-            );
+        // `transfer_date` (added 2026-05-15) — defaults to today; up to
+        // 7 days of backdating is allowed by the SPA form. Period-lock
+        // runs against the chosen date so a backdated handover into a
+        // closed month is rejected the same as a same-day write would be.
+        $transferDate = !empty($data['transfer_date'])
+            ? (string) $data['transfer_date']
+            : now()->toDateString();
+        if (CashflowHelper::isDateInLockedPeriod($transferDate, $accountId)) {
+            $d = \Illuminate\Support\Carbon::parse($transferDate);
+            throw CashflowException::periodLocked((int) $d->month, (int) $d->year);
         }
 
         // Source must have enough outstanding to give away. Without this
@@ -69,12 +73,13 @@ class StaffTransferService
             );
         }
 
-        return DB::transaction(function () use ($accountId, $fromUserId, $toUserId, $amount, $data) {
+        return DB::transaction(function () use ($accountId, $fromUserId, $toUserId, $amount, $data, $transferDate) {
             $transfer = StaffTransfer::create([
                 'account_id' => $accountId,
                 'from_user_id' => $fromUserId,
                 'to_user_id' => $toUserId,
                 'amount' => $amount,
+                'transfer_date' => $transferDate,
                 'description' => $data['description'] ?? null,
                 'created_by' => Auth::id(),
             ]);
@@ -99,13 +104,16 @@ class StaffTransferService
             throw new CashflowException('This handover is already voided.');
         }
 
-        // Period-lock guard — voiding rewinds both ledger sides, which counts
-        // as a write against the original creation month.
-        $createdAt = $transfer->created_at->format('Y-m-d');
-        if (CashflowHelper::isDateInLockedPeriod($createdAt, $accountId)) {
+        // Period-lock guard — voiding rewinds both ledger sides, which
+        // counts as a write against the handover's movement month.
+        // Guard on transfer_date, not created_at (a backdated handover
+        // can sit in a now-locked month); fall back to created_at only
+        // for pre-2026-05-15 NULL stragglers.
+        $movementDate = $transfer->transfer_date ?? $transfer->created_at;
+        if (CashflowHelper::isDateInLockedPeriod($movementDate->format('Y-m-d'), $accountId)) {
             throw CashflowException::periodLocked(
-                (int) $transfer->created_at->month,
-                (int) $transfer->created_at->year,
+                (int) $movementDate->month,
+                (int) $movementDate->year,
             );
         }
 

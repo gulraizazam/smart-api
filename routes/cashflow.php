@@ -5,9 +5,12 @@ use App\Http\Controllers\Api\CashFlow\CashFlowPoolsController;
 use App\Http\Controllers\Api\CashFlow\CashFlowCategoriesController;
 use App\Http\Controllers\Api\CashFlow\CashFlowExpensesController;
 use App\Http\Controllers\Api\CashFlow\ExpenseAttachmentsController;
+use App\Http\Controllers\Api\CashFlow\CashTransferAttachmentsController;
+use App\Http\Controllers\Api\CashFlow\MovementAttachmentsController;
 use App\Http\Controllers\Api\CashFlow\CashFlowMovementsController;
 use App\Http\Controllers\Api\CashFlow\CashFlowTransfersController;
 use App\Http\Controllers\Api\CashFlow\CashFlowVendorsController;
+use App\Http\Controllers\Api\CashFlow\VendorTransactionAttachmentsController;
 use App\Http\Controllers\Api\CashFlow\CashFlowStaffController;
 use App\Http\Controllers\Api\CashFlow\CashFlowDashboardController;
 use App\Http\Controllers\Api\CashFlow\CashFlowReportsController;
@@ -125,11 +128,32 @@ Route::prefix('cashflow')->name('cashflow.')->group(function () {
         Route::get('data', [CashFlowMovementsController::class, 'movementsData'])->name('data');
         Route::get('form-data', [CashFlowMovementsController::class, 'formData'])->name('form_data');
         Route::post('store', [CashFlowMovementsController::class, 'store'])
-            ->middleware('idempotent')
+            ->middleware(['throttle:60,1', 'idempotent'])
             ->name('store');
-        Route::post('{kind}/{id}/void', [CashFlowMovementsController::class, 'void'])->name('void');
+        Route::post('{kind}/{id}/void', [CashFlowMovementsController::class, 'void'])->middleware('throttle:60,1')->name('void');
         Route::get('{kind}/{id}/audit', [CashFlowMovementsController::class, 'audit'])->name('audit');
         Route::get('pool/{poolId}/ledger', [CashFlowMovementsController::class, 'poolLedger'])->name('pool_ledger');
+
+        // Cash transfer attachments (pool→pool only). Same R2 bucket as
+        // expense attachments; controller's FormRequest gates by the
+        // `cashflow_transfer_create` slug. Per-method checks re-verify
+        // for signed-url + destroy.
+        Route::post('attachments', [CashTransferAttachmentsController::class, 'store'])
+            ->name('attachments.store');
+        Route::get('attachments/{id}/signed-url', [CashTransferAttachmentsController::class, 'signedUrl'])
+            ->name('attachments.signed_url');
+        Route::delete('attachments/{id}', [CashTransferAttachmentsController::class, 'destroy'])
+            ->name('attachments.destroy');
+
+        // Staff-side attachments (advance / return / staff handover).
+        // Separate surface from the pool-side `attachments` endpoint
+        // above — different table, different permission gates.
+        Route::post('staff-attachments', [MovementAttachmentsController::class, 'store'])
+            ->name('staff_attachments.store');
+        Route::get('staff-attachments/{id}/signed-url', [MovementAttachmentsController::class, 'signedUrl'])
+            ->name('staff_attachments.signed_url');
+        Route::delete('staff-attachments/{id}', [MovementAttachmentsController::class, 'destroy'])
+            ->name('staff_attachments.destroy');
     });
 
     // Transfers — defense-in-depth: a route-level gate that fails closed if a
@@ -138,10 +162,10 @@ Route::prefix('cashflow')->name('cashflow.')->group(function () {
     Route::prefix('transfers')->name('transfers.')->middleware('permission:cashflow_transfer_view|cashflow_manage')->group(function () {
         Route::get('data', [CashFlowTransfersController::class, 'transfersData'])->name('data');
         Route::post('store', [CashFlowTransfersController::class, 'transfersStore'])
-            ->middleware('idempotent')
+            ->middleware(['throttle:60,1', 'idempotent'])
             ->name('store');
-        Route::post('{id}/void', [CashFlowTransfersController::class, 'transfersVoid'])->name('void');
-        Route::post('{id}/edit', [CashFlowTransfersController::class, 'transfersEdit'])->name('edit');
+        Route::post('{id}/void', [CashFlowTransfersController::class, 'transfersVoid'])->middleware('throttle:60,1')->name('void');
+        Route::post('{id}/edit', [CashFlowTransfersController::class, 'transfersEdit'])->middleware('throttle:60,1')->name('edit');
         Route::get('{id}/audit', [CashFlowTransfersController::class, 'transfersAudit'])->name('audit');
     });
 
@@ -152,6 +176,8 @@ Route::prefix('cashflow')->name('cashflow.')->group(function () {
     Route::prefix('vendors')->name('vendors.')->middleware('permission:cashflow_vendor_view|cashflow_vendor_manage|cashflow_manage')->group(function () {
         Route::get('data', [CashFlowVendorsController::class, 'vendorsData'])->name('data');
         Route::get('overview', [CashFlowVendorsController::class, 'vendorsOverview'])->name('overview');
+        Route::get('transactions', [CashFlowVendorsController::class, 'vendorsTransactions'])->name('transactions');
+        Route::get('transactions/export', [CashFlowVendorsController::class, 'vendorsTransactionsExport'])->name('transactions.export');
         Route::post('store', [CashFlowVendorsController::class, 'vendorsStore'])->name('store');
         Route::post('{id}/update', [CashFlowVendorsController::class, 'vendorsUpdate'])->name('update');
         Route::post('{id}/toggle', [CashFlowVendorsController::class, 'vendorsToggle'])->name('toggle');
@@ -162,6 +188,18 @@ Route::prefix('cashflow')->name('cashflow.')->group(function () {
         Route::post('{id}/transactions/{txId}/delete', [CashFlowVendorsController::class, 'vendorsTransactionDelete'])->name('transaction.delete');
         Route::get('{id}/transactions/{txId}/audit', [CashFlowVendorsController::class, 'vendorsTransactionAudit'])->name('transaction.audit');
         Route::get('{id}/ledger/export', [CashFlowVendorsController::class, 'vendorsLedgerExport'])->name('ledger.export');
+
+        // Vendor transaction attachments — exact mirror of the expense
+        // attachment endpoints; same private `invoices` R2 bucket. The
+        // FormRequest gates by `cashflow_vendor_transaction`; per-method
+        // checks re-verify for signed-url + destroy. Literal `attachments`
+        // segment never collides with the numeric `{id}/...` routes above.
+        Route::post('attachments', [VendorTransactionAttachmentsController::class, 'store'])
+            ->name('attachments.store');
+        Route::get('attachments/{id}/signed-url', [VendorTransactionAttachmentsController::class, 'signedUrl'])
+            ->name('attachments.signed_url');
+        Route::delete('attachments/{id}', [VendorTransactionAttachmentsController::class, 'destroy'])
+            ->name('attachments.destroy');
     });
 
     // Vendor Requests — defense-in-depth (suggestion store + approve/dismiss).
@@ -185,21 +223,21 @@ Route::prefix('cashflow')->name('cashflow.')->group(function () {
     });
 
     // Staff Advances & Returns
-    Route::prefix('staff')->name('staff.')->group(function () {
+    Route::prefix('staff')->name('staff.')->middleware('permission:cashflow_staff_advance_view|cashflow_staff_advance|cashflow_staff_advance_create|cashflow_staff_advance_edit|cashflow_staff_advance_void|cashflow_staff_return_create|cashflow_staff_return_void|cashflow_staff_transfer_create|cashflow_staff_transfer_void|cashflow_manage')->group(function () {
         Route::get('summary', [CashFlowStaffController::class, 'staffSummary'])->name('summary');
         Route::get('recent-activity', [CashFlowStaffController::class, 'staffRecentActivity'])->name('recent_activity');
         Route::get('{userId}/ledger', [CashFlowStaffController::class, 'staffLedger'])->name('ledger');
         Route::get('eligible', [CashFlowStaffController::class, 'staffEligible'])->name('eligible');
         Route::post('advance/store', [CashFlowStaffController::class, 'staffAdvanceStore'])
-            ->middleware('idempotent')
+            ->middleware(['throttle:60,1', 'idempotent'])
             ->name('advance.store');
-        Route::post('advance/{id}/void', [CashFlowStaffController::class, 'staffAdvanceVoid'])->name('advance.void');
-        Route::post('advance/{id}/update', [CashFlowStaffController::class, 'staffAdvanceUpdate'])->name('advance.update');
+        Route::post('advance/{id}/void', [CashFlowStaffController::class, 'staffAdvanceVoid'])->middleware('throttle:60,1')->name('advance.void');
+        Route::post('advance/{id}/update', [CashFlowStaffController::class, 'staffAdvanceUpdate'])->middleware('throttle:60,1')->name('advance.update');
         Route::get('advance/{id}/audit', [CashFlowStaffController::class, 'staffAdvanceAudit'])->name('advance.audit');
         Route::post('return/store', [CashFlowStaffController::class, 'staffReturnStore'])
-            ->middleware('idempotent')
+            ->middleware(['throttle:60,1', 'idempotent'])
             ->name('return.store');
-        Route::post('return/{id}/void', [CashFlowStaffController::class, 'staffReturnVoid'])->name('return.void');
+        Route::post('return/{id}/void', [CashFlowStaffController::class, 'staffReturnVoid'])->middleware('throttle:60,1')->name('return.void');
         Route::get('return/{id}/audit', [CashFlowStaffController::class, 'staffReturnAudit'])->name('return.audit');
     });
 

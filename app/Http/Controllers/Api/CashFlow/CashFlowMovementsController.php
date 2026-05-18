@@ -225,6 +225,7 @@ class CashFlowMovementsController extends Controller
             MovementService::KIND_TRANSFER => Gate::allows('cashflow_transfer_void'),
             MovementService::KIND_STAFF_ADVANCE => Gate::allows('cashflow_staff_advance_void'),
             MovementService::KIND_STAFF_RETURN => Gate::allows('cashflow_staff_return_void'),
+            MovementService::KIND_STAFF_TRANSFER => Gate::allows('cashflow_staff_transfer_void'),
             default => false,
         };
     }
