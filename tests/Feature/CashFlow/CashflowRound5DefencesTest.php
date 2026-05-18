@@ -200,24 +200,32 @@ class CashflowRound5DefencesTest extends TestCase
             'updated_at' => now(),
         ]);
         $tenantBLocation = Locations::factory()->create(['account_id' => 2]);
-        $tenantBPool = CashPool::factory()->create([
-            'account_id' => 2,
-            'location_id' => $tenantBLocation->id,
-        ]);
-        $tenantBCategory = ExpenseCategory::factory()->create(['account_id' => 2]);
-        $tenantBExpense = Expense::create([
-            'account_id' => 2,
-            'expense_date' => now()->format('Y-m-d'),
-            'amount' => 50,
-            'category_id' => $tenantBCategory->id,
-            'paid_from_pool_id' => $tenantBPool->id,
-            'payment_method_id' => 1,
-            'description' => 'tenant B expense',
-            'status' => ExpenseStatus::Approved,
-            'is_flagged' => 0,
-            'created_by' => 1,
-            'is_for_general' => 1,
-        ]);
+        // GuardsTenantBoundary now forces account_id to the auth user's
+        // account on create, so a cross-tenant fixture can't be made via
+        // a normal create() (that hardening is the point). Fabricate the
+        // malicious foreign-tenant row with events suppressed so the
+        // downstream validator still gets a genuinely cross-tenant id.
+        [$tenantBPool, $tenantBCategory, $tenantBExpense] = \Illuminate\Database\Eloquent\Model::withoutEvents(function () use ($tenantBLocation) {
+            $pool = CashPool::factory()->create([
+                'account_id' => 2,
+                'location_id' => $tenantBLocation->id,
+            ]);
+            $cat = ExpenseCategory::factory()->create(['account_id' => 2]);
+            $exp = Expense::create([
+                'account_id' => 2,
+                'expense_date' => now()->format('Y-m-d'),
+                'amount' => 50,
+                'category_id' => $cat->id,
+                'paid_from_pool_id' => $pool->id,
+                'payment_method_id' => 1,
+                'description' => 'tenant B expense',
+                'status' => ExpenseStatus::Approved,
+                'is_flagged' => 0,
+                'created_by' => 1,
+                'is_for_general' => 1,
+            ]);
+            return [$pool, $cat, $exp];
+        });
 
         $fixture = $this->makeUploadedPdf();
 

@@ -59,7 +59,12 @@ class CashflowLookupsController extends Controller
                 ->sorted()
                 ->get(['id', 'name']);
 
-            return response()->json(['success' => true, 'data' => ['vendor_categories' => $categories]]);
+            return response()->json(['success' => true, 'data' => [
+                'vendor_categories' => $categories,
+                // Lets the purchase/deliver dialogs pre-empt a locked-period
+                // rejection instead of surfacing a raw server error.
+                'has_period_locks' => \App\Models\CashFlow\PeriodLock::where('account_id', $accountId)->exists(),
+            ]]);
         } catch (\Exception $e) {
             \Illuminate\Support\Facades\Log::error($e->getMessage(), ['file' => $e->getFile(), 'line' => $e->getLine()]);
             return response()->json(['success' => false, 'message' => 'An error occurred. Please try again.'], 500);

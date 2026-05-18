@@ -39,7 +39,7 @@ CREATE TABLE `activities` (
   `rescheduled_by` bigint(20) unsigned DEFAULT NULL,
   `user_id` int(10) unsigned DEFAULT NULL,
   `invoice_id` int(10) unsigned DEFAULT NULL,
-  `amount` decimal(12,2) DEFAULT NULL,
+  `amount` varchar(300) DEFAULT NULL,
   `location` varchar(100) DEFAULT NULL,
   `centre_id` int(10) unsigned DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
@@ -51,12 +51,34 @@ CREATE TABLE `activities` (
   `account_id` int(10) unsigned DEFAULT NULL,
   `package_id` int(10) unsigned DEFAULT NULL,
   PRIMARY KEY (`id`),
+  KEY `idx_activities_created_at` (`created_at`),
+  KEY `idx_activities_account_created` (`account_id`,`created_at`),
+  KEY `idx_activities_account_type` (`account_id`,`activity_type`),
+  KEY `fk_activities_lead` (`lead_id`),
+  KEY `idx_activities_patient` (`patient_id`),
+  KEY `idx_activities_service` (`service_id`),
+  KEY `idx_activities_appointment` (`appointment_id`),
+  KEY `idx_activities_centre` (`centre_id`),
+  KEY `idx_activities_invoice` (`invoice_id`),
+  KEY `idx_activities_package` (`package_id`),
+  KEY `fk_activities_lead_status_id` (`lead_status_id`),
+  KEY `fk_activities_user_id` (`user_id`),
   KEY `idx_activities_acct_created` (`account_id`,`created_at`),
   KEY `idx_activities_acct_patient_id_desc` (`account_id`,`patient_id`,`id`),
   KEY `idx_activities_acct_lead_id_desc` (`account_id`,`lead_id`,`id`),
   KEY `idx_activities_acct_createdby_created` (`account_id`,`created_by`,`created_at`),
   KEY `idx_activities_acct_type_created` (`account_id`,`activity_type`,`created_at`),
-  KEY `idx_activities_tier_created` (`log_tier`,`created_at`)
+  KEY `idx_activities_tier_created` (`log_tier`,`created_at`),
+  CONSTRAINT `fk_activities_account_id` FOREIGN KEY (`account_id`) REFERENCES `accounts` (`id`),
+  CONSTRAINT `fk_activities_appointment_id` FOREIGN KEY (`appointment_id`) REFERENCES `appointments` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_activities_centre_id` FOREIGN KEY (`centre_id`) REFERENCES `locations` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_activities_invoice_id` FOREIGN KEY (`invoice_id`) REFERENCES `invoices` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_activities_lead` FOREIGN KEY (`lead_id`) REFERENCES `leads` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_activities_lead_status_id` FOREIGN KEY (`lead_status_id`) REFERENCES `lead_statuses` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_activities_package_id` FOREIGN KEY (`package_id`) REFERENCES `packages` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_activities_patient_id` FOREIGN KEY (`patient_id`) REFERENCES `users` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_activities_service_id` FOREIGN KEY (`service_id`) REFERENCES `services` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_activities_user_id` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `activities_archive`;
@@ -104,7 +126,12 @@ CREATE TABLE `appointment_comments` (
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   `deleted_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `appointment_comments_appointment_id_foreign` (`appointment_id`),
+  KEY `appointment_comments_created_by_foreign` (`created_by`),
+  KEY `idx_appt_comments_appt_created` (`appointment_id`,`created_at`),
+  CONSTRAINT `fk_ac_appointment` FOREIGN KEY (`appointment_id`) REFERENCES `appointments` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_ac_creator` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `appointment_statuses`;
@@ -126,7 +153,13 @@ CREATE TABLE `appointment_statuses` (
   `updated_at` timestamp NULL DEFAULT NULL,
   `deleted_at` timestamp NULL DEFAULT NULL,
   `account_id` int(10) unsigned NOT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `appointment_statuses_account` (`account_id`),
+  KEY `appointment_statuses_appointment_type` (`appointment_type_id`),
+  KEY `fk_appointment_statuses_parent_id` (`parent_id`),
+  CONSTRAINT `fk_appointment_statuses_account_id` FOREIGN KEY (`account_id`) REFERENCES `accounts` (`id`),
+  CONSTRAINT `fk_appointment_statuses_appointment_type_id` FOREIGN KEY (`appointment_type_id`) REFERENCES `appointment_types` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_appointment_statuses_parent_id` FOREIGN KEY (`parent_id`) REFERENCES `appointment_statuses` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `appointment_types`;
@@ -139,7 +172,9 @@ CREATE TABLE `appointment_types` (
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   `deleted_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `appointment_types_account_id_foreign` (`account_id`),
+  CONSTRAINT `fk_appointment_types_account_id` FOREIGN KEY (`account_id`) REFERENCES `accounts` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `appointmentimages`;
@@ -152,7 +187,9 @@ CREATE TABLE `appointmentimages` (
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   `deleted_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `appointmentimages_appointment_id_foreign` (`appointment_id`),
+  CONSTRAINT `appointmentimages_appointment_id_foreign` FOREIGN KEY (`appointment_id`) REFERENCES `appointments` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `appointments`;
@@ -166,6 +203,7 @@ CREATE TABLE `appointments` (
   `first_scheduled_date` date DEFAULT NULL,
   `first_scheduled_time` time DEFAULT NULL,
   `first_scheduled_count` tinyint(1) NOT NULL DEFAULT 0,
+  `rescheduled_count` int(10) unsigned NOT NULL DEFAULT 0,
   `reason` varchar(500) DEFAULT NULL,
   `send_message` tinyint(1) NOT NULL DEFAULT 0,
   `lead_id` int(10) unsigned NOT NULL,
@@ -193,8 +231,9 @@ CREATE TABLE `appointments` (
   `updated_by` int(10) unsigned DEFAULT NULL,
   `converted_by` int(10) unsigned DEFAULT NULL,
   `deleted_by` int(10) unsigned DEFAULT NULL,
-  `active` tinyint(1) unsigned NOT NULL DEFAULT 1,
+  `active` tinyint(3) unsigned NOT NULL DEFAULT 1,
   `msg_count` tinyint(3) unsigned NOT NULL DEFAULT 0,
+  `sms_last_attempt_at` timestamp NULL DEFAULT NULL,
   `counter` int(10) unsigned DEFAULT 0,
   `consultancy_type` enum('in_person','treatment','virtual') DEFAULT NULL,
   `coming_from` varchar(20) DEFAULT NULL,
@@ -203,7 +242,33 @@ CREATE TABLE `appointments` (
   `deleted_at` timestamp NULL DEFAULT NULL,
   `account_id` int(10) unsigned NOT NULL,
   `is_unscheduled` tinyint(1) NOT NULL DEFAULT 0,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `appointments_lead_id_foreign` (`lead_id`),
+  KEY `appointments_doctor_id_foreign` (`doctor_id`),
+  KEY `appointments_region_id_foreign` (`region_id`),
+  KEY `appointments_city_id_foreign` (`city_id`),
+  KEY `appointments_service_id_foreign` (`service_id`),
+  KEY `appointments_cancellation_reason_id_foreign` (`cancellation_reason_id`),
+  KEY `appointments_created_by_foreign` (`created_by`),
+  KEY `appointments_updated_by_foreign` (`updated_by`),
+  KEY `appointments_converted_by_foreign` (`converted_by`),
+  KEY `appointments_resource_has_rota_day` (`resource_has_rota_day_id`),
+  KEY `appointments_resource_has_rota_day_machine` (`resource_has_rota_day_id_for_machine`),
+  KEY `appointments_appointment_type` (`appointment_type_id`),
+  KEY `appointments_resource_id` (`resource_id`),
+  KEY `idx_scheduled_date_time` (`scheduled_date`,`scheduled_time`),
+  KEY `idx_appointment_status_type_location` (`appointment_status_id`,`appointment_type_id`,`location_id`),
+  KEY `idx_appointments_account_deleted` (`account_id`,`deleted_at`),
+  KEY `idx_appointments_patient_deleted` (`patient_id`,`deleted_at`),
+  KEY `idx_appointments_location_deleted` (`location_id`,`deleted_at`),
+  KEY `idx_appointments_created_at` (`created_at`),
+  KEY `idx_appt_account_type` (`account_id`,`appointment_type_id`),
+  KEY `idx_appt_account_basestatus` (`account_id`,`base_appointment_status_id`),
+  KEY `idx_appt_date_type_account` (`scheduled_date`,`appointment_type_id`,`account_id`),
+  KEY `idx_appt_patient_type_status` (`patient_id`,`appointment_type_id`,`base_appointment_status_id`),
+  KEY `idx_appt_type_patient_id` (`appointment_type_id`,`patient_id`,`id`),
+  KEY `idx_appointments_sms_last_attempt_at` (`sms_last_attempt_at`),
+  CONSTRAINT `fk_appointments_account_id` FOREIGN KEY (`account_id`) REFERENCES `accounts` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `appointments_daily_stats`;
@@ -217,7 +282,18 @@ CREATE TABLE `appointments_daily_stats` (
   `cron_current_date` date DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uniq_ads_appointment_date` (`appointment_id`,`scheduled_date`),
+  KEY `user_id_foreign` (`user_id`),
+  KEY `centre_id_foreign` (`centre_id`),
+  KEY `appointment_id_foreign_key` (`appointment_id`),
+  KEY `appointment_status_id_foreign_key` (`appointment_status_id`),
+  KEY `idx_ads_scheduled_date` (`scheduled_date`),
+  KEY `idx_ads_centre_date` (`centre_id`,`scheduled_date`),
+  CONSTRAINT `fk_appointments_daily_stats_appointment_id` FOREIGN KEY (`appointment_id`) REFERENCES `appointments` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_appointments_daily_stats_appointment_status_id` FOREIGN KEY (`appointment_status_id`) REFERENCES `appointment_statuses` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_appointments_daily_stats_centre_id` FOREIGN KEY (`centre_id`) REFERENCES `locations` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_appointments_daily_stats_user_id` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `audit_trail_actions`;
@@ -235,10 +311,11 @@ CREATE TABLE `audit_trail_changes` (
   `audit_trail_id` int(10) unsigned NOT NULL,
   `field_name` varchar(64) DEFAULT NULL,
   `field_before` varchar(8000) DEFAULT NULL,
-  `field_after` varchar(8000) DEFAULT NULL,
+  `field_after` text NOT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`,`created_at`)
+  PRIMARY KEY (`id`,`created_at`),
+  KEY `audit_trail_changes_audit_trail_id_foreign` (`audit_trail_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
  PARTITION BY RANGE (unix_timestamp(`created_at`))
 (PARTITION `p2024_q3` VALUES LESS THAN (1727722800) ENGINE = InnoDB,
@@ -255,14 +332,15 @@ CREATE TABLE `audit_trail_changes` (
 
 DROP TABLE IF EXISTS `audit_trail_changes_archive`;
 CREATE TABLE `audit_trail_changes_archive` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `audit_trail_id` int(10) unsigned NOT NULL,
+  `id` int(10) unsigned NOT NULL,
+  `audit_trail_id` bigint(20) unsigned NOT NULL,
   `field_name` varchar(500) NOT NULL,
   `field_before` text DEFAULT NULL,
   `field_after` text DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `idx_archive_changes_trail` (`audit_trail_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `audit_trail_tables`;
@@ -285,20 +363,26 @@ CREATE TABLE `audit_trails` (
   `parent_id` int(10) unsigned DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `audit_trails_user_id_foreign` (`user_id`),
+  KEY `idx_audit_trails_parent_id` (`parent_id`,`id`),
+  KEY `idx_audit_trails_table_action` (`audit_trail_table_name`,`audit_trail_action_name`),
+  KEY `idx_audit_trails_created_at` (`created_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `audit_trails_archive`;
 CREATE TABLE `audit_trails_archive` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `id` int(10) unsigned NOT NULL,
   `audit_trail_action_name` int(10) unsigned NOT NULL,
   `audit_trail_table_name` int(10) unsigned NOT NULL,
-  `table_record_id` int(10) unsigned NOT NULL,
-  `user_id` int(10) unsigned NOT NULL,
-  `parent_id` int(10) unsigned DEFAULT NULL,
+  `table_record_id` bigint(20) unsigned NOT NULL,
+  `user_id` bigint(20) unsigned NOT NULL,
+  `parent_id` bigint(20) unsigned DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `idx_archive_trails_user` (`user_id`),
+  KEY `idx_archive_trails_created` (`created_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `base_discount_services`;
@@ -307,12 +391,18 @@ CREATE TABLE `base_discount_services` (
   `discount_id` int(10) unsigned DEFAULT NULL,
   `service_price` decimal(12,2) DEFAULT NULL,
   `sessions` int(11) DEFAULT NULL,
+  `is_category` tinyint(3) unsigned NOT NULL DEFAULT 0,
   `service_id` int(10) unsigned DEFAULT NULL,
   `bundle_id` int(10) unsigned DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `is_category` tinyint(1) NOT NULL DEFAULT 0,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `fk_base_disc_svc_service` (`service_id`),
+  KEY `fk_base_disc_svc_discount` (`discount_id`),
+  KEY `fk_base_discount_services_bundle_id` (`bundle_id`),
+  CONSTRAINT `fk_base_disc_svc_discount` FOREIGN KEY (`discount_id`) REFERENCES `discounts` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_base_disc_svc_service` FOREIGN KEY (`service_id`) REFERENCES `services` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_base_discount_services_bundle_id` FOREIGN KEY (`bundle_id`) REFERENCES `bundles` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `brands`;
@@ -323,7 +413,9 @@ CREATE TABLE `brands` (
   `status` tinyint(4) NOT NULL DEFAULT 1,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `fk_brands_account_id` (`account_id`),
+  CONSTRAINT `fk_brands_account_id` FOREIGN KEY (`account_id`) REFERENCES `accounts` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `bundle_has_services`;
@@ -339,7 +431,12 @@ CREATE TABLE `bundle_has_services` (
   `discount_type` varchar(100) DEFAULT NULL,
   `discount_amount` decimal(12,2) DEFAULT NULL,
   `is_category` tinyint(1) NOT NULL DEFAULT 0,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `bundle_has_services_service_id_foreign` (`service_id`),
+  KEY `idx_bhs_bundle_id` (`bundle_id`),
+  KEY `idx_bhs_service_id` (`service_id`),
+  CONSTRAINT `fk_bhs_bundle` FOREIGN KEY (`bundle_id`) REFERENCES `bundles` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_bhs_service` FOREIGN KEY (`service_id`) REFERENCES `services` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `bundle_services_price_history`;
@@ -359,7 +456,14 @@ CREATE TABLE `bundle_services_price_history` (
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   `deleted_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `bundle_services_price_history_bundle_id_foreign` (`bundle_id`),
+  KEY `bundle_services_price_history_service_id_foreign` (`service_id`),
+  KEY `bundle_services_price_history_created_by_foreign` (`created_by`),
+  KEY `bundle_services_price_history_updated_by_foreign` (`updated_by`),
+  KEY `bundle_services_price_history_account_id_foreign` (`account_id`),
+  CONSTRAINT `fk_bundle_services_price_history_account_id` FOREIGN KEY (`account_id`) REFERENCES `accounts` (`id`),
+  CONSTRAINT `fk_bundle_services_price_history_bundle_id` FOREIGN KEY (`bundle_id`) REFERENCES `bundles` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `bundles`;
@@ -385,7 +489,12 @@ CREATE TABLE `bundles` (
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   `deleted_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `bundles_created_by_foreign` (`created_by`),
+  KEY `bundles_updated_by_foreign` (`updated_by`),
+  KEY `bundles_account_id_foreign` (`account_id`),
+  KEY `idx_bundles_account_active_type` (`account_id`,`active`,`type`),
+  CONSTRAINT `fk_bundles_account_id` FOREIGN KEY (`account_id`) REFERENCES `accounts` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `business_closure_locations`;
@@ -395,7 +504,9 @@ CREATE TABLE `business_closure_locations` (
   `location_id` int(10) unsigned NOT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `business_closure_locations_business_closure_id_foreign` (`business_closure_id`),
+  KEY `business_closure_locations_location_id_foreign` (`location_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `business_closures`;
@@ -410,21 +521,25 @@ CREATE TABLE `business_closures` (
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   `deleted_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `business_closures_account_id_foreign` (`account_id`),
+  KEY `business_closures_created_by_foreign` (`created_by`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `cache`;
 CREATE TABLE `cache` (
   `key` varchar(255) NOT NULL,
   `value` mediumtext NOT NULL,
-  `expiration` int(11) NOT NULL
+  `expiration` int(11) NOT NULL,
+  PRIMARY KEY (`key`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `cache_locks`;
 CREATE TABLE `cache_locks` (
   `key` varchar(255) NOT NULL,
   `owner` varchar(255) NOT NULL,
-  `expiration` int(11) NOT NULL
+  `expiration` int(11) NOT NULL,
+  PRIMARY KEY (`key`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `cancellation_reasons`;
@@ -438,7 +553,11 @@ CREATE TABLE `cancellation_reasons` (
   `updated_at` timestamp NULL DEFAULT NULL,
   `deleted_at` timestamp NULL DEFAULT NULL,
   `account_id` int(10) unsigned NOT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `cancellation_reasons_account` (`account_id`),
+  KEY `cancellation_reasons_appointment_type` (`appointment_type_id`),
+  CONSTRAINT `fk_cancellation_reasons_account_id` FOREIGN KEY (`account_id`) REFERENCES `accounts` (`id`),
+  CONSTRAINT `fk_cancellation_reasons_appointment_type_id` FOREIGN KEY (`appointment_type_id`) REFERENCES `appointment_types` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `cash_pools`;
@@ -455,7 +574,35 @@ CREATE TABLE `cash_pools` (
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   `deleted_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `cash_pools_location_id_foreign` (`location_id`),
+  KEY `cash_pools_account_id_type_index` (`account_id`,`type`),
+  KEY `cash_pools_account_id_is_active_index` (`account_id`,`is_active`),
+  CONSTRAINT `fk_cash_pools_account_id` FOREIGN KEY (`account_id`) REFERENCES `accounts` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+DROP TABLE IF EXISTS `cash_transfer_attachments`;
+CREATE TABLE `cash_transfer_attachments` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `account_id` int(10) unsigned NOT NULL,
+  `cash_transfer_id` bigint(20) unsigned DEFAULT NULL COMMENT 'NULL = orphan upload — bound on transfer submit, pruned by command if it stays orphan past TTL.',
+  `file_name` varchar(255) NOT NULL COMMENT 'Original filename as uploaded; for display only.',
+  `file_path` varchar(500) NOT NULL COMMENT 'R2 object key — content-addressed by SHA-256.',
+  `mime_type` varchar(100) NOT NULL,
+  `file_size` int(10) unsigned NOT NULL COMMENT 'Bytes; capped at 10 MB by the upload endpoint.',
+  `sha256` char(64) NOT NULL COMMENT 'Lowercase hex SHA-256 of the file bytes — drives dedup + content-addressed key.',
+  `uploaded_by` int(10) unsigned NOT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  `deleted_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `cash_transfer_attachments_uploaded_by_foreign` (`uploaded_by`),
+  KEY `ctatt_account_transfer_idx` (`account_id`,`cash_transfer_id`),
+  KEY `ctatt_account_sha_idx` (`account_id`,`sha256`),
+  KEY `ctatt_transfer_idx` (`cash_transfer_id`),
+  CONSTRAINT `cash_transfer_attachments_account_id_foreign` FOREIGN KEY (`account_id`) REFERENCES `accounts` (`id`),
+  CONSTRAINT `cash_transfer_attachments_cash_transfer_id_foreign` FOREIGN KEY (`cash_transfer_id`) REFERENCES `cash_transfers` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `cash_transfer_attachments_uploaded_by_foreign` FOREIGN KEY (`uploaded_by`) REFERENCES `users` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `cash_transfers`;
@@ -466,7 +613,7 @@ CREATE TABLE `cash_transfers` (
   `amount` decimal(15,2) NOT NULL,
   `from_pool_id` bigint(20) unsigned NOT NULL,
   `to_pool_id` bigint(20) unsigned NOT NULL,
-  `method` enum('physical_cash','bank_deposit') NOT NULL,
+  `method` enum('physical_cash','bank_deposit') DEFAULT NULL,
   `reference_no` varchar(255) DEFAULT NULL,
   `attachment_url` varchar(255) DEFAULT NULL,
   `description` text DEFAULT NULL,
@@ -478,7 +625,15 @@ CREATE TABLE `cash_transfers` (
   `updated_at` timestamp NULL DEFAULT NULL,
   `system_created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `deleted_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `cash_transfers_from_pool_id_foreign` (`from_pool_id`),
+  KEY `cash_transfers_to_pool_id_foreign` (`to_pool_id`),
+  KEY `cash_transfers_created_by_foreign` (`created_by`),
+  KEY `cash_transfers_account_id_transfer_date_index` (`account_id`,`transfer_date`),
+  KEY `cash_transfers_account_id_from_pool_id_index` (`account_id`,`from_pool_id`),
+  KEY `cash_transfers_account_id_to_pool_id_index` (`account_id`,`to_pool_id`),
+  KEY `cash_transfers_account_voided_idx` (`account_id`,`voided_at`),
+  CONSTRAINT `fk_cash_transfers_account_id` FOREIGN KEY (`account_id`) REFERENCES `accounts` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `cashflow_audit_logs`;
@@ -494,7 +649,16 @@ CREATE TABLE `cashflow_audit_logs` (
   `reason` text DEFAULT NULL,
   `ip_address` varchar(45) DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `cashflow_audit_logs_user_id_foreign` (`user_id`),
+  KEY `audit_entity_idx` (`account_id`,`entity_type`,`entity_id`),
+  KEY `audit_action_idx` (`account_id`,`action`),
+  KEY `audit_user_idx` (`account_id`,`user_id`),
+  KEY `cashflow_audit_logs_created_at_index` (`created_at`),
+  KEY `cf_audit_entity_action_idx` (`entity_type`,`entity_id`,`action`),
+  CONSTRAINT `fk_cashflow_audit_logs_account_id` FOREIGN KEY (`account_id`) REFERENCES `accounts` (`id`),
+  CONSTRAINT `cashflow_audit_logs_chk_1` CHECK (json_valid(`old_values`)),
+  CONSTRAINT `cashflow_audit_logs_chk_2` CHECK (json_valid(`new_values`))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `cashflow_notifications`;
@@ -508,7 +672,11 @@ CREATE TABLE `cashflow_notifications` (
   `data` longtext DEFAULT NULL,
   `read_at` timestamp NULL DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `cashflow_notifications_user_id_read_at_index` (`user_id`,`read_at`),
+  KEY `cashflow_notifications_account_id_type_index` (`account_id`,`type`),
+  CONSTRAINT `fk_cashflow_notifications_account_id` FOREIGN KEY (`account_id`) REFERENCES `accounts` (`id`),
+  CONSTRAINT `cashflow_notifications_chk_1` CHECK (json_valid(`data`))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `cashflow_settings`;
@@ -520,7 +688,10 @@ CREATE TABLE `cashflow_settings` (
   `description` varchar(255) DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `cashflow_settings_account_id_key_unique` (`account_id`,`key`),
+  KEY `cashflow_settings_key_index` (`key`),
+  CONSTRAINT `fk_cashflow_settings_account_id` FOREIGN KEY (`account_id`) REFERENCES `accounts` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `cashflow_vendors`;
@@ -543,7 +714,12 @@ CREATE TABLE `cashflow_vendors` (
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   `deleted_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `cashflow_vendors_account_id_name_unique` (`account_id`,`name`),
+  KEY `cashflow_vendors_created_by_foreign` (`created_by`),
+  KEY `cashflow_vendors_account_id_is_active_index` (`account_id`,`is_active`),
+  KEY `cashflow_vendors_category_id_foreign` (`category_id`),
+  CONSTRAINT `fk_cashflow_vendors_account_id` FOREIGN KEY (`account_id`) REFERENCES `accounts` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `category_requests`;
@@ -558,7 +734,11 @@ CREATE TABLE `category_requests` (
   `category_id` bigint(20) unsigned DEFAULT NULL COMMENT 'Linked category if approved',
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `category_requests_requested_by_foreign` (`requested_by`),
+  KEY `category_requests_category_id_foreign` (`category_id`),
+  KEY `category_requests_account_id_status_index` (`account_id`,`status`),
+  CONSTRAINT `fk_category_requests_account_id` FOREIGN KEY (`account_id`) REFERENCES `accounts` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `centertarget`;
@@ -571,7 +751,11 @@ CREATE TABLE `centertarget` (
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   `deleted_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `centertarget_account_id_index` (`account_id`),
+  KEY `centertarget_month_index` (`month`),
+  KEY `centertarget_year_index` (`year`),
+  CONSTRAINT `fk_centertarget_account_id` FOREIGN KEY (`account_id`) REFERENCES `accounts` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `centretargetmeta`;
@@ -586,7 +770,15 @@ CREATE TABLE `centretargetmeta` (
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   `deleted_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `centretargetmeta_account_id_index` (`account_id`),
+  KEY `centretargetmeta_month_index` (`month`),
+  KEY `centretargetmeta_year_index` (`year`),
+  KEY `centretargetmeta_location_id_index` (`location_id`),
+  KEY `centretargetmeta_centertarget_id_index` (`centertarget_id`),
+  CONSTRAINT `fk_centretargetmeta_account_id` FOREIGN KEY (`account_id`) REFERENCES `accounts` (`id`),
+  CONSTRAINT `fk_centretargetmeta_centertarget_id` FOREIGN KEY (`centertarget_id`) REFERENCES `centertarget` (`id`),
+  CONSTRAINT `fk_centretargetmeta_location_id` FOREIGN KEY (`location_id`) REFERENCES `locations` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `cities`;
@@ -602,7 +794,11 @@ CREATE TABLE `cities` (
   `updated_at` timestamp NULL DEFAULT NULL,
   `deleted_at` timestamp NULL DEFAULT NULL,
   `account_id` int(10) unsigned NOT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `cities_region_id_foreign` (`region_id`),
+  KEY `cities_account` (`account_id`),
+  CONSTRAINT `fk_cities_account_id` FOREIGN KEY (`account_id`) REFERENCES `accounts` (`id`),
+  CONSTRAINT `fk_cities_region_id` FOREIGN KEY (`region_id`) REFERENCES `regions` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `custom_form_feedback_details`;
@@ -622,7 +818,17 @@ CREATE TABLE `custom_form_feedback_details` (
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   `deleted_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `custom_form_feedback_details_custom_form_id_foreign` (`custom_form_id`),
+  KEY `custom_form_feedback_details_custom_form_field_id_foreign` (`custom_form_field_id`),
+  KEY `custom_form_feedback_details_custom_form_feedback_id_foreign` (`custom_form_feedback_id`),
+  KEY `custom_form_feedback_details_account_id_foreign` (`account_id`),
+  KEY `custom_form_feedback_details_created_by_foreign` (`created_by`),
+  KEY `custom_form_feedback_details_updated_by_foreign` (`updated_by`),
+  CONSTRAINT `fk_custom_form_feedback_details_account_id` FOREIGN KEY (`account_id`) REFERENCES `accounts` (`id`),
+  CONSTRAINT `fk_custom_form_feedback_details_custom_form_feedback_id` FOREIGN KEY (`custom_form_feedback_id`) REFERENCES `custom_form_feedbacks` (`id`),
+  CONSTRAINT `fk_custom_form_feedback_details_custom_form_field_id` FOREIGN KEY (`custom_form_field_id`) REFERENCES `custom_form_fields` (`id`),
+  CONSTRAINT `fk_custom_form_feedback_details_custom_form_id` FOREIGN KEY (`custom_form_id`) REFERENCES `custom_forms` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `custom_form_feedbacks`;
@@ -640,7 +846,14 @@ CREATE TABLE `custom_form_feedbacks` (
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   `deleted_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `custom_form_feedbacks_custom_form_id_foreign` (`custom_form_id`),
+  KEY `custom_form_feedbacks_account_id_foreign` (`account_id`),
+  KEY `custom_form_feedbacks_created_by_foreign` (`created_by`),
+  KEY `custom_form_feedbacks_updated_by_foreign` (`updated_by`),
+  KEY `idx_cff_form_account` (`custom_form_id`,`account_id`),
+  CONSTRAINT `fk_custom_form_feedbacks_account_id` FOREIGN KEY (`account_id`) REFERENCES `accounts` (`id`),
+  CONSTRAINT `fk_custom_form_feedbacks_custom_form_id` FOREIGN KEY (`custom_form_id`) REFERENCES `custom_forms` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `custom_form_fields`;
@@ -658,7 +871,13 @@ CREATE TABLE `custom_form_fields` (
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   `deleted_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `custom_form_fields_user_form_id_foreign` (`user_form_id`),
+  KEY `custom_form_fields_account_id_foreign` (`account_id`),
+  KEY `custom_form_fields_created_by_foreign` (`created_by`),
+  KEY `custom_form_fields_updated_by_foreign` (`updated_by`),
+  CONSTRAINT `fk_custom_form_fields_account_id` FOREIGN KEY (`account_id`) REFERENCES `accounts` (`id`),
+  CONSTRAINT `fk_custom_form_fields_user_form_id` FOREIGN KEY (`user_form_id`) REFERENCES `custom_forms` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `custom_forms`;
@@ -677,7 +896,53 @@ CREATE TABLE `custom_forms` (
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   `deleted_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `custom_forms_account_id_foreign` (`account_id`),
+  KEY `custom_forms_created_by_foreign` (`created_by`),
+  KEY `custom_forms_updated_by_foreign` (`updated_by`),
+  CONSTRAINT `fk_custom_forms_account_id` FOREIGN KEY (`account_id`) REFERENCES `accounts` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+DROP TABLE IF EXISTS `dashboard_alert_events`;
+CREATE TABLE `dashboard_alert_events` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `account_id` bigint(20) unsigned NOT NULL,
+  `alert_key` varchar(64) NOT NULL,
+  `scope` varchar(128) NOT NULL,
+  `first_seen_at` timestamp NOT NULL,
+  `last_seen_at` timestamp NOT NULL,
+  `acknowledged_at` timestamp NULL DEFAULT NULL,
+  `acknowledged_by` bigint(20) unsigned DEFAULT NULL,
+  `snoozed_until` timestamp NULL DEFAULT NULL,
+  `snoozed_by` bigint(20) unsigned DEFAULT NULL,
+  `snooze_reason` varchar(255) DEFAULT NULL,
+  `resolved_at` timestamp NULL DEFAULT NULL,
+  `context` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`context`)),
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `dae_account_alert_scope_unique` (`account_id`,`alert_key`,`scope`),
+  KEY `dae_active_lookup` (`account_id`,`resolved_at`,`snoozed_until`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+DROP TABLE IF EXISTS `dashboard_daily_metrics`;
+CREATE TABLE `dashboard_daily_metrics` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `account_id` bigint(20) unsigned NOT NULL,
+  `date` date NOT NULL,
+  `branch_id` bigint(20) unsigned DEFAULT NULL,
+  `resource_id` bigint(20) unsigned DEFAULT NULL,
+  `resource_type` varchar(20) DEFAULT NULL,
+  `metric_key` varchar(64) NOT NULL,
+  `value` decimal(14,2) NOT NULL DEFAULT 0.00,
+  `target_value` decimal(14,2) DEFAULT NULL,
+  `dimensions` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`dimensions`)),
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `ddm_acc_date_branch_metric` (`account_id`,`date`,`branch_id`,`metric_key`),
+  KEY `ddm_acc_date_resource_metric` (`account_id`,`date`,`resource_type`,`resource_id`,`metric_key`),
+  KEY `ddm_acc_metric_date` (`account_id`,`metric_key`,`date`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `db_backups`;
@@ -702,7 +967,9 @@ CREATE TABLE `departments` (
   `updated_at` timestamp NULL DEFAULT NULL,
   `deleted_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
-  KEY `departments_account_id_index` (`account_id`)
+  UNIQUE KEY `departments_name_acct_unique` (`name`,`account_id`,`deleted_at`),
+  KEY `departments_account_id_index` (`account_id`),
+  KEY `departments_acct_active_idx` (`account_id`,`active`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `designations`;
@@ -718,8 +985,10 @@ CREATE TABLE `designations` (
   `updated_at` timestamp NULL DEFAULT NULL,
   `deleted_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
+  UNIQUE KEY `designations_name_acct_unique` (`name`,`account_id`,`deleted_at`),
   KEY `designations_account_id_index` (`account_id`),
-  KEY `designations_department_id_index` (`department_id`)
+  KEY `designations_department_id_index` (`department_id`),
+  KEY `designations_acct_active_idx` (`account_id`,`active`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `discount_has_locations`;
@@ -733,7 +1002,13 @@ CREATE TABLE `discount_has_locations` (
   `type` enum('Fixed','Percentage') DEFAULT NULL,
   `amount` decimal(11,2) DEFAULT NULL,
   `slug` varchar(100) DEFAULT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `discount_has_locations_location_id_foreign` (`location_id`),
+  KEY `discount_has_locations_service_id_foreign` (`service_id`),
+  KEY `idx_discount_has_locations_composite` (`discount_id`,`location_id`),
+  CONSTRAINT `fk_discloc_discount` FOREIGN KEY (`discount_id`) REFERENCES `discounts` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_discloc_location` FOREIGN KEY (`location_id`) REFERENCES `locations` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_discloc_service` FOREIGN KEY (`service_id`) REFERENCES `services` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `discount_role`;
@@ -743,7 +1018,11 @@ CREATE TABLE `discount_role` (
   `role_id` int(10) unsigned NOT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `fk_disc_role_discount` (`discount_id`),
+  KEY `fk_disc_role_role` (`role_id`),
+  CONSTRAINT `fk_disc_role_discount` FOREIGN KEY (`discount_id`) REFERENCES `discounts` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_disc_role_role` FOREIGN KEY (`role_id`) REFERENCES `roles` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `discounts`;
@@ -755,7 +1034,7 @@ CREATE TABLE `discounts` (
   `type` enum('Fixed','Percentage','Configurable','Simple') NOT NULL,
   `amount` decimal(11,2) NOT NULL,
   `description` varchar(100) DEFAULT NULL,
-  `discount_type` varchar(30) NOT NULL,
+  `discount_type` varchar(191) DEFAULT NULL,
   `pre_days` int(11) NOT NULL DEFAULT 0,
   `post_days` int(11) NOT NULL DEFAULT 0,
   `start` date DEFAULT NULL,
@@ -765,7 +1044,11 @@ CREATE TABLE `discounts` (
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   `deleted_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `discounts_account_id_foreign` (`account_id`),
+  KEY `fk_discounts_custtype` (`customer_type_id`),
+  CONSTRAINT `fk_discounts_account_id` FOREIGN KEY (`account_id`) REFERENCES `accounts` (`id`),
+  CONSTRAINT `fk_discounts_custtype` FOREIGN KEY (`customer_type_id`) REFERENCES `membership_types` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `doctor_google_reviews`;
@@ -780,7 +1063,11 @@ CREATE TABLE `doctor_google_reviews` (
   `updated_by` int(10) unsigned DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `doctor_reviews_unique` (`account_id`,`doctor_id`,`month`,`year`),
+  KEY `doctor_google_reviews_doctor_id_index` (`doctor_id`),
+  KEY `doctor_google_reviews_month_index` (`month`),
+  KEY `doctor_google_reviews_year_index` (`year`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `doctor_has_locations`;
@@ -793,13 +1080,23 @@ CREATE TABLE `doctor_has_locations` (
   `is_allocated` int(11) NOT NULL DEFAULT 1,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `doctor_has_locations_location_id_foreign` (`location_id`),
+  KEY `doctor_has_locations_service_id_foreign` (`service_id`),
+  KEY `idx_doctor_has_locations_composite` (`user_id`,`location_id`),
+  CONSTRAINT `fk_dhl_location` FOREIGN KEY (`location_id`) REFERENCES `locations` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_dhl_service` FOREIGN KEY (`service_id`) REFERENCES `services` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_dhl_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `doctor_has_services`;
 CREATE TABLE `doctor_has_services` (
   `user_id` int(10) unsigned NOT NULL,
-  `service_id` int(10) unsigned NOT NULL
+  `service_id` int(10) unsigned NOT NULL,
+  PRIMARY KEY (`user_id`,`service_id`),
+  KEY `doctor_has_services_service_id_foreign` (`service_id`),
+  CONSTRAINT `fk_doctor_has_services_service_id` FOREIGN KEY (`service_id`) REFERENCES `services` (`id`),
+  CONSTRAINT `fk_doctor_has_services_user_id` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `documents`;
@@ -813,7 +1110,10 @@ CREATE TABLE `documents` (
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   `deleted_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `documents_user_id_foreign` (`user_id`),
+  KEY `idx_documents_user_created` (`user_id`,`created_at`),
+  CONSTRAINT `fk_documents_user_id` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `employee_details`;
@@ -843,7 +1143,8 @@ CREATE TABLE `employee_details` (
   UNIQUE KEY `employee_details_user_id_unique` (`user_id`),
   KEY `employee_details_account_id_index` (`account_id`),
   KEY `employee_details_department_id_index` (`department_id`),
-  KEY `employee_details_designation_id_index` (`designation_id`)
+  KEY `employee_details_designation_id_index` (`designation_id`),
+  KEY `employee_details_reporting_manager_id_index` (`reporting_manager_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `employee_documents`;
@@ -900,7 +1201,10 @@ CREATE TABLE `expense_categories` (
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   `deleted_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `expense_categories_account_id_name_unique` (`account_id`,`name`),
+  KEY `expense_categories_account_id_is_active_index` (`account_id`,`is_active`),
+  CONSTRAINT `fk_expense_categories_account_id` FOREIGN KEY (`account_id`) REFERENCES `accounts` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `expenses`;
@@ -934,7 +1238,24 @@ CREATE TABLE `expenses` (
   `updated_at` timestamp NULL DEFAULT NULL,
   `system_created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `deleted_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `expenses_category_id_foreign` (`category_id`),
+  KEY `expenses_paid_from_pool_id_foreign` (`paid_from_pool_id`),
+  KEY `expenses_for_branch_id_foreign` (`for_branch_id`),
+  KEY `expenses_payment_method_id_foreign` (`payment_method_id`),
+  KEY `expenses_vendor_id_foreign` (`vendor_id`),
+  KEY `expenses_staff_id_foreign` (`staff_id`),
+  KEY `expenses_verified_by_foreign` (`verified_by`),
+  KEY `expenses_created_by_foreign` (`created_by`),
+  KEY `expenses_voided_by_foreign` (`voided_by`),
+  KEY `exp_date_pool_idx` (`account_id`,`expense_date`,`paid_from_pool_id`),
+  KEY `exp_date_branch_idx` (`account_id`,`expense_date`,`for_branch_id`),
+  KEY `exp_vendor_idx` (`account_id`,`vendor_id`),
+  KEY `exp_staff_idx` (`account_id`,`staff_id`),
+  KEY `exp_status_idx` (`account_id`,`status`),
+  KEY `exp_flagged_idx` (`account_id`,`is_flagged`),
+  KEY `expenses_voided_at_index` (`voided_at`),
+  CONSTRAINT `fk_expenses_account_id` FOREIGN KEY (`account_id`) REFERENCES `accounts` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `failed_jobs`;
@@ -965,7 +1286,18 @@ CREATE TABLE `feedback` (
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `feedback_appointment_id_unique` (`appointment_id`)
+  UNIQUE KEY `feedback_appointment_id_unique` (`appointment_id`),
+  KEY `fk_feedback_patient_id` (`patient_id`),
+  KEY `fk_feedback_doctor_id` (`doctor_id`),
+  KEY `fk_feedback_service_id` (`service_id`),
+  KEY `fk_feedback_location_id` (`location_id`),
+  KEY `fk_feedback_treatment_id` (`treatment_id`),
+  CONSTRAINT `fk_feedback_appointment` FOREIGN KEY (`appointment_id`) REFERENCES `appointments` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_feedback_doctor_id` FOREIGN KEY (`doctor_id`) REFERENCES `users` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_feedback_location_id` FOREIGN KEY (`location_id`) REFERENCES `locations` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_feedback_patient_id` FOREIGN KEY (`patient_id`) REFERENCES `users` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_feedback_service_id` FOREIGN KEY (`service_id`) REFERENCES `services` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_feedback_treatment_id` FOREIGN KEY (`treatment_id`) REFERENCES `appointments` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `get_discount_services`;
@@ -982,7 +1314,15 @@ CREATE TABLE `get_discount_services` (
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `same_service` tinyint(1) NOT NULL DEFAULT 0,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `fk_get_disc_svc_service` (`service_id`),
+  KEY `fk_get_disc_svc_discount` (`discount_id`),
+  KEY `fk_get_discount_services_base_service_id` (`base_service_id`),
+  KEY `fk_get_discount_services_bundle_id` (`bundle_id`),
+  CONSTRAINT `fk_get_disc_svc_discount` FOREIGN KEY (`discount_id`) REFERENCES `discounts` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_get_disc_svc_service` FOREIGN KEY (`service_id`) REFERENCES `services` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_get_discount_services_base_service_id` FOREIGN KEY (`base_service_id`) REFERENCES `services` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_get_discount_services_bundle_id` FOREIGN KEY (`bundle_id`) REFERENCES `bundles` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `global_operator_settings`;
@@ -1012,7 +1352,9 @@ CREATE TABLE `heavy_lifters` (
   `account_id` int(10) unsigned NOT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `heavy_lifters_account` (`account_id`),
+  CONSTRAINT `fk_heavy_lifters_account_id` FOREIGN KEY (`account_id`) REFERENCES `accounts` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `hr_notifications`;
@@ -1046,7 +1388,13 @@ CREATE TABLE `inventories` (
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   `deleted_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `idx_inventories_product` (`product_id`),
+  KEY `idx_inventories_warehouse` (`warehouse_id`),
+  KEY `idx_inventories_location` (`location_id`),
+  CONSTRAINT `fk_inv_location` FOREIGN KEY (`location_id`) REFERENCES `locations` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_inv_product` FOREIGN KEY (`product_id`) REFERENCES `products` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_inv_warehouse` FOREIGN KEY (`warehouse_id`) REFERENCES `warehouses` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `invoice_details`;
@@ -1073,7 +1421,19 @@ CREATE TABLE `invoice_details` (
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   `deleted_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `invoice_details_discount_id_foreign` (`discount_id`),
+  KEY `invoice_details_service_id_foreign` (`service_id`),
+  KEY `invoice_details_package_id_foreign` (`package_id`),
+  KEY `package_service_invoice_id` (`package_service_id`),
+  KEY `idx_invoice_details_invoice_deleted` (`invoice_id`,`deleted_at`),
+  KEY `idx_invoice_details_created_at` (`created_at`),
+  KEY `idx_inv_details_invoice_service` (`invoice_id`,`service_id`),
+  CONSTRAINT `fk_inv_details_package` FOREIGN KEY (`package_id`) REFERENCES `packages` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_inv_details_pkg_svc` FOREIGN KEY (`package_service_id`) REFERENCES `package_services` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_invoice_details_discount_id` FOREIGN KEY (`discount_id`) REFERENCES `discounts` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_invoice_details_invoice` FOREIGN KEY (`invoice_id`) REFERENCES `invoices` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_invoice_details_service` FOREIGN KEY (`service_id`) REFERENCES `services` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `invoice_statuses`;
@@ -1087,7 +1447,9 @@ CREATE TABLE `invoice_statuses` (
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   `deleted_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `invoice_status_account_id` (`account_id`),
+  CONSTRAINT `fk_invoice_statuses_account_id` FOREIGN KEY (`account_id`) REFERENCES `accounts` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `invoices`;
@@ -1108,7 +1470,23 @@ CREATE TABLE `invoices` (
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   `deleted_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `invoices_appointment_id_foreign` (`appointment_id`),
+  KEY `invoices_created_by_foreign` (`created_by`),
+  KEY `invoices_location_id_foreign` (`location_id`),
+  KEY `invoices_doctor_id_foreign` (`doctor_id`),
+  KEY `invoices_invoice_status` (`invoice_status_id`),
+  KEY `idx_invoices_patient_deleted` (`patient_id`,`deleted_at`),
+  KEY `idx_invoices_account_deleted_created` (`account_id`,`deleted_at`,`created_at`),
+  KEY `fk_invoices_package` (`package_id`),
+  CONSTRAINT `fk_invoices_account` FOREIGN KEY (`account_id`) REFERENCES `accounts` (`id`),
+  CONSTRAINT `fk_invoices_appointment` FOREIGN KEY (`appointment_id`) REFERENCES `appointments` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_invoices_creator` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_invoices_doctor` FOREIGN KEY (`doctor_id`) REFERENCES `users` (`id`),
+  CONSTRAINT `fk_invoices_location` FOREIGN KEY (`location_id`) REFERENCES `locations` (`id`),
+  CONSTRAINT `fk_invoices_package` FOREIGN KEY (`package_id`) REFERENCES `packages` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_invoices_patient` FOREIGN KEY (`patient_id`) REFERENCES `users` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_invoices_status` FOREIGN KEY (`invoice_status_id`) REFERENCES `invoice_statuses` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `jobs`;
@@ -1120,7 +1498,8 @@ CREATE TABLE `jobs` (
   `reserved_at` int(10) unsigned DEFAULT NULL,
   `available_at` int(10) unsigned NOT NULL,
   `created_at` int(10) unsigned NOT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `jobs_queue_index` (`queue`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `lead_comments`;
@@ -1133,20 +1512,28 @@ CREATE TABLE `lead_comments` (
   `updated_at` timestamp NULL DEFAULT NULL,
   `deleted_at` timestamp NULL DEFAULT NULL,
   `account_id` int(10) unsigned NOT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `lead_comments_created_by_foreign` (`created_by`),
+  KEY `idx_lead_comments_lead_deleted` (`lead_id`,`deleted_at`),
+  KEY `idx_lead_comments_account_deleted` (`account_id`,`deleted_at`),
+  KEY `idx_lead_comments_created_at` (`created_at`),
+  CONSTRAINT `fk_lead_comments_account_id` FOREIGN KEY (`account_id`) REFERENCES `accounts` (`id`),
+  CONSTRAINT `fk_lead_comments_lead` FOREIGN KEY (`lead_id`) REFERENCES `leads` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `lead_sources`;
 CREATE TABLE `lead_sources` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `name` varchar(100) DEFAULT NULL,
-  `sort_no` tinyint(3) unsigned DEFAULT NULL,
+  `sort_no` int(10) unsigned DEFAULT NULL,
   `active` tinyint(3) unsigned NOT NULL DEFAULT 1,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   `deleted_at` timestamp NULL DEFAULT NULL,
   `account_id` int(10) unsigned NOT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `lead_sources_account` (`account_id`),
+  CONSTRAINT `fk_lead_sources_account_id` FOREIGN KEY (`account_id`) REFERENCES `accounts` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `lead_statuses`;
@@ -1160,13 +1547,17 @@ CREATE TABLE `lead_statuses` (
   `is_arrived` tinyint(3) unsigned NOT NULL DEFAULT 0,
   `is_converted` tinyint(3) unsigned NOT NULL DEFAULT 0,
   `is_junk` tinyint(3) unsigned NOT NULL DEFAULT 0,
-  `sort_no` tinyint(3) unsigned DEFAULT NULL,
+  `sort_no` int(10) unsigned DEFAULT NULL,
   `active` tinyint(3) unsigned NOT NULL DEFAULT 1,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   `deleted_at` timestamp NULL DEFAULT NULL,
   `account_id` int(10) unsigned NOT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `lead_statuses_account` (`account_id`),
+  KEY `fk_lead_statuses_parent_id` (`parent_id`),
+  CONSTRAINT `fk_lead_statuses_account_id` FOREIGN KEY (`account_id`) REFERENCES `accounts` (`id`),
+  CONSTRAINT `fk_lead_statuses_parent_id` FOREIGN KEY (`parent_id`) REFERENCES `lead_statuses` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `leads`;
@@ -1196,7 +1587,37 @@ CREATE TABLE `leads` (
   `phone` varchar(30) NOT NULL,
   `gender` tinyint(4) NOT NULL DEFAULT 0,
   `referred_by` int(10) unsigned DEFAULT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `leads_city_id_foreign` (`city_id`),
+  KEY `leads_region_id_foreign` (`region_id`),
+  KEY `leads_lead_source_id_foreign` (`lead_source_id`),
+  KEY `leads_lead_status_id_foreign` (`lead_status_id`),
+  KEY `leads_created_by_foreign` (`created_by`),
+  KEY `leads_updated_by_foreign` (`updated_by`),
+  KEY `leads_converted_by_foreign` (`converted_by`),
+  KEY `leads_service_id_foreign` (`service_id`),
+  KEY `leads_town_id_foreign` (`town_id`),
+  KEY `idx_leads_account_deleted` (`account_id`,`deleted_at`),
+  KEY `idx_leads_patient_deleted` (`patient_id`,`deleted_at`),
+  KEY `idx_leads_account_active_deleted` (`account_id`,`active`,`deleted_at`),
+  KEY `fk_leads_location` (`location_id`),
+  KEY `idx_leads_created_at` (`created_at`),
+  KEY `idx_leads_account_city` (`account_id`,`city_id`),
+  KEY `idx_leads_account_status` (`account_id`,`lead_status_id`),
+  KEY `idx_leads_phone_account` (`phone`,`account_id`),
+  KEY `fk_leads_child_service` (`child_service_id`),
+  FULLTEXT KEY `idx_leads_name_ft` (`name`),
+  CONSTRAINT `fk_leads_account_id` FOREIGN KEY (`account_id`) REFERENCES `accounts` (`id`),
+  CONSTRAINT `fk_leads_child_service` FOREIGN KEY (`child_service_id`) REFERENCES `services` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_leads_city_id` FOREIGN KEY (`city_id`) REFERENCES `cities` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_leads_creator` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_leads_location` FOREIGN KEY (`location_id`) REFERENCES `locations` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_leads_patient` FOREIGN KEY (`patient_id`) REFERENCES `users` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_leads_region_id` FOREIGN KEY (`region_id`) REFERENCES `regions` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_leads_service` FOREIGN KEY (`service_id`) REFERENCES `services` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_leads_source` FOREIGN KEY (`lead_source_id`) REFERENCES `lead_sources` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_leads_status` FOREIGN KEY (`lead_status_id`) REFERENCES `lead_statuses` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_leads_town_id` FOREIGN KEY (`town_id`) REFERENCES `towns` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `leads_services`;
@@ -1209,9 +1630,20 @@ CREATE TABLE `leads_services` (
   `child_service_id` int(10) unsigned DEFAULT NULL,
   `consultancy_id` int(10) unsigned DEFAULT NULL,
   `status` int(11) NOT NULL DEFAULT 0,
+  `inquiry_count` smallint(5) unsigned NOT NULL DEFAULT 1 COMMENT 'Times the client re-inquired this (category, service) pair',
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `leads_services_service_id_foreign` (`service_id`),
+  KEY `leads_services_child_service_id_foreign` (`child_service_id`),
+  KEY `leads_services_consultancy_id_foreign` (`consultancy_id`),
+  KEY `idx_leads_services_lead_service` (`lead_id`,`service_id`),
+  KEY `fk_ls_status` (`lead_status_id`),
+  KEY `idx_leads_services_created_at` (`created_at`),
+  CONSTRAINT `fk_ls_child_service` FOREIGN KEY (`child_service_id`) REFERENCES `services` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_ls_lead` FOREIGN KEY (`lead_id`) REFERENCES `leads` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_ls_service` FOREIGN KEY (`service_id`) REFERENCES `services` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_ls_status` FOREIGN KEY (`lead_status_id`) REFERENCES `lead_statuses` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `leave_applications`;
@@ -1236,7 +1668,10 @@ CREATE TABLE `leave_applications` (
   `deleted_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `leave_applications_user_id_account_id_index` (`user_id`,`account_id`),
-  KEY `leave_applications_status_account_id_index` (`status`,`account_id`)
+  KEY `leave_applications_status_account_id_index` (`status`,`account_id`),
+  KEY `leave_applications_leave_type_id_index` (`leave_type_id`),
+  KEY `leave_applications_reviewed_by_index` (`reviewed_by`),
+  KEY `leave_apps_overlap_idx` (`user_id`,`start_date`,`end_date`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `leave_balances`;
@@ -1267,7 +1702,9 @@ CREATE TABLE `leave_types` (
   `updated_at` timestamp NULL DEFAULT NULL,
   `deleted_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
-  KEY `leave_types_account_id_index` (`account_id`)
+  UNIQUE KEY `leave_types_name_acct_unique` (`name`,`account_id`,`deleted_at`),
+  KEY `leave_types_account_id_index` (`account_id`),
+  KEY `leave_types_acct_active_idx` (`account_id`,`active`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `locations`;
@@ -1291,7 +1728,13 @@ CREATE TABLE `locations` (
   `updated_at` timestamp NULL DEFAULT NULL,
   `deleted_at` timestamp NULL DEFAULT NULL,
   `account_id` int(10) unsigned NOT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `locations_city_id_foreign` (`city_id`),
+  KEY `locations_region_id_foreign` (`region_id`),
+  KEY `locations_account` (`account_id`),
+  CONSTRAINT `fk_locations_account_id` FOREIGN KEY (`account_id`) REFERENCES `accounts` (`id`),
+  CONSTRAINT `fk_locations_city_id` FOREIGN KEY (`city_id`) REFERENCES `cities` (`id`),
+  CONSTRAINT `fk_locations_region_id` FOREIGN KEY (`region_id`) REFERENCES `regions` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `login_attempts`;
@@ -1316,7 +1759,10 @@ CREATE TABLE `login_attempts` (
 DROP TABLE IF EXISTS `machine_type_has_services`;
 CREATE TABLE `machine_type_has_services` (
   `machine_type_id` int(10) unsigned NOT NULL,
-  `service_id` int(10) unsigned NOT NULL
+  `service_id` int(10) unsigned NOT NULL,
+  PRIMARY KEY (`machine_type_id`,`service_id`),
+  KEY `machine_type_has_services_service_id_foreign` (`service_id`),
+  CONSTRAINT `fk_machine_type_has_services_service_id` FOREIGN KEY (`service_id`) REFERENCES `services` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `machine_types`;
@@ -1328,7 +1774,9 @@ CREATE TABLE `machine_types` (
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   `deleted_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `machine_types_account_id_foreign` (`account_id`),
+  CONSTRAINT `fk_machine_types_account_id` FOREIGN KEY (`account_id`) REFERENCES `accounts` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `measurements`;
@@ -1344,7 +1792,17 @@ CREATE TABLE `measurements` (
   `type` enum('Before Appointment','After Appointment') NOT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `measurements_patient_id_foreign` (`patient_id`),
+  KEY `measurements_user_id_foreign` (`user_id`),
+  KEY `measurements_appointment_id_foreign` (`appointment_id`),
+  KEY `measurements_service_id_foreign` (`service_id`),
+  KEY `measurements_custom_form_feedback_id_foreign` (`custom_form_feedback_id`),
+  CONSTRAINT `fk_measurements_appointment_id` FOREIGN KEY (`appointment_id`) REFERENCES `appointments` (`id`),
+  CONSTRAINT `fk_measurements_custom_form_feedback_id` FOREIGN KEY (`custom_form_feedback_id`) REFERENCES `custom_form_feedbacks` (`id`),
+  CONSTRAINT `fk_measurements_patient_id` FOREIGN KEY (`patient_id`) REFERENCES `users` (`id`),
+  CONSTRAINT `fk_measurements_service_id` FOREIGN KEY (`service_id`) REFERENCES `services` (`id`),
+  CONSTRAINT `fk_measurements_user_id` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `medicals`;
@@ -1357,7 +1815,30 @@ CREATE TABLE `medicals` (
   `date` date DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `medicals_patient_id_foreign` (`patient_id`),
+  KEY `medicals_user_id_foreign` (`user_id`),
+  KEY `medicals_appointment_id_foreign` (`appointment_id`),
+  KEY `medicals_custom_form_feedback_id_foreign` (`custom_form_feedback_id`),
+  CONSTRAINT `fk_medicals_appointment_id` FOREIGN KEY (`appointment_id`) REFERENCES `appointments` (`id`),
+  CONSTRAINT `fk_medicals_custom_form_feedback_id` FOREIGN KEY (`custom_form_feedback_id`) REFERENCES `custom_form_feedbacks` (`id`),
+  CONSTRAINT `fk_medicals_patient_id` FOREIGN KEY (`patient_id`) REFERENCES `users` (`id`),
+  CONSTRAINT `fk_medicals_user_id` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+DROP TABLE IF EXISTS `membership_renewals`;
+CREATE TABLE `membership_renewals` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `original_membership_id` bigint(20) unsigned NOT NULL,
+  `renewed_membership_id` bigint(20) unsigned NOT NULL,
+  `renewed_at` timestamp NULL DEFAULT NULL,
+  `renewed_by` bigint(20) unsigned DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `membership_renewals_original_membership_id_index` (`original_membership_id`),
+  KEY `membership_renewals_renewed_membership_id_index` (`renewed_membership_id`),
+  KEY `membership_renewals_renewed_by_index` (`renewed_by`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `membership_type_has_discounts`;
@@ -1368,7 +1849,11 @@ CREATE TABLE `membership_type_has_discounts` (
   `created_by` bigint(20) unsigned DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `membership_discount_unique` (`membership_type_id`,`discount_id`),
+  KEY `membership_type_has_discounts_discount_id_index` (`discount_id`),
+  CONSTRAINT `fk_membership_type_has_discounts_discount_id` FOREIGN KEY (`discount_id`) REFERENCES `discounts` (`id`),
+  CONSTRAINT `fk_membership_type_has_discounts_membership_type_id` FOREIGN KEY (`membership_type_id`) REFERENCES `membership_types` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `membership_types`;
@@ -1385,7 +1870,10 @@ CREATE TABLE `membership_types` (
   `deleted_at` timestamp NULL DEFAULT NULL,
   `deleted_by` bigint(20) unsigned DEFAULT NULL,
   `parent_id` bigint(20) unsigned DEFAULT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `membership_types_name_index` (`name`),
+  KEY `fk_memtypes_parent` (`parent_id`),
+  CONSTRAINT `fk_memtypes_parent` FOREIGN KEY (`parent_id`) REFERENCES `membership_types` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `memberships`;
@@ -1406,7 +1894,14 @@ CREATE TABLE `memberships` (
   `assigned_at` date DEFAULT NULL,
   `is_referral` int(11) NOT NULL DEFAULT 0,
   `parent_membership_code` varchar(100) DEFAULT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `idx_memberships_patient_deleted` (`patient_id`,`deleted_at`),
+  KEY `idx_memberships_type` (`membership_type_id`),
+  KEY `idx_memberships_active` (`active`),
+  KEY `fk_mem_creator` (`created_by`),
+  CONSTRAINT `fk_mem_creator` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`),
+  CONSTRAINT `fk_mem_patient` FOREIGN KEY (`patient_id`) REFERENCES `users` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_mem_type` FOREIGN KEY (`membership_type_id`) REFERENCES `membership_types` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `migrations`;
@@ -1421,14 +1916,41 @@ DROP TABLE IF EXISTS `model_has_permissions`;
 CREATE TABLE `model_has_permissions` (
   `permission_id` int(10) unsigned NOT NULL,
   `model_type` varchar(191) NOT NULL,
-  `model_id` bigint(20) unsigned NOT NULL
+  `model_id` bigint(20) unsigned NOT NULL,
+  PRIMARY KEY (`permission_id`,`model_id`,`model_type`),
+  KEY `model_has_permissions_model_type_model_id_index` (`model_type`,`model_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `model_has_roles`;
 CREATE TABLE `model_has_roles` (
   `role_id` int(10) unsigned NOT NULL,
   `model_type` varchar(191) NOT NULL,
-  `model_id` bigint(20) unsigned NOT NULL
+  `model_id` bigint(20) unsigned NOT NULL,
+  PRIMARY KEY (`role_id`,`model_id`,`model_type`),
+  KEY `model_has_roles_model_type_model_id_index` (`model_type`,`model_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+DROP TABLE IF EXISTS `movement_attachments`;
+CREATE TABLE `movement_attachments` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `account_id` int(10) unsigned NOT NULL,
+  `movement_kind` enum('staff_advance','staff_return','staff_transfer') DEFAULT NULL COMMENT 'Discriminator for which staff table the attachment ultimately binds to. NULL = orphan upload.',
+  `movement_id` bigint(20) unsigned DEFAULT NULL COMMENT 'FK target inside the table named by movement_kind. NULL while orphan; populated on form submit.',
+  `file_name` varchar(255) NOT NULL,
+  `file_path` varchar(500) NOT NULL COMMENT 'R2 object key — content-addressed by SHA-256.',
+  `mime_type` varchar(100) NOT NULL,
+  `file_size` int(10) unsigned NOT NULL,
+  `sha256` char(64) NOT NULL,
+  `uploaded_by` int(10) unsigned NOT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  `deleted_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `movement_attachments_uploaded_by_foreign` (`uploaded_by`),
+  KEY `movatt_account_kind_id_idx` (`account_id`,`movement_kind`,`movement_id`),
+  KEY `movatt_account_sha_idx` (`account_id`,`sha256`),
+  CONSTRAINT `movement_attachments_account_id_foreign` FOREIGN KEY (`account_id`) REFERENCES `accounts` (`id`),
+  CONSTRAINT `movement_attachments_uploaded_by_foreign` FOREIGN KEY (`uploaded_by`) REFERENCES `users` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `oauth_access_tokens`;
@@ -1531,12 +2053,22 @@ CREATE TABLE `order_details` (
   `quantity` int(11) NOT NULL,
   `sale_price` decimal(8,2) NOT NULL,
   `discount_price` decimal(8,2) DEFAULT NULL,
-  `sale_price_after_discount` decimal(8,2) NOT NULL,
+  `sale_price_after_discount` decimal(8,2) DEFAULT NULL,
   `order_type` enum('sale','refund') NOT NULL,
   `reason` text DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `order_details_order_id_foreign` (`order_id`),
+  KEY `order_details_product_id_foreign` (`product_id`),
+  KEY `fk_od_account` (`account_id`),
+  KEY `fk_order_details_discount_id` (`discount_id`),
+  KEY `fk_order_details_inventory_id` (`inventory_id`),
+  CONSTRAINT `fk_od_account` FOREIGN KEY (`account_id`) REFERENCES `accounts` (`id`),
+  CONSTRAINT `fk_od_order` FOREIGN KEY (`order_id`) REFERENCES `orders` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_od_product` FOREIGN KEY (`product_id`) REFERENCES `products` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_order_details_discount_id` FOREIGN KEY (`discount_id`) REFERENCES `discounts` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_order_details_inventory_id` FOREIGN KEY (`inventory_id`) REFERENCES `inventories` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `order_refund_details`;
@@ -1549,7 +2081,13 @@ CREATE TABLE `order_refund_details` (
   `sale_price` int(11) NOT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `fk_order_refund_details_account_id` (`account_id`),
+  KEY `fk_order_refund_details_order_refund_id` (`order_refund_id`),
+  KEY `fk_order_refund_details_product_id` (`product_id`),
+  CONSTRAINT `fk_order_refund_details_account_id` FOREIGN KEY (`account_id`) REFERENCES `accounts` (`id`),
+  CONSTRAINT `fk_order_refund_details_order_refund_id` FOREIGN KEY (`order_refund_id`) REFERENCES `order_refunds` (`id`),
+  CONSTRAINT `fk_order_refund_details_product_id` FOREIGN KEY (`product_id`) REFERENCES `products` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `order_refunds`;
@@ -1568,14 +2106,21 @@ CREATE TABLE `order_refunds` (
   `quantity` int(11) NOT NULL DEFAULT 0,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `fk_order_refunds_account_id` (`account_id`),
+  KEY `fk_order_refunds_location_id` (`location_id`),
+  KEY `fk_order_refunds_order_id` (`order_id`),
+  KEY `fk_order_refunds_patient_id` (`patient_id`),
+  CONSTRAINT `fk_order_refunds_account_id` FOREIGN KEY (`account_id`) REFERENCES `accounts` (`id`),
+  CONSTRAINT `fk_order_refunds_location_id` FOREIGN KEY (`location_id`) REFERENCES `locations` (`id`),
+  CONSTRAINT `fk_order_refunds_order_id` FOREIGN KEY (`order_id`) REFERENCES `orders` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `orders`;
 CREATE TABLE `orders` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `account_id` int(10) unsigned NOT NULL,
-  `patient_id` bigint(20) unsigned DEFAULT NULL,
+  `patient_id` int(10) unsigned DEFAULT NULL,
   `buyer_type` enum('patient','employee') NOT NULL DEFAULT 'patient',
   `total_price` decimal(8,2) DEFAULT NULL,
   `auto_discount_type` enum('none','employee','membership') NOT NULL DEFAULT 'none',
@@ -1595,22 +2140,32 @@ CREATE TABLE `orders` (
   `employee_id` int(10) unsigned DEFAULT NULL,
   `discount` varchar(255) NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`),
+  KEY `idx_orders_account` (`account_id`),
+  KEY `idx_orders_patient` (`patient_id`),
+  KEY `idx_orders_location` (`location_id`),
+  KEY `idx_orders_created_at` (`created_at`),
+  KEY `fk_orders_creator` (`created_by`),
+  KEY `fk_orders_employee_id` (`employee_id`),
   KEY `orders_employee_id_idx` (`employee_id`),
   KEY `orders_buyer_type_idx` (`buyer_type`,`created_at`),
-  CONSTRAINT `orders_employee_id_foreign` FOREIGN KEY (`employee_id`) REFERENCES `users` (`id`)
+  CONSTRAINT `fk_orders_account` FOREIGN KEY (`account_id`) REFERENCES `accounts` (`id`),
+  CONSTRAINT `fk_orders_creator` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`),
+  CONSTRAINT `fk_orders_employee_id` FOREIGN KEY (`employee_id`) REFERENCES `users` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_orders_location` FOREIGN KEY (`location_id`) REFERENCES `locations` (`id`),
+  CONSTRAINT `fk_orders_patient` FOREIGN KEY (`patient_id`) REFERENCES `users` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `package_advances`;
 CREATE TABLE `package_advances` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `cash_flow` enum('in','out') NOT NULL DEFAULT 'in',
-  `cash_amount` decimal(11,2) NOT NULL DEFAULT 0.00,
+  `cash_amount` double(11,2) NOT NULL DEFAULT 0.00,
   `active` tinyint(3) unsigned NOT NULL DEFAULT 1,
-  `is_refund` tinyint(1) NOT NULL DEFAULT 0,
-  `is_adjustment` tinyint(1) NOT NULL DEFAULT 0,
-  `is_tax` tinyint(1) NOT NULL DEFAULT 0,
+  `is_refund` int(10) unsigned NOT NULL DEFAULT 0,
+  `is_adjustment` int(10) unsigned NOT NULL DEFAULT 0,
+  `is_tax` tinyint(3) unsigned NOT NULL DEFAULT 0,
   `refund_note` varchar(2000) DEFAULT NULL,
-  `is_cancel` tinyint(1) NOT NULL DEFAULT 0,
+  `is_cancel` int(10) unsigned NOT NULL DEFAULT 0,
   `patient_id` int(10) unsigned DEFAULT NULL,
   `payment_mode_id` int(10) unsigned DEFAULT NULL,
   `account_id` int(10) unsigned NOT NULL,
@@ -1622,13 +2177,23 @@ CREATE TABLE `package_advances` (
   `package_id` int(10) unsigned DEFAULT NULL,
   `invoice_id` int(10) unsigned DEFAULT NULL,
   `order_id` bigint(20) unsigned DEFAULT NULL,
-  `is_setteled` tinyint(1) NOT NULL DEFAULT 0,
+  `is_setteled` int(11) NOT NULL DEFAULT 0,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   `system_created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `deleted_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
-  KEY `idx_pa_refund_location_pkg` (`is_refund`,`location_id`,`package_id`),
+  KEY `package_advances_payment_mode_id_foreign` (`payment_mode_id`),
+  KEY `package_advances_created_by_foreign` (`created_by`),
+  KEY `package_advances_updated_by_foreign` (`updated_by`),
+  KEY `patient_balances_appointment_type` (`appointment_type_id`),
+  KEY `package_advances_invoice_id` (`invoice_id`),
+  KEY `package_location_id` (`location_id`),
+  KEY `idx_pa_pkg_deleted` (`package_id`,`deleted_at`),
+  KEY `idx_pa_account_created` (`account_id`,`created_at`),
+  KEY `idx_pa_patient_account` (`patient_id`,`account_id`),
+  KEY `idx_pa_appt_patient_cashflow` (`appointment_id`,`patient_id`,`cash_flow`),
+  KEY `idx_pa_cashflow_patient_amount` (`cash_flow`,`patient_id`,`cash_amount`),
   KEY `package_advances_order_id_idx` (`order_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -1662,7 +2227,22 @@ CREATE TABLE `package_bundles` (
   `membership_type_id` bigint(20) unsigned DEFAULT NULL,
   `membership_code_id` bigint(20) unsigned DEFAULT NULL,
   `config_group_id` varchar(100) DEFAULT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `package_bundles_discount_id_foreign` (`discount_id`),
+  KEY `package_bundles_bundle_id` (`bundle_id`),
+  KEY `package_bundle_location_id` (`location_id`),
+  KEY `idx_package_bundles_package_deleted` (`package_id`,`deleted_at`),
+  KEY `idx_package_bundles_pkg_bundle` (`package_id`,`bundle_id`),
+  KEY `fk_pkg_bundles_base_svc` (`base_service_id`),
+  KEY `fk_pkg_bundles_membership` (`membership_code_id`),
+  KEY `fk_pkg_bundles_memtype` (`membership_type_id`),
+  KEY `idx_package_bundles_created_at` (`created_at`),
+  CONSTRAINT `fk_package_bundles_discount_id` FOREIGN KEY (`discount_id`) REFERENCES `discounts` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_package_bundles_location_id` FOREIGN KEY (`location_id`) REFERENCES `locations` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_pkg_bundles_base_svc` FOREIGN KEY (`base_service_id`) REFERENCES `services` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_pkg_bundles_membership` FOREIGN KEY (`membership_code_id`) REFERENCES `memberships` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_pkg_bundles_memtype` FOREIGN KEY (`membership_type_id`) REFERENCES `membership_types` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_pkg_bundles_package` FOREIGN KEY (`package_id`) REFERENCES `packages` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `package_services`;
@@ -1687,7 +2267,16 @@ CREATE TABLE `package_services` (
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   `consumption_order` tinyint(4) NOT NULL DEFAULT 0,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `package_services_package_bundle_id_foreign` (`package_bundle_id`),
+  KEY `package_services_service_id_foreign` (`service_id`),
+  KEY `idx_package_services_pkg_svc` (`package_id`,`service_id`),
+  KEY `fk_pkg_svc_base_service` (`base_service_id`),
+  KEY `idx_package_services_created_at` (`created_at`),
+  CONSTRAINT `fk_package_services_package_bundle_id` FOREIGN KEY (`package_bundle_id`) REFERENCES `package_bundles` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_package_services_service_id` FOREIGN KEY (`service_id`) REFERENCES `services` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_pkg_services_package` FOREIGN KEY (`package_id`) REFERENCES `packages` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_pkg_svc_base_service` FOREIGN KEY (`base_service_id`) REFERENCES `services` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `package_vouchers`;
@@ -1703,8 +2292,14 @@ CREATE TABLE `package_vouchers` (
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp(),
   PRIMARY KEY (`id`),
+  KEY `fk_pkg_vouchers_package` (`package_id`),
+  KEY `fk_pkg_vouchers_service` (`service_id`),
+  KEY `fk_package_vouchers_user_id` (`user_id`),
   KEY `package_vouchers_voucher_user_index` (`voucher_id`,`user_id`),
-  KEY `package_vouchers_package_random_id_index` (`package_random_id`)
+  KEY `package_vouchers_package_random_id_index` (`package_random_id`),
+  CONSTRAINT `fk_package_vouchers_user_id` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_pkg_vouchers_package` FOREIGN KEY (`package_id`) REFERENCES `packages` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_pkg_vouchers_service` FOREIGN KEY (`service_id`) REFERENCES `services` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `packages`;
@@ -1728,14 +2323,24 @@ CREATE TABLE `packages` (
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   `deleted_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `packages_patient_id_foreign` (`patient_id`),
+  KEY `packages_location_id_foreign` (`location_id`),
+  KEY `package_appointment_id` (`appointment_id`),
+  KEY `idx_packages_account_location_active` (`account_id`,`location_id`,`active`,`deleted_at`),
+  KEY `idx_packages_updated_at` (`updated_at`),
+  CONSTRAINT `fk_packages_account_id` FOREIGN KEY (`account_id`) REFERENCES `accounts` (`id`),
+  CONSTRAINT `fk_packages_appointment` FOREIGN KEY (`appointment_id`) REFERENCES `appointments` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_packages_location` FOREIGN KEY (`location_id`) REFERENCES `locations` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_packages_patient` FOREIGN KEY (`patient_id`) REFERENCES `users` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `password_resets`;
 CREATE TABLE `password_resets` (
   `email` varchar(191) NOT NULL,
   `token` varchar(191) NOT NULL,
-  `created_at` timestamp NULL DEFAULT NULL
+  `created_at` timestamp NULL DEFAULT NULL,
+  KEY `password_resets_email_index` (`email`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `patient_notes`;
@@ -1748,7 +2353,9 @@ CREATE TABLE `patient_notes` (
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   `deleted_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `patient_notes_patient_id_created_at_index` (`patient_id`,`created_at`),
+  CONSTRAINT `fk_patient_notes_patient_id` FOREIGN KEY (`patient_id`) REFERENCES `users` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `payment_modes`;
@@ -1765,7 +2372,11 @@ CREATE TABLE `payment_modes` (
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   `deleted_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `payment_modes_account_id_foreign` (`account_id`),
+  KEY `payment_modes_created_by_foreign` (`created_by`),
+  KEY `payment_modes_updated_by_foreign` (`updated_by`),
+  CONSTRAINT `fk_payment_modes_account_id` FOREIGN KEY (`account_id`) REFERENCES `accounts` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `period_locks`;
@@ -1781,7 +2392,12 @@ CREATE TABLE `period_locks` (
   `unlocked_at` timestamp NULL DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `period_locks_account_id_month_year_unique` (`account_id`,`month`,`year`),
+  KEY `period_locks_locked_by_foreign` (`locked_by`),
+  KEY `period_locks_unlocked_by_foreign` (`unlocked_by`),
+  CONSTRAINT `fk_period_locks_account_id` FOREIGN KEY (`account_id`) REFERENCES `accounts` (`id`),
+  CONSTRAINT `period_locks_chk_1` CHECK (json_valid(`balance_snapshot`))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `permissions`;
@@ -1798,6 +2414,7 @@ CREATE TABLE `permissions` (
   `sort_order` int(11) NOT NULL DEFAULT 0,
   `status` smallint(5) unsigned NOT NULL DEFAULT 1,
   PRIMARY KEY (`id`),
+  UNIQUE KEY `permissions_name_guard_name_unique` (`name`,`guard_name`),
   KEY `permissions_category_sort_idx` (`category`,`sort_order`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -1835,7 +2452,22 @@ CREATE TABLE `plan_invoices` (
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   `deleted_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `plan_invoices_invoice_number_unique` (`invoice_number`),
+  KEY `plan_invoices_location_id_index` (`location_id`),
+  KEY `plan_invoices_invoice_type_index` (`invoice_type`),
+  KEY `plan_invoices_created_at_index` (`created_at`),
+  KEY `idx_plan_invoices_account_deleted` (`account_id`,`deleted_at`),
+  KEY `idx_plan_invoices_patient_deleted` (`patient_id`,`deleted_at`),
+  KEY `fk_plan_invoices_package_advance_id` (`package_advance_id`),
+  KEY `fk_plan_invoices_package_id` (`package_id`),
+  KEY `fk_plan_invoices_payment_mode_id` (`payment_mode_id`),
+  CONSTRAINT `fk_plan_inv_location` FOREIGN KEY (`location_id`) REFERENCES `locations` (`id`),
+  CONSTRAINT `fk_plan_invoices_account_id` FOREIGN KEY (`account_id`) REFERENCES `accounts` (`id`),
+  CONSTRAINT `fk_plan_invoices_package_advance_id` FOREIGN KEY (`package_advance_id`) REFERENCES `package_advances` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_plan_invoices_package_id` FOREIGN KEY (`package_id`) REFERENCES `packages` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_plan_invoices_patient_id` FOREIGN KEY (`patient_id`) REFERENCES `users` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_plan_invoices_payment_mode_id` FOREIGN KEY (`payment_mode_id`) REFERENCES `payment_modes` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `plans`;
@@ -1849,7 +2481,9 @@ CREATE TABLE `plans` (
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   `deleted_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `plans_created_by_foreign` (`created_by`),
+  KEY `plans_updated_by_foreign` (`updated_by`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `product_details`;
@@ -1857,13 +2491,17 @@ CREATE TABLE `product_details` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `account_id` int(10) unsigned NOT NULL,
   `product_id` bigint(20) unsigned NOT NULL,
-  `purchase_price` decimal(12,2) DEFAULT 0.00,
-  `total_purchase_price` decimal(12,2) DEFAULT 0.00,
+  `purchase_price` varchar(300) NOT NULL,
+  `total_purchase_price` varchar(300) NOT NULL,
   `quantity` int(11) NOT NULL,
   `bulq` varchar(300) DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `fk_prod_details_product` (`product_id`),
+  KEY `fk_product_details_account_id` (`account_id`),
+  CONSTRAINT `fk_prod_details_product` FOREIGN KEY (`product_id`) REFERENCES `products` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_product_details_account_id` FOREIGN KEY (`account_id`) REFERENCES `accounts` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `products`;
@@ -1873,17 +2511,25 @@ CREATE TABLE `products` (
   `account_id` int(10) unsigned NOT NULL,
   `brand_id` bigint(20) unsigned NOT NULL,
   `name` varchar(255) NOT NULL,
-  `sale_price` decimal(8,2) NOT NULL,
+  `slug` varchar(255) NOT NULL,
+  `sale_price` decimal(10,2) DEFAULT NULL,
   `status` tinyint(4) NOT NULL DEFAULT 1,
   `location_id` int(10) unsigned DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
-  `purchase_price` decimal(10,2) NOT NULL,
+  `purchase_price` decimal(10,2) DEFAULT NULL,
   `product_type` enum('in_house_use','for_sale') NOT NULL,
   `created_by` int(10) unsigned NOT NULL,
   `updated_by` bigint(20) unsigned DEFAULT NULL,
   `active` tinyint(1) NOT NULL DEFAULT 1,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `products_slug_unique` (`slug`),
+  KEY `products_account_id_foreign` (`account_id`),
+  KEY `products_brand_id_foreign` (`brand_id`),
+  KEY `fk_products_location_id` (`location_id`),
+  CONSTRAINT `fk_products_account_id` FOREIGN KEY (`account_id`) REFERENCES `accounts` (`id`),
+  CONSTRAINT `fk_products_brand_id` FOREIGN KEY (`brand_id`) REFERENCES `brands` (`id`),
+  CONSTRAINT `fk_products_location_id` FOREIGN KEY (`location_id`) REFERENCES `locations` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `recruitment_candidates`;
@@ -1910,7 +2556,10 @@ CREATE TABLE `recruitment_candidates` (
   PRIMARY KEY (`id`),
   KEY `recruitment_candidates_status_account_id_index` (`status`,`account_id`),
   KEY `recruitment_candidates_account_id_index` (`account_id`),
-  KEY `recruitment_candidates_designation_id_index` (`designation_id`)
+  KEY `recruitment_candidates_designation_id_index` (`designation_id`),
+  KEY `recruitment_candidates_city_id_index` (`city_id`),
+  KEY `recruitment_candidates_location_id_index` (`location_id`),
+  KEY `recruitment_candidates_converted_user_id_index` (`converted_user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `recruitment_interviews`;
@@ -1920,16 +2569,13 @@ CREATE TABLE `recruitment_interviews` (
   `interviewer_id` int(10) unsigned NOT NULL,
   `interview_date` datetime NOT NULL,
   `interview_type` varchar(255) DEFAULT NULL,
-  `interview_notes` text DEFAULT NULL,
+  `interview_notes` varchar(150) DEFAULT NULL,
   `score_communication` tinyint(3) unsigned DEFAULT NULL,
   `score_technical` tinyint(3) unsigned DEFAULT NULL,
   `score_cultural_fit` tinyint(3) unsigned DEFAULT NULL,
   `score_experience` tinyint(3) unsigned DEFAULT NULL,
   `score_personality` tinyint(3) unsigned DEFAULT NULL,
-  `rating` tinyint(3) unsigned DEFAULT NULL,
-  `recommendation` varchar(255) DEFAULT NULL,
   `verdict` varchar(255) DEFAULT NULL,
-  `next_steps` varchar(500) DEFAULT NULL,
   `account_id` int(10) unsigned NOT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
@@ -1950,7 +2596,9 @@ CREATE TABLE `regions` (
   `updated_at` timestamp NULL DEFAULT NULL,
   `deleted_at` timestamp NULL DEFAULT NULL,
   `account_id` int(10) unsigned NOT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `regions_account` (`account_id`),
+  CONSTRAINT `fk_regions_account_id` FOREIGN KEY (`account_id`) REFERENCES `accounts` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `resource_has_rota`;
@@ -1961,20 +2609,20 @@ CREATE TABLE `resource_has_rota` (
   `location_id` int(10) unsigned DEFAULT NULL,
   `start` date NOT NULL,
   `end` date NOT NULL,
-  `monday` varchar(30) DEFAULT NULL,
-  `monday_off` varchar(30) DEFAULT NULL,
-  `tuesday` varchar(30) DEFAULT NULL,
-  `tuesday_off` varchar(30) DEFAULT NULL,
-  `wednesday` varchar(30) DEFAULT NULL,
-  `wednesday_off` varchar(30) DEFAULT NULL,
-  `thursday` varchar(30) DEFAULT NULL,
-  `thursday_off` varchar(30) DEFAULT NULL,
-  `friday` varchar(30) DEFAULT NULL,
-  `friday_off` varchar(30) DEFAULT NULL,
-  `saturday` varchar(30) DEFAULT NULL,
-  `saturday_off` varchar(30) DEFAULT NULL,
-  `sunday` varchar(30) DEFAULT NULL,
-  `sunday_off` varchar(30) DEFAULT NULL,
+  `monday` varchar(191) DEFAULT NULL,
+  `monday_off` varchar(191) DEFAULT NULL,
+  `tuesday` varchar(191) DEFAULT NULL,
+  `tuesday_off` varchar(191) DEFAULT NULL,
+  `wednesday` varchar(191) DEFAULT NULL,
+  `wednesday_off` varchar(191) DEFAULT NULL,
+  `thursday` varchar(191) DEFAULT NULL,
+  `thursday_off` varchar(191) DEFAULT NULL,
+  `friday` varchar(191) DEFAULT NULL,
+  `friday_off` varchar(191) DEFAULT NULL,
+  `saturday` varchar(191) DEFAULT NULL,
+  `saturday_off` varchar(191) DEFAULT NULL,
+  `sunday` varchar(191) DEFAULT NULL,
+  `sunday_off` varchar(191) DEFAULT NULL,
   `copy_all` tinyint(3) unsigned DEFAULT NULL,
   `active` tinyint(3) unsigned NOT NULL DEFAULT 1,
   `is_consultancy` tinyint(3) unsigned NOT NULL DEFAULT 1,
@@ -1985,7 +2633,13 @@ CREATE TABLE `resource_has_rota` (
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   `deleted_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `resource_has_rota_region_id_foreign` (`region_id`),
+  KEY `resource_has_rota_city_id_foreign` (`city_id`),
+  KEY `resource_has_rota_location_id_foreign` (`location_id`),
+  KEY `resource_has_rota_resource_type_id_foreign` (`resource_type_id`),
+  KEY `resource_has_rota_account_id_foreign` (`account_id`),
+  KEY `idx_resource_has_rota_res_loc` (`resource_id`,`location_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `resource_has_rota_days`;
@@ -2003,13 +2657,21 @@ CREATE TABLE `resource_has_rota_days` (
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   `deleted_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `idx_rota_days_rota_deleted` (`resource_has_rota_id`,`deleted_at`),
+  KEY `idx_rota_days_date` (`date`),
+  KEY `idx_rhrd_created_at` (`created_at`),
+  CONSTRAINT `fk_resource_has_rota_days_resource_has_rota_id` FOREIGN KEY (`resource_has_rota_id`) REFERENCES `resource_has_rota` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `resource_has_services`;
 CREATE TABLE `resource_has_services` (
   `resource_id` int(10) unsigned NOT NULL,
-  `service_id` int(10) unsigned NOT NULL
+  `service_id` int(10) unsigned NOT NULL,
+  PRIMARY KEY (`resource_id`,`service_id`),
+  KEY `resource_has_services_service_id_foreign` (`service_id`),
+  CONSTRAINT `fk_resource_has_services_resource_id` FOREIGN KEY (`resource_id`) REFERENCES `resources` (`id`),
+  CONSTRAINT `fk_resource_has_services_service_id` FOREIGN KEY (`service_id`) REFERENCES `services` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `resource_time_offs`;
@@ -2029,7 +2691,13 @@ CREATE TABLE `resource_time_offs` (
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   `deleted_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `resource_time_offs_resource_id_start_date_index` (`resource_id`,`start_date`),
+  KEY `resource_time_offs_location_id_start_date_index` (`location_id`,`start_date`),
+  KEY `fk_resource_time_offs_account_id` (`account_id`),
+  CONSTRAINT `fk_resource_time_offs_account_id` FOREIGN KEY (`account_id`) REFERENCES `accounts` (`id`),
+  CONSTRAINT `fk_resource_time_offs_location_id` FOREIGN KEY (`location_id`) REFERENCES `locations` (`id`),
+  CONSTRAINT `fk_resource_time_offs_resource_id` FOREIGN KEY (`resource_id`) REFERENCES `resources` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `resource_types`;
@@ -2043,7 +2711,9 @@ CREATE TABLE `resource_types` (
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   `deleted_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `resource_types_created_by_foreign` (`created_by`),
+  KEY `resource_types_updated_by_foreign` (`updated_by`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `resources`;
@@ -2059,20 +2729,35 @@ CREATE TABLE `resources` (
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   `deleted_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `resources_resource_type_id_foreign` (`resource_type_id`),
+  KEY `resources_location_id_foreign` (`location_id`),
+  KEY `machine_type_resource_id` (`machine_type_id`),
+  KEY `idx_resources_account_active` (`account_id`,`active`),
+  CONSTRAINT `fk_resources_account_id` FOREIGN KEY (`account_id`) REFERENCES `accounts` (`id`),
+  CONSTRAINT `fk_resources_location_id` FOREIGN KEY (`location_id`) REFERENCES `locations` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_resources_machine_type_id` FOREIGN KEY (`machine_type_id`) REFERENCES `machine_types` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_resources_resource_type_id` FOREIGN KEY (`resource_type_id`) REFERENCES `resource_types` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `role_has_permissions`;
 CREATE TABLE `role_has_permissions` (
   `permission_id` int(10) unsigned NOT NULL,
-  `role_id` int(10) unsigned NOT NULL
+  `role_id` int(10) unsigned NOT NULL,
+  PRIMARY KEY (`permission_id`,`role_id`),
+  KEY `role_has_permissions_role_id_foreign` (`role_id`),
+  CONSTRAINT `fk_rhp_permission` FOREIGN KEY (`permission_id`) REFERENCES `permissions` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_rhp_role` FOREIGN KEY (`role_id`) REFERENCES `roles` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `role_has_users`;
 CREATE TABLE `role_has_users` (
   `role_id` int(10) unsigned NOT NULL,
   `user_id` int(10) unsigned NOT NULL,
-  `deleted_at` timestamp NULL DEFAULT NULL
+  `deleted_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`role_id`,`user_id`),
+  KEY `rolehasusers_user` (`user_id`),
+  CONSTRAINT `fk_role_has_users_role_id` FOREIGN KEY (`role_id`) REFERENCES `roles` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `roles`;
@@ -2083,7 +2768,8 @@ CREATE TABLE `roles` (
   `guard_name` varchar(30) NOT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `roles_name_guard_name_unique` (`name`,`guard_name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `service_bundle_price_history`;
@@ -2136,7 +2822,12 @@ DROP TABLE IF EXISTS `service_has_locations`;
 CREATE TABLE `service_has_locations` (
   `service_id` int(10) unsigned NOT NULL,
   `location_id` int(10) unsigned NOT NULL,
-  `account_id` int(10) unsigned NOT NULL
+  `account_id` int(10) unsigned NOT NULL,
+  PRIMARY KEY (`service_id`,`location_id`,`account_id`),
+  KEY `servicehaslocations_locations` (`location_id`),
+  KEY `servicehaslocations_accounts` (`account_id`),
+  CONSTRAINT `fk_service_has_locations_account_id` FOREIGN KEY (`account_id`) REFERENCES `accounts` (`id`),
+  CONSTRAINT `fk_service_has_locations_service_id` FOREIGN KEY (`service_id`) REFERENCES `services` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `services`;
@@ -2159,7 +2850,13 @@ CREATE TABLE `services` (
   `updated_at` timestamp NULL DEFAULT NULL,
   `deleted_at` timestamp NULL DEFAULT NULL,
   `account_id` int(10) unsigned NOT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `idx_services_account_active_endnode` (`account_id`,`active`,`end_node`),
+  KEY `fk_services_parent_id` (`parent_id`),
+  KEY `fk_services_tax_treatment_type_id` (`tax_treatment_type_id`),
+  CONSTRAINT `fk_services_account_id` FOREIGN KEY (`account_id`) REFERENCES `accounts` (`id`),
+  CONSTRAINT `fk_services_parent_id` FOREIGN KEY (`parent_id`) REFERENCES `services` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_services_tax_treatment_type_id` FOREIGN KEY (`tax_treatment_type_id`) REFERENCES `tax_treatment_type` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `settings`;
@@ -2173,7 +2870,9 @@ CREATE TABLE `settings` (
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   `deleted_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `settings_account` (`account_id`),
+  CONSTRAINT `fk_settings_account_id` FOREIGN KEY (`account_id`) REFERENCES `accounts` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `sms_logs`;
@@ -2190,17 +2889,27 @@ CREATE TABLE `sms_logs` (
   `appointment_id` int(10) unsigned DEFAULT NULL,
   `invoice_id` int(10) unsigned DEFAULT NULL,
   `package_id` int(10) unsigned DEFAULT NULL,
-  `is_refund` tinyint(1) NOT NULL DEFAULT 0,
+  `is_refund` varchar(191) DEFAULT NULL,
   `created_by` int(10) unsigned DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   `deleted_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `sms_logs_lead_id_foreign` (`lead_id`),
+  KEY `sms_logs_created_by_foreign` (`created_by`),
+  KEY `sms_logs_invoice_id_foreign` (`invoice_id`),
+  KEY `sms_logs_package_id_foreign` (`package_id`),
+  KEY `idx_sms_logs_appointment_deleted` (`appointment_id`,`deleted_at`),
+  KEY `idx_sms_logs_lead_created` (`lead_id`,`created_at`),
+  CONSTRAINT `fk_sms_invoice` FOREIGN KEY (`invoice_id`) REFERENCES `invoices` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_sms_lead` FOREIGN KEY (`lead_id`) REFERENCES `leads` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_sms_logs_appointment` FOREIGN KEY (`appointment_id`) REFERENCES `appointments` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_sms_package` FOREIGN KEY (`package_id`) REFERENCES `packages` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `sms_logs_archive`;
 CREATE TABLE `sms_logs_archive` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `id` int(10) unsigned NOT NULL,
   `log_type` varchar(100) NOT NULL DEFAULT 'sms',
   `to` text NOT NULL,
   `text` text NOT NULL,
@@ -2208,16 +2917,17 @@ CREATE TABLE `sms_logs_archive` (
   `status` tinyint(3) unsigned DEFAULT NULL,
   `sms_data` text DEFAULT NULL,
   `error_msg` text DEFAULT NULL,
-  `lead_id` int(10) unsigned DEFAULT NULL,
-  `appointment_id` int(10) unsigned DEFAULT NULL,
-  `invoice_id` int(10) unsigned DEFAULT NULL,
-  `package_id` int(10) unsigned DEFAULT NULL,
+  `lead_id` bigint(20) unsigned DEFAULT NULL,
+  `appointment_id` bigint(20) unsigned DEFAULT NULL,
+  `invoice_id` bigint(20) unsigned DEFAULT NULL,
+  `package_id` bigint(20) unsigned DEFAULT NULL,
   `is_refund` tinyint(1) NOT NULL DEFAULT 0,
-  `created_by` int(10) unsigned DEFAULT NULL,
+  `created_by` bigint(20) unsigned DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   `deleted_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `idx_archive_sms_created` (`created_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `sms_templates`;
@@ -2231,7 +2941,9 @@ CREATE TABLE `sms_templates` (
   `updated_at` timestamp NULL DEFAULT NULL,
   `deleted_at` timestamp NULL DEFAULT NULL,
   `account_id` int(10) unsigned NOT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `sms_templates_account` (`account_id`),
+  CONSTRAINT `fk_sms_templates_account_id` FOREIGN KEY (`account_id`) REFERENCES `accounts` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `staff_advances`;
@@ -2241,6 +2953,7 @@ CREATE TABLE `staff_advances` (
   `user_id` int(10) unsigned NOT NULL COMMENT 'Staff receiving advance',
   `pool_id` bigint(20) unsigned NOT NULL COMMENT 'Cash pool advance given from',
   `amount` decimal(15,2) NOT NULL,
+  `advance_date` date DEFAULT NULL COMMENT 'Date the advance was issued — backdating up to 7 days is allowed by StaffAdvanceService.',
   `description` text DEFAULT NULL,
   `created_by` int(10) unsigned NOT NULL,
   `voided_at` timestamp NULL DEFAULT NULL,
@@ -2250,7 +2963,14 @@ CREATE TABLE `staff_advances` (
   `updated_at` timestamp NULL DEFAULT NULL,
   `system_created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `deleted_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `staff_advances_user_id_foreign` (`user_id`),
+  KEY `staff_advances_pool_id_foreign` (`pool_id`),
+  KEY `staff_advances_created_by_foreign` (`created_by`),
+  KEY `staff_advances_account_id_user_id_index` (`account_id`,`user_id`),
+  KEY `staff_advances_account_date_idx` (`account_id`,`advance_date`),
+  KEY `staff_advances_account_voided_idx` (`account_id`,`voided_at`),
+  CONSTRAINT `fk_staff_advances_account_id` FOREIGN KEY (`account_id`) REFERENCES `accounts` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `staff_returns`;
@@ -2260,6 +2980,7 @@ CREATE TABLE `staff_returns` (
   `user_id` int(10) unsigned NOT NULL COMMENT 'Staff returning cash',
   `pool_id` bigint(20) unsigned NOT NULL COMMENT 'Cash pool return deposited to',
   `amount` decimal(15,2) NOT NULL,
+  `return_date` date DEFAULT NULL COMMENT 'Date the return was received — backdating up to 7 days is allowed by StaffAdvanceService.',
   `description` text DEFAULT NULL,
   `created_by` int(10) unsigned NOT NULL,
   `voided_at` timestamp NULL DEFAULT NULL,
@@ -2269,7 +2990,14 @@ CREATE TABLE `staff_returns` (
   `updated_at` timestamp NULL DEFAULT NULL,
   `system_created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `deleted_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `staff_returns_user_id_foreign` (`user_id`),
+  KEY `staff_returns_pool_id_foreign` (`pool_id`),
+  KEY `staff_returns_created_by_foreign` (`created_by`),
+  KEY `staff_returns_account_id_user_id_index` (`account_id`,`user_id`),
+  KEY `staff_returns_account_date_idx` (`account_id`,`return_date`),
+  KEY `staff_returns_account_voided_idx` (`account_id`,`voided_at`),
+  CONSTRAINT `fk_staff_returns_account_id` FOREIGN KEY (`account_id`) REFERENCES `accounts` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `staff_target_services`;
@@ -2287,7 +3015,19 @@ CREATE TABLE `staff_target_services` (
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   `deleted_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `staff_target_services_account_id_index` (`account_id`),
+  KEY `staff_target_services_location_id_index` (`location_id`),
+  KEY `staff_target_services_staff_target_id_index` (`staff_target_id`),
+  KEY `staff_target_services_staff_id_index` (`staff_id`),
+  KEY `staff_target_services_service_id_index` (`service_id`),
+  KEY `staff_target_services_month_index` (`month`),
+  KEY `staff_target_services_year_index` (`year`),
+  CONSTRAINT `fk_staff_target_services_account_id` FOREIGN KEY (`account_id`) REFERENCES `accounts` (`id`),
+  CONSTRAINT `fk_staff_target_services_location_id` FOREIGN KEY (`location_id`) REFERENCES `locations` (`id`),
+  CONSTRAINT `fk_staff_target_services_service_id` FOREIGN KEY (`service_id`) REFERENCES `services` (`id`),
+  CONSTRAINT `fk_staff_target_services_staff_id` FOREIGN KEY (`staff_id`) REFERENCES `users` (`id`),
+  CONSTRAINT `fk_staff_target_services_staff_target_id` FOREIGN KEY (`staff_target_id`) REFERENCES `staff_targets` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `staff_targets`;
@@ -2303,7 +3043,15 @@ CREATE TABLE `staff_targets` (
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   `deleted_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `staff_targets_account_id_index` (`account_id`),
+  KEY `staff_targets_staff_id_index` (`staff_id`),
+  KEY `staff_targets_location_id_index` (`location_id`),
+  KEY `staff_targets_month_index` (`month`),
+  KEY `staff_targets_year_index` (`year`),
+  CONSTRAINT `fk_staff_targets_account_id` FOREIGN KEY (`account_id`) REFERENCES `accounts` (`id`),
+  CONSTRAINT `fk_staff_targets_location_id` FOREIGN KEY (`location_id`) REFERENCES `locations` (`id`),
+  CONSTRAINT `fk_staff_targets_staff_id` FOREIGN KEY (`staff_id`) REFERENCES `users` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `staff_transfers`;
@@ -2313,6 +3061,7 @@ CREATE TABLE `staff_transfers` (
   `from_user_id` bigint(20) unsigned NOT NULL COMMENT 'Staff handing over the cash',
   `to_user_id` bigint(20) unsigned NOT NULL COMMENT 'Staff receiving the cash',
   `amount` decimal(15,2) NOT NULL,
+  `transfer_date` date DEFAULT NULL COMMENT 'Date the handover happened — backdating up to 7 days is allowed by StaffTransferService.',
   `description` text DEFAULT NULL,
   `voided_at` timestamp NULL DEFAULT NULL,
   `void_reason` varchar(100) DEFAULT NULL,
@@ -2321,7 +3070,9 @@ CREATE TABLE `staff_transfers` (
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   `deleted_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `staff_transfers_account_date_idx` (`account_id`,`transfer_date`),
+  KEY `staff_transfers_account_voided_idx` (`account_id`,`voided_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `stocks`;
@@ -2340,16 +3091,26 @@ CREATE TABLE `stocks` (
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
+  KEY `stocks_product_id_foreign` (`product_id`),
+  KEY `fk_stocks_location` (`location_id`),
+  KEY `fk_stocks_account` (`account_id`),
+  KEY `fk_stocks_order` (`order_id`),
+  KEY `fk_stocks_product_detail_id` (`product_detail_id`),
   KEY `stocks_fifo_idx` (`product_id`,`location_id`,`stock_type`,`remaining_quantity`,`created_at`),
-  KEY `stocks_location_id_idx` (`location_id`)
+  KEY `stocks_location_id_idx` (`location_id`),
+  CONSTRAINT `fk_stocks_account` FOREIGN KEY (`account_id`) REFERENCES `accounts` (`id`),
+  CONSTRAINT `fk_stocks_location` FOREIGN KEY (`location_id`) REFERENCES `locations` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_stocks_order` FOREIGN KEY (`order_id`) REFERENCES `orders` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_stocks_product` FOREIGN KEY (`product_id`) REFERENCES `products` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_stocks_product_detail_id` FOREIGN KEY (`product_detail_id`) REFERENCES `product_details` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `student_verifications`;
 CREATE TABLE `student_verifications` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `patient_id` int(10) unsigned NOT NULL,
-  `membership_id` bigint(20) unsigned DEFAULT NULL,
-  `membership_type_id` bigint(20) unsigned NOT NULL,
+  `membership_id` int(10) unsigned DEFAULT NULL,
+  `membership_type_id` int(10) unsigned NOT NULL,
   `package_id` int(10) unsigned DEFAULT NULL,
   `document_paths` longtext NOT NULL,
   `status` enum('pending','approved','rejected') NOT NULL DEFAULT 'pending',
@@ -2361,7 +3122,12 @@ CREATE TABLE `student_verifications` (
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   `deleted_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `fk_student_verifications_package_id` (`package_id`),
+  KEY `fk_student_verifications_patient_id` (`patient_id`),
+  CONSTRAINT `fk_student_verifications_package_id` FOREIGN KEY (`package_id`) REFERENCES `packages` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_student_verifications_patient_id` FOREIGN KEY (`patient_id`) REFERENCES `users` (`id`),
+  CONSTRAINT `student_verifications_chk_1` CHECK (json_valid(`document_paths`))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `system_targets`;
@@ -2374,51 +3140,39 @@ CREATE TABLE `system_targets` (
   `updated_by` int(10) unsigned DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `system_targets_unique` (`account_id`,`target_key`),
+  KEY `system_targets_target_key_index` (`target_key`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `tax_treatment_type`;
 CREATE TABLE `tax_treatment_type` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `name` varchar(191) NOT NULL,
+  `name` varchar(50) NOT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   `deleted_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-DROP TABLE IF EXISTS `taxes`;
-CREATE TABLE `taxes` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `name` varchar(191) NOT NULL,
-  `type` varchar(191) NOT NULL,
-  `value` varchar(191) NOT NULL,
-  `active` tinyint(3) unsigned NOT NULL DEFAULT 1,
-  `account_id` int(10) unsigned DEFAULT NULL,
-  `created_at` timestamp NULL DEFAULT NULL,
-  `updated_at` timestamp NULL DEFAULT NULL,
-  `deleted_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  KEY `taxes_account_id_foreign` (`account_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
 DROP TABLE IF EXISTS `telecomprovidernumbers`;
 CREATE TABLE `telecomprovidernumbers` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `pre_fix` varchar(500) NOT NULL,
+  `pre_fix` varchar(100) DEFAULT NULL,
   `active` tinyint(3) unsigned NOT NULL DEFAULT 1,
   `telecomprovider_id` int(10) unsigned NOT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   `deleted_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
-  KEY `telecomprovidernumbers_telecomprovider_id_foreign` (`telecomprovider_id`)
+  KEY `telecomprovidernumbers_telecomprovider_id_foreign` (`telecomprovider_id`),
+  CONSTRAINT `fk_telecomprovidernumbers_telecomprovider_id` FOREIGN KEY (`telecomprovider_id`) REFERENCES `telecomproviders` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `telecomproviders`;
 CREATE TABLE `telecomproviders` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `name` varchar(500) DEFAULT NULL,
+  `name` varchar(100) DEFAULT NULL,
   `active` tinyint(3) unsigned NOT NULL DEFAULT 1,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
@@ -2429,24 +3183,26 @@ CREATE TABLE `telecomproviders` (
 DROP TABLE IF EXISTS `towns`;
 CREATE TABLE `towns` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `name` varchar(191) DEFAULT NULL,
+  `name` varchar(100) NOT NULL,
   `city_id` int(10) unsigned DEFAULT NULL,
   `active` tinyint(3) unsigned NOT NULL DEFAULT 1,
-  `account_id` int(10) unsigned DEFAULT NULL,
+  `account_id` int(10) unsigned NOT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   `deleted_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `towns_city_id_foreign` (`city_id`),
-  KEY `towns_account_id_foreign` (`account_id`)
+  KEY `towns_account_id_foreign` (`account_id`),
+  CONSTRAINT `fk_towns_account_id` FOREIGN KEY (`account_id`) REFERENCES `accounts` (`id`),
+  CONSTRAINT `fk_towns_city_id` FOREIGN KEY (`city_id`) REFERENCES `cities` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `transfer_products`;
 CREATE TABLE `transfer_products` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `product_id` bigint(20) unsigned NOT NULL,
-  `child_product_id` int(11) NOT NULL,
-  `product_detail_id` int(11) DEFAULT NULL,
+  `child_product_id` bigint(20) unsigned NOT NULL,
+  `product_detail_id` int(10) unsigned DEFAULT NULL,
   `from_location_id` int(10) unsigned DEFAULT NULL,
   `from_warehouse_id` bigint(20) unsigned DEFAULT NULL,
   `to_location_id` int(10) unsigned DEFAULT NULL,
@@ -2476,30 +3232,37 @@ CREATE TABLE `user_has_locations` (
   `location_id` int(10) unsigned NOT NULL,
   PRIMARY KEY (`user_id`,`location_id`),
   KEY `user_has_locations_region_id_foreign` (`region_id`),
-  KEY `user_has_locations_location_id_foreign` (`location_id`)
+  KEY `user_has_locations_location_id_foreign` (`location_id`),
+  CONSTRAINT `fk_uhl_location` FOREIGN KEY (`location_id`) REFERENCES `locations` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_uhl_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_user_has_locations_region_id` FOREIGN KEY (`region_id`) REFERENCES `regions` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `user_has_warehouses`;
 CREATE TABLE `user_has_warehouses` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  `user_id` int(11) NOT NULL,
-  `warehouse_id` int(11) NOT NULL,
+  `user_id` int(10) unsigned NOT NULL,
+  `warehouse_id` bigint(20) unsigned NOT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `fk_user_wh_user` (`user_id`),
+  KEY `fk_user_wh_warehouse` (`warehouse_id`),
+  CONSTRAINT `fk_user_wh_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_user_wh_warehouse` FOREIGN KEY (`warehouse_id`) REFERENCES `warehouses` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `user_operator_settings`;
 CREATE TABLE `user_operator_settings` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `operator_name` varchar(191) NOT NULL,
-  `username` varchar(191) NOT NULL,
-  `password` varchar(191) NOT NULL,
-  `mask` varchar(191) DEFAULT NULL,
-  `test_mode` varchar(191) NOT NULL,
-  `url` varchar(191) DEFAULT NULL,
-  `string_1` varchar(191) DEFAULT NULL,
-  `string_2` varchar(191) DEFAULT NULL,
+  `operator_name` varchar(50) DEFAULT NULL,
+  `username` varchar(50) DEFAULT NULL,
+  `password` text DEFAULT NULL,
+  `mask` varchar(30) DEFAULT NULL,
+  `test_mode` varchar(20) DEFAULT NULL,
+  `url` varchar(100) DEFAULT NULL,
+  `string_1` varchar(30) DEFAULT NULL,
+  `string_2` varchar(30) DEFAULT NULL,
   `operator_id` int(10) unsigned NOT NULL,
   `account_id` int(10) unsigned NOT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
@@ -2507,15 +3270,17 @@ CREATE TABLE `user_operator_settings` (
   `deleted_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `user_operator_settings_operator` (`operator_id`),
-  KEY `user_operator_settings_account` (`account_id`)
+  KEY `user_operator_settings_account` (`account_id`),
+  CONSTRAINT `fk_user_operator_settings_account_id` FOREIGN KEY (`account_id`) REFERENCES `accounts` (`id`),
+  CONSTRAINT `fk_user_operator_settings_operator_id` FOREIGN KEY (`operator_id`) REFERENCES `global_operator_settings` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `user_types`;
 CREATE TABLE `user_types` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `name` varchar(191) NOT NULL,
-  `type` varchar(191) NOT NULL,
-  `account_id` int(10) unsigned DEFAULT NULL,
+  `name` varchar(50) NOT NULL,
+  `type` varchar(50) NOT NULL,
+  `account_id` int(10) unsigned NOT NULL,
   `active` tinyint(3) unsigned NOT NULL DEFAULT 1,
   `created_by` int(10) unsigned DEFAULT NULL,
   `updated_by` int(10) unsigned DEFAULT NULL,
@@ -2525,44 +3290,45 @@ CREATE TABLE `user_types` (
   PRIMARY KEY (`id`),
   KEY `user_types_created_by_foreign` (`created_by`),
   KEY `user_types_updated_by_foreign` (`updated_by`),
-  KEY `user_types_account` (`account_id`)
+  KEY `user_types_account` (`account_id`),
+  CONSTRAINT `fk_user_types_account_id` FOREIGN KEY (`account_id`) REFERENCES `accounts` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `user_vouchers`;
 CREATE TABLE `user_vouchers` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  `user_id` bigint(20) unsigned DEFAULT NULL,
+  `user_id` int(10) unsigned DEFAULT NULL,
   `voucher_id` bigint(20) unsigned DEFAULT NULL,
   `amount` decimal(10,2) DEFAULT NULL,
-  `total_amount` varchar(500) DEFAULT NULL,
+  `total_amount` decimal(12,2) DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   `deleted_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `user_vouchers_user_voucher_index` (`user_id`,`voucher_id`),
-  KEY `user_vouchers_voucher_id_index` (`voucher_id`)
+  KEY `user_vouchers_voucher_id_index` (`voucher_id`),
+  CONSTRAINT `fk_user_vouchers_user_id` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `users`;
 CREATE TABLE `users` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `name` varchar(191) NOT NULL,
-  `email` varchar(191) DEFAULT NULL,
-  `phone` varchar(191) NOT NULL,
+  `name` varchar(100) NOT NULL,
+  `email` varchar(100) DEFAULT NULL,
+  `phone` varchar(30) DEFAULT NULL,
   `phone_normalized` varchar(40) DEFAULT NULL,
   `main_account` tinyint(4) NOT NULL DEFAULT 0,
   `gender` tinyint(4) DEFAULT NULL,
   `cnic` text DEFAULT NULL,
   `dob` date DEFAULT NULL,
-  `commission` double(11,2) NOT NULL DEFAULT 0.00,
+  `commission` decimal(11,2) NOT NULL DEFAULT 0.00,
   `user_type_id` int(10) unsigned DEFAULT NULL,
   `resource_type_id` int(10) unsigned DEFAULT NULL,
   `account_id` int(10) unsigned DEFAULT NULL,
-  `address` text DEFAULT NULL,
   `referred_by` int(10) unsigned DEFAULT NULL,
-  `password` varchar(191) NOT NULL,
-  `remember_token` varchar(191) DEFAULT NULL,
-  `image_src` varchar(191) DEFAULT NULL,
+  `password` varchar(100) NOT NULL,
+  `remember_token` varchar(100) DEFAULT NULL,
+  `image_src` varchar(100) DEFAULT NULL,
   `active` tinyint(3) unsigned NOT NULL DEFAULT 1,
   `hr_managed` tinyint(3) unsigned NOT NULL DEFAULT 1,
   `is_advance_eligible` tinyint(1) NOT NULL DEFAULT 0,
@@ -2570,8 +3336,8 @@ CREATE TABLE `users` (
   `updated_at` timestamp NULL DEFAULT NULL,
   `deleted_at` timestamp NULL DEFAULT NULL,
   `is_dr_migrated` tinyint(1) NOT NULL DEFAULT 0,
-  `created_by` int(11) DEFAULT NULL,
-  `can_perform_consultation` int(11) NOT NULL DEFAULT 0,
+  `created_by` int(10) unsigned DEFAULT NULL,
+  `can_perform_consultation` tinyint(1) NOT NULL DEFAULT 0,
   `failed_login_attempts` tinyint(3) unsigned NOT NULL DEFAULT 0,
   `locked_until` timestamp NULL DEFAULT NULL,
   `totp_secret` text DEFAULT NULL,
@@ -2580,17 +3346,22 @@ CREATE TABLE `users` (
   UNIQUE KEY `users_email_deleted_at_unique` (`email`,`deleted_at`),
   KEY `users_user_type` (`user_type_id`),
   KEY `users_resource_type` (`resource_type_id`),
-  KEY `users_account` (`account_id`),
   KEY `users_name_phone_index` (`name`,`phone`),
-  KEY `idx_user_type` (`user_type_id`),
+  KEY `idx_users_account_active_deleted` (`account_id`,`active`,`deleted_at`),
+  KEY `idx_users_created_at` (`created_at`),
+  KEY `fk_users_creator` (`created_by`),
   KEY `idx_users_phone_normalized` (`phone_normalized`),
-  FULLTEXT KEY `idx_users_name_ft` (`name`)
+  FULLTEXT KEY `idx_users_name_ft` (`name`),
+  CONSTRAINT `fk_users_account` FOREIGN KEY (`account_id`) REFERENCES `accounts` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_users_creator` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_users_resource_type_id` FOREIGN KEY (`resource_type_id`) REFERENCES `resource_types` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_users_user_type_id` FOREIGN KEY (`user_type_id`) REFERENCES `user_types` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `vendor_requests`;
 CREATE TABLE `vendor_requests` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  `account_id` bigint(20) unsigned NOT NULL,
+  `account_id` int(10) unsigned NOT NULL,
   `name` varchar(255) NOT NULL,
   `contact_person` varchar(255) DEFAULT NULL,
   `phone` varchar(255) DEFAULT NULL,
@@ -2609,13 +3380,40 @@ CREATE TABLE `vendor_requests` (
   PRIMARY KEY (`id`),
   KEY `vendor_requests_requested_by_foreign` (`requested_by`),
   KEY `vendor_requests_vendor_id_foreign` (`vendor_id`),
-  KEY `vendor_requests_account_id_status_index` (`account_id`,`status`)
+  KEY `vendor_requests_account_id_status_index` (`account_id`,`status`),
+  KEY `fk_vendor_requests_category_id` (`category_id`),
+  CONSTRAINT `fk_vendor_requests_account_id` FOREIGN KEY (`account_id`) REFERENCES `accounts` (`id`),
+  CONSTRAINT `fk_vendor_requests_category_id` FOREIGN KEY (`category_id`) REFERENCES `expense_categories` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+DROP TABLE IF EXISTS `vendor_transaction_attachments`;
+CREATE TABLE `vendor_transaction_attachments` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `account_id` int(10) unsigned NOT NULL,
+  `vendor_transaction_id` bigint(20) unsigned DEFAULT NULL COMMENT 'NULL = orphan upload — bound to a vendor transaction on form submit, pruned by command if it stays orphan past the TTL.',
+  `file_name` varchar(255) NOT NULL COMMENT 'Original filename as uploaded; for display only.',
+  `file_path` varchar(500) NOT NULL COMMENT 'R2 object key — content-addressed by SHA-256.',
+  `mime_type` varchar(100) NOT NULL,
+  `file_size` int(10) unsigned NOT NULL COMMENT 'Bytes; capped at 10 MB by the upload endpoint.',
+  `sha256` char(64) NOT NULL COMMENT 'Lowercase hex SHA-256 of the file bytes — drives dedup.',
+  `uploaded_by` int(10) unsigned NOT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  `deleted_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `vendor_transaction_attachments_uploaded_by_foreign` (`uploaded_by`),
+  KEY `vtxatt_account_tx_idx` (`account_id`,`vendor_transaction_id`),
+  KEY `vtxatt_account_sha_idx` (`account_id`,`sha256`),
+  KEY `vtxatt_tx_idx` (`vendor_transaction_id`),
+  CONSTRAINT `vendor_transaction_attachments_account_id_foreign` FOREIGN KEY (`account_id`) REFERENCES `accounts` (`id`),
+  CONSTRAINT `vendor_transaction_attachments_uploaded_by_foreign` FOREIGN KEY (`uploaded_by`) REFERENCES `users` (`id`),
+  CONSTRAINT `vendor_transaction_attachments_vendor_transaction_id_foreign` FOREIGN KEY (`vendor_transaction_id`) REFERENCES `vendor_transactions` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `vendor_transactions`;
 CREATE TABLE `vendor_transactions` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  `account_id` bigint(20) unsigned NOT NULL,
+  `account_id` int(10) unsigned NOT NULL,
   `vendor_id` bigint(20) unsigned NOT NULL,
   `type` enum('purchase','payment') NOT NULL,
   `status` enum('ordered','delivered') NOT NULL DEFAULT 'delivered',
@@ -2623,9 +3421,9 @@ CREATE TABLE `vendor_transactions` (
   `expense_id` bigint(20) unsigned DEFAULT NULL COMMENT 'Linked expense for payments',
   `description` text DEFAULT NULL,
   `reference_no` varchar(255) DEFAULT NULL,
-  `attachment_url` varchar(500) DEFAULT NULL,
+  `attachment_url` varchar(255) DEFAULT NULL,
   `transaction_date` date DEFAULT NULL,
-  `for_branch_id` bigint(20) unsigned DEFAULT NULL,
+  `for_branch_id` int(10) unsigned DEFAULT NULL,
   `is_for_general` tinyint(1) NOT NULL DEFAULT 0,
   `created_by` int(10) unsigned NOT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
@@ -2636,37 +3434,10 @@ CREATE TABLE `vendor_transactions` (
   KEY `vendor_transactions_expense_id_foreign` (`expense_id`),
   KEY `vendor_transactions_created_by_foreign` (`created_by`),
   KEY `vendor_transactions_account_id_vendor_id_index` (`account_id`,`vendor_id`),
-  KEY `vendor_transactions_account_id_type_index` (`account_id`,`type`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-DROP TABLE IF EXISTS `voucher_has_locations`;
-CREATE TABLE `voucher_has_locations` (
-  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  `voucher_id` bigint(20) unsigned NOT NULL,
-  `location_id` bigint(20) unsigned NOT NULL,
-  `service_id` bigint(20) unsigned NOT NULL,
-  `created_at` timestamp NULL DEFAULT NULL,
-  `updated_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  KEY `voucher_has_locations_voucher_id_foreign` (`voucher_id`),
-  KEY `voucher_has_locations_location_id_foreign` (`location_id`),
-  KEY `voucher_has_locations_service_id_foreign` (`service_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-DROP TABLE IF EXISTS `vouchers`;
-CREATE TABLE `vouchers` (
-  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  `slug` varchar(40) NOT NULL DEFAULT 'default',
-  `name` varchar(255) DEFAULT NULL,
-  `start` date DEFAULT NULL,
-  `end` date DEFAULT NULL,
-  `active` tinyint(3) unsigned NOT NULL DEFAULT 1,
-  `account_id` bigint(20) unsigned DEFAULT NULL,
-  `created_at` timestamp NULL DEFAULT NULL,
-  `updated_at` timestamp NULL DEFAULT NULL,
-  `deleted_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  KEY `vouchers_account_id_foreign` (`account_id`)
+  KEY `vendor_transactions_account_id_type_index` (`account_id`,`type`),
+  KEY `fk_vendor_transactions_for_branch_id` (`for_branch_id`),
+  CONSTRAINT `fk_vendor_transactions_account_id` FOREIGN KEY (`account_id`) REFERENCES `accounts` (`id`),
+  CONSTRAINT `fk_vendor_transactions_for_branch_id` FOREIGN KEY (`for_branch_id`) REFERENCES `locations` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `warehouses`;
@@ -2674,24 +3445,27 @@ CREATE TABLE `warehouses` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `account_id` int(10) unsigned NOT NULL,
   `name` varchar(255) NOT NULL,
-  `manager_name` varchar(500) DEFAULT NULL,
+  `manager_name` varchar(100) DEFAULT NULL,
   `manager_phone` varchar(50) DEFAULT NULL,
   `address` text DEFAULT NULL,
   `google_map` text DEFAULT NULL,
-  `region_id` bigint(20) unsigned NOT NULL,
-  `city_id` bigint(20) unsigned NOT NULL,
+  `region_id` int(10) unsigned NOT NULL,
+  `city_id` int(10) unsigned NOT NULL,
   `image_src` varchar(255) DEFAULT NULL,
   `active` tinyint(3) unsigned NOT NULL DEFAULT 1,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
-  KEY `warehouses_account_id_foreign` (`account_id`)
+  KEY `warehouses_account_id_foreign` (`account_id`),
+  KEY `fk_warehouses_city_id` (`city_id`),
+  CONSTRAINT `fk_warehouses_account_id` FOREIGN KEY (`account_id`) REFERENCES `accounts` (`id`),
+  CONSTRAINT `fk_warehouses_city_id` FOREIGN KEY (`city_id`) REFERENCES `cities` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `working_day_exceptions`;
 CREATE TABLE `working_day_exceptions` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  `account_id` bigint(20) unsigned NOT NULL,
+  `account_id` int(10) unsigned NOT NULL,
   `exception_date` date NOT NULL,
   `is_working` tinyint(1) NOT NULL DEFAULT 1,
   `title` varchar(255) DEFAULT NULL,
@@ -2699,7 +3473,8 @@ CREATE TABLE `working_day_exceptions` (
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
-  KEY `working_day_exceptions_account_id_exception_date_index` (`account_id`,`exception_date`)
+  KEY `working_day_exceptions_account_id_exception_date_index` (`account_id`,`exception_date`),
+  CONSTRAINT `fk_working_day_exceptions_account_id` FOREIGN KEY (`account_id`) REFERENCES `accounts` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 SET FOREIGN_KEY_CHECKS=1;

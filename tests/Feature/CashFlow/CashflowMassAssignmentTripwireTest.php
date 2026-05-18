@@ -142,4 +142,29 @@ class CashflowMassAssignmentTripwireTest extends TestCase
             );
         }
     }
+
+    /**
+     * GuardsTenantBoundary backstop (Sec H1): Cash Flow models now boot
+     * the trait, so a crafted `account_id` is forced to the auth user's
+     * account on create and reverted on update — defence even if a
+     * future call site does ->create($request->all()). Acting account
+     * is 1 (actingAsAdmin).
+     */
+    public function test_guards_tenant_boundary_forces_account_id_on_cashflow_models(): void
+    {
+        // Create with a hostile cross-tenant account_id → forced to 1.
+        $pool = CashPool::factory()->create(['account_id' => 9999]);
+        $this->assertSame(1, (int) $pool->fresh()->account_id);
+
+        $vendor = Vendor::create([
+            'account_id' => 9999,
+            'name' => 'Guard Test Vendor',
+        ]);
+        $this->assertSame(1, (int) $vendor->fresh()->account_id);
+
+        // Update attempting to move the row to another tenant → reverted.
+        $vendor->account_id = 8888;
+        $vendor->save();
+        $this->assertSame(1, (int) $vendor->fresh()->account_id);
+    }
 }

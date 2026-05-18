@@ -102,7 +102,7 @@ class VendorPeriodLockEnforcementTest extends TestCase
         $this->expectException(CashflowException::class);
         $this->service->updateTransaction($tx->id, [
             'amount' => 2000,
-        ], accountId: 1);
+        ], accountId: 1, vendorId: $tx->vendor_id);
     }
 
     public function test_moving_a_vendor_transaction_into_a_locked_period_is_rejected(): void
@@ -125,7 +125,7 @@ class VendorPeriodLockEnforcementTest extends TestCase
         $this->expectException(CashflowException::class);
         $this->service->updateTransaction($tx->id, [
             'transaction_date' => $previous->copy()->day(15)->toDateString(),
-        ], accountId: 1);
+        ], accountId: 1, vendorId: $tx->vendor_id);
     }
 
     public function test_marking_delivered_inside_a_locked_period_is_rejected(): void
@@ -150,6 +150,7 @@ class VendorPeriodLockEnforcementTest extends TestCase
             $tx->id,
             'https://drive.google.com/file/d/x/view',
             accountId: 1,
+            vendorId: $tx->vendor_id,
         );
     }
 
@@ -171,6 +172,6 @@ class VendorPeriodLockEnforcementTest extends TestCase
         ]);
 
         $this->expectException(CashflowException::class);
-        $this->service->deleteTransaction($tx->id, accountId: 1);
+        $this->service->deleteTransaction($tx->id, accountId: 1, vendorId: $tx->vendor_id);
     }
 }

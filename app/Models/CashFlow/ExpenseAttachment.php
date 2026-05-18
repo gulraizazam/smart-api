@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models\CashFlow;
 
+use App\Models\Concerns\GuardsTenantBoundary;
 use App\Models\User;
 use App\Services\Storage\R2DocumentService;
 use Illuminate\Database\Eloquent\Model;
@@ -33,6 +34,7 @@ use Illuminate\Support\Facades\Storage;
 class ExpenseAttachment extends Model
 {
     use SoftDeletes;
+    use GuardsTenantBoundary;
 
     protected $fillable = [
         'account_id',

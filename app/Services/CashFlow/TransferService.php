@@ -34,9 +34,9 @@ class TransferService
             ->orderBy('transfer_date', 'desc')
             ->orderBy('id', 'desc');
 
-        if (!empty($filters['date_from']) && !empty($filters['date_to'])) {
-            $query->inDateRange($filters['date_from'], $filters['date_to']);
-        }
+        // Null-safe scope: either bound may be omitted (open-ended
+        // ranges filter correctly; no both-bound guard).
+        $query->inDateRange($filters['date_from'] ?? null, $filters['date_to'] ?? null);
 
         if (!empty($filters['pool_id'])) {
             $query->involvingPool($filters['pool_id']);

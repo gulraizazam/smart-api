@@ -103,10 +103,9 @@ class ExpenseService
             $query->where('category_id', $filters['category_id']);
         }
 
-        // Date range
-        if (!empty($filters['date_from']) && !empty($filters['date_to'])) {
-            $query->inDateRange($filters['date_from'], $filters['date_to']);
-        }
+        // Date range — null-safe scope: either bound may be omitted
+        // (open-ended ranges filter correctly; no both-bound guard).
+        $query->inDateRange($filters['date_from'] ?? null, $filters['date_to'] ?? null);
 
         // Flagged only
         if (!empty($filters['flagged'])) {

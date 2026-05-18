@@ -258,13 +258,12 @@ class PackageAdvanceObserver
      */
     private function resolvePool(int $accountId, $paymentModeId, $locationId): ?CashPool
     {
-        $isCash = false;
-        if ($paymentModeId) {
-            $paymentMode = PaymentModes::find($paymentModeId);
-            if ($paymentMode) {
-                $isCash = str_contains(strtolower($paymentMode->name), 'cash');
-            }
-        }
+        // Cash classification via the centralized helper
+        // (PaymentModes::cashIds = payment_type OR name-match + safe
+        // fallback) — single source of truth, shared with PoolService
+        // and FDM pool-balance display. Do not re-implement inline.
+        $isCash = $paymentModeId
+            && in_array((int) $paymentModeId, PaymentModes::cashIds($accountId), true);
 
         if ($isCash && $locationId) {
             // Cash payment → find the branch cash pool for this location

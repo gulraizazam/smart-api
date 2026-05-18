@@ -3,6 +3,7 @@
 declare(strict_types=1);
 namespace App\Models\CashFlow;
 
+use App\Models\Concerns\GuardsTenantBoundary;
 use App\Models\Locations;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
@@ -16,6 +17,7 @@ class CashPool extends Model
 {
     use HasFactory;
     use SoftDeletes;
+    use GuardsTenantBoundary;
 
     protected $table = 'cash_pools';
 

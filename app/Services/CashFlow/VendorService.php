@@ -13,6 +13,7 @@ use App\Models\CashFlow\CashflowAuditLog;
 use App\Models\CashFlow\Vendor;
 use App\Models\CashFlow\VendorRequest;
 use App\Models\CashFlow\VendorTransaction;
+use App\Models\CashFlow\VendorTransactionAttachment;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
@@ -20,10 +21,50 @@ use Illuminate\Support\Facades\DB;
 
 class VendorService
 {
+    /** Mirrors ExpenseService::MAX_ATTACHMENTS_PER_EXPENSE. */
+    private const MAX_ATTACHMENTS_PER_TRANSACTION = 10;
+
     public function __construct(
         private readonly CashflowAuditService $auditService,
         private readonly NotificationService $notificationService,
     ) {}
+
+    /**
+     * Bind freshly-uploaded (orphan) attachment rows to a transaction.
+     * Exact mirror of ExpenseService::bindAttachments — only same-tenant,
+     * still-unbound rows are claimed, capped at
+     * self::MAX_ATTACHMENTS_PER_TRANSACTION.
+     */
+    private function bindAttachments(VendorTransaction $tx, array $attachmentIds): void
+    {
+        $attachmentIds = array_values(array_filter(
+            array_map('intval', $attachmentIds),
+            static fn (int $id): bool => $id > 0,
+        ));
+        if ($attachmentIds === []) {
+            return;
+        }
+
+        $existing = $tx->attachments()->count();
+        $projected = $existing + count($attachmentIds);
+        if ($projected > self::MAX_ATTACHMENTS_PER_TRANSACTION) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'attachment_ids' => [sprintf(
+                    'A transaction can have at most %d attachments (this would make it %d).',
+                    self::MAX_ATTACHMENTS_PER_TRANSACTION,
+                    $projected,
+                )],
+            ]);
+        }
+
+        VendorTransactionAttachment::forAccount((int) $tx->account_id)
+            ->whereIn('id', $attachmentIds)
+            ->whereNull('vendor_transaction_id')
+            ->update([
+                'vendor_transaction_id' => $tx->id,
+                'updated_at' => now(),
+            ]);
+    }
 
     // ===================== VENDORS =====================
 
@@ -180,7 +221,7 @@ class VendorService
         $purchasePage = (int) ($params['purchase_page'] ?? 1);
         $purchaseQuery = VendorTransaction::forAccount($accountId)
             ->where('type', VendorTransactionType::Purchase)
-            ->with(['vendor:id,name', 'expense:id,description,expense_date,attachment_url', 'creator:id,name', 'forBranch:id,name'])
+            ->with(['vendor:id,name', 'expense:id,description,expense_date,attachment_url', 'creator:id,name', 'forBranch:id,name', 'attachments:id,vendor_transaction_id,file_name,mime_type,file_size,sha256'])
             ->orderByRaw("{$dateExpr} DESC, created_at DESC");
 
         if (! empty($params['purchase_status'])) {
@@ -193,7 +234,7 @@ class VendorService
         $paymentPage = (int) ($params['payment_page'] ?? 1);
         $paymentQuery = VendorTransaction::forAccount($accountId)
             ->where('type', VendorTransactionType::Payment)
-            ->with(['vendor:id,name', 'expense:id,description,expense_date,attachment_url', 'creator:id,name', 'forBranch:id,name'])
+            ->with(['vendor:id,name', 'expense:id,description,expense_date,attachment_url', 'creator:id,name', 'forBranch:id,name', 'attachments:id,vendor_transaction_id,file_name,mime_type,file_size,sha256'])
             ->orderByRaw("{$dateExpr} DESC, created_at DESC");
 
         if (! empty($params['payment_vendor_id'])) {
@@ -223,29 +264,35 @@ class VendorService
     /**
      * Get vendor ledger (transactions) with date filtering, computed opening balance, period stats, and running balance.
      */
-    public function getVendorLedger(int $vendorId, int $accountId, array $filters = [], int $perPage = 25): array
+    public function getVendorLedger(?int $vendorId, int $accountId, array $filters = [], int $perPage = 25): array
     {
-        $vendor = Vendor::forAccount($accountId)->findOrFail($vendorId);
+        // $vendorId null = unified ledger across every vendor in the
+        // account (powers the "All vendors" panel). When scoped, the
+        // closure adds the vendor_id constraint to every sub-query.
+        $vendor = $vendorId ? Vendor::forAccount($accountId)->findOrFail($vendorId) : null;
+        $scopeVendor = fn ($q) => $vendorId ? $q->where('vendor_id', $vendorId) : $q;
 
         [$dateFrom, $dateTo] = CashflowHelper::defaultDateRange($filters);
 
         $dateExpr = 'COALESCE(transaction_date, DATE(created_at))';
 
-        // Compute opening balance at period start:
-        // vendor.opening_balance + SUM(delivered purchases before date_from) - SUM(payments before date_from)
-        $prePeriod = VendorTransaction::forAccount($accountId)
-            ->where('vendor_id', $vendorId);
+        // Opening balance at period start: base opening (this vendor, or
+        // every vendor's opening summed for the unified view) + SUM(delivered
+        // purchases before date_from) - SUM(payments before date_from).
+        $prePeriod = $scopeVendor(VendorTransaction::forAccount($accountId));
 
         $prePeriod->whereRaw("{$dateExpr} < ?", [$dateFrom]);
 
         $prePurchases = (clone $prePeriod)->where('type', VendorTransactionType::Purchase)->where('status', VendorTransactionStatus::Delivered)->sum('amount');
         $prePayments = (clone $prePeriod)->where('type', VendorTransactionType::Payment)->sum('amount');
-        $openingBalance = (float) $vendor->opening_balance + (float) $prePurchases - (float) $prePayments;
+        $baseOpening = $vendorId
+            ? (float) $vendor->opening_balance
+            : (float) Vendor::forAccount($accountId)->sum('opening_balance');
+        $openingBalance = $baseOpening + (float) $prePurchases - (float) $prePayments;
 
         // Query for filtered period (DESC for latest-first display)
-        $query = VendorTransaction::forAccount($accountId)
-            ->where('vendor_id', $vendorId)
-            ->with(['expense:id,description,expense_date,attachment_url', 'creator:id,name', 'forBranch:id,name'])
+        $query = $scopeVendor(VendorTransaction::forAccount($accountId))
+            ->with(['vendor:id,name', 'expense:id,description,expense_date,attachment_url', 'creator:id,name', 'forBranch:id,name', 'attachments:id,vendor_transaction_id,file_name,mime_type,file_size,sha256'])
             ->orderByRaw("{$dateExpr} DESC, created_at DESC");
 
         if ($dateFrom) {
@@ -259,13 +306,17 @@ class VendorService
             $query->where('type', $filters['type']);
         }
 
+        // Status (ordered/delivered) is a purchase-only lifecycle.
+        // Payments carry `status = delivered` by default (no status
+        // concept), so a bare status filter would wrongly include every
+        // payment — constrain to purchases.
         if (! empty($filters['status'])) {
-            $query->where('status', $filters['status']);
+            $query->where('type', VendorTransactionType::Purchase)
+                ->where('status', $filters['status']);
         }
 
         // Period stats (on unfiltered-by-type query for the date range)
-        $periodBase = VendorTransaction::forAccount($accountId)
-            ->where('vendor_id', $vendorId);
+        $periodBase = $scopeVendor(VendorTransaction::forAccount($accountId));
 
         if ($dateFrom) {
             $periodBase->whereRaw("{$dateExpr} >= ?", [$dateFrom]);
@@ -291,8 +342,7 @@ class VendorService
         // If not page 1, subtract the newer transactions that come before this page (in DESC order)
         if ($transactions->currentPage() > 1) {
             $skipCount = ($transactions->currentPage() - 1) * $perPage;
-            $newerTxs = VendorTransaction::forAccount($accountId)
-                ->where('vendor_id', $vendorId)
+            $newerTxs = $scopeVendor(VendorTransaction::forAccount($accountId))
                 ->whereRaw("{$dateExpr} >= ?", [$dateFrom])
                 ->whereRaw("{$dateExpr} <= ?", [$dateTo]);
             if (! empty($filters['type'])) {
@@ -331,6 +381,7 @@ class VendorService
             'vendor' => $vendor,
             'transactions' => $transactions,
             'opening_balance' => round($openingBalance, 2),
+            'closing_balance' => round($openingBalance + (float) $periodPurchases - (float) $periodPayments, 2),
             'date_from' => $dateFrom,
             'date_to' => $dateTo,
             'period_stats' => [
@@ -347,9 +398,11 @@ class VendorService
      * This is a restricted update — only status and attachment_url can change.
      * Gated by the create (cashflow_vendor_transaction) permission at controller level.
      */
-    public function deliverTransaction(int $transactionId, ?string $attachmentUrl, int $accountId): VendorTransaction
+    public function deliverTransaction(int $transactionId, ?string $attachmentUrl, int $accountId, int $vendorId, array $attachmentIds = []): VendorTransaction
     {
-        $tx = VendorTransaction::forAccount($accountId)->findOrFail($transactionId);
+        // Scope to the {vendorId} path segment — a crafted URL must not
+        // deliver another vendor's transaction. Mismatch → 404.
+        $tx = VendorTransaction::forAccount($accountId)->where('vendor_id', $vendorId)->findOrFail($transactionId);
 
         if ($tx->type !== VendorTransactionType::Purchase) {
             throw new CashflowException('Only purchase records can be marked as delivered.');
@@ -382,6 +435,11 @@ class VendorService
                 ->increment('cached_balance', $tx->amount);
         });
 
+        // Bind any files uploaded on the deliver form (replaces the
+        // legacy single Drive URL — that column stays writable for
+        // backward compatibility).
+        $this->bindAttachments($tx, $attachmentIds);
+
         $this->auditService->log(
             CashflowAuditLog::ACTION_UPDATED,
             CashflowAuditLog::ENTITY_VENDOR_TRANSACTION,
@@ -398,9 +456,12 @@ class VendorService
     /**
      * Update a standalone purchase transaction (not linked to an expense).
      */
-    public function updateTransaction(int $transactionId, array $data, int $accountId): VendorTransaction
+    public function updateTransaction(int $transactionId, array $data, int $accountId, int $vendorId): VendorTransaction
     {
-        $tx = VendorTransaction::forAccount($accountId)->findOrFail($transactionId);
+        // Scope to the {vendorId} path segment too — a same-account
+        // user must not mutate another vendor's transaction via a
+        // crafted URL. Mismatch is a 404 (same as a missing id).
+        $tx = VendorTransaction::forAccount($accountId)->where('vendor_id', $vendorId)->findOrFail($transactionId);
 
         if ($tx->expense_id) {
             throw new CashflowException('Cannot edit a payment linked to an expense. Edit the expense instead.');
@@ -482,6 +543,9 @@ class VendorService
             return $fresh;
         });
 
+        // Bind any files uploaded during this edit.
+        $this->bindAttachments($tx, $data['attachment_ids'] ?? []);
+
         // `data['edit_reason']` is now required on the API edge (see
         // StoreVendorPurchaseRequest::rules()); pass it through so the audit
         // log captures the explanation alongside the diff.
@@ -502,9 +566,11 @@ class VendorService
     /**
      * Delete a standalone purchase transaction (not linked to an expense).
      */
-    public function deleteTransaction(int $transactionId, int $accountId): void
+    public function deleteTransaction(int $transactionId, int $accountId, int $vendorId): void
     {
-        $tx = VendorTransaction::forAccount($accountId)->findOrFail($transactionId);
+        // Scope to the {vendorId} path segment — a crafted URL must not
+        // delete another vendor's transaction. Mismatch → 404.
+        $tx = VendorTransaction::forAccount($accountId)->where('vendor_id', $vendorId)->findOrFail($transactionId);
 
         if ($tx->expense_id) {
             throw new CashflowException('Cannot delete a payment linked to an expense. Void the expense instead.');
@@ -553,31 +619,34 @@ class VendorService
     /**
      * Export vendor ledger as array (for CSV generation).
      */
-    public function exportVendorLedger(int $vendorId, int $accountId, array $filters = []): array
+    public function exportVendorLedger(?int $vendorId, int $accountId, array $filters = []): array
     {
-        $vendor = Vendor::forAccount($accountId)->findOrFail($vendorId);
+        // $vendorId null = unified export across every vendor (mirrors
+        // getVendorLedger). The closure scopes each sub-query when set.
+        $vendor = $vendorId ? Vendor::forAccount($accountId)->findOrFail($vendorId) : null;
+        $scopeVendor = fn ($q) => $vendorId ? $q->where('vendor_id', $vendorId) : $q;
 
-        $dateFrom = $filters['date_from'] ?? null;
-        $dateTo = $filters['date_to'] ?? null;
+        // Same default window as getVendorLedger (month-to-date when no
+        // explicit range) — the CSV must match what the screen shows.
+        // Single source of truth: CashflowHelper::defaultDateRange.
+        [$dateFrom, $dateTo] = CashflowHelper::defaultDateRange($filters);
         $dateExpr = 'COALESCE(transaction_date, DATE(created_at))';
 
-        // Opening balance at period start
-        $prePeriod = VendorTransaction::forAccount($accountId)
-            ->where('vendor_id', $vendorId);
-
-        if ($dateFrom) {
-            $prePeriod->whereRaw("{$dateExpr} < ?", [$dateFrom]);
-        } else {
-            $prePeriod->whereRaw('1 = 0');
-        }
+        // Opening balance at period start: base opening + delivered
+        // purchases before date_from - payments before date_from
+        // (mirrors getVendorLedger so opening/closing agree with screen).
+        $prePeriod = $scopeVendor(VendorTransaction::forAccount($accountId));
+        $prePeriod->whereRaw("{$dateExpr} < ?", [$dateFrom]);
 
         $prePurchases = (clone $prePeriod)->where('type', VendorTransactionType::Purchase)->where('status', VendorTransactionStatus::Delivered)->sum('amount');
         $prePayments = (clone $prePeriod)->where('type', VendorTransactionType::Payment)->sum('amount');
-        $openingBalance = (float) $vendor->opening_balance + (float) $prePurchases - (float) $prePayments;
+        $baseOpening = $vendorId
+            ? (float) $vendor->opening_balance
+            : (float) Vendor::forAccount($accountId)->sum('opening_balance');
+        $openingBalance = $baseOpening + (float) $prePurchases - (float) $prePayments;
 
-        $query = VendorTransaction::forAccount($accountId)
-            ->where('vendor_id', $vendorId)
-            ->with(['expense:id,description,expense_date', 'forBranch:id,name', 'creator:id,name'])
+        $query = $scopeVendor(VendorTransaction::forAccount($accountId))
+            ->with(['vendor:id,name', 'expense:id,description,expense_date', 'forBranch:id,name', 'creator:id,name'])
             ->orderByRaw("{$dateExpr} ASC, created_at ASC");
 
         if ($dateFrom) {
@@ -589,6 +658,15 @@ class VendorService
 
         if (! empty($filters['type'])) {
             $query->where('type', $filters['type']);
+        }
+
+        // Status (ordered/delivered) is a purchase-only lifecycle.
+        // Payments carry `status = delivered` by default (no status
+        // concept), so a bare status filter would wrongly include every
+        // payment — constrain to purchases.
+        if (! empty($filters['status'])) {
+            $query->where('type', VendorTransactionType::Purchase)
+                ->where('status', $filters['status']);
         }
 
         $txs = $query->get();
@@ -603,9 +681,13 @@ class VendorService
             $desc = ($tx->expense && $tx->expense->description) ? $tx->expense->description : ($tx->description ?? '');
             $branchName = $tx->is_for_general ? 'General' : ($tx->forBranch?->name ?? '');
             $rows[] = [
+                // Vendor first so the unified ("All vendors") CSV is
+                // self-describing; redundant-but-harmless for a single
+                // vendor (the preamble already names it).
+                'vendor' => $tx->vendor?->name ?? '',
                 'date' => $tx->transaction_date ?? $tx->created_at->toDateString(),
-                'type' => ucfirst($tx->type),
-                'status' => $tx->status ?? '',
+                'type' => ucfirst($tx->type->value),
+                'status' => $tx->status?->value ?? '',
                 'description' => $desc,
                 'reference' => $tx->reference_no ?? '',
                 'branch' => $branchName,
@@ -675,6 +757,9 @@ class VendorService
                 'created_by' => Auth::id(),
             ]);
         });
+
+        // Bind any files the SPA uploaded while the form was open.
+        $this->bindAttachments($transaction, $data['attachment_ids'] ?? []);
 
         $this->auditService->log(
             CashflowAuditLog::ACTION_CREATED,
