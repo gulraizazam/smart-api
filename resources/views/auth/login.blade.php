@@ -5,12 +5,13 @@
 <style>
     :root {
         --allura-bg: #f5f5f7;
-        --allura-fg: #0a0a0a;
+        --allura-fg: #072542;
+        --allura-fg-hover: #0a3559;
         --allura-muted: #6b7280;
         --allura-line: #e5e7eb;
         --allura-line-strong: #d4d4d8;
         --allura-card: #ffffff;
-        --allura-brand-bg: #000000;
+        --allura-brand-bg: #072542;
         --allura-brand-fg: #ffffff;
         --allura-error: #b42318;
         --allura-warn: #b45309;
@@ -65,7 +66,7 @@
         height: 40px;
         border-radius: 10px;
         background: #fff;
-        color: #000;
+        color: var(--allura-fg);
         font-weight: 800;
         font-size: 1.1rem;
         letter-spacing: 0;
@@ -148,7 +149,7 @@
         border-radius: 16px;
         padding-block: 1.75rem;
         padding-inline: 1.5rem;
-        box-shadow: 0 1px 2px rgba(0,0,0,.04), 0 8px 24px rgba(0,0,0,.06);
+        box-shadow: 0 1px 2px rgba(7,37,66,.04), 0 8px 24px rgba(7,37,66,.06);
     }
 
     .allura-auth__mobile-mark {
@@ -199,7 +200,7 @@
         text-underline-offset: 3px;
         text-decoration-thickness: 1px;
     }
-    .allura-field__link:hover { color: #000; text-decoration-thickness: 2px; }
+    .allura-field__link:hover { color: var(--allura-fg); text-decoration-thickness: 2px; }
     .allura-field__link:focus-visible {
         outline: 2px solid var(--allura-fg);
         outline-offset: 3px;
@@ -231,7 +232,7 @@
     .allura-auth .allura-field__input:focus-visible {
         outline: none;
         border-color: var(--allura-fg);
-        box-shadow: 0 0 0 3px rgba(0,0,0,.12);
+        box-shadow: 0 0 0 3px rgba(7,37,66,.12);
     }
     .allura-auth .allura-field__input[aria-invalid="true"] { border-color: var(--allura-error); }
     .allura-auth .allura-field__input[aria-invalid="true"]:focus {
@@ -294,11 +295,11 @@
         color: #fff;
         margin-block-start: 0.5rem;
     }
-    .allura-btn--primary:hover { background: #1a1a1a; }
+    .allura-btn--primary:hover { background: var(--allura-fg-hover); }
     .allura-btn--primary:active { transform: translateY(1px); }
     .allura-btn:focus-visible {
         outline: none;
-        box-shadow: 0 0 0 3px rgba(0,0,0,.22);
+        box-shadow: 0 0 0 3px rgba(7,37,66,.22);
     }
     .allura-btn[disabled] { opacity: 0.6; cursor: progress; }
 
