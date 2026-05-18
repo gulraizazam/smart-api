@@ -374,7 +374,7 @@
         <div class="allura-auth__brand-glow"></div>
         <div class="allura-auth__brand-inner">
             <a href="/" class="allura-auth__brand-mark">
-                <img src="{{ asset('allura-logo2_processed.jpg') }}" alt="Allura Aesthetics" class="allura-auth__logo" />
+                <img src="{{ asset('allura-logo2_processed.jpg') }}" alt="Allura Aesthetics" class="allura-auth__logo" style="mix-blend-mode: lighten;"/>
             </a>
 
             <div>
