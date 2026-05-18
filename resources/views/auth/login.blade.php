@@ -54,6 +54,7 @@
         gap: 0.75rem;
         font-size: 1.5rem;
         font-weight: 700;
+        width: 200px;
         letter-spacing: 0.01em;
         color: inherit;
         text-decoration: none;
