@@ -82,6 +82,7 @@ class CashflowAuditLog extends Model
     /**
      * Prevent updates — this model is write-only.
      */
+    #[\Override]
     public function update(array $attributes = [], array $options = [])
     {
         throw new \RuntimeException('Cashflow audit logs are immutable and cannot be updated.');
@@ -90,6 +91,7 @@ class CashflowAuditLog extends Model
     /**
      * Prevent deletes — this model is write-only.
      */
+    #[\Override]
     public function delete()
     {
         throw new \RuntimeException('Cashflow audit logs are immutable and cannot be deleted.');

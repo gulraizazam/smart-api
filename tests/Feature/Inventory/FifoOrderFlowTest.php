@@ -54,12 +54,16 @@ class FifoOrderFlowTest extends TestCase
         ]);
 
         // The dev/test schema has `created_by` + `purchase_price` +
-        // `product_type` as NOT NULL with no defaults — fill them.
+        // `product_type` + `slug` as NOT NULL with no defaults — fill
+        // them. (`slug` is added by migration
+        // 2026_04_16_120000_add_slug_to_products_table and is UNIQUE;
+        // deriving it from the unique name keeps each row distinct.)
         $uid = uniqid();
         $product = new Product();
         $product->account_id = 1;
         $product->brand_id = $brand->id;
         $product->name = 'Test Product '.$uid;
+        $product->slug = \Illuminate\Support\Str::slug($product->name);
         $product->sale_price = 1000;
         $product->purchase_price = 500;
         $product->product_type = 'for_sale';

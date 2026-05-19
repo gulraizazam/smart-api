@@ -194,26 +194,33 @@ class CashflowDeeperSecurityProbeTest extends TestCase
             'account_id' => self::TENANT_B,
             'name' => 'B branch',
         ]);
-        $tenantBPool = \App\Models\CashFlow\CashPool::factory()->create([
-            'account_id' => self::TENANT_B,
-            'location_id' => $tenantBLocation->id,
-        ]);
-        $tenantBCategory = ExpenseCategory::factory()->create([
-            'account_id' => self::TENANT_B,
-        ]);
-        $tenantBExpense = Expense::create([
-            'account_id' => self::TENANT_B,
-            'expense_date' => now()->format('Y-m-d'),
-            'amount' => 50,
-            'category_id' => $tenantBCategory->id,
-            'paid_from_pool_id' => $tenantBPool->id,
-            'payment_method_id' => 1,
-            'description' => 'tenant B expense',
-            'status' => ExpenseStatus::Approved,
-            'is_flagged' => 0,
-            'created_by' => 1,
-            'is_for_general' => 1,
-        ]);
+        // GuardsTenantBoundary now forces account_id to the auth
+        // account on create, so the malicious foreign-tenant fixture
+        // must be fabricated with model events suppressed (the
+        // production validator it feeds is unchanged).
+        [$tenantBPool, $tenantBCategory, $tenantBExpense] = \Illuminate\Database\Eloquent\Model::withoutEvents(function () use ($tenantBLocation) {
+            $pool = \App\Models\CashFlow\CashPool::factory()->create([
+                'account_id' => self::TENANT_B,
+                'location_id' => $tenantBLocation->id,
+            ]);
+            $cat = ExpenseCategory::factory()->create([
+                'account_id' => self::TENANT_B,
+            ]);
+            $exp = Expense::create([
+                'account_id' => self::TENANT_B,
+                'expense_date' => now()->format('Y-m-d'),
+                'amount' => 50,
+                'category_id' => $cat->id,
+                'paid_from_pool_id' => $pool->id,
+                'payment_method_id' => 1,
+                'description' => 'tenant B expense',
+                'status' => ExpenseStatus::Approved,
+                'is_flagged' => 0,
+                'created_by' => 1,
+                'is_for_general' => 1,
+            ]);
+            return [$pool, $cat, $exp];
+        });
 
         $vendorA = Vendor::factory()->create(['account_id' => self::TENANT_A]);
 

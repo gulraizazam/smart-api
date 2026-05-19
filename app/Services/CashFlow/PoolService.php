@@ -240,12 +240,11 @@ class PoolService
             }
         }
 
-        // Build cash payment mode IDs
-        $cashModeIds = \App\Models\PaymentModes::where('active', 1)
-            ->get()
-            ->filter(fn($pm) => str_contains(strtolower($pm->name), 'cash'))
-            ->pluck('id')
-            ->toArray();
+        // Cash payment-mode IDs via the centralized classifier
+        // (PaymentModes::cashIds = payment_type OR name-match + safe
+        // fallback). Single source of truth, shared with FDM pool-
+        // balance display — do not re-implement inline.
+        $cashModeIds = \App\Models\PaymentModes::cashIds($accountId);
 
         // Step 1: Reset all pools to opening_balance
         $balances = [];
@@ -407,11 +406,11 @@ class PoolService
             }
         }
 
-        $cashModeIds = \App\Models\PaymentModes::where('active', 1)
-            ->get()
-            ->filter(fn($pm) => str_contains(strtolower($pm->name), 'cash'))
-            ->pluck('id')
-            ->toArray();
+        // Cash payment-mode IDs via the centralized classifier
+        // (PaymentModes::cashIds = payment_type OR name-match + safe
+        // fallback). Single source of truth, shared with FDM pool-
+        // balance display — do not re-implement inline.
+        $cashModeIds = \App\Models\PaymentModes::cashIds($accountId);
 
         // Step 1: Reset all pools to opening_balance
         $balances = [];

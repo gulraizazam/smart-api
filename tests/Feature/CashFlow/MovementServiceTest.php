@@ -393,7 +393,8 @@ class MovementServiceTest extends TestCase
             'account_id' => 1, 'user_id' => $this->eligibleStaff->id, 'pool_id' => $this->poolA->id,
             'amount' => 200, 'created_by' => $this->admin->id,
         ]);
-        // Backdate to yesterday via direct DB write (StaffAdvance has no advance_date column).
+        // Raw create() leaves advance_date NULL, so the effective date
+        // falls back to created_at — backdate that to yesterday.
         DB::table('staff_advances')->where('id', $advance->id)->update(['created_at' => now()->subDay()]);
 
         $return = StaffReturn::create([
@@ -458,6 +459,96 @@ class MovementServiceTest extends TestCase
 
         $this->assertCount(1, $items);
         $this->assertSame('transfer', $items->first()['kind']);
+    }
+
+    public function test_list_search_matches_pool_staff_names_and_amount(): void
+    {
+        $staff = User::factory()->create([
+            'account_id' => 1, 'is_advance_eligible' => 1, 'name' => 'Zarpash Khan',
+        ]);
+
+        // Transfer HQ Cash → Branch Cash, amount 1234, plain description.
+        $transfer = CashTransfer::create([
+            'account_id' => 1, 'transfer_date' => now()->toDateString(),
+            'amount' => 1234, 'from_pool_id' => $this->poolA->id, 'to_pool_id' => $this->poolB->id,
+            'method' => 'physical_cash', 'attachment_url' => 'https://drive.google.com/x',
+            'created_by' => $this->admin->id, 'description' => 'plain note',
+        ]);
+        // Advance HQ Cash → Zarpash, amount 777, no description.
+        $advance = StaffAdvance::create([
+            'account_id' => 1, 'user_id' => $staff->id, 'pool_id' => $this->poolA->id,
+            'amount' => 777, 'created_by' => $this->admin->id,
+        ]);
+
+        $kinds = fn (string $s) => collect(
+            $this->movementService->list(1, ['search' => $s], 25, 1)->items()
+        )->pluck('kind')->sort()->values()->all();
+
+        // Counterparty pool name — "Branch" only hits the transfer
+        // (its to-pool); the advance's pool is HQ Cash.
+        $this->assertSame(['transfer'], $kinds('Branch'));
+        // Staff name — only the advance has Zarpash.
+        $this->assertSame(['staff_advance'], $kinds('Zarpash'));
+        // A pool shared by both (HQ Cash) returns both kinds.
+        $this->assertSame(['staff_advance', 'transfer'], $kinds('HQ Cash'));
+        // Amount — decimal is CAST, so "1234" hits 1234.00, "777" hits
+        // 777.00, and neither cross-matches.
+        $this->assertSame(['transfer'], $kinds('1234'));
+        $this->assertSame(['staff_advance'], $kinds('777'));
+        // Sanity: a term in nothing matches nothing.
+        $this->assertSame([], $kinds('zzzznope'));
+
+        // No cross-kind leakage: the only "1234" hit is the transfer
+        // row itself (right kind + amount), not the 777 advance.
+        // (Can't compare ids — transfer/advance live in separate tables
+        // and both auto-increment from 1.)
+        $only = collect($this->movementService->list(1, ['search' => '1234'], 25, 1)->items());
+        $this->assertCount(1, $only);
+        $this->assertSame('transfer', $only->first()['kind']);
+        $this->assertEqualsWithDelta(1234.0, $only->first()['amount'], 0.001);
+    }
+
+    public function test_list_date_filter_handles_open_ended_ranges(): void
+    {
+        // One movement per kind on three distinct dates, each on its own
+        // date column (transfer_date / advance_date / return_date).
+        CashTransfer::create([
+            'account_id' => 1, 'transfer_date' => '2026-04-05',
+            'amount' => 100, 'from_pool_id' => $this->poolA->id, 'to_pool_id' => $this->poolB->id,
+            'method' => 'physical_cash', 'attachment_url' => 'https://drive.google.com/x',
+            'created_by' => $this->admin->id,
+        ]);
+        StaffAdvance::create([
+            'account_id' => 1, 'user_id' => $this->eligibleStaff->id, 'pool_id' => $this->poolA->id,
+            'amount' => 200, 'advance_date' => '2026-05-10', 'created_by' => $this->admin->id,
+        ]);
+        StaffReturn::create([
+            'account_id' => 1, 'user_id' => $this->eligibleStaff->id, 'pool_id' => $this->poolA->id,
+            'amount' => 50, 'return_date' => '2026-06-01', 'created_by' => $this->admin->id,
+        ]);
+
+        $kinds = fn (array $f) => collect(
+            $this->movementService->list(1, $f, 25, 1)->items()
+        )->pluck('kind')->sort()->values()->all();
+
+        // No bounds → everything (scope no-ops).
+        $this->assertSame(['staff_advance', 'staff_return', 'transfer'], $kinds([]));
+
+        // FROM-only (the screenshot bug): "from May 1" must drop the
+        // April transfer, not be silently ignored.
+        $this->assertSame(['staff_advance', 'staff_return'], $kinds(['date_from' => '2026-05-01']));
+
+        // UNTIL-only: "until May 31" drops the June return.
+        $this->assertSame(['staff_advance', 'transfer'], $kinds(['date_to' => '2026-05-31']));
+
+        // Both bounds → identical to the old whereBetween (inclusive).
+        $this->assertSame(['staff_advance'], $kinds([
+            'date_from' => '2026-05-01', 'date_to' => '2026-05-31',
+        ]));
+        // Inclusive on the exact boundary dates.
+        $this->assertSame(['transfer'], $kinds([
+            'date_from' => '2026-04-05', 'date_to' => '2026-04-05',
+        ]));
     }
 
     // -----------------------------------------------------------------

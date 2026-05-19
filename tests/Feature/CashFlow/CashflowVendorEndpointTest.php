@@ -264,4 +264,273 @@ class CashflowVendorEndpointTest extends TestCase
         $response = $this->getJson('/api/cashflow/vendors/data');
         $this->assertContains($response->status(), [401, 302, 403]);
     }
+
+    /**
+     * Sec M1: the vendor-transaction mutation routes carry both
+     * {vendorId} and {txId}. The service now scopes the fetch to
+     * {vendorId}, so a same-account user cannot delete/update another
+     * vendor's transaction via a crafted URL — the mismatch is a 404
+     * and the target row is untouched.
+     */
+    public function test_vendor_transaction_mutation_is_scoped_to_the_url_vendor(): void
+    {
+        $vendorA = \App\Models\CashFlow\Vendor::factory()->create(['account_id' => 1]);
+        $vendorB = \App\Models\CashFlow\Vendor::factory()->create(['account_id' => 1]);
+        $txB = \App\Models\CashFlow\VendorTransaction::factory()->create([
+            'account_id' => 1,
+            'vendor_id' => $vendorB->id,
+            'type' => 'purchase',
+        ]);
+
+        $response = $this->postJson(
+            "/api/cashflow/vendors/{$vendorA->id}/transactions/{$txB->id}/delete",
+        );
+
+        // Not a success — the cross-vendor delete must not happen, and
+        // B's transaction row is still present (not soft-deleted).
+        $this->assertNotSame(200, $response->status());
+        $this->assertDatabaseHas('vendor_transactions', [
+            'id' => $txB->id,
+            'deleted_at' => null,
+        ]);
+    }
+
+    /**
+     * New unified endpoint: GET /vendors/transactions lists across every
+     * vendor and scopes to one via ?vendor_id. Powers the redesign's
+     * "All vendors" panel; reuses getVendorLedger.
+     */
+    public function test_vendors_transactions_endpoint_lists_across_and_scopes_by_vendor(): void
+    {
+        $vendorA = \App\Models\CashFlow\Vendor::factory()->create(['account_id' => 1]);
+        $vendorB = \App\Models\CashFlow\Vendor::factory()->create(['account_id' => 1]);
+        $today = now()->toDateString();
+        $txA = \App\Models\CashFlow\VendorTransaction::factory()->create([
+            'account_id' => 1, 'vendor_id' => $vendorA->id, 'type' => 'purchase',
+            'status' => 'delivered', 'transaction_date' => $today,
+        ]);
+        $txB = \App\Models\CashFlow\VendorTransaction::factory()->create([
+            'account_id' => 1, 'vendor_id' => $vendorB->id, 'type' => 'payment',
+            'transaction_date' => $today,
+        ]);
+
+        // Wide range — VendorTransactionFactory uses a random past
+        // transaction_date, and getVendorLedger applies the date filter.
+        $range = 'date_from=2000-01-01&date_to=2999-12-31';
+        $all = $this->getJson("/api/cashflow/vendors/transactions?{$range}");
+        $all->assertStatus(200);
+        $ids = collect($all->json('data.transactions.data'))->pluck('id')->all();
+        $this->assertContains($txA->id, $ids);
+        $this->assertContains($txB->id, $ids);
+        // Contract the SPA now binds to.
+        $all->assertJsonStructure(['data' => [
+            'opening_balance', 'closing_balance',
+            'period_stats' => ['total_purchases', 'total_payments', 'net', 'count'],
+            'transactions' => ['data', 'current_page', 'last_page', 'per_page', 'total'],
+        ]]);
+
+        $scoped = $this->getJson("/api/cashflow/vendors/transactions?vendor_id={$vendorA->id}&{$range}");
+        $scoped->assertStatus(200);
+        $scopedIds = collect($scoped->json('data.transactions.data'))->pluck('id')->all();
+        $this->assertContains($txA->id, $scopedIds);
+        $this->assertNotContains($txB->id, $scopedIds);
+    }
+
+    /**
+     * Status (ordered/delivered) is a purchase-only lifecycle. Payments
+     * are stored with status=delivered by default, so a status filter
+     * must constrain to purchases — otherwise every payment leaks into a
+     * "Delivered" filter (regression: SPA Delivered chip listed payments).
+     */
+    public function test_status_filter_is_purchase_only_and_excludes_payments(): void
+    {
+        $vendor = \App\Models\CashFlow\Vendor::factory()->create(['account_id' => 1]);
+        $today = now()->toDateString();
+        $purchase = \App\Models\CashFlow\VendorTransaction::factory()->create([
+            'account_id' => 1, 'vendor_id' => $vendor->id, 'type' => 'purchase',
+            'status' => 'delivered', 'transaction_date' => $today,
+        ]);
+        $payment = \App\Models\CashFlow\VendorTransaction::factory()->create([
+            'account_id' => 1, 'vendor_id' => $vendor->id, 'type' => 'payment',
+            'status' => 'delivered', 'transaction_date' => $today,
+        ]);
+
+        $range = 'date_from=2000-01-01&date_to=2999-12-31';
+        $res = $this->getJson("/api/cashflow/vendors/transactions?status=delivered&{$range}");
+        $res->assertStatus(200);
+        $ids = collect($res->json('data.transactions.data'))->pluck('id')->all();
+        $this->assertContains($purchase->id, $ids, 'a delivered purchase must match the status filter');
+        $this->assertNotContains($payment->id, $ids, 'payments must not appear under a purchase status filter');
+    }
+
+    /**
+     * Unified cross-vendor CSV export (the "All vendors" Export CSV).
+     * exportVendorLedger(null, …) streams every vendor's rows in one
+     * file with an "All vendors" header.
+     */
+    public function test_unified_transactions_export_streams_csv_across_all_vendors(): void
+    {
+        $vendorA = \App\Models\CashFlow\Vendor::factory()->create(['account_id' => 1]);
+        $vendorB = \App\Models\CashFlow\Vendor::factory()->create(['account_id' => 1]);
+        $today = now()->toDateString();
+        \App\Models\CashFlow\VendorTransaction::factory()->create([
+            'account_id' => 1, 'vendor_id' => $vendorA->id, 'type' => 'purchase',
+            'status' => 'delivered', 'amount' => 111111, 'transaction_date' => $today,
+        ]);
+        \App\Models\CashFlow\VendorTransaction::factory()->create([
+            'account_id' => 1, 'vendor_id' => $vendorB->id, 'type' => 'payment',
+            'status' => 'delivered', 'amount' => 222222, 'transaction_date' => $today,
+        ]);
+
+        $res = $this->get('/api/cashflow/vendors/transactions/export?date_from=2000-01-01&date_to=2999-12-31');
+        $res->assertStatus(200);
+        $csv = $res->streamedContent();
+        $this->assertStringContainsString('Vendor: All vendors', $csv);
+        // Both vendors' transactions land in the one file.
+        $this->assertStringContainsString('111111', $csv);
+        $this->assertStringContainsString('222222', $csv);
+        // Bug 3: the unified CSV must name the vendor per row (was absent
+        // → couldn't tell which vendor a row belonged to).
+        $this->assertStringContainsString($vendorA->name, $csv);
+        $this->assertStringContainsString($vendorB->name, $csv);
+        // Bug 2: header carries Vendor + Status (were missing → shift).
+        // Parse via str_getcsv so fputcsv quoting ("Recorded By") doesn't
+        // make this brittle.
+        $headerLine = collect(preg_split('/\r\n|\n/', $csv))
+            ->first(fn ($l) => str_starts_with($l, 'Vendor,Date,'));
+        $this->assertNotNull($headerLine, 'aligned data header row must exist');
+        $this->assertSame(
+            ['Vendor', 'Date', 'Type', 'Status', 'Description', 'Reference', 'Branch', 'Purchase', 'Payment', 'Balance', 'Recorded By'],
+            str_getcsv($headerLine),
+        );
+    }
+
+    /**
+     * Bug 1: with no explicit date range the CSV export must use the
+     * SAME month-to-date default as the on-screen ledger — previously it
+     * dumped all-time data, so the file never matched the screen.
+     */
+    public function test_export_defaults_to_month_to_date_like_the_ledger(): void
+    {
+        $vendor = \App\Models\CashFlow\Vendor::factory()->create(['account_id' => 1]);
+        $thisMonth = \App\Models\CashFlow\VendorTransaction::factory()->create([
+            'account_id' => 1, 'vendor_id' => $vendor->id, 'type' => 'purchase',
+            'status' => 'delivered', 'amount' => 4242, 'transaction_date' => now()->toDateString(),
+        ]);
+        $old = \App\Models\CashFlow\VendorTransaction::factory()->create([
+            'account_id' => 1, 'vendor_id' => $vendor->id, 'type' => 'purchase',
+            'status' => 'delivered', 'amount' => 9191,
+            'transaction_date' => now()->subMonthsNoOverflow(2)->toDateString(),
+        ]);
+
+        $svc = app(\App\Services\CashFlow\VendorService::class);
+
+        // No filters → month-to-date: only the current-month row.
+        // transaction_date is a Carbon cast → normalise to Y-m-d strings.
+        $default = $svc->exportVendorLedger($vendor->id, 1, []);
+        $defaultDates = collect($default['rows'])->pluck('date')
+            ->map(fn ($d) => \Illuminate\Support\Carbon::parse($d)->toDateString())->all();
+        $this->assertContains(now()->toDateString(), $defaultDates);
+        $this->assertNotContains(now()->subMonthsNoOverflow(2)->toDateString(), $defaultDates);
+        $this->assertSame(now()->startOfMonth()->toDateString(), $default['date_from']);
+
+        // Explicit wide range still returns everything (regression guard).
+        $wide = $svc->exportVendorLedger($vendor->id, 1, [
+            'date_from' => '2000-01-01', 'date_to' => '2999-12-31',
+        ]);
+        $this->assertCount(2, $wide['rows']);
+    }
+
+    /**
+     * Bug 2: CSV data columns must line up with the header. A delivered
+     * purchase's "delivered" must land under Status, not bleed into
+     * Description (the missing Status header used to shift every column).
+     */
+    public function test_export_csv_columns_align_with_header(): void
+    {
+        $vendor = \App\Models\CashFlow\Vendor::factory()->create(['account_id' => 1]);
+        \App\Models\CashFlow\VendorTransaction::factory()->create([
+            'account_id' => 1, 'vendor_id' => $vendor->id, 'type' => 'purchase',
+            'status' => 'delivered', 'amount' => 7777, 'description' => 'ZZ_DESC_MARKER',
+            'reference_no' => 'REF_MARKER', 'transaction_date' => now()->toDateString(),
+        ]);
+
+        $res = $this->get("/api/cashflow/vendors/{$vendor->id}/ledger/export");
+        $res->assertStatus(200);
+        $lines = collect(preg_split('/\r\n|\n/', $res->streamedContent()))
+            ->filter(fn ($l) => $l !== '')->values();
+
+        $headerIdx = $lines->search(fn ($l) => str_starts_with($l, 'Vendor,Date,'));
+        $this->assertNotFalse($headerIdx, 'aligned header row must exist');
+        $header = str_getcsv($lines[$headerIdx]);
+        $dataRow = str_getcsv($lines[$headerIdx + 1]);
+
+        $col = fn (string $name) => $dataRow[array_search($name, $header, true)];
+        $this->assertSame('delivered', $col('Status'));
+        $this->assertSame('ZZ_DESC_MARKER', $col('Description'));
+        $this->assertSame('REF_MARKER', $col('Reference'));
+        $this->assertSame($vendor->name, $col('Vendor'));
+        $this->assertSame('7777', $col('Purchase'));
+    }
+
+    /** G1: ledger payload carries closing_balance + nested period_stats. */
+    public function test_vendor_ledger_returns_closing_balance_and_period_stats(): void
+    {
+        $vendor = \App\Models\CashFlow\Vendor::factory()->create([
+            'account_id' => 1, 'opening_balance' => 1000,
+        ]);
+        \App\Models\CashFlow\VendorTransaction::factory()->create([
+            'account_id' => 1, 'vendor_id' => $vendor->id,
+            'type' => 'purchase', 'status' => 'delivered', 'amount' => 500,
+        ]);
+
+        $res = $this->getJson("/api/cashflow/vendors/{$vendor->id}/ledger");
+        $res->assertStatus(200)->assertJsonStructure(['data' => [
+            'opening_balance', 'closing_balance',
+            'period_stats' => ['total_purchases', 'total_payments', 'net', 'count'],
+        ]]);
+        // closing = opening + period purchases - payments (all in range).
+        $this->assertSame(
+            round((float) $res->json('data.opening_balance')
+                + (float) $res->json('data.period_stats.total_purchases')
+                - (float) $res->json('data.period_stats.total_payments'), 2),
+            round((float) $res->json('data.closing_balance'), 2),
+        );
+    }
+
+    /** G4: export honours the on-screen status filter (was silently dropped). */
+    public function test_vendor_ledger_export_honours_status_filter(): void
+    {
+        $vendor = \App\Models\CashFlow\Vendor::factory()->create(['account_id' => 1]);
+        // Dated today so the now-default month-to-date export window
+        // (CashflowHelper::defaultDateRange, same as the ledger) includes
+        // them — the factory otherwise picks a random historical date.
+        \App\Models\CashFlow\VendorTransaction::factory()->create([
+            'account_id' => 1, 'vendor_id' => $vendor->id, 'type' => 'purchase', 'status' => 'delivered',
+            'transaction_date' => now()->toDateString(),
+        ]);
+        \App\Models\CashFlow\VendorTransaction::factory()->create([
+            'account_id' => 1, 'vendor_id' => $vendor->id, 'type' => 'purchase', 'status' => 'ordered',
+            'transaction_date' => now()->toDateString(),
+        ]);
+
+        $svc = app(\App\Services\CashFlow\VendorService::class);
+        $this->assertCount(2, $svc->exportVendorLedger($vendor->id, 1, [])['rows']);
+        $this->assertCount(1, $svc->exportVendorLedger($vendor->id, 1, ['status' => 'delivered'])['rows']);
+    }
+
+    /** G5: vendor form-data exposes the period-lock flag for pre-empt. */
+    public function test_vendor_form_data_exposes_has_period_locks(): void
+    {
+        $res = $this->getJson('/api/cashflow/vendors/form-data');
+        $res->assertStatus(200)->assertJsonStructure(['data' => ['vendor_categories', 'has_period_locks']]);
+        $this->assertFalse($res->json('data.has_period_locks'));
+
+        \App\Models\CashFlow\PeriodLock::factory()->create([
+            'account_id' => 1, 'month' => now()->month, 'year' => now()->year,
+        ]);
+        $this->assertTrue(
+            $this->getJson('/api/cashflow/vendors/form-data')->json('data.has_period_locks'),
+        );
+    }
 }

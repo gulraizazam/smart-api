@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace Tests\Feature\CashFlow;
 
 use App\Models\CashFlow\CashPool;
+use App\Models\PackageAdvances;
 use App\Models\PaymentModes;
 use App\Services\CashFlow\CashflowSettingService;
 use App\Services\CashFlow\DashboardService;
-use Illuminate\Support\Facades\DB;
 use Tests\Concerns\RefreshTestDatabase as RefreshDatabase;
 use Tests\Concerns\UsesFinancialFixtures;
 use Tests\TestCase;
@@ -118,63 +118,78 @@ class FdmPaymentModeClassificationTest extends TestCase
     }
 
     /**
-     * Regression: pool balances must reflect a cash sale made through a
-     * non-id-1 payment mode. Before the fix, `getPoolBalances()` literally
-     * filtered `where('payment_mode', 1)`, so a tenant whose primary cash
-     * mode was seeded at id ≠ 1 silently saw zero inventory cash on every
-     * branch pool. Pin the centralized-helper path.
+     * Regression: a cash sale through a non-id-1 cash mode must reach the
+     * branch cash pool's balance.
+     *
+     * The mechanism changed in the 2026-05 inventory revamp. Old path:
+     * getPoolBalances() layered a runtime Order::sum() on top of
+     * cached_balance, first filtered by a hardcoded payment_mode = 1,
+     * later by an inline name-only scan -- both misclassified a tenant
+     * whose cash mode was not id=1 / not literally named "cash". New
+     * path: an order writes a package_advances ledger row, and
+     * PackageAdvanceObserver credits the pool resolved from the payment
+     * mode, classified via the centralized PaymentModes::cashIds()
+     * helper (payment_type OR name match + fallback). This pins that
+     * contract end-to-end: ledger row with a non-id-1 cash mode ->
+     * observer -> branch pool cached_balance -> getPoolBalances().
      */
     public function test_pool_balances_counts_cash_sales_via_non_id_one_cash_mode(): void
     {
         $accountId = 1;
-        $location = $this->defaultLocation;
 
-        // A "Cash - Petty" row will be created with an auto-increment id well
-        // past 1 (after the 4 default modes from the fixture seeder).
+        // Cash mode seeded well past id=1 (after the fixture defaults).
+        // The premise is that classification must not depend on id=1.
         $petty = PaymentModes::create([
             'account_id' => $accountId,
             'name' => 'Cash - Petty',
             'active' => 1,
             'payment_type' => 0,
         ]);
-        $this->assertGreaterThan(1, $petty->id, 'Test premise: the new cash mode must not be id=1.');
+        $this->assertGreaterThan(1, $petty->id, 'Test premise: the cash mode must not be id=1.');
+        $this->assertContains($petty->id, PaymentModes::cashIds($accountId),
+            'Sanity: the centralized helper must classify this mode as cash.');
 
-        // Branch-cash pool tied to the seeded test location.
-        $pool = CashPool::factory()->create([
-            'account_id' => $accountId,
-            'type' => CashPool::TYPE_BRANCH_CASH,
-            'location_id' => $location->id,
-            'opening_balance' => 0,
-            'cached_balance' => 0,
-        ]);
+        // Resolve the exact pool the observer will credit, deterministically.
+        // resolvePool() runs CashPool::where(account, location, branch_cash,
+        // is_active)->first() in primary-key order. Picking the lowest-id
+        // active branch-cash pool that has a location guarantees that, for
+        // that pool's location, resolvePool() returns this very pool -- so
+        // the assertion does not depend on fixture/factory pool ordering.
+        $expectedPool = CashPool::where('account_id', $accountId)
+            ->whereNotNull('location_id')
+            ->where('type', CashPool::TYPE_BRANCH_CASH)
+            ->where('is_active', 1)
+            ->orderBy('id')
+            ->first();
+        $this->assertNotNull($expectedPool, 'Fixtures should seed an active branch-cash pool.');
+        $balanceBefore = (float) $expectedPool->cached_balance;
 
-        // Go-live yesterday so the post-first-week branch in getPoolBalances
-        // is exercised — that's the path that runs the cash classifier query.
+        // Go-live yesterday so the ledger row (system_created_at = now)
+        // is post-go-live and the observer applies the pool impact.
         app(CashflowSettingService::class)->set('go_live_date', now()->subDay()->toDateString(), $accountId);
 
-        // Insert one cash sale through the new payment mode. Use DB::table
-        // to bypass the OrderFactory's legacy `payment_mode => 'cash'` string
-        // default (the column has been bigint for two years; the factory just
-        // hasn't been updated). Schema fields: created_by NOT NULL, quantity
-        // is a varchar with default '0'.
-        DB::table('orders')->insert([
-            'account_id' => $accountId,
-            'location_id' => $location->id,
-            'patient_id' => null,
-            'total_price' => 1234,
-            'order_type' => 'sale',
-            'payment_mode' => $petty->id,
-            'status' => 1,
-            'quantity' => '1',
-            'created_by' => 1,
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
+        // The ledger row OrderService now writes per cash sale. Build it
+        // through the model (not a raw insert) so PackageAdvanceObserver
+        // fires -- under the new design that observer is the single
+        // source of truth for cached_balance. Direct attribute assignment
+        // sidesteps mass-assignment guarding.
+        $advance = new PackageAdvances();
+        $advance->account_id = $accountId;
+        $advance->location_id = $expectedPool->location_id;
+        $advance->payment_mode_id = $petty->id;
+        $advance->cash_flow = 'in';
+        $advance->cash_amount = 1234;
+        $advance->is_cancel = 0;
+        $advance->is_refund = 0;
+        $advance->system_created_at = now();
+        $advance->save();
 
+        // End-to-end: observer credited the resolved branch pool, and
+        // getPoolBalances() surfaces the updated cached_balance.
         $balances = app(DashboardService::class)->getPoolBalances($accountId);
-        $row = collect($balances)->firstWhere('id', $pool->id);
-        $this->assertNotNull($row, 'Pool should appear in getPoolBalances output.');
-        $this->assertEqualsWithDelta(1234.0, (float) $row['cached_balance'], 0.01,
-            'Cash sale through a non-id-1 cash mode must be reflected in branch pool balance.');
+        $row = collect($balances)->firstWhere('id', $expectedPool->id);
+        $this->assertNotNull($row, 'Resolved pool should appear in getPoolBalances output.');
+        $this->assertEqualsWithDelta($balanceBefore + 1234.0, (float) $row['cached_balance'], 0.01,
+            'Cash sale through a non-id-1 cash mode must reach the branch pool balance.');
     }
 }

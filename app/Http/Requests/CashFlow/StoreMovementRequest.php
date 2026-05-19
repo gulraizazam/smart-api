@@ -82,12 +82,21 @@ class StoreMovementRequest extends FormRequest
             ->whereNull('deleted_at')
             ->whereNot('user_type_id', (int) \Illuminate\Support\Facades\Config::get('constants.patient_id', 3));
 
-        // pool→pool inherits the transfer rules (7-day backdate window,
-        // method, attachment, reference). The form's text limits drop to
-        // 100 chars here to mirror StoreTransferRequest exactly. Inline
-        // ternaries (not `Rule::when`) so the result is a plain array
-        // safe to array_merge — Rule::when returns a ConditionalRules
-        // object that array_merge rejects in Laravel 11+.
+        // method + reference_no were dropped from the form 2026-05-15
+        // (method = noise; reference_no had 0% real-world usage). Both
+        // remain accepted in the payload so legacy callers don't break.
+        // Attachment is now optional too — staff workflow no longer
+        // demands a receipt for every transfer.
+        //
+        // transfer_date is required for EVERY combo since 2026-05-15.
+        // The staff-side tables grew their own date columns; the SPA
+        // ships a single `transfer_date` field and MovementService
+        // routes it to the right column. 7-day backdate window matches
+        // pool→pool. Inline ternaries (not `Rule::when`) so the result
+        // is a plain array safe to array_merge — Rule::when returns a
+        // ConditionalRules object that array_merge rejects in Laravel 11+.
+        $dateRule = 'required|date|before_or_equal:today|after_or_equal:' . now()->subDays(7)->toDateString();
+
         return array_merge(
             [
                 'source_type' => 'required|in:pool,staff',
@@ -96,15 +105,28 @@ class StoreMovementRequest extends FormRequest
                 'dest_id' => 'required|integer|min:1',
                 'amount' => 'required|integer|min:1|max:99999999',
                 'description' => 'nullable|string|max:500',
+                'transfer_date' => $dateRule,
             ],
             $isPoolToPool ? [
-                'transfer_date' => 'required|date|before_or_equal:today|after_or_equal:' . now()->subDays(7)->toDateString(),
-                'method' => 'required|in:physical_cash,bank_deposit',
+                'method' => 'nullable|in:physical_cash,bank_deposit',
                 'reference_no' => 'nullable|string|max:100',
-                'attachment_url' => ['required', 'string', 'max:500', new GoogleDriveUrlRule],
+                'attachment_url' => ['nullable', 'string', 'max:500', new GoogleDriveUrlRule],
                 'description' => 'nullable|string|max:100',
                 'source_id' => ['required', 'integer', $poolExists],
                 'dest_id' => ['required', 'integer', $poolExists, 'different:source_id'],
+                // New attachments (drop-zone uploads). IDs come from the
+                // upload endpoint as orphan rows; the service binds them
+                // to the freshly-created cash_transfer on save. Tenant +
+                // orphan checks live in the exists rule so cross-tenant
+                // or already-bound IDs are rejected here, not deeper in.
+                'attachment_ids' => 'nullable|array|max:10',
+                'attachment_ids.*' => [
+                    'integer',
+                    Rule::exists('cash_transfer_attachments', 'id')
+                        ->where('account_id', $accountId)
+                        ->whereNull('cash_transfer_id')
+                        ->whereNull('deleted_at'),
+                ],
             ] : [],
             $isPoolToStaff ? [
                 'source_id' => ['required', 'integer', $poolExists],
@@ -118,6 +140,19 @@ class StoreMovementRequest extends FormRequest
                 'source_id' => ['required', 'integer', $userExists],
                 'dest_id' => ['required', 'integer', $userExists, 'different:source_id'],
             ] : [],
+            // Staff-side attachments — separate table from cash_transfer_
+            // attachments; IDs must be orphan (movement_id NULL) and live
+            // in the caller's tenant. Empty array / missing key is fine.
+            ! $isPoolToPool ? [
+                'attachment_ids' => 'nullable|array|max:10',
+                'attachment_ids.*' => [
+                    'integer',
+                    Rule::exists('movement_attachments', 'id')
+                        ->where('account_id', $accountId)
+                        ->whereNull('movement_id')
+                        ->whereNull('deleted_at'),
+                ],
+            ] : [],
         );
     }
 
@@ -127,7 +162,6 @@ class StoreMovementRequest extends FormRequest
             // Used for both pool↔pool and staff↔staff combinations — generic
             // copy avoids leaking the discriminator's internal naming.
             'dest_id.different' => 'Source and destination must be different.',
-            'attachment_url.required' => 'Transfer receipt/attachment is required.',
         ];
     }
 }

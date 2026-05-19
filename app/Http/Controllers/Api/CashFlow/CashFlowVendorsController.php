@@ -217,6 +217,33 @@ class CashFlowVendorsController extends Controller
     /**
      * Get vendor ledger (transactions for a specific vendor).
      */
+    /**
+     * Unified vendor-transactions list across every vendor (or one, via
+     * the optional `vendor_id` query param). Reuses getVendorLedger's
+     * tested type/status/date filtering, pagination and period_stats —
+     * passing a null vendorId drops the per-vendor scope.
+     */
+    public function vendorsTransactions(Request $request): JsonResponse
+    {
+        try {
+            $accountId = Auth::user()->account_id;
+            $filters = $request->only(['type', 'date_from', 'date_to', 'status']);
+            $vendorId = $request->filled('vendor_id') ? (int) $request->input('vendor_id') : null;
+
+            $result = $this->vendorService->getVendorLedger(
+                $vendorId,
+                $accountId,
+                $filters,
+                (int) $request->input('per_page', 25),
+            );
+
+            return response()->json(['success' => true, 'data' => $result]);
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error($e->getMessage(), ['file' => $e->getFile(), 'line' => $e->getLine()]);
+            return response()->json(['success' => false, 'message' => 'An error occurred. Please try again.'], 500);
+        }
+    }
+
     public function vendorsLedger(Request $request, int $id): JsonResponse
     {
 
@@ -292,7 +319,7 @@ class CashFlowVendorsController extends Controller
 
             $accountId = Auth::user()->account_id;
 
-            $tx = $this->vendorService->updateTransaction($txId, $request->validated(), $accountId);
+            $tx = $this->vendorService->updateTransaction($txId, $request->validated(), $accountId, $vendorId);
 
             return response()->json(['success' => true, 'data' => $tx, 'message' => 'Transaction updated.']);
 
@@ -323,13 +350,24 @@ class CashFlowVendorsController extends Controller
 
             }
 
+            // Receipt is now an uploaded R2 attachment (mirror of
+            // Payments); the legacy Drive URL still works for back-compat
+            // and old API clients. At least one of the two is required.
             $request->validate([
-                'attachment_url' => 'required|url|max:500',
+                'attachment_url'   => 'nullable|url|max:500',
+                'attachment_ids'   => 'required_without:attachment_url|array|min:1',
+                'attachment_ids.*' => 'integer',
             ]);
 
             $accountId = Auth::user()->account_id;
 
-            $tx = $this->vendorService->deliverTransaction($txId, $request->input('attachment_url'), $accountId);
+            $tx = $this->vendorService->deliverTransaction(
+                $txId,
+                $request->input('attachment_url'),
+                $accountId,
+                $vendorId,
+                $request->input('attachment_ids', []),
+            );
 
             return response()->json(['success' => true, 'data' => $tx, 'message' => 'Purchase marked as delivered.']);
 
@@ -339,7 +377,7 @@ class CashFlowVendorsController extends Controller
 
         } catch (\Illuminate\Validation\ValidationException $e) {
 
-            return response()->json(['success' => false, 'message' => 'A valid Google Drive URL is required to mark as delivered.', 'errors' => $e->errors()], 422);
+            return response()->json(['success' => false, 'message' => 'An invoice / receipt attachment is required to mark as delivered.', 'errors' => $e->errors()], 422);
 
         } catch (\Exception $e) {
 
@@ -366,7 +404,7 @@ class CashFlowVendorsController extends Controller
 
             $accountId = Auth::user()->account_id;
 
-            $this->vendorService->deleteTransaction($txId, $accountId);
+            $this->vendorService->deleteTransaction($txId, $accountId, $vendorId);
 
             return response()->json(['success' => true, 'message' => 'Transaction deleted.']);
 
@@ -419,74 +457,77 @@ class CashFlowVendorsController extends Controller
     /**
      * Export vendor ledger as CSV.
      */
-    public function vendorsLedgerExport(Request $request, int $id): \Illuminate\Http\JsonResponse
+    public function vendorsLedgerExport(Request $request, int $id): \Symfony\Component\HttpFoundation\Response
     {
-
         try {
-
             if (!Gate::allows('cashflow_vendor_ledger_export')) {
-
                 throw CashflowException::unauthorized('export vendor ledger');
-
             }
-
             $accountId = Auth::user()->account_id;
-
-            $filters = $request->only(['type', 'date_from', 'date_to']);
-
+            $filters = $request->only(['type', 'date_from', 'date_to', 'status']);
             $data = $this->vendorService->exportVendorLedger($id, $accountId, $filters);
 
-
-
-            $vendor = $data['vendor'];
-
-            $filename = 'vendor_ledger_' . \Illuminate\Support\Str::slug($vendor->name) . '_' . $data['date_from'] . '_to_' . $data['date_to'] . '.csv';
-
-
-
-            $headers = ['Content-Type' => 'text/csv', 'Content-Disposition' => 'attachment; filename="' . $filename . '"'];
-
-
-
-            $callback = function () use ($data) {
-
-                $out = fopen('php://output', 'w');
-
-                // Round 4 Inj-H2: vendor name and ledger row fields are
-                // user-controlled — defang formula-trigger characters
-                // before writing so the CSV cannot execute payloads when
-                // opened in Excel.
-                fputcsv_safe($out, ['Vendor: ' . $data['vendor']->name]);
-
-                fputcsv_safe($out, ['Period: ' . $data['date_from'] . ' to ' . $data['date_to']]);
-
-                fputcsv_safe($out, ['Opening Balance: ' . $data['opening_balance']]);
-
-                fputcsv($out, []);
-
-                fputcsv($out, ['Date', 'Type', 'Description', 'Reference', 'Branch', 'Purchase', 'Payment', 'Balance', 'Recorded By']);
-
-                foreach ($data['rows'] as $row) {
-
-                    fputcsv_safe($out, array_values($row));
-
-                }
-
-                fclose($out);
-
-            };
-
-
-
-            return response()->stream($callback, 200, $headers);
-
+            return $this->streamLedgerCsv($data);
         } catch (\Exception $e) {
-
             \Illuminate\Support\Facades\Log::error($e->getMessage(), ['file' => $e->getFile(), 'line' => $e->getLine()]);
             return response()->json(['success' => false, 'message' => 'An error occurred. Please try again.'], 500);
-
         }
+    }
 
+    /**
+     * Cross-vendor CSV export — the unified "All vendors" panel's
+     * Export CSV. Mirrors vendorsLedgerExport with no vendor id;
+     * exportVendorLedger(null, …) is the nullable-vendor twin of
+     * getVendorLedger that powers /vendors/transactions.
+     */
+    public function vendorsTransactionsExport(Request $request): \Symfony\Component\HttpFoundation\Response
+    {
+        try {
+            if (!Gate::allows('cashflow_vendor_ledger_export')) {
+                throw CashflowException::unauthorized('export vendor ledger');
+            }
+            $accountId = Auth::user()->account_id;
+            $filters = $request->only(['type', 'date_from', 'date_to', 'status']);
+            $data = $this->vendorService->exportVendorLedger(null, $accountId, $filters);
+
+            return $this->streamLedgerCsv($data);
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error($e->getMessage(), ['file' => $e->getFile(), 'line' => $e->getLine()]);
+            return response()->json(['success' => false, 'message' => 'An error occurred. Please try again.'], 500);
+        }
+    }
+
+    /**
+     * Shared CSV writer for both the per-vendor and unified exports.
+     * `$data['vendor']` is null for the unified export — fall back to a
+     * generic name/slug. Formula-injection defanged via fputcsv_safe
+     * (vendor name + row fields are user-controlled).
+     */
+    private function streamLedgerCsv(array $data): \Symfony\Component\HttpFoundation\StreamedResponse
+    {
+        $vendorName = $data['vendor']?->name ?? 'All vendors';
+        $slug = $data['vendor'] ? \Illuminate\Support\Str::slug($data['vendor']->name) : 'all_vendors';
+        $filename = 'vendor_ledger_' . $slug . '_' . $data['date_from'] . '_to_' . $data['date_to'] . '.csv';
+        $headers = ['Content-Type' => 'text/csv', 'Content-Disposition' => 'attachment; filename="' . $filename . '"'];
+
+        $callback = function () use ($data, $vendorName) {
+            $out = fopen('php://output', 'w');
+            fputcsv_safe($out, ['Vendor: ' . $vendorName]);
+            fputcsv_safe($out, ['Period: ' . $data['date_from'] . ' to ' . $data['date_to']]);
+            fputcsv_safe($out, ['Opening Balance: ' . $data['opening_balance']]);
+            fputcsv($out, []);
+            // Header must match exportVendorLedger() row key order exactly
+            // (array_values is positional): vendor,date,type,status,desc,
+            // reference,branch,purchase,payment,balance,by. Status + Vendor
+            // were previously missing → every column shifted.
+            fputcsv($out, ['Vendor', 'Date', 'Type', 'Status', 'Description', 'Reference', 'Branch', 'Purchase', 'Payment', 'Balance', 'Recorded By']);
+            foreach ($data['rows'] as $row) {
+                fputcsv_safe($out, array_values($row));
+            }
+            fclose($out);
+        };
+
+        return response()->stream($callback, 200, $headers);
     }
 
     /**

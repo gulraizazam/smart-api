@@ -3,6 +3,7 @@
 declare(strict_types=1);
 namespace App\Models\CashFlow;
 
+use App\Models\Concerns\GuardsTenantBoundary;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -15,6 +16,7 @@ class Vendor extends Model
 {
     use HasFactory;
     use SoftDeletes;
+    use GuardsTenantBoundary;
 
     protected $table = 'cashflow_vendors';
 
