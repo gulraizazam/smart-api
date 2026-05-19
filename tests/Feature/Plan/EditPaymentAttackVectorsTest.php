@@ -247,6 +247,39 @@ class EditPaymentAttackVectorsTest extends TestCase
         $this->assertArrayHasKey('package_advance_id', $response->json('errors', []));
     }
 
+    /* -------- overpayment is allowed (no cap, by product rule) -------- */
+
+    /**
+     * Product rule: an operator MAY record a payment larger than the
+     * outstanding balance (advance / credit — outstanding can go
+     * negative). The server must NOT reintroduce an over-payment cap:
+     * a payment exceeding outstanding must not be rejected with the
+     * "exceed the outstanding balance" 422 that briefly existed.
+     */
+    public function test_update_membership_plan_does_not_cap_overpayment(): void
+    {
+        $response = $this->postJson('/api/packages/update_membership_plan', [
+            'package_id' => $this->package->id,
+            'patient_id' => $this->patient->id,
+            'location_id' => $this->defaultLocation->id,
+            'payment_mode_id' => $this->cash->id,
+            'cash_amount' => 6000,        // + 5000 already paid > 10000 total
+            'grand_total' => 10000,
+        ]);
+
+        // Downstream membership wiring may still fail for this minimal
+        // fixture, but the over-payment guard specifically must be gone.
+        $this->assertNotSame(
+            422,
+            $response->status(),
+            'Overpayment must not be capped — the 422 balance guard was removed by product decision.',
+        );
+        $this->assertStringNotContainsString(
+            'exceed the outstanding balance',
+            (string) $response->json('message'),
+        );
+    }
+
     /* --------------------------------------------------------------- */
 
     /**

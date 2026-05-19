@@ -6,6 +6,7 @@ namespace App\Models;
 
 use App\Casts\EncryptedLegacy;
 use App\Models\Concerns\GuardsTenantBoundary;
+use App\Services\Dashboard\Support\ResourceScopeResolver;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -223,6 +224,15 @@ class User extends Authenticatable
             ->pluck('name')
             ->values()
             ->all();
+
+        // Authoritative ACL-scoped centre assignment so the SPA can
+        // auto-select + lock centre filters when the user is bound to a
+        // single branch. Mirrors ResourceScopeResolver semantics:
+        //   null  → company-wide (all centres)
+        //   [id]  → exactly one centre (SPA locks every centre selector to it)
+        //   [...] → a regional subset
+        $payload['assigned_centre_ids'] = app(ResourceScopeResolver::class)
+            ->allowedBranchIds($this);
 
         return $payload;
     }
