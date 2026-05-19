@@ -114,14 +114,45 @@ class DashboardTabPermissionSeederTest extends TestCase
 
         $fdmPerms = $this->rolePermNames('FDM');
 
-        sort($fdmPerms);
+        // Scope the exact-match to dashboard.* — FDM also legitimately holds
+        // the cross-module cashflow_fdm_view (asserted separately below).
+        $fdmDashboard = array_values(array_filter(
+            $fdmPerms,
+            static fn (string $p): bool => str_starts_with($p, 'dashboard.'),
+        ));
+        sort($fdmDashboard);
         $expected = self::FDM_PANELS;
         sort($expected);
-        $this->assertSame($expected, $fdmPerms, 'FDM must hold exactly the 16 dashboard.fdm.* panels');
+        $this->assertSame($expected, $fdmDashboard, 'FDM must hold exactly the 16 dashboard.fdm.* panels');
 
         foreach (['dashboard.overview.', 'dashboard.practitioners.', 'dashboard.marketing.'] as $otherTab) {
             $leaked = array_filter($fdmPerms, static fn (string $p): bool => str_starts_with($p, $otherTab));
             $this->assertEmpty($leaked, "FDM must not hold {$otherTab}* perms");
+        }
+
+        // The FDM Cash panel depends on this cross-module gate.
+        $this->assertContains(
+            'cashflow_fdm_view',
+            $fdmPerms,
+            'FDM must hold cashflow_fdm_view so /api/cashflow/fdm/data is not 403/302',
+        );
+    }
+
+    public function test_cashflow_fdm_view_is_created_and_granted_to_admins(): void
+    {
+        $this->runSeeder();
+
+        $perm = Permission::where('name', 'cashflow_fdm_view')->first();
+        $this->assertNotNull($perm, 'cashflow_fdm_view gate must exist');
+        $this->assertFalse((bool) $perm->main_group);
+        $this->assertTrue((bool) $perm->status);
+
+        foreach (self::ADMIN_ROLES as $role) {
+            $this->assertContains(
+                'cashflow_fdm_view',
+                $this->rolePermNames($role),
+                "{$role} must hold cashflow_fdm_view",
+            );
         }
     }
 

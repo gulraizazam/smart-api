@@ -33,6 +33,18 @@ class CheckPermission
         }
 
         if (!$allowed) {
+            // API / XHR callers (the SPA) must get a handleable JSON 403 —
+            // a 302 to the Blade `unauthorized` page is opaque to fetch()
+            // and silently breaks panels (e.g. the FDM cash widget, which
+            // has explicit 403 handling that never fired). Legacy Blade
+            // web routes keep the human-facing redirect.
+            if ($request->expectsJson() || $request->is('api/*')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'You are not authorized to perform this action.',
+                ], 403);
+            }
+
             return redirect()->route('unauthorized');
         }
 

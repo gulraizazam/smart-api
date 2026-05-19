@@ -30,6 +30,11 @@ use Spatie\Permission\PermissionRegistrar;
  * (cutera-admin-spa/src/lib/management-dashboard/permissions.ts) and the two
  * source migrations verbatim. Keep all three in sync.
  *
+ * Also guarantees + grants the cross-module `cashflow_fdm_view` gate (the FDM
+ * Cash panel hits /api/cashflow/fdm/data, which CheckPermission gates on it)
+ * to FDM + admins — it ships only in the unregistered CashflowPermissionsSeeder
+ * and is granted to no role, so the FDM cash widget is dead without this.
+ *
  * NOTE: Spatie caches permissions for 24h and RoleService caches the
  * role-editor permission tree; both are evicted at the end so changes are
  * effective immediately. Affected FDM users must still re-login or hit
@@ -41,6 +46,13 @@ class DashboardTabPermissionSeeder extends Seeder
 
     /** Roles that always get every dashboard panel ("admin sees everything"). */
     private const ADMIN_ROLES = ['Administrator', 'Super-Admin', 'Super Admin'];
+
+    /**
+     * Cashflow gate the FDM dashboard's Cash panel depends on. It is created
+     * only by CashflowPermissionsSeeder (unregistered, grants no role), so we
+     * guarantee + grant it here too — the FDM tab is dead without it.
+     */
+    private const CASHFLOW_FDM_VIEW = 'cashflow_fdm_view';
 
     /** RoleService cache keys (v2 + transitional v1) — keep in sync with RoleService::clearCache(). */
     private const ROLE_SERVICE_CACHE_KEYS = [
@@ -180,6 +192,33 @@ class DashboardTabPermissionSeeder extends Seeder
                 $this->command?->warn('FDM role not found — skipped FDM grant. Assign dashboard.fdm.* via the role editor.');
             }
 
+            // The FDM dashboard's Cash panel calls /api/cashflow/fdm/data,
+            // gated by the cashflow module's `cashflow_fdm_view`. That perm
+            // is created only by the (unregistered) CashflowPermissionsSeeder
+            // and granted to no role, so without this the FDM cash widget is
+            // dead (and CheckPermission 403s the XHR). Ensure the gate exists
+            // and grant it to FDM + admins. parent_id is role-editor grouping
+            // only — Gate::allows() just needs the row + the assignment.
+            $cashflowParentId = (int) (Permission::where('name', 'cashflow_manage')->value('id') ?? 0);
+            Permission::updateOrCreate(
+                ['name' => self::CASHFLOW_FDM_VIEW],
+                [
+                    'title' => 'View FDM Screen (Branch Cash)',
+                    'main_group' => 0,
+                    'parent_id' => $cashflowParentId,
+                    'status' => 1,
+                    'category' => null,
+                    'guard_name' => self::GUARD,
+                    'sort_order' => 2,
+                ],
+            );
+            foreach (Role::whereIn('name', self::ADMIN_ROLES)->get() as $role) {
+                $role->givePermissionTo(self::CASHFLOW_FDM_VIEW);
+            }
+            if ($fdm) {
+                $fdm->givePermissionTo(self::CASHFLOW_FDM_VIEW);
+            }
+
             // Invalidate caches inside the txn so a rollback also rolls back eviction.
             app(PermissionRegistrar::class)->forgetCachedPermissions();
             foreach (self::ROLE_SERVICE_CACHE_KEYS as $key) {
@@ -188,8 +227,9 @@ class DashboardTabPermissionSeeder extends Seeder
         });
 
         $this->command?->info(sprintf(
-            'Dashboard tab permissions seeded: 4 parents + %d panels. FDM granted %d fdm.* perms. '
-            . 'Spatie + RoleService caches cleared. Affected users must re-login or refresh /api/user.',
+            'Dashboard tab permissions seeded: 4 parents + %d panels. FDM granted %d fdm.* perms '
+            . '+ cashflow_fdm_view (FDM cash panel). Spatie + RoleService caches cleared. '
+            . 'Affected users must re-login or refresh /api/user.',
             count($allPanelPerms),
             count($fdmPanelPerms),
         ));
