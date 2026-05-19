@@ -498,8 +498,12 @@ class FinanceConversionReport
         }
         $conversionsByPatient = collect($appointments_info)->where('conversion_spend', '!=', '')->groupBy('patient_id')
             ->map(fn ($items) => $items->sum('conversion_spend'));
-        if (! empty($conversionsByPatient)) {
-            $avg_cxlient_value = $conversionsByPatient->sum() / count($conversionsByPatient);
+        // $conversionsByPatient is an Illuminate Collection — `empty()` on an
+        // object is ALWAYS false, so the old guard never tripped and an empty
+        // period divided sum() by count()=0 → DivisionByZeroError. Guard on the
+        // collection's own count instead.
+        if ($conversionsByPatient->count() > 0) {
+            $avg_cxlient_value = $conversionsByPatient->sum() / $conversionsByPatient->count();
         } else {
             $avg_cxlient_value = 0;
         }

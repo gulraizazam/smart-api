@@ -109,7 +109,7 @@ class LeadsController extends Controller
     public function create(): JsonResponse
     {
         if (! Gate::allows('leads_create')) {
-            return $this->errorResponse('You are not authorized to access this resource.', 401);
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
         }
 
         try {
@@ -135,7 +135,7 @@ class LeadsController extends Controller
     public function detail(int $id): JsonResponse
     {
         if (! Gate::allows('leads_manage')) {
-            return $this->errorResponse('You are not authorized to access this resource.', 401);
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
         }
 
         try {
@@ -156,7 +156,7 @@ class LeadsController extends Controller
     public function edit(int $id): JsonResponse
     {
         if (! Gate::allows('leads_edit')) {
-            return $this->errorResponse('You are not authorized to access this resource.', 401);
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
         }
 
         try {
@@ -188,7 +188,7 @@ class LeadsController extends Controller
     public function destroy(int $id): JsonResponse
     {
         if (! Gate::allows('leads_destroy')) {
-            return $this->errorResponse('You are not authorized to access this resource.', 401);
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
         }
 
         try {
@@ -220,7 +220,7 @@ class LeadsController extends Controller
     public function showLeadStatuses(Request $request): JsonResponse
     {
         if (! Gate::allows('leads_lead_status')) {
-            return $this->errorResponse('You are not authorized to access this resource.', 401);
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
         }
 
         try {
@@ -469,7 +469,7 @@ class LeadsController extends Controller
     public function convert(int $id): JsonResponse
     {
         if (! Gate::allows('appointments_manage') || ! Gate::allows('leads_convert')) {
-            return $this->errorResponse('You are not authorized to access this resource.', 401);
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
         }
 
         try {
@@ -550,7 +550,7 @@ class LeadsController extends Controller
     public function saveCity(Request $request): JsonResponse
     {
         if (! Gate::allows('leads_manage')) {
-            return $this->errorResponse('You are not authorized to access this resource.', 401);
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
         }
 
         try {
@@ -582,7 +582,7 @@ class LeadsController extends Controller
     public function sendSms(int $id): JsonResponse
     {
         if (! Gate::allows('leads_manage')) {
-            return $this->errorResponse('You are not authorized to access this resource.', 401);
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
         }
 
         try {
@@ -599,7 +599,7 @@ class LeadsController extends Controller
     public function removeFromJunk(int $id): JsonResponse
     {
         if (! Gate::allows('leads_convert')) {
-            return $this->errorResponse('You are not authorized to access this resource.', 401);
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
         }
 
         try {
