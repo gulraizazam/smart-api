@@ -15,6 +15,7 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             PermissionSeeder::class,
+            DashboardTabPermissionSeeder::class,
             AuditTrailActionSeeder::class,
             AuditTrailTableSeeder::class,
             AccountsSeeder::class,
