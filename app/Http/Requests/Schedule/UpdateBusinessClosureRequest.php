@@ -14,7 +14,7 @@ class UpdateBusinessClosureRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return true;
+        return \Illuminate\Support\Facades\Gate::allows('business_closures.edit');
     }
 
     /**

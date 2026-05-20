@@ -2,7 +2,7 @@
 <input type="hidden" value="{{$package_id}}" name="package_id">
 
 <div class="row">
-    @if(Gate::allows('plans_cash_edit_payment_mode'))
+    @if(Gate::allows('plans.cash.edit_payment_mode'))
         <div class="form-group col-md-6">
             {!! Form::label('payment_mode_id', 'Payment Mode*', ['class' => 'control-label']) !!}
             <select name="payment_mode_id" id="payment_mode_id" class="form-control select2_finance_edit" required>
@@ -22,7 +22,7 @@
         <input type="hidden" id="payment_mode_id" name="payment_mode_id" value="{{$pack_adv_info->payment_mode_id}}">
     @endif
 
-    @if(Gate::allows('plans_cash_edit_amount'))
+    @if(Gate::allows('plans.cash.edit_amount'))
         <div class="form-group col-md-6">
             {!! Form::label('cash_amount', 'Amount*', ['class' => 'control-label']) !!}
             <input type="number" name="cash_amount" id="cash_amount" value="{{$pack_adv_info->cash_amount}}"
@@ -43,7 +43,7 @@
     @endif
 </div>
 <div class="row">
-    @if(Gate::allows('plans_cash_edit_date'))
+    @if(Gate::allows('plans.cash.edit_date'))
         <div class="form-group col-md-6">
             {!! Form::label('created_at', 'Date*', ['class' => 'control-label']) !!}
             <input type="text" name="created_at"

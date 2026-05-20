@@ -47,12 +47,12 @@ final class PackagesController extends Controller
      * bundles datatable — `name`, `price`, `total_services`, `status`,
      * `created_from`, `created_to`, `startdate`, `enddate`, `per_page`.
      *
-     * Permission: `packages_manage`. Inactive rows are hidden unless
-     * `view_inactive_packages` is granted.
+     * Permission: `packages.list.view`. Inactive rows are hidden unless
+     * `packages.list.view_inactive` is granted.
      */
     public function index(Request $request): JsonResponse
     {
-        if (! Gate::allows('packages_manage')) {
+        if (! Gate::allows('packages.list.view')) {
             return $this->unauthorizedResponse();
         }
 
@@ -64,6 +64,9 @@ final class PackagesController extends Controller
             $records = ['data' => []];
 
             if (hasFilter($filters, 'delete')) {
+                if (! Gate::allows('packages.destroy')) {
+                    return $this->unauthorizedResponse();
+                }
                 $ids = array_filter(array_map('intval', explode(',', $filters['delete'])));
                 $this->bundleService->bulkDelete($ids, $accountId);
                 $records['status'] = true;
@@ -74,7 +77,7 @@ final class PackagesController extends Controller
             $filters = $this->restoreSavedFilters($filters, (int) $user->id);
 
             [$orderBy, $order] = getSortBy($request);
-            $canViewInactive = Gate::allows('view_inactive_packages');
+            $canViewInactive = Gate::allows('packages.list.view_inactive');
 
             $totalRecords = $this->bundleService->getTotalRecords($filters, $accountId, $canViewInactive);
             [$displayLength, $displayStart, $pages, $page] = getPaginationElement($request, $totalRecords);
@@ -121,11 +124,11 @@ final class PackagesController extends Controller
     /**
      * POST /api/packages/create
      *
-     * Permission: `packages_create`.
+     * Permission: `packages.create`.
      */
     public function store(StoreBundleRequest $request): JsonResponse
     {
-        if (! Gate::allows('packages_create')) {
+        if (! Gate::allows('packages.create')) {
             return $this->unauthorizedResponse();
         }
 
@@ -144,11 +147,11 @@ final class PackagesController extends Controller
      * GET /api/packages/{id}
      *
      * Detail (bundle + bundle_services + relationships).
-     * Permission: `packages_manage`.
+     * Permission: `packages.detail.view`.
      */
     public function show(int $id): JsonResponse
     {
-        if (! Gate::allows('packages_manage')) {
+        if (! Gate::allows('packages.detail.view')) {
             return $this->unauthorizedResponse();
         }
 
@@ -167,11 +170,11 @@ final class PackagesController extends Controller
      * GET /api/packages/{id}/edit
      *
      * Form data for the edit screen.
-     * Permission: `packages_edit`.
+     * Permission: `packages.edit`.
      */
     public function edit(int $id): JsonResponse
     {
-        if (! Gate::allows('packages_edit')) {
+        if (! Gate::allows('packages.edit')) {
             return $this->unauthorizedResponse();
         }
 
@@ -205,11 +208,11 @@ final class PackagesController extends Controller
     /**
      * DELETE /api/packages/{id}
      *
-     * Permission: `packages_destroy`.
+     * Permission: `packages.destroy`.
      */
     public function destroy(int $id): JsonResponse
     {
-        if (! Gate::allows('packages_destroy')) {
+        if (! Gate::allows('packages.destroy')) {
             return $this->unauthorizedResponse();
         }
 
@@ -256,7 +259,7 @@ final class PackagesController extends Controller
      */
     public function sortOrderGet(): JsonResponse
     {
-        if (! Gate::allows('packages_edit')) {
+        if (! Gate::allows('packages.sort')) {
             return $this->unauthorizedResponse();
         }
 
@@ -277,9 +280,9 @@ final class PackagesController extends Controller
     public function sortOrderSave(Request $request): JsonResponse
     {
         // Gated on the dedicated reorder permission so a role can have
-        // packages_edit (price/duration edits) without being able to
-        // change global ordering. Seeded by PermissionSeeder (parent_id=195).
-        if (! Gate::allows('packages_sort')) {
+        // packages.edit (price/duration edits) without being able to
+        // change global ordering.
+        if (! Gate::allows('packages.sort')) {
             return $this->unauthorizedResponse();
         }
 

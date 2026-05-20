@@ -31,7 +31,7 @@
                         </div>
 
                         <div class="card-toolbar">
-                            @if(Gate::allows('resourcerotas_create'))
+                            @if(Gate::allows('scheduling_shifts.create'))
                                 <div class="dropdown">
                                     <button class="btn btn-dark dropdown-toggle" type="button" id="addDropdownBtn" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                         Add

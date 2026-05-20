@@ -39,21 +39,21 @@
                             <!--begin::Dropdown-->
 
                             @if(request('type') != 'junk')
-                                @if(Gate::allows('leads_import'))
+                                @if(Gate::allows('leads.import'))
                                     <a href="javascript:void(0);" data-toggle="modal" data-target="#modal_import_leads" class="btn btn-primary pull-right margin-r-5">
                                         <i class="fa fa-upload"></i>
                                         <span class="hidden-xs"> Import </span>
                                     </a>
                                 @endif
                                 &nbsp;&nbsp;
-                                @if(Gate::allows('leads_export'))
+                                @if(Gate::allows('leads.export'))
                                     <a href="#" id="export-leads" data-href="{{route('admin.leads.export.excel')}}" class="btn btn-primary">
                                         <i class="fa fa-download"></i>
                                         <span class="hidden-xs"> Export </span>
                                     </a>
                                 @endif
                                 &nbsp;&nbsp;
-                                @if(Gate::allows('leads_create'))
+                                @if(Gate::allows('leads.create'))
                                     <a href="javascript:void(0);" id="create_lead" onclick="createLead('{{ route('admin.leads.create') }}');" class="btn btn-primary" data-toggle="modal" data-target="#modal_add_leads">
                                         <i class="la la-plus"></i>
                                         Add New

@@ -44,7 +44,15 @@ class AppointmentLookupController extends AppointmentBaseController
             'service_id' => null,
             'lead_source_id' => null,
         ];
-        if (\Illuminate\Support\Facades\Gate::allows('appointments_manage')) {
+        // Lookup runs the phone classifier — returns matched patient/lead
+        // data so the form can pre-fill the dialog. Either module's
+        // create perm grants enriched data; `appointments_manage` kept
+        // as the legacy fallback.
+        if (
+            \Illuminate\Support\Facades\Gate::allows('consultations.create')
+            || \Illuminate\Support\Facades\Gate::allows('treatments.create')
+            || \Illuminate\Support\Facades\Gate::allows('appointments_manage')
+        ) {
             $phone = PhoneFormattingService::cleanNumber($request->phone);
             $patient = Patients::getByPhone($phone, Auth::user()->account_id, $request->patient_id ? (int) $request->patient_id : false);
             if (! $patient) {

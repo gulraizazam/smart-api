@@ -11,7 +11,7 @@ final class BundleImpactRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return Gate::allows('services_edit');
+        return Gate::allows('services.edit');
     }
 
     /**

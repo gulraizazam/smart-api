@@ -24,7 +24,7 @@ class ExportConsultancies implements FromQuery, WithHeadings, WithMapping, WithE
         private readonly int $offset = 0,
         private readonly mixed $request = null,
     ) {
-        $this->canViewContact = Gate::allows('contact');
+        $this->canViewContact = Gate::allows('consultations.list.view_contact');
     }
 
     public function query()

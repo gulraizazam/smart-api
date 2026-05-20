@@ -31,6 +31,17 @@ class AppointmentCommunicationController extends AppointmentBaseController
      */
     public function showSMSLogs(int $id): JsonResponse
     {
+        // Dual-purpose endpoint — consultations + treatments both hit this.
+        // Either module's `view_sms_logs` perm grants access;
+        // `appointments_manage` kept as a legacy fallback.
+        if (
+            !\Illuminate\Support\Facades\Gate::allows('consultations.view_sms_logs')
+            && !\Illuminate\Support\Facades\Gate::allows('treatments.view_sms_logs')
+            && !\Illuminate\Support\Facades\Gate::allows('appointments_manage')
+        ) {
+            return $this->errorResponse('You are not authorized to view SMS logs.', 403);
+        }
+
         $SMSLogs = SMSLogs::whereAppointmentId($id)->orderBy('created_at', 'desc')->get();
 
         return $this->successResponse('Record found', [

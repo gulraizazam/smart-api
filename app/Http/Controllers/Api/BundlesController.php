@@ -31,7 +31,7 @@ final class BundlesController extends Controller
      */
     public function datatable(Request $request): JsonResponse
     {
-        if (! Gate::allows('packages_manage')) {
+        if (! Gate::allows('packages.list.view')) {
             return $this->unauthorizedResponse();
         }
 
@@ -41,8 +41,12 @@ final class BundlesController extends Controller
             $filters = getFilters($request->all());
             $records = ['data' => []];
 
-            // Handle bulk delete
+            // Bulk delete branch — re-gate inside because top-level
+            // `packages.list.view` only authorises reads.
             if (hasFilter($filters, 'delete')) {
+                if (! Gate::allows('packages.destroy')) {
+                    return $this->unauthorizedResponse();
+                }
                 $ids = array_filter(array_map('intval', explode(',', $filters['delete'])));
                 $this->bundleService->bulkDelete($ids, $accountId);
                 $records['status'] = true;
@@ -54,7 +58,7 @@ final class BundlesController extends Controller
             $filters = $this->restoreSavedFilters($filters, $user->id);
 
             [$orderBy, $order] = getSortBy($request);
-            $canViewInactive = Gate::allows('view_inactive_packages');
+            $canViewInactive = Gate::allows('packages.list.view_inactive');
 
             $totalRecords = $this->bundleService->getTotalRecords($filters, $accountId, $canViewInactive);
             [$displayLength, $displayStart, $pages, $page] = getPaginationElement($request, $totalRecords);
@@ -84,7 +88,7 @@ final class BundlesController extends Controller
      */
     public function store(StoreBundleRequest $request): JsonResponse
     {
-        if (! Gate::allows('packages_create')) {
+        if (! Gate::allows('packages.create')) {
             return $this->unauthorizedResponse();
         }
 
@@ -104,7 +108,7 @@ final class BundlesController extends Controller
      */
     public function edit(int $id): JsonResponse
     {
-        if (! Gate::allows('packages_edit')) {
+        if (! Gate::allows('packages.edit')) {
             return $this->unauthorizedResponse();
         }
 
@@ -140,7 +144,7 @@ final class BundlesController extends Controller
      */
     public function destroy(int $id): JsonResponse
     {
-        if (! Gate::allows('packages_destroy')) {
+        if (! Gate::allows('packages.destroy')) {
             return $this->unauthorizedResponse();
         }
 
@@ -184,7 +188,7 @@ final class BundlesController extends Controller
      */
     public function detail(int $id): JsonResponse
     {
-        if (! Gate::allows('packages_manage')) {
+        if (! Gate::allows('packages.detail.view')) {
             return $this->unauthorizedResponse();
         }
 
@@ -206,7 +210,7 @@ final class BundlesController extends Controller
      */
     public function sortOrderGet(): JsonResponse
     {
-        if (! Gate::allows('packages_edit')) {
+        if (! Gate::allows('packages.sort')) {
             return $this->unauthorizedResponse();
         }
 
@@ -224,7 +228,7 @@ final class BundlesController extends Controller
      */
     public function sortOrderSave(Request $request): JsonResponse
     {
-        if (! Gate::allows('packages_edit')) {
+        if (! Gate::allows('packages.sort')) {
             return $this->unauthorizedResponse();
         }
 

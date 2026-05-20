@@ -38,6 +38,10 @@ class PatientController extends Controller
     public function index(Request $request): JsonResponse
     {
         try {
+            if (!Gate::allows('patients.list.view')) {
+                return $this->unauthorized();
+            }
+
             return response()->json($this->patientService->getDatatableData($request));
         } catch (Exception $e) {
             return $this->exceptionToResponse($e);
@@ -47,6 +51,14 @@ class PatientController extends Controller
     public function search(Request $request): JsonResponse
     {
         try {
+            // Search is consumed by other modules' patient pickers as well,
+            // so the gate is the broad list-view rather than a search-only
+            // perm. Revoking list view also removes ability to look up a
+            // patient by name/phone/id from the SPA pickers.
+            if (!Gate::allows('patients.list.view')) {
+                return $this->unauthorized();
+            }
+
             $search = $request->input('search', $request->input('q', ''));
             $patients = $this->patientService->searchPatients($search, auth()->user()->account_id);
 
@@ -69,6 +81,10 @@ class PatientController extends Controller
     public function show(int $id): JsonResponse
     {
         try {
+            if (!Gate::allows('patients.card.view')) {
+                return $this->unauthorized();
+            }
+
             $result = $this->patientService->getPatient($id);
 
             return $result
@@ -82,7 +98,7 @@ class PatientController extends Controller
     public function edit(int $id): JsonResponse
     {
         try {
-            if (!Gate::allows('patients_manage')) {
+            if (!Gate::allows('patients.edit')) {
                 return $this->unauthorized();
             }
 
@@ -99,7 +115,7 @@ class PatientController extends Controller
     public function update(PatientRequest $request, int $id): JsonResponse
     {
         try {
-            if (!Gate::allows('patients_manage')) {
+            if (!Gate::allows('patients.edit')) {
                 return $this->unauthorized();
             }
 
@@ -114,7 +130,7 @@ class PatientController extends Controller
     public function destroy(int $id): JsonResponse
     {
         try {
-            if (!Gate::allows('patients_manage')) {
+            if (!Gate::allows('patients.delete')) {
                 return $this->unauthorized();
             }
 
@@ -129,13 +145,19 @@ class PatientController extends Controller
     public function status(PatientStatusRequest $request): JsonResponse
     {
         try {
-            if (!Gate::allows('patients_manage')) {
+            // Direction-aware gate — status=1 is activate, 0 is deactivate.
+            // SPA row buttons only render the direction the user can move
+            // in, but a direct API call could send either; check the perm
+            // that matches the requested transition.
+            $next = (int) $request->validated('status');
+            $required = $next === 1 ? 'patients.activate' : 'patients.deactivate';
+            if (!Gate::allows($required)) {
                 return $this->unauthorized();
             }
 
             $result = $this->patientService->changeStatus(
                 (int) $request->validated('id'),
-                (int) $request->validated('status'),
+                $next,
             );
 
             return $this->fromService($result);
@@ -153,6 +175,10 @@ class PatientController extends Controller
     public function getPatient(int $id): JsonResponse
     {
         try {
+            if (!Gate::allows('patients.card.view')) {
+                return $this->unauthorized();
+            }
+
             $result = $this->patientService->getPatient($id);
 
             return $result
@@ -166,6 +192,10 @@ class PatientController extends Controller
     public function getTabCounts(int $id): JsonResponse
     {
         try {
+            if (!Gate::allows('patients.card.view')) {
+                return $this->unauthorized();
+            }
+
             $counts = $this->patientService->getTabCounts($id);
 
             return $counts
@@ -185,7 +215,7 @@ class PatientController extends Controller
     public function lastAppointmentLocation(int $id, Request $request): JsonResponse
     {
         try {
-            if (! Gate::allows('patients_manage')) {
+            if (! Gate::allows('patients.card.view')) {
                 return $this->unauthorized();
             }
 
@@ -217,7 +247,7 @@ class PatientController extends Controller
     public function consultationLaunchLocation(int $id): JsonResponse
     {
         try {
-            if (! Gate::allows('patients_manage')) {
+            if (! Gate::allows('patients.consultations.create')) {
                 return $this->unauthorized();
             }
 
@@ -246,7 +276,7 @@ class PatientController extends Controller
     public function treatmentLaunchLocation(int $id): JsonResponse
     {
         try {
-            if (! Gate::allows('patients_manage')) {
+            if (! Gate::allows('patients.treatments.create')) {
                 return $this->unauthorized();
             }
 
@@ -274,7 +304,11 @@ class PatientController extends Controller
     public function storeImage(PatientImageRequest $request): JsonResponse
     {
         try {
-            if (!Gate::allows('patients_manage') && !Gate::allows('users_manage')) {
+            // No patient-card avatar upload exists in the SPA, but the
+            // endpoint is still exposed for staff/user image uploads which
+            // route through PatientImageRequest. Gate on `users_manage` —
+            // the original patient-side perm was dropped after audit.
+            if (!Gate::allows('users_manage')) {
                 return $this->unauthorized();
             }
 
@@ -300,6 +334,10 @@ class PatientController extends Controller
     public function assignMembership(AssignMembershipRequest $request): JsonResponse
     {
         try {
+            if (!Gate::allows('patients.membership.assign')) {
+                return $this->unauthorized();
+            }
+
             $result = $this->patientService->assignMembership(
                 $request->patientId(),
                 $request->validated('membership_code'),
@@ -314,6 +352,10 @@ class PatientController extends Controller
     public function assignVoucher(AssignVoucherRequest $request): JsonResponse
     {
         try {
+            if (!Gate::allows('patients.voucher.assign')) {
+                return $this->unauthorized();
+            }
+
             $result = $this->patientService->assignVoucher(
                 $request->patientId(),
                 (int) $request->validated('voucher_id'),
@@ -329,7 +371,7 @@ class PatientController extends Controller
     public function addReferral(AddReferralRequest $request, int $id): JsonResponse
     {
         try {
-            if (!Gate::allows('patients_manage')) {
+            if (!Gate::allows('patients.referral.add')) {
                 return $this->unauthorized();
             }
 
@@ -355,6 +397,13 @@ class PatientController extends Controller
     public function appointmentsDatatable(int $id, Request $request): JsonResponse
     {
         try {
+            // No dedicated "all appointments" tab in the SPA card — this
+            // legacy endpoint serves the combined feed. Gate on card view
+            // so revoking card access removes it too.
+            if (!Gate::allows('patients.card.view')) {
+                return $this->unauthorized();
+            }
+
             $data = $this->patientService->getPatientAppointments($id, $request);
             $data['data'] = PatientAppointmentResource::collection($data['data']);
 
@@ -367,6 +416,10 @@ class PatientController extends Controller
     public function consultationsDatatable(int $id, Request $request): JsonResponse
     {
         try {
+            if (!Gate::allows('patients.consultations.view')) {
+                return $this->unauthorized();
+            }
+
             $data = $this->patientService->getPatientConsultations($id, $request);
             $data['data'] = PatientAppointmentResource::collection($data['data']);
 
@@ -379,6 +432,10 @@ class PatientController extends Controller
     public function treatmentsDatatable(int $id, Request $request): JsonResponse
     {
         try {
+            if (!Gate::allows('patients.treatments.view')) {
+                return $this->unauthorized();
+            }
+
             $data = $this->patientService->getPatientTreatments($id, $request);
             $data['data'] = PatientAppointmentResource::collection($data['data']);
 
@@ -397,7 +454,7 @@ class PatientController extends Controller
     public function documents(int $id): JsonResponse
     {
         try {
-            if (!Gate::allows('patients_document_manage')) {
+            if (!Gate::allows('patients.documents.view')) {
                 return $this->forbidden();
             }
 
@@ -414,7 +471,7 @@ class PatientController extends Controller
     public function deleteDocument(int $id, int $documentId): JsonResponse
     {
         try {
-            if (!Gate::allows('patients_document_destroy')) {
+            if (!Gate::allows('patients.documents.delete')) {
                 return $this->forbidden();
             }
 
@@ -431,7 +488,7 @@ class PatientController extends Controller
     public function uploadDocument(int $id, PatientDocumentRequest $request): JsonResponse
     {
         try {
-            if (!Gate::allows('patients_document_create')) {
+            if (!Gate::allows('patients.documents.upload')) {
                 return $this->forbidden();
             }
 
@@ -452,7 +509,7 @@ class PatientController extends Controller
     public function updateDocument(int $id, int $documentId, PatientDocumentRequest $request): JsonResponse
     {
         try {
-            if (!Gate::allows('patients_document_edit')) {
+            if (!Gate::allows('patients.documents.edit')) {
                 return $this->forbidden();
             }
 
@@ -480,6 +537,10 @@ class PatientController extends Controller
     public function getActivityHistory(int $id): JsonResponse
     {
         try {
+            if (!Gate::allows('patients.activity.view')) {
+                return $this->unauthorized();
+            }
+
             $activities = $this->patientService->getActivityHistory($id);
 
             return $activities !== null
@@ -493,7 +554,7 @@ class PatientController extends Controller
     public function getVoucherHistory(int $patientId, int $userVoucherId): JsonResponse
     {
         try {
-            if (!Gate::allows('vouchers_manage')) {
+            if (!Gate::allows('patients.vouchers.view_history')) {
                 return $this->unauthorized();
             }
 
@@ -516,6 +577,10 @@ class PatientController extends Controller
     public function getNotes(int $id): JsonResponse
     {
         try {
+            if (!Gate::allows('patients.notes.view')) {
+                return $this->unauthorized();
+            }
+
             $result = $this->patientService->getNotes($id);
 
             if (!$result) {
@@ -531,6 +596,10 @@ class PatientController extends Controller
     public function addNote(int $id, PatientNoteRequest $request): JsonResponse
     {
         try {
+            if (!Gate::allows('patients.notes.create')) {
+                return $this->unauthorized();
+            }
+
             $result = $this->patientService->addNote($id, $request->validated('note'));
 
             if (!$result) {
@@ -546,7 +615,12 @@ class PatientController extends Controller
     public function updateNote(int $id, int $noteId, PatientNoteRequest $request): JsonResponse
     {
         try {
-            $result = $this->patientService->updateNote($id, $noteId, $request->validated('note'), $this->isSuperAdmin());
+            // Override switch — bypass creator-only enforcement for super-
+            // admins (legacy behaviour) and for any role granted the explicit
+            // `patients.notes.manage` perm. Service then handles the actual
+            // creator-equality check for everyone else.
+            $canOverride = $this->isSuperAdmin() || Gate::allows('patients.notes.manage');
+            $result = $this->patientService->updateNote($id, $noteId, $request->validated('note'), $canOverride);
 
             return $result['status']
                 ? $this->success($result['message'], new PatientNoteResource($result['note']))
@@ -559,7 +633,8 @@ class PatientController extends Controller
     public function deleteNote(int $id, int $noteId): JsonResponse
     {
         try {
-            $result = $this->patientService->deleteNote($id, $noteId, $this->isSuperAdmin());
+            $canOverride = $this->isSuperAdmin() || Gate::allows('patients.notes.manage');
+            $result = $this->patientService->deleteNote($id, $noteId, $canOverride);
 
             return $result['status']
                 ? $this->success($result['message'])
@@ -572,6 +647,10 @@ class PatientController extends Controller
     public function togglePinNote(int $id, int $noteId): JsonResponse
     {
         try {
+            if (!Gate::allows('patients.notes.pin')) {
+                return $this->unauthorized();
+            }
+
             $result = $this->patientService->togglePinNote($id, $noteId);
 
             return $result['status']

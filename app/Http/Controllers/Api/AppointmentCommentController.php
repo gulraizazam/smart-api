@@ -19,7 +19,15 @@ class AppointmentCommentController extends Controller
     public function index(int $appointmentId): JsonResponse
     {
         try {
-            if (!Gate::allows('appointments_manage') && !Gate::allows('appointments_view')) {
+            // Dual-purpose endpoint — `appointment_id` could be either a
+            // consultation or a treatment. Either module's detail-view
+            // perm grants access; `appointments_manage` remains as a
+            // legacy fallback for older role configurations.
+            if (
+                !Gate::allows('consultations.detail.view')
+                && !Gate::allows('treatments.detail.view')
+                && !Gate::allows('appointments_manage')
+            ) {
                 throw AppointmentException::unauthorized();
             }
 
@@ -44,7 +52,15 @@ class AppointmentCommentController extends Controller
     public function store(StoreAppointmentCommentRequest $request): JsonResponse
     {
         try {
-            if (!Gate::allows('appointments_manage') && !Gate::allows('appointments_view')) {
+            // Dual-purpose endpoint — `appointment_id` could be either a
+            // consultation or a treatment. Either module's detail-view
+            // perm grants access; `appointments_manage` remains as a
+            // legacy fallback for older role configurations.
+            if (
+                !Gate::allows('consultations.detail.view')
+                && !Gate::allows('treatments.detail.view')
+                && !Gate::allows('appointments_manage')
+            ) {
                 throw AppointmentException::unauthorized();
             }
 

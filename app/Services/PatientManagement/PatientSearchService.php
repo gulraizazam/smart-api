@@ -17,7 +17,7 @@ class PatientSearchService
 {
     public static function contactStatus(string|null $contact): string
     {
-        if (!Gate::allows('contact')) {
+        if (!Gate::allows('patients.list.view_contact')) {
             return '***********';
         }
 

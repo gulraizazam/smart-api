@@ -203,7 +203,7 @@ class Packages extends BaseModel
         $query = self::when(! empty($where), fn ($q) => $q->where($where))
             ->whereIn('location_id', ACL::getUserCentres());
 
-        if (! Gate::allows('view_inactive_plans')) {
+        if (! Gate::allows('plans.list.view_inactive')) {
             $query->where('active', 1);
         }
 
@@ -228,7 +228,7 @@ class Packages extends BaseModel
             ->offset($iDisplayStart)
             ->orderBy($orderBy, $order);
 
-        if (! Gate::allows('view_inactive_plans')) {
+        if (! Gate::allows('plans.list.view_inactive')) {
             $query->where('active', 1);
         }
 

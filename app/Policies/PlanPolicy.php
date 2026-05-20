@@ -6,51 +6,54 @@ namespace App\Policies;
 use App\Models\User;
 
 /**
- * Authorization policy for Plans and Packages.
+ * Authorization policy for Plans.
  *
- * "Plans" (PlanInvoice / Packages) share the same permission group.
- * Package-level CRUD uses packages_* strings; plan management uses plans_manage.
+ * Uses the dotted `plans.*` catalog (added in 2026_05_31_120000). The
+ * previous policy mixed `packages_*` and `plans_*` strings — those were
+ * collapsed because in this codebase Plans and the old "Packages" feature
+ * map to the same `packages` DB table, and ops should only see one
+ * permission group.
  */
 class PlanPolicy
 {
     /**
-     * View the packages / plans list.
+     * View the plans list.
      */
     public function viewAny(User $user): bool
     {
-        return $user->can('packages_manage') || $user->can('plans_manage');
+        return $user->can('plans.list.view');
     }
 
     /**
-     * View a single package / plan.
+     * View a single plan.
      */
     public function view(User $user): bool
     {
-        return $user->can('packages_manage') || $user->can('plans_manage');
+        return $user->can('plans.detail.view') || $user->can('plans.list.view');
     }
 
     /**
-     * Create a new package / plan.
+     * Create a new plan.
      */
     public function create(User $user): bool
     {
-        return $user->can('packages_manage');
+        return $user->can('plans.create');
     }
 
     /**
-     * Edit an existing package / plan.
+     * Edit an existing plan.
      */
     public function update(User $user): bool
     {
-        return $user->can('packages_edit') || $user->can('packages_manage');
+        return $user->can('plans.edit');
     }
 
     /**
-     * Delete a package / plan.
+     * Delete a plan.
      */
     public function delete(User $user): bool
     {
-        return $user->can('packages_destroy');
+        return $user->can('plans.destroy');
     }
 
     /**
@@ -58,15 +61,15 @@ class PlanPolicy
      */
     public function managePlans(User $user): bool
     {
-        return $user->can('plans_manage');
+        return $user->can('plans.edit') || $user->can('plans.list.view');
     }
 
     /**
-     * Create a new plan (plans_create permission).
+     * Create a new plan.
      */
     public function createPlan(User $user): bool
     {
-        return $user->can('plans_create') || $user->can('plans_manage');
+        return $user->can('plans.create');
     }
 
     /**
@@ -74,7 +77,7 @@ class PlanPolicy
      */
     public function editPlan(User $user): bool
     {
-        return $user->can('plans_edit') || $user->can('plans_manage');
+        return $user->can('plans.edit');
     }
 
     /**
@@ -82,7 +85,7 @@ class PlanPolicy
      */
     public function destroyPlan(User $user): bool
     {
-        return $user->can('plans_destroy');
+        return $user->can('plans.destroy');
     }
 
     /**
@@ -90,7 +93,7 @@ class PlanPolicy
      */
     public function inactivatePlan(User $user): bool
     {
-        return $user->can('plans_inactive') || $user->can('plans_manage');
+        return $user->can('plans.deactivate');
     }
 
     /**
@@ -98,11 +101,11 @@ class PlanPolicy
      */
     public function viewLog(User $user): bool
     {
-        return $user->can('plans_log') || $user->can('plans_manage');
+        return $user->can('plans.log.view');
     }
 
     /**
-     * Allocate a discount to a package.
+     * Allocate a discount to a plan.
      */
     public function allocateDiscount(User $user): bool
     {
@@ -110,18 +113,18 @@ class PlanPolicy
     }
 
     /**
-     * Transfer a package between patients.
+     * Transfer a plan between patients.
      */
     public function transfer(User $user): bool
     {
-        return $user->can('packages_manage') || $user->can('packages_transfer');
+        return $user->can('plans.transfer');
     }
 
     /**
-     * Manage bundles (service groups within packages).
+     * Manage bundles (service groups within plans).
      */
     public function manageBundles(User $user): bool
     {
-        return $user->can('packages_manage');
+        return $user->can('plans.edit');
     }
 }

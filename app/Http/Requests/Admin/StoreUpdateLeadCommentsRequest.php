@@ -11,7 +11,7 @@ class StoreUpdateLeadCommentsRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return Gate::allows('leads_manage');
+        return Gate::allows('leads.comment.create');
     }
 
     public function rules(): array

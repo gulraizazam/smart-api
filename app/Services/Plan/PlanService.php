@@ -225,7 +225,7 @@ final class PlanService
         int|string $accountId,
     ): array {
         $userCentres = ACL::getUserCentres();
-        $canViewInactive = Gate::allows('view_inactive_plans');
+        $canViewInactive = Gate::allows('plans.list.view_inactive');
 
         $query = DB::table('packages')
             ->where('account_id', $accountId)
@@ -2110,7 +2110,7 @@ final class PlanService
 
         $query->whereIn('location_id', ACL::getUserCentres());
 
-        if (! Gate::allows('view_inactive_plans')) {
+        if (! Gate::allows('plans.list.view_inactive')) {
             $query->where('active', 1);
         }
 
@@ -2141,7 +2141,7 @@ final class PlanService
     private function buildOptimizedResultQuery(array $where, int|string $accountId): Builder
     {
         $userCentres = ACL::getUserCentres();
-        $canViewInactive = Gate::allows('view_inactive_plans');
+        $canViewInactive = Gate::allows('plans.list.view_inactive');
 
         $scopedPackageIds = DB::table('packages')
             ->select('id')

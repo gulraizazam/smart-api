@@ -26,7 +26,7 @@
             image_manage: {{ Gate::allows('appointments_image_manage') ? 'true' : 'false' }},
             measurement_manage: {{ Gate::allows('appointments_measurement_manage') ? 'true' : 'false' }},
             medical_form_manage: {{ Gate::allows('appointments_medical_form_manage') ? 'true' : 'false' }},
-            plans_create: {{ Gate::allows('plans_create') ? 'true' : 'false' }},
+            plans_create: {{ Gate::allows('plans.create') ? 'true' : 'false' }},
             patient_card: {{ Gate::allows('patient_card') ? 'true' : 'false' }},
             contact: {{ Gate::allows('contact') ? 'true' : 'false' }},
         };
@@ -103,7 +103,7 @@
                                     </button>
                                 </div>
                                 <div class="card-toolbar submit-btn toolbar-plan-form d-none">
-                                    @if(Gate::allows('plans_create'))
+                                    @if(Gate::allows('plans.create'))
                                         <button type="button" class="btn btn-sm btn-primary mr-2 change-tab" onclick="createPlan('{{ route('admin.packages.create') }}');" data-toggle="modal" data-target="#modal_add_plan">
                                             <i class="la la-plus"></i> Add Procedures
                                         </button>

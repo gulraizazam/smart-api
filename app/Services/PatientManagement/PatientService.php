@@ -165,7 +165,7 @@ class PatientService
             ->where('user_type_id', Config::get('constants.patient_id'))
             ->where('account_id', $accountId);
 
-        if (! Gate::allows('view_inactive_patients')) {
+        if (! Gate::allows('patients.list.view_inactive')) {
             $query->where('active', 1);
         }
 
@@ -285,13 +285,31 @@ class PatientService
     public function getPermissions(): array
     {
         return [
-            'edit' => Gate::allows('patients_edit'),
-            'delete' => Gate::allows('patients_destroy'),
-            'active' => Gate::allows('patients_active'),
-            'inactive' => Gate::allows('patients_inactive'),
-            'manage' => Gate::allows('patients_manage'),
-            'contact' => Gate::allows('contact'),
-            'add_referrals' => Gate::allows('patients_add_referrals'),
+            'edit' => Gate::allows('patients.edit'),
+            'delete' => Gate::allows('patients.delete'),
+            'active' => Gate::allows('patients.activate'),
+            'inactive' => Gate::allows('patients.deactivate'),
+            'manage' => Gate::allows('patients.card.view'),
+            // Patient-module contact gate — replaces the cross-module
+            // `contact` perm for surfaces inside the patients module so the
+            // role-editor toggle `patients.list.view_contact` is the
+            // authority here. The legacy `contact` perm still gates phone
+            // visibility everywhere else (leads, treatments, appointments,
+            // reports, exports) and will be re-pointed in those modules'
+            // own audit passes.
+            'contact' => Gate::allows('patients.list.view_contact'),
+            'add_referrals' => Gate::allows('patients.referral.add'),
+            // Inline action gates for the profile tab — the SPA hides the
+            // matching buttons when these are false. Server-side
+            // enforcement happens in PatientController and is the security
+            // boundary; these flags are purely a UX hint.
+            'assign_membership' => Gate::allows('patients.membership.assign'),
+            'assign_voucher' => Gate::allows('patients.voucher.assign'),
+            'view_voucher_history' => Gate::allows('patients.vouchers.view_history'),
+            'notes_view' => Gate::allows('patients.notes.view'),
+            'notes_create' => Gate::allows('patients.notes.create'),
+            'notes_pin' => Gate::allows('patients.notes.pin'),
+            'notes_manage' => Gate::allows('patients.notes.manage'),
         ];
     }
 
@@ -801,10 +819,10 @@ class PatientService
         PatientAccessScope::applyTo($baseQuery);
 
         // Mirror the contact-permission redaction already implemented in
-        // Patients::getPatientSearchOptimized — callers without `contact`
-        // must receive rows with the phone key entirely absent (not
-        // masked, not blank) so downstream renderers don't show a column.
-        $canViewContact = Gate::allows('contact');
+        // Patients::getPatientSearchOptimized — callers without the patients
+        // contact gate must receive rows with the phone key entirely absent
+        // (not masked, not blank) so downstream renderers don't show a column.
+        $canViewContact = Gate::allows('patients.list.view_contact');
 
         if ($shape['type'] === 'patient_code' || $shape['type'] === 'short_id') {
             $row = (clone $baseQuery)
@@ -1281,7 +1299,11 @@ class PatientService
                 'invoice' => Gate::allows('consultancy_invoice') || Gate::allows('appointments_invoice'),
                 'invoice_display' => Gate::allows('consultancy_invoice_display') || Gate::allows('appointments_invoice_display'),
                 'log' => Gate::allows('appointments_log'),
-                'contact' => Gate::allows('contact'),
+                // Patient appointments table inside the patient card —
+                // gate on the patients-module contact perm so revoking
+                // `patients.list.view_contact` hides the patient phone
+                // here too (not just on the datatable list page).
+                'contact' => Gate::allows('patients.list.view_contact'),
             ],
             'filter_values' => [
                 'patient' => null, 'cities' => [], 'locations' => [],

@@ -13,7 +13,7 @@ class BulkCreateServiceBundleRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return Gate::allows('packages_create');
+        return Gate::allows('bundles.bulk_create');
     }
 
     /**

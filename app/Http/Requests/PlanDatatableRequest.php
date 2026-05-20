@@ -12,7 +12,11 @@ final class PlanDatatableRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()?->can('plans_manage') ?? false;
+        // Used by both the patient-card datatable and the global /plans
+        // page. Either gate is sufficient — the controller routes the
+        // request to the appropriate scope.
+        return ($this->user()?->can('plans.list.view')
+            || $this->user()?->can('patients.plans.view')) ?? false;
     }
 
     public function rules(): array

@@ -105,7 +105,7 @@
             </div>
         </div>
         <hr>
-        @if(Gate::allows('leads_manage'))
+        @if(Gate::allows('leads.comment.create'))
             <div class="container" style="width:100%;padding-bottom:5%; ">
                 <div class="box-footer">
                     <form id="cment">

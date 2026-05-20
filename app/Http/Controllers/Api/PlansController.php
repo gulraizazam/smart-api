@@ -69,7 +69,10 @@ final class PlansController extends Controller
 
     public function getLookupData(int|string $patientId): JsonResponse
     {
-        if (Gate::denies('plans_manage')) {
+        // Patient-card concern — gated on `patients.plans.view` since the
+        // patient-card "Plans" tab is the only caller. Global lookup data
+        // for the /plans page goes through getGlobalLookupData below.
+        if (Gate::denies('patients.plans.view')) {
             return $this->unauthorizedResponse();
         }
 
@@ -86,7 +89,7 @@ final class PlansController extends Controller
 
     public function getStatistics(int|string $patientId): JsonResponse
     {
-        if (Gate::denies('plans_manage')) {
+        if (Gate::denies('patients.plans.view')) {
             return $this->unauthorizedResponse();
         }
 
@@ -181,7 +184,7 @@ final class PlansController extends Controller
 
     public function getGlobalLookupData(): JsonResponse
     {
-        if (Gate::denies('plans_manage')) {
+        if (Gate::denies('plans.list.view')) {
             return $this->unauthorizedResponse();
         }
 
@@ -293,34 +296,34 @@ final class PlansController extends Controller
     private function patientPermissions(): array
     {
         return [
-            'edit'                    => Gate::allows('plans_edit'),
-            'delete'                  => Gate::allows('plans_destroy'),
-            'active'                  => Gate::allows('plans_active'),
-            'inactive'                => Gate::allows('plans_inactive'),
-            'create'                  => Gate::allows('plans_create'),
-            'log'                     => Gate::allows('plans_log'),
-            'sms_log'                 => Gate::allows('plans_sms_log'),
-            'patients_plan_cash_edit'   => Gate::allows('plans_cash_edit'),
-            'patients_plan_cash_delete' => Gate::allows('plans_cash_delete'),
+            'edit'                      => Gate::allows('plans.edit'),
+            'delete'                    => Gate::allows('plans.destroy'),
+            'active'                    => Gate::allows('plans.activate'),
+            'inactive'                  => Gate::allows('plans.deactivate'),
+            'create'                    => Gate::allows('plans.create'),
+            'log'                       => Gate::allows('plans.log.view'),
+            'sms_log'                   => Gate::allows('plans.sms_log.view'),
+            'patients_plan_cash_edit'   => Gate::allows('plans.cash.edit'),
+            'patients_plan_cash_delete' => Gate::allows('plans.cash.delete'),
         ];
     }
 
     private function globalPermissions(): array
     {
         return [
-            'edit'                        => Gate::allows('plans_edit'),
-            'delete'                      => Gate::allows('plans_destroy'),
-            'active'                      => Gate::allows('plans_active'),
-            'inactive'                    => Gate::allows('plans_inactive'),
-            'create'                      => Gate::allows('plans_create'),
-            'log'                         => Gate::allows('plans_log'),
-            'sms_log'                     => Gate::allows('plans_sms_log'),
-            'plans_cash_edit'             => Gate::allows('plans_cash_edit'),
-            'plans_cash_delete'           => Gate::allows('plans_cash_delete'),
-            'plans_cash_edit_payment_mode' => Gate::allows('plans_cash_edit_payment_mode'),
-            'plans_cash_edit_amount'       => Gate::allows('plans_cash_edit_amount'),
-            'plans_cash_edit_date'         => Gate::allows('plans_cash_edit_date'),
-            'plans_edit_sold_by'           => Gate::allows('plans_edit_sold_by'),
+            'edit'                         => Gate::allows('plans.edit'),
+            'delete'                       => Gate::allows('plans.destroy'),
+            'active'                       => Gate::allows('plans.activate'),
+            'inactive'                     => Gate::allows('plans.deactivate'),
+            'create'                       => Gate::allows('plans.create'),
+            'log'                          => Gate::allows('plans.log.view'),
+            'sms_log'                      => Gate::allows('plans.sms_log.view'),
+            'plans_cash_edit'              => Gate::allows('plans.cash.edit'),
+            'plans_cash_delete'            => Gate::allows('plans.cash.delete'),
+            'plans_cash_edit_payment_mode' => Gate::allows('plans.cash.edit_payment_mode'),
+            'plans_cash_edit_amount'       => Gate::allows('plans.cash.edit_amount'),
+            'plans_cash_edit_date'         => Gate::allows('plans.cash.edit_date'),
+            'plans_edit_sold_by'           => Gate::allows('plans.sold_by.edit'),
         ];
     }
 

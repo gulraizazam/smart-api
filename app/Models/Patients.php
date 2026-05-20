@@ -253,7 +253,7 @@ class Patients extends BaseModel
             return [];
         }
 
-        $canViewContact = Gate::allows('contact');
+        $canViewContact = Gate::allows('patients.list.view_contact');
 
         [$scopeSql, $scopeBindings] = PatientAccessScope::rawClause('users.id');
         $cacheKey = "patient_search_{$accountId}_".PatientAccessScope::cacheSuffix().'_'.md5($name);
@@ -366,7 +366,7 @@ class Patients extends BaseModel
      */
     public static function getPatientidAjaxOrder(string $name, int $accountId): Collection
     {
-        $canViewContact = Gate::allows('contact');
+        $canViewContact = Gate::allows('patients.list.view_contact');
         $users = collect();
 
         if (str_contains(strtolower($name), 'c-')) {
@@ -424,7 +424,7 @@ class Patients extends BaseModel
      */
     public static function getPatientidAjax(string $name, int $accountId): Collection
     {
-        $canViewContact = Gate::allows('contact');
+        $canViewContact = Gate::allows('patients.list.view_contact');
         $hidePhone = static function (Collection $users) use ($canViewContact): Collection {
             if (! $canViewContact) {
                 $users->each(fn ($user) => $user->makeHidden('phone'));
@@ -476,7 +476,7 @@ class Patients extends BaseModel
     {
         // Phone-prefix lookup is meaningless — and leaks enumeration signal —
         // when the caller cannot view contact numbers. Deny outright.
-        if (! Gate::allows('contact')) {
+        if (! Gate::allows('patients.list.view_contact')) {
             return new Collection;
         }
 

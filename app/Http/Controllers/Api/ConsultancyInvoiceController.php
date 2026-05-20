@@ -27,7 +27,7 @@ class ConsultancyInvoiceController extends Controller
     public function show(int $id): JsonResponse
     {
         try {
-            if (!Gate::allows('appointments_manage') && !Gate::allows('appointments_view')) {
+            if (!Gate::allows('consultations.invoice.view')) {
                 return $this->errorResponse('You are not authorized to access this resource.', 403);
             }
 
@@ -48,7 +48,7 @@ class ConsultancyInvoiceController extends Controller
     public function calculate(CalculateConsultancyPriceRequest $request): JsonResponse
     {
         try {
-            if (!Gate::allows('appointments_manage') && !Gate::allows('appointments_invoice')) {
+            if (!Gate::allows('consultations.invoice.create')) {
                 return $this->errorResponse('You are not authorized to perform this action.', 403);
             }
 
@@ -66,7 +66,7 @@ class ConsultancyInvoiceController extends Controller
     public function calculateCustomDiscount(CustomDiscountRequest $request): JsonResponse
     {
         try {
-            if (!Gate::allows('appointments_manage') && !Gate::allows('appointments_invoice')) {
+            if (!Gate::allows('consultations.invoice.create')) {
                 return $this->errorResponse('You are not authorized to perform this action.', 403);
             }
 
@@ -84,7 +84,7 @@ class ConsultancyInvoiceController extends Controller
     public function checkCustomDiscount(Request $request): JsonResponse
     {
         try {
-            if (!Gate::allows('appointments_manage') && !Gate::allows('appointments_invoice')) {
+            if (!Gate::allows('consultations.invoice.create')) {
                 return $this->errorResponse('You are not authorized to perform this action.', 403);
             }
 
@@ -108,7 +108,7 @@ class ConsultancyInvoiceController extends Controller
     public function calculateFinal(FinalCalculationRequest $request): JsonResponse
     {
         try {
-            if (!Gate::allows('appointments_manage') && !Gate::allows('appointments_invoice')) {
+            if (!Gate::allows('consultations.invoice.create')) {
                 return $this->errorResponse('You are not authorized to perform this action.', 403);
             }
 
@@ -126,7 +126,7 @@ class ConsultancyInvoiceController extends Controller
     public function store(StoreConsultancyInvoiceRequest $request): JsonResponse
     {
         try {
-            if (!Gate::allows('appointments_manage')) {
+            if (!Gate::allows('consultations.invoice.create')) {
                 return $this->errorResponse('You are not authorized to create invoices.', 403);
             }
 

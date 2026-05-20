@@ -103,10 +103,19 @@ class AppointmentPolicy
     }
 
     /**
-     * Manage schedules / time-slots.
+     * Manage schedules / time-slots. Used by AppointmentsController::schedule
+     * (calendar drag-drop reschedule, shared between consultations and
+     * treatments). Either module's dotted reschedule perm grants the move;
+     * legacy `appointments_manage` kept as a transitional fallback for
+     * older role configurations. The dangling `schedule_manage` ref was
+     * removed in the business-working-days audit (that perm never existed
+     * in DB; its real successor is `business_working_days.edit` which is
+     * a separate concern).
      */
     public function manageSchedule(User $user): bool
     {
-        return $user->can('appointments_manage') || $user->can('schedule_manage');
+        return $user->can('appointments_manage')
+            || $user->can('consultations.reschedule')
+            || $user->can('treatments.reschedule');
     }
 }

@@ -11,7 +11,7 @@ final class UpdateServiceStatusRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return Gate::allows('services_active') || Gate::allows('services_inactive');
+        return Gate::allows('services.activate') || Gate::allows('services.deactivate');
     }
 
     /**

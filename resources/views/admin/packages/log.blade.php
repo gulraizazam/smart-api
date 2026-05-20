@@ -39,7 +39,7 @@
                                 <i class="la la-arrow-alt-circle-left"></i>
                                 Back
                             </a> &nbsp;&nbsp;
-                            @if (Gate::allows('plans_log_excel'))
+                            @if (Gate::allows('plans.log.export'))
                                 <a href="{{ route('admin.packages.log', [ request('id'), 'excel']) }}" class="btn btn-sm btn-primary">
                                     <i class="la la-file-export"></i>
                                     Excel

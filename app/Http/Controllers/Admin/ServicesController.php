@@ -27,7 +27,7 @@ class ServicesController extends Controller
      */
     public function index(Request $request): \Illuminate\View\View
     {
-        if (! Gate::allows('services_manage')) {
+        if (! Gate::allows('services.list.view')) {
             return abort(401);
         }
 
@@ -63,15 +63,14 @@ class ServicesController extends Controller
             if (! empty($Services)) {
                 $records['data'] = $Services;
                 $records['permissions'] = [
-                    'edit' => Gate::allows('services_edit'),
-                    
-                    'delete' => Gate::allows('services_destroy'),
-                    'active' => Gate::allows('services_active'),
-                    'inactive' => Gate::allows('services_inactive'),
-                    'create' => Gate::allows('services_create'),
-                    'sort' => Gate::allows('services_edit'),
-                    'duplicate' => Gate::allows('services_duplicate'),
-                    'detail'=> Gate::allows('services_detail'),
+                    'edit' => Gate::allows('services.edit'),
+                    'delete' => Gate::allows('services.destroy'),
+                    'active' => Gate::allows('services.activate'),
+                    'inactive' => Gate::allows('services.deactivate'),
+                    'create' => Gate::allows('services.create'),
+                    'sort' => Gate::allows('services.sort'),
+                    'duplicate' => Gate::allows('services.duplicate'),
+                    'detail'=> Gate::allows('services.detail.view'),
                 ];
                 $records['meta'] = [
                     'field' => $orderBy,
@@ -91,7 +90,7 @@ class ServicesController extends Controller
     }
     public function getSortOrder(): \Illuminate\View\View
     {
-        if (! Gate::allows('services_edit')) {
+        if (! Gate::allows('services.sort')) {
             return abort(401);
         }
 
@@ -100,8 +99,8 @@ class ServicesController extends Controller
     public function sortOrderGet(): \Illuminate\Http\JsonResponse
     {
         try {
-            if (! Gate::allows('services_edit')) {
-                return $this->errorResponse('You are not authorized to access this resource.', 401);
+            if (! Gate::allows('services.sort')) {
+                return $this->errorResponse('You are not authorized to access this resource.', 403);
             }
 
             $parents = Services::where('slug', '!=', 'all')
@@ -134,8 +133,8 @@ class ServicesController extends Controller
     public function sortOrderSave(Request $request): \Illuminate\Http\JsonResponse
     {
         try {
-            if (! Gate::allows('services_edit')) {
-                return $this->errorResponse('You are not authorized to access this resource.', 401);
+            if (! Gate::allows('services.sort')) {
+                return $this->errorResponse('You are not authorized to access this resource.', 403);
             }
 
             $parentId = (int) $request->parent_id;
@@ -170,8 +169,8 @@ class ServicesController extends Controller
     public function categorySortOrderSave(Request $request): \Illuminate\Http\JsonResponse
     {
         try {
-            if (! Gate::allows('services_edit')) {
-                return $this->errorResponse('You are not authorized to access this resource.', 401);
+            if (! Gate::allows('services.sort')) {
+                return $this->errorResponse('You are not authorized to access this resource.', 403);
             }
 
             $categoryIds = $request->input('category_ids', []);
@@ -233,8 +232,8 @@ class ServicesController extends Controller
      */
     public function create(): \Illuminate\Http\JsonResponse
     {
-        if (! Gate::allows('services_create')) {
-            return $this->errorResponse('You are not authorized to access this resource.', 401);
+        if (! Gate::allows('services.create')) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
         }
 
         $service = new \stdClass();
@@ -266,8 +265,8 @@ class ServicesController extends Controller
     public function store(StoreUpdateServiceRequest $request): \Illuminate\Http\JsonResponse
     {
 
-        if (! Gate::allows('services_create')) {
-            return $this->errorResponse('You are not authorized to access this resource.', 401);
+        if (! Gate::allows('services.create')) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
         }
 
         if (Services::createRecord($request, Auth::user()->account_id)) {
@@ -286,8 +285,8 @@ class ServicesController extends Controller
      */
     public function edit(int $id): \Illuminate\Http\JsonResponse
     {
-        if (! Gate::allows('services_edit')) {
-            return $this->errorResponse('You are not authorized to access this resource.', 401);
+        if (! Gate::allows('services.edit')) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
         }
 
         $service = Services::findOrFail($id);
@@ -329,7 +328,7 @@ class ServicesController extends Controller
      */
     public function show(Request $request, int $id): \Illuminate\View\View
     {
-        if (! Gate::allows('services_manage')) {
+        if (! Gate::allows('services.detail.view')) {
             return abort(401);
         }
 
@@ -365,8 +364,8 @@ class ServicesController extends Controller
      */
     public function duplicate(int $id): \Illuminate\Http\JsonResponse
     {
-        if (! Gate::allows('services_duplicate')) {
-            return $this->errorResponse('You are not authorized to access this resource.', 401);
+        if (! Gate::allows('services.duplicate')) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
         }
 
         $service = Services::findOrFail($id);
@@ -399,8 +398,8 @@ class ServicesController extends Controller
      */
     public function storeDuplicate(StoreUpdateServiceRequest $request): \Illuminate\Http\JsonResponse
     {
-        if (! Gate::allows('services_duplicate')) {
-            return $this->errorResponse('You are not authorized to access this resource.', 401);
+        if (! Gate::allows('services.duplicate')) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
         }
 
         if (Services::createRecord($request, Auth::user()->account_id)) {
@@ -418,8 +417,8 @@ class ServicesController extends Controller
      */
     public function update(StoreUpdateServiceRequest $request, int $id): \Illuminate\Http\JsonResponse
     {
-        if (! Gate::allows('services_edit')) {
-            return $this->errorResponse('You are not authorized to access this resource.', 401);
+        if (! Gate::allows('services.edit')) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
         }
         $service = Services::findOrFail($id);
         if ($service->parent_id > 0 && $request->parent_id == 0) {
@@ -451,8 +450,8 @@ class ServicesController extends Controller
      */
     public function destroy(int $id): \Illuminate\Http\JsonResponse
     {
-        if (! Gate::allows('services_destroy')) {
-            return $this->errorResponse('You are not authorized to access this resource.', 401);
+        if (! Gate::allows('services.destroy')) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
         }
 
         $result = Services::deleteRecord($id);
@@ -473,8 +472,8 @@ class ServicesController extends Controller
     {
         try {
 
-            if (! Gate::allows('services_active') && ! Gate::allows('services_inactive')) {
-                return $this->errorResponse('You are not authorized to access this resource.', 401);
+            if (! Gate::allows('services.activate') && ! Gate::allows('services.deactivate')) {
+                return $this->errorResponse('You are not authorized to access this resource.', 403);
             }
             $checkService = Services::find((int) $request->id);
 
@@ -525,8 +524,7 @@ class ServicesController extends Controller
     {
         // Server-side authority — the SPA also hides the button when this
         // gate is missing, but a 403 here is the actual security boundary.
-        // Permission seeded by PermissionSeeder (services_export, parent_id=46).
-        if (! \Illuminate\Support\Facades\Gate::allows('services_export')) {
+        if (! \Illuminate\Support\Facades\Gate::allows('services.export')) {
             abort(403);
         }
 

@@ -39,7 +39,7 @@ use Illuminate\Support\Facades\Route;
         Route::get('lead_statuses/sort', [LeadStatusesController::class, 'sortOrder'])->name('lead_statuses.sort');
 
         // Services
-        Route::resource('services', ServicesController::class)->only(['index', 'show'])->middleware('permission:services_manage');
+        Route::resource('services', ServicesController::class)->only(['index', 'show'])->middleware('permission:services.list.view');
 
         // Appointment Statuses
         Route::get('appointment_statuses', [AppointmentStatusesController::class, 'index'])->name('appointment_statuses.index');
@@ -83,13 +83,14 @@ use Illuminate\Support\Facades\Route;
         //Discount route end
 
         //Packages route Start
-        Route::get('bundles', [AdminBundlesController::class, 'index'])->name('bundles.index')->middleware('permission:packages_manage');
-        Route::get('bundles/sort', [AdminBundlesController::class, 'sort'])->name('bundles.sort')->middleware('permission:packages_edit');
+        Route::get('bundles', [AdminBundlesController::class, 'index'])->name('bundles.index')->middleware('permission:packages.list.view');
+        Route::get('bundles/sort', [AdminBundlesController::class, 'sort'])->name('bundles.sort')->middleware('permission:packages.sort');
         //Packages route end
 
-        // Service Bundles (same service × N sessions)
-        Route::get('service-bundles', [AdminServiceBundlesController::class, 'index'])->name('service-bundles.index')->middleware('permission:packages_manage');
-        Route::get('service-bundles/sort', [AdminServiceBundlesController::class, 'sort'])->name('service-bundles.sort')->middleware('permission:packages_edit');
+        // Service Bundles (same service × N sessions) — uses the Bundles
+        // module catalog (bundles.*), introduced in 2026_05_29.
+        Route::get('service-bundles', [AdminServiceBundlesController::class, 'index'])->name('service-bundles.index')->middleware('permission:bundles.list.view');
+        Route::get('service-bundles/sort', [AdminServiceBundlesController::class, 'sort'])->name('service-bundles.sort')->middleware('permission:bundles.sort');
         // Service Bundles route end
 
         //Centre Target
@@ -102,11 +103,11 @@ use Illuminate\Support\Facades\Route;
         Route::resource('packagesadvances', PackageAdvancesController::class)->only('index');
 
         //Resource Rota Management (Schedule Calendar)
-        Route::get('resourcerotas/schedule', [ResourceRotasController::class, 'scheduleCalendar'])->name('resourcerotas.schedule')->middleware('permission:resourcerotas_manage');
-        Route::get('resourcerotas/repeating-shifts', [ResourceRotasController::class, 'repeatingShifts'])->name('resourcerotas.repeating-shifts')->middleware('permission:resourcerotas_manage');
+        Route::get('resourcerotas/schedule', [ResourceRotasController::class, 'scheduleCalendar'])->name('resourcerotas.schedule')->middleware('permission:scheduling_shifts.list.view');
+        Route::get('resourcerotas/repeating-shifts', [ResourceRotasController::class, 'repeatingShifts'])->name('resourcerotas.repeating-shifts')->middleware('permission:scheduling_shifts.list.view');
 
         //Business Closures Management
-        Route::get('business-closures', [App\Http\Controllers\Admin\BusinessClosureController::class, 'index'])->name('business-closures.index');
+        Route::get('business-closures', [App\Http\Controllers\Admin\BusinessClosureController::class, 'index'])->name('business-closures.index')->middleware('permission:business_closures.list.view');
 
         //Invoice Management route start
         Route::get('invoices/log/{id}/{type}/{patient_id?}', [InvoicesController::class, 'invoicelog'])->name('invoices.invoice_log');
@@ -118,7 +119,7 @@ use Illuminate\Support\Facades\Route;
         Route::get('plans/log/{id}/{type}', [PackagesController::class, 'packagelog'])->name('packages.log');
         Route::get('view-package/{id}', [PackagesController::class, 'viewPackage'])->name('packages.view.package');
 
-        Route::resource('packages', PackagesController::class)->only(['index', 'create'])->middleware('permission:plans_manage');
+        Route::resource('packages', PackagesController::class)->only(['index', 'create'])->middleware('permission:plans.list.view');
         Route::post('packages/resetvoucherpacakgebundles', [PackagesController::class, 'resetvoucherpacakgebundles'])->name('packages.resetvoucherpacakgebundles');
         Route::get('packages/getserviceinfo_for_plan', [PackagesController::class, 'getserviceinfo_for_plan'])->name('packages.getserviceinfo_for_plan');
         Route::get('packages/getdiscountinfo_for_plan', [PackagesController::class, 'getdiscountinfo_for_plan'])->name('packages.getdiscountinfo_for_plan');
@@ -160,7 +161,7 @@ use Illuminate\Support\Facades\Route;
         Route::get('memberships/export/pdf', [ApiMembershipsController::class, 'exportPdf'])->name('memberships.export.pdf');
         Route::get('memberships/export/excel', [ApiMembershipsController::class, 'exportDocs'])->name('membership.export.excel');
         // Patients - using API controller for CRUD operations, keeping view routes
-        Route::get('patients', [PatientsController::class, 'index'])->name('patients.index')->middleware('permission:patients_manage');
+        Route::get('patients', [PatientsController::class, 'index'])->name('patients.index')->middleware('permission:patients.list.view');
         Route::match(['get', 'post'], 'patients/{id}/preview', [PatientsController::class, 'preview'])->name('patients.preview');
         // New Patient Card V2 - Section-based navigation (no JS tab conflicts)
         Route::get('patients/{id}/card/{section?}', [PatientsController::class, 'cardV2'])->name('patients.card');

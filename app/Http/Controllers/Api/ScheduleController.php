@@ -17,6 +17,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Carbon\Carbon;
 
 class ScheduleController extends Controller
@@ -26,6 +27,13 @@ class ScheduleController extends Controller
      */
     public function getLocations(): JsonResponse
     {
+        // Locations dropdown for the scheduling-shifts calendar — gate
+        // on list view so non-scheduling users can't enumerate the
+        // location list via this helper.
+        if (! Gate::allows('scheduling_shifts.list.view')) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
+        }
+
         // Use same method and format as consultancy calendar for consistent ordering
         $locations = Locations::getActiveRecordsByCity('', ACL::getUserCentres(), Auth::user()->account_id);
 
@@ -36,9 +44,18 @@ class ScheduleController extends Controller
 
     /**
      * Get business working days configuration
+     *
+     * Legacy endpoint kept live for older callers (the SPA hits
+     * Api/BusinessWorkingDaysController::show via /api/business-working-days
+     * instead). Gated on the same business-working-days view perm so
+     * direct callers face the same auth as the new endpoint.
      */
     public function getBusinessWorkingDays(): JsonResponse
     {
+        if (! Gate::allows('business_working_days.list.view')) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
+        }
+
         $accountId = Auth::user()->account_id;
         
         // Try to get existing setting
@@ -83,6 +100,11 @@ class ScheduleController extends Controller
      */
     public function saveBusinessWorkingDays(Request $request): JsonResponse
     {
+        // Legacy endpoint — see comment on getBusinessWorkingDays above.
+        if (! Gate::allows('business_working_days.edit')) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
+        }
+
         $accountId = Auth::user()->account_id;
         $workingDays = $request->input('working_days', []);
         
@@ -140,6 +162,10 @@ class ScheduleController extends Controller
      */
     public function getShifts(Request $request): JsonResponse
     {
+        if (! Gate::allows('scheduling_shifts.list.view')) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
+        }
+
         $locationId = (int) $request->input('location_id');
         $resourceTypeId = (int) $request->input('resource_type_id', 2); // Default to Doctor (2)
         $startDate = $request->input('start_date');
@@ -271,6 +297,13 @@ class ScheduleController extends Controller
      */
     public function storeShifts(Request $request): JsonResponse
     {
+        // storeShifts handles both new-shift create AND edit-existing
+        // writes (the controller doesn't differentiate — the SPA dialog
+        // routes both intents here). Allow either create or edit.
+        if (! Gate::allows('scheduling_shifts.create') && ! Gate::allows('scheduling_shifts.edit')) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
+        }
+
         $resourceId = $request->input('resource_id');
         $locationId = $request->input('location_id');
         $date = $request->input('date');
@@ -378,6 +411,10 @@ class ScheduleController extends Controller
      */
     public function storeRepeatingShifts(Request $request): JsonResponse
     {
+        if (! Gate::allows('scheduling_shifts.create')) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
+        }
+
         $resourceId = (int) $request->input('resource_id');
         $locationId = (int) $request->input('location_id');
         $scheduleType = $request->input('schedule_type', 'every_week');
@@ -570,6 +607,10 @@ class ScheduleController extends Controller
      */
     public function getResources(Request $request): JsonResponse
     {
+        if (! Gate::allows('scheduling_shifts.list.view')) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
+        }
+
         $locationId = (int) $request->input('location_id');
         $resourceTypeId = (int) $request->input('resource_type_id', 2);
 
@@ -589,6 +630,10 @@ class ScheduleController extends Controller
      */
     public function deleteShifts(Request $request): JsonResponse
     {
+        if (! Gate::allows('scheduling_shifts.delete')) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
+        }
+
         $resourceId = $request->input('resource_id');
         $locationId = $request->input('location_id');
         $date = $request->input('date');
@@ -641,6 +686,10 @@ class ScheduleController extends Controller
      */
     public function deleteSingleShift(Request $request): JsonResponse
     {
+        if (! Gate::allows('scheduling_shifts.delete')) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
+        }
+
         $shiftId = $request->input('shift_id');
 
         if (!$shiftId) {
@@ -671,6 +720,12 @@ class ScheduleController extends Controller
      */
     public function storeTimeOff(Request $request): JsonResponse
     {
+        // Time-offs are managed inside the scheduling-shifts page; they
+        // share the shift `create` perm by design (single-perm rotas UX).
+        if (! Gate::allows('scheduling_shifts.create')) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
+        }
+
         $resourceId = $request->input('resource_id');
         $locationId = $request->input('location_id');
         $type = $request->input('type', 'time_off');
@@ -739,6 +794,10 @@ class ScheduleController extends Controller
      */
     public function getTimeOffs(Request $request): JsonResponse
     {
+        if (! Gate::allows('scheduling_shifts.list.view')) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
+        }
+
         $locationId = $request->input('location_id');
         $startDate = $request->input('start_date');
         $endDate = $request->input('end_date');
@@ -786,6 +845,10 @@ class ScheduleController extends Controller
      */
     public function getTimeOff(Request $request): JsonResponse
     {
+        if (! Gate::allows('scheduling_shifts.list.view')) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
+        }
+
         $timeOffId = $request->input('time_off_id');
 
         if (!$timeOffId) {
@@ -821,6 +884,10 @@ class ScheduleController extends Controller
      */
     public function updateTimeOff(Request $request): JsonResponse
     {
+        if (! Gate::allows('scheduling_shifts.edit')) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
+        }
+
         $timeOffId = $request->input('time_off_id');
 
         if (!$timeOffId) {
@@ -885,6 +952,10 @@ class ScheduleController extends Controller
      */
     public function deleteTimeOff(Request $request): JsonResponse
     {
+        if (! Gate::allows('scheduling_shifts.delete')) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
+        }
+
         $timeOffId = $request->input('time_off_id');
 
         if (!$timeOffId) {
@@ -1121,6 +1192,10 @@ class ScheduleController extends Controller
      */
     public function bulkDeleteShifts(Request $request): JsonResponse
     {
+        if (! Gate::allows('scheduling_shifts.delete')) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
+        }
+
         $resourceId = $request->input('resource_id');
         $locationId = $request->input('location_id');
         $startDate = $request->input('start_date');

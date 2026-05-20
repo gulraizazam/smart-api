@@ -11,7 +11,7 @@ final class StoreServiceRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return Gate::allows('services_create');
+        return Gate::allows('services.create');
     }
 
     /**

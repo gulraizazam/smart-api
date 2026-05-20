@@ -239,8 +239,6 @@ class CashFlowDashboardController extends Controller
             // Debug information
             $debugInfo = [
                 'cached_balance' => (float) $pools->sum('cached_balance'),
-                'inventory_cash_sales' => $inventoryCashSales,
-                'inventory_cash_refunds' => $inventoryCashRefunds,
                 'total_current_balance' => $currentBalance,
                 'static_opening_balance' => (float) $pools->sum('opening_balance'),
                 'current_date' => \Carbon\Carbon::now()->toDateTimeString(),

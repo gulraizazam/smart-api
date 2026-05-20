@@ -11,7 +11,7 @@ class ImportLeadsRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return Gate::allows('leads_import');
+        return Gate::allows('leads.import');
     }
 
     public function rules(): array

@@ -37,7 +37,7 @@
                         
                         <div class="fv-row col-md-6 append_payment_mode">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Payment Mode <span class="text text-danger">*</span></label>
-                            @if(Gate::allows('plans_cash_edit_payment_mode'))
+                            @if(Gate::allows('plans.cash.edit_payment_mode'))
                             <select id="plane_cash_payment_mode" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="payment_mode_id">
 
                             </select>
@@ -48,7 +48,7 @@
                         
                         <div class="fv-row col-md-6 append_cash_amount">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Amount <span class="text text-danger">*</span></label>
-                            @if(Gate::allows('plans_cash_edit_amount'))
+                            @if(Gate::allows('plans.cash.edit_amount'))
                                 <input oninput="phoneField(this)" name="cash_amount" type="text" id="plane_cash_amount" class="form-control">
                             
                             @endif
@@ -57,7 +57,7 @@
                         
                         <div class="fv-row col-md-6   append_cash_date">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Date <span class="text text-danger">*</span></label>
-                            @if(Gate::allows('plans_cash_edit_date'))
+                            @if(Gate::allows('plans.cash.edit_date'))
                             <input type="text" id="plane_cash_date" name="created_at" class="form-control custom-datepicker">
                             
                             @endif

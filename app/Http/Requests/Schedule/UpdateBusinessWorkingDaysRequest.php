@@ -12,7 +12,7 @@ class UpdateBusinessWorkingDaysRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return Auth::check() && Gate::allows('schedule_manage');
+        return Auth::check() && Gate::allows('business_working_days.edit');
     }
 
     /**

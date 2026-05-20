@@ -114,6 +114,10 @@ class PackagesController extends Controller
      */
     public function getservices(Request $request): JsonResponse
     {
+        if (! Gate::allows('plans.list.view')) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
+        }
+
         try {
             if (! $request->has('location_id') || ! $request->location_id) {
                 return $this->errorResponse('Location ID is required.', 500);
@@ -144,6 +148,10 @@ class PackagesController extends Controller
      */
     public function savebundle_service(Request $request): JsonResponse
     {
+        if (! Gate::allows('plans.edit') && ! Gate::allows('plans.create')) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
+        }
+
         try {
             $result = $this->planService->addBundleService([
                 'bundle_id' => $request->bundle_id,
@@ -174,6 +182,10 @@ class PackagesController extends Controller
      */
     public function savemembership_service(Request $request): JsonResponse
     {
+        if (! Gate::allows('plans.edit') && ! Gate::allows('plans.create')) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
+        }
+
         try {
             $result = $this->planService->addMembershipService([
                 'membership_id' => $request->membership_id,
@@ -197,6 +209,10 @@ class PackagesController extends Controller
      */
     public function updateMembershipPlan(Request $request): JsonResponse
     {
+        if (! Gate::allows('plans.edit')) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
+        }
+
         try {
             $packageId = $request->package_id;
             $patientId = $request->patient_id;
@@ -509,6 +525,10 @@ class PackagesController extends Controller
      */
     public function getbundles(Request $request): JsonResponse
     {
+        if (! Gate::allows('plans.list.view')) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
+        }
+
         try {
             if (! $request->has('location_id') || ! $request->location_id) {
                 return $this->errorResponse('Location ID is required.', 500);
@@ -533,6 +553,10 @@ class PackagesController extends Controller
      */
     public function getmemberships(Request $request): JsonResponse
     {
+        if (! Gate::allows('plans.list.view')) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
+        }
+
         try {
             if (! $request->has('location_id') || ! $request->location_id) {
                 return $this->errorResponse('Location ID is required.', 500);
@@ -560,6 +584,10 @@ class PackagesController extends Controller
      */
     public function getmembershipinfo(Request $request): JsonResponse
     {
+        if (! Gate::allows('plans.list.view')) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
+        }
+
         try {
             if (! $request->membership_id) {
                 return $this->errorResponse('Membership ID is required.', 500);
@@ -582,6 +610,10 @@ class PackagesController extends Controller
      */
     public function searchMembershipCodes(Request $request): JsonResponse
     {
+        if (! Gate::allows('plans.list.view')) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
+        }
+
         try {
             $search = $request->search;
 
@@ -607,6 +639,10 @@ class PackagesController extends Controller
      */
     public function getdiscountinfo(Request $request): JsonResponse
     {
+        if (! Gate::allows('plans.list.view')) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
+        }
+
         $result = $this->planService->getDiscountInfo($request->all());
 
         return $result['success']
@@ -619,6 +655,10 @@ class PackagesController extends Controller
      */
     public function savepackages_service(Request $request): JsonResponse
     {
+        if (! Gate::allows('plans.edit') && ! Gate::allows('plans.create')) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
+        }
+
         $result = $this->planService->savePackagesService($request->all());
 
         return $result['success']
@@ -631,6 +671,10 @@ class PackagesController extends Controller
      */
     public function makePackagesServicesData(MakePackageServicesRequest $request): JsonResponse
     {
+        if (! Gate::allows('plans.edit') && ! Gate::allows('plans.create')) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
+        }
+
         \Log::info('=== makePackagesServicesData (POST BUNDLE PATH) CALLED ===', [
             'bundle_id_from_request' => $request->bundle_id,
             'discount_id' => $request->discount_id,
@@ -659,6 +703,10 @@ class PackagesController extends Controller
      */
     public function getdiscountinfocustom(Request $request): JsonResponse|false
     {
+        if (! Gate::allows('plans.list.view')) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
+        }
+
         $result = $this->planService->getCustomDiscountInfo($request->all());
 
         if ($result === false) {
@@ -677,6 +725,10 @@ class PackagesController extends Controller
      */
     public function deletepackagesservice(Request $request): JsonResponse
     {
+        if (! Gate::allows('plans.service.delete') && ! Gate::allows('plans.edit')) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
+        }
+
         $result = $this->planService->deletePackageService($request->all());
 
         if ($result['success']) {
@@ -698,6 +750,10 @@ class PackagesController extends Controller
 
     public function deleteconfpackagesservice(Request $request): JsonResponse
     {
+        if (! Gate::allows('plans.service.delete') && ! Gate::allows('plans.edit')) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
+        }
+
         $result = $this->planService->deleteConfigurablePackageService($request->all());
 
         if ($result['success']) {
@@ -721,6 +777,10 @@ class PackagesController extends Controller
      */
     public function cascadeDeleteGroup(Request $request): JsonResponse
     {
+        if (! Gate::allows('plans.service.delete') && ! Gate::allows('plans.edit')) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
+        }
+
         $validated = $request->validate([
             'ids' => 'required|array|min:1',
             'ids.*' => 'integer',
@@ -754,6 +814,10 @@ class PackagesController extends Controller
      */
     public function deletepackagesexclusive(Request $request): JsonResponse
     {
+        if (! Gate::allows('plans.service.delete') && ! Gate::allows('plans.edit')) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
+        }
+
         $result = $this->planService->deleteExclusiveService($request->all());
 
         return response()->json([
@@ -771,6 +835,10 @@ class PackagesController extends Controller
      */
     public function savepackages(Request $request): JsonResponse
     {
+        if (! Gate::allows('plans.create')) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
+        }
+
         try {
             // IMPORTANT: Store student documents IMMEDIATELY at the start of the request
             // before any other processing can consume/delete the temp files
@@ -871,6 +939,10 @@ class PackagesController extends Controller
      */
     public function getserviceinfo(Request $request): JsonResponse
     {
+        if (! Gate::allows('plans.list.view')) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
+        }
+
         $result = $this->planService->getServiceInfoForPackage($request->all());
 
         return $result['success']
@@ -887,6 +959,10 @@ class PackagesController extends Controller
      */
     public function getserviceinfo_for_plan(Request $request): JsonResponse
     {
+        if (! Gate::allows('plans.list.view')) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
+        }
+
         $result = $this->planService->getServiceInfoForPlan($request->all());
 
         if ($result['success']) {
@@ -905,6 +981,10 @@ class PackagesController extends Controller
      */
     public function getdiscountinfo_for_plan(Request $request): JsonResponse
     {
+        if (! Gate::allows('plans.list.view')) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
+        }
+
         $result = $this->planService->getDiscountInfoForPlan($request->all());
 
         return $result['success']
@@ -921,6 +1001,10 @@ class PackagesController extends Controller
      */
     public function getdiscountinfocustom_for_plan(Request $request): JsonResponse
     {
+        if (! Gate::allows('plans.list.view')) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
+        }
+
         $result = $this->planService->getCustomDiscountInfoForPlan($request->all());
 
         return $result['success']
@@ -937,6 +1021,10 @@ class PackagesController extends Controller
      */
     public function savepackages_service_for_plan(Request $request): JsonResponse
     {
+        if (! Gate::allows('plans.edit') && ! Gate::allows('plans.create')) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
+        }
+
         $result = $this->planService->saveServiceForPlan($request->all());
 
         return $result['success']
@@ -952,6 +1040,10 @@ class PackagesController extends Controller
      */
     public function reserveVoucherForPlan(Request $request): JsonResponse
     {
+        if (! Gate::allows('plans.edit') && ! Gate::allows('plans.create')) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
+        }
+
         $validated = $request->validate([
             'voucher_id' => 'required|integer|exists:discounts,id',
             'patient_id' => 'required|integer|exists:users,id',
@@ -975,6 +1067,10 @@ class PackagesController extends Controller
      */
     public function refundVoucherForPlan(Request $request): JsonResponse
     {
+        if (! Gate::allows('plans.edit')) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
+        }
+
         $validated = $request->validate([
             'voucher_id' => 'required|integer|exists:discounts,id',
             'patient_id' => 'required|integer|exists:users,id',
@@ -1000,6 +1096,10 @@ class PackagesController extends Controller
      */
     public function getservices_for_zero(Request $request): JsonResponse
     {
+        if (! Gate::allows('plans.list.view')) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
+        }
+
         $result = $this->planService->getBundleServices((int) $request->bundle_id);
 
         return $result['success']
@@ -1015,6 +1115,10 @@ class PackagesController extends Controller
      */
     public function getgrandtotal(Request $request): JsonResponse
     {
+        if (! Gate::allows('plans.list.view')) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
+        }
+
         $result = $this->planService->calculateGrandTotal(
             (string) $request->total,
             (float) $request->cash_amount
@@ -1036,6 +1140,10 @@ class PackagesController extends Controller
      */
     public function status(Request $request): JsonResponse
     {
+        if (! Gate::allows('plans.activate') && ! Gate::allows('plans.deactivate')) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
+        }
+
         $this->authorize('inactivatePlan', Packages::class);
 
         $result = $this->planService->toggleStatus((int) $request->id, (string) $request->status);
@@ -1089,6 +1197,10 @@ class PackagesController extends Controller
      */
     public function getgrandtotal_update(Request $request): JsonResponse
     {
+        if (! Gate::allows('plans.list.view')) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
+        }
+
         try {
             $result = $this->planService->calculateGrandTotalForUpdate(
                 (string) $request->random_id,
@@ -1116,6 +1228,10 @@ class PackagesController extends Controller
      */
     public function updatebundle(Request $request): JsonResponse
     {
+        if (! Gate::allows('plans.edit')) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
+        }
+
         try {
             $request->validate([
                 'package_id' => 'required|exists:packages,id',
@@ -1191,6 +1307,10 @@ class PackagesController extends Controller
      */
     public function destroy(int $id): JsonResponse
     {
+        if (! Gate::allows('plans.destroy')) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
+        }
+
         $this->authorize('destroyPlan', Packages::class);
 
         try {
@@ -1218,6 +1338,10 @@ class PackagesController extends Controller
      */
     public function display(int $id): JsonResponse
     {
+        if (! Gate::allows('plans.detail.view') && ! Gate::allows('plans.list.view')) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
+        }
+
         $this->authorize('managePlans', Packages::class);
 
         try {
@@ -1238,6 +1362,10 @@ class PackagesController extends Controller
      */
     public function printData(int $id): JsonResponse
     {
+        if (! Gate::allows('plans.print')) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
+        }
+
         $this->authorize('managePlans', Packages::class);
 
         try {
@@ -1285,7 +1413,17 @@ class PackagesController extends Controller
      */
     public function package_pdf(int $id): \Illuminate\Http\Response
     {
+        // Route-level gate kept via PlanPolicy::managePlans → plans.list.view.
+        // `plans.print` is the more specific permission; either suffices
+        // because exporting the PDF is a viewing action — operators who
+        // can see the plan can print it. Strict-print-only roles should
+        // remove `plans.list.view` to enforce that distinction.
         $this->authorize('managePlans', Packages::class);
+
+        if (! Gate::allows('plans.print') && ! Gate::allows('plans.list.view')) {
+            abort(403);
+        }
+
         $package = Packages::find($id);
 
         $location_info = Locations::find($package->location_id);
@@ -1353,11 +1491,11 @@ class PackagesController extends Controller
      */
     public function editpackageadvancescashindex(int $id, int $package_id): JsonResponse
     {
-        // Require finances_edit to even READ the payment for editing —
+        // Require plans.cash.edit to even READ the payment for editing —
         // anything that reveals an advance's amount + payment mode +
         // patient is sensitive. Before 2026-05-15 this endpoint was
         // unguarded and returned ANY tenant's payment by id.
-        if (! \Illuminate\Support\Facades\Gate::allows('finances_edit')) {
+        if (! \Illuminate\Support\Facades\Gate::allows('plans.cash.edit')) {
             return $this->errorResponse('Unauthorized.', 403);
         }
 
@@ -1400,7 +1538,7 @@ class PackagesController extends Controller
      */
     public function storepackageadvancescash(Request $request): JsonResponse
     {
-        if (! \Illuminate\Support\Facades\Gate::allows('finances_edit')) {
+        if (! \Illuminate\Support\Facades\Gate::allows('plans.cash.edit')) {
             return $this->errorResponse('Unauthorized.', 403);
         }
 
@@ -1436,7 +1574,7 @@ class PackagesController extends Controller
      */
     public function deletepackageadvancescash(Request $request): JsonResponse
     {
-        if (! \Illuminate\Support\Facades\Gate::allows('finances_manage')) {
+        if (! \Illuminate\Support\Facades\Gate::allows('plans.cash.delete')) {
             return $this->errorResponse('Unauthorized.', 403);
         }
 
@@ -1471,6 +1609,10 @@ class PackagesController extends Controller
      */
     public function getappointmentinfo(Request $request): JsonResponse
     {
+        if (! Gate::allows('plans.list.view')) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
+        }
+
         // Validate required parameters
         if (! $request->patient_id || ! $request->location_id) {
             return $this->errorResponse('Patient ID and Location ID are required.', 500);
@@ -1495,6 +1637,10 @@ class PackagesController extends Controller
      */
     public function getSoldByData(Request $request): JsonResponse
     {
+        if (! Gate::allows('plans.sold_by.edit') && ! Gate::allows('plans.list.view')) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
+        }
+
         try {
             $result = $this->planService->getSoldByData(
                 (int) ($request->package_service_id ?? 0),
@@ -1518,6 +1664,10 @@ class PackagesController extends Controller
      */
     public function updateSoldBy(Request $request): JsonResponse
     {
+        if (! Gate::allows('plans.sold_by.edit')) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
+        }
+
         try {
             $result = $this->planService->updateSoldBy($request->all());
 
@@ -1536,6 +1686,10 @@ class PackagesController extends Controller
      */
     public function checkDuplicateServiceForSoldBy(Request $request): JsonResponse
     {
+        if (! Gate::allows('plans.sold_by.edit') && ! Gate::allows('plans.list.view')) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
+        }
+
         try {
             $result = $this->planService->checkDuplicateServiceForSoldBy($request->all());
 
@@ -1554,6 +1708,10 @@ class PackagesController extends Controller
      */
     public function packagelog(int $id, string $type): View
     {
+        if (! Gate::allows('plans.log.view')) {
+            abort(403);
+        }
+
         $this->authorize('viewLog', Packages::class);
 
         $action_array = [
@@ -1640,6 +1798,10 @@ class PackagesController extends Controller
 
     public function planDatatable(Request $request, int $id): JsonResponse
     {
+        if (! Gate::allows('plans.log.view')) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
+        }
+
 
         $records = [];
 
@@ -1751,6 +1913,10 @@ class PackagesController extends Controller
 
     public function packagelogexcel(int $id, mixed $finance_log): void
     {
+        if (! Gate::allows('plans.log.export')) {
+            abort(403);
+        }
+
         $this->authorize('viewLog', Packages::class);
 
         $spreadsheet = new Spreadsheet;
@@ -1854,6 +2020,10 @@ class PackagesController extends Controller
      */
     public function showSMSLogs(int $id): JsonResponse
     {
+        if (! Gate::allows('plans.sms_log.view')) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
+        }
+
         $SMSLogs = SMSLogs::where('package_id', '=', $id)->orderBy('created_at', 'desc')->get();
 
         return $this->successResponse('Record found', [
@@ -1868,6 +2038,10 @@ class PackagesController extends Controller
      */
     public function sendLogSMS(Request $request): JsonResponse
     {
+        if (! Gate::allows('plans.sms_log.view') && ! Gate::allows('plans.edit')) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
+        }
+
         $result = $this->planService->resendSms((int) $request->get('id'));
 
         if ($result['success']) {
@@ -1883,6 +2057,10 @@ class PackagesController extends Controller
      * */
     public function getpackage(Request $request): JsonResponse
     {
+        if (! Gate::allows('plans.list.view')) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
+        }
+
         $package = Packages::where('name', 'LIKE', "%{$request->q}%")->select('name', 'id')->get();
 
         return response()->json($package);
@@ -1890,6 +2068,10 @@ class PackagesController extends Controller
 
     public function getPlans(Request $request): JsonResponse
     {
+        if (! Gate::allows('plans.list.view')) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
+        }
+
         $plans = Packages::where('patient_id', $request->patient_id)->pluck('name');
 
         return response()->json(['stataus' => 1, 'message' => 'plan found', 'plans' => $plans]);
@@ -1938,6 +2120,10 @@ class PackagesController extends Controller
 
     public function viewPackage(int $id): View
     {
+        if (! Gate::allows('plans.detail.view') && ! Gate::allows('plans.list.view')) {
+            abort(403);
+        }
+
 
         $url = route('admin.packages.edit', $id);
 
@@ -2044,6 +2230,10 @@ class PackagesController extends Controller
 
     public function deleteplanrowtem(Request $request): JsonResponse
     {
+        if (! Gate::allows('plans.service.delete') && ! Gate::allows('plans.edit')) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
+        }
+
         $result = $this->planService->deletePlanRow($request->all());
 
         return response()->json([
@@ -2054,6 +2244,10 @@ class PackagesController extends Controller
 
     public function resetvoucherpacakgebundles(Request $request): JsonResponse
     {
+        if (! Gate::allows('plans.edit') && ! Gate::allows('plans.create')) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
+        }
+
         $result = $this->planService->resetVoucherPackageBundles($request->all());
 
         return response()->json(['success' => $result['success']]);

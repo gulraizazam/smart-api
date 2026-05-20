@@ -35,7 +35,7 @@
         <span id="patient_membership_expiry" style="margin-left:15px;"></span>
     </div>
 
-    @can('patients_edit')
+    @can('patients.edit')
     <div class="col-12 text-right mt-3">
         <button type="button" class="btn btn-primary profile-edit-btn" id="edit-patient-profile-btn" onclick="editPatientFromProfile();">
             <i class="la la-pencil"></i> Edit Patient

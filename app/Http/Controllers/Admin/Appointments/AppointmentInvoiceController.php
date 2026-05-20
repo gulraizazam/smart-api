@@ -180,6 +180,21 @@ class AppointmentInvoiceController extends AppointmentBaseController
 
     public function saveinvoice(Request $request): JsonResponse
     {
+        // Dual-purpose endpoint — invoice save for either consultations or
+        // treatments depending on the appointment type. Gate on whichever
+        // module's invoice-create perm matches; legacy `appointments_invoice`
+        // kept as a transitional cross-module fallback.
+        if (
+            !\Illuminate\Support\Facades\Gate::allows('treatments.invoice.create')
+            && !\Illuminate\Support\Facades\Gate::allows('consultations.invoice.create')
+            && !\Illuminate\Support\Facades\Gate::allows('appointments_invoice')
+        ) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You are not authorized to save invoices.',
+            ], 403);
+        }
+
         // Hard validation gate on the money-touching fields. Before this
         // (pre-2026-05-15), `$request->cash` flowed unchecked into
         // `package_advances.cash_amount` via `createRecord_forinvoice`

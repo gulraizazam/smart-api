@@ -46,7 +46,7 @@ class BusinessWorkingDaysController extends Controller
     public function show(): JsonResponse
     {
         try {
-            if (! Gate::allows('schedule_manage')) {
+            if (! Gate::allows('business_working_days.list.view')) {
                 return $this->errorResponse('You are not authorized to access this resource.', 403);
             }
 
@@ -120,7 +120,7 @@ class BusinessWorkingDaysController extends Controller
     public function check(Request $request): JsonResponse
     {
         try {
-            if (! Gate::allows('schedule_manage')) {
+            if (! Gate::allows('business_working_days.list.view')) {
                 return $this->errorResponse('You are not authorized to access this resource.', 403);
             }
 
@@ -158,7 +158,7 @@ class BusinessWorkingDaysController extends Controller
     public function calendar(Request $request): JsonResponse
     {
         try {
-            if (! Gate::allows('schedule_manage')) {
+            if (! Gate::allows('business_working_days.list.view')) {
                 return $this->errorResponse('You are not authorized to access this resource.', 403);
             }
 
@@ -220,7 +220,7 @@ class BusinessWorkingDaysController extends Controller
     public function indexExceptions(Request $request): JsonResponse
     {
         try {
-            if (! Gate::allows('schedule_manage')) {
+            if (! Gate::allows('business_working_days.list.view')) {
                 return $this->errorResponse('You are not authorized to access this resource.', 403);
             }
 
@@ -301,7 +301,7 @@ class BusinessWorkingDaysController extends Controller
     public function showException(WorkingDayException $exception): JsonResponse
     {
         try {
-            if (! Gate::allows('schedule_manage')) {
+            if (! Gate::allows('business_working_days.list.view')) {
                 return $this->errorResponse('You are not authorized to access this resource.', 403);
             }
 
@@ -349,7 +349,7 @@ class BusinessWorkingDaysController extends Controller
     public function destroyException(WorkingDayException $exception): JsonResponse
     {
         try {
-            if (! Gate::allows('schedule_manage')) {
+            if (! Gate::allows('business_working_days.edit')) {
                 return $this->errorResponse('You are not authorized to perform this action.', 403);
             }
 

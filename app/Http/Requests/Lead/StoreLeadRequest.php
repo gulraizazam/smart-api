@@ -11,7 +11,7 @@ class StoreLeadRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return Gate::allows('leads_create');
+        return Gate::allows('leads.create');
     }
 
     public function rules(): array

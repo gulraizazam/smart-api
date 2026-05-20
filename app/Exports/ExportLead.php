@@ -30,7 +30,7 @@ class ExportLead implements FromCollection, WithHeadings, WithEvents
 
         $query = $datatableData['query'];
 
-        if (! Gate::allows('view_inactive_leads')) {
+        if (! Gate::allows('leads.list.view_inactive')) {
             $query->where('leads.active', 1);
         }
 

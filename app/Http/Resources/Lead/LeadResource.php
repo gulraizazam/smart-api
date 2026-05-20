@@ -20,7 +20,7 @@ class LeadResource extends JsonResource
 
     public function toArray(Request $request): array
     {
-        $canViewContact = Gate::allows('contact');
+        $canViewContact = Gate::allows('leads.list.view_contact');
 
         return [
             'id' => $this->id,

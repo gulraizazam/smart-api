@@ -137,7 +137,7 @@
 
                 <!--Patient menu-->
 
-                @if (Gate::allows('patients_manage'))
+                @if (Gate::allows('patients.list.view'))
                 <li class="menu-item {{ activeMenu('admin.patients.index') }} {{ activeMenu('admin.patients.preview') }}" aria-haspopup="true">
                     <a href="{{ route('admin.patients.index') }}" class="menu-link">
                         <span class="svg-icon menu-icon">
@@ -150,7 +150,7 @@
 
                 <!-- Leads menu -->
 
-                @if (Gate::allows('leads_manage'))
+                @if (Gate::allows('leads.list.view'))
                 <li class="menu-item menu-item-submenu {{ openMenu(['admin.leads.index']) }}" aria-haspopup="true" data-menu-toggle="hover">
 
                     <a href="javascript:void(0);" class="menu-link menu-toggle">
@@ -164,7 +164,7 @@
                         <i class="menu-arrow"></i>
                         <ul class="menu-subnav">
 
-                            @can('leads_create')
+                            @can('leads.create')
                             <li class="menu-item {{ isActive(url('admin/leads?create=create'), 'create') }}" aria-haspopup="true">
                                 <a href="{{ route('admin.leads.index', ['create' => 'create']) }}" class="menu-link">
                                     <i class="menu-bullet menu-bullet-dot">
@@ -175,7 +175,7 @@
                             </li>
                             @endcan
 
-                            @can('leads_manage')
+                            @can('leads.list.view')
                             <li class="menu-item {{ isActive(url('admin/leads'), 'other') }}" aria-haspopup="true">
                                 <a href="{{ route('admin.leads.index') }}" class="menu-link">
                                     <i class="menu-bullet menu-bullet-dot">
@@ -186,7 +186,7 @@
                             </li>
                             @endcan
 
-                            @can('leads_junk')
+                            @can('leads.list.view_junk')
                             <li class="menu-item {{ isActive(url('admin/leads?type=junk'), 'junk') }}" aria-haspopup="true">
                                 <a href="{{ route('admin.leads.index', ['type' => 'junk']) }}" class="menu-link">
                                     <i class="menu-bullet menu-bullet-dot">
@@ -253,7 +253,7 @@
 
                 <!-- End Appointment menu -->
 
-                @if (Gate::allows('plans_manage'))
+                @if (Gate::allows('plans.list.view'))
                 <li class="menu-item {{ activeMenu('admin.packages.index') }}" aria-haspopup="true">
                     <a href="{{ route('admin.packages.index') }}" class="menu-link">
                         <span class="svg-icon menu-icon"><i class="font-icon la la-cog"></i></span>
@@ -269,7 +269,7 @@
                     </a>
                 </li>
                 @endif
-                @if (Gate::allows('services_manage') || Gate::allows('packages_manage') || Gate::allows('discounts_manage'))
+                @if (Gate::allows('services.list.view') || Gate::allows('packages.list.view') || Gate::allows('bundles.list.view') || Gate::allows('discounts_manage'))
                 <li class="menu-item menu-item-submenu {{ openMenu(['admin.services.index']) }} {{ openMenu(['admin.service-bundles.index']) }} {{ openMenu(['admin.bundles.index']) }} {{ openMenu(['admin.discounts.index']) }}" aria-haspopup="true" data-menu-toggle="hover">
 
                     <a href="javascript:void(0);" class="menu-link menu-toggle">
@@ -284,7 +284,7 @@
 
                         <ul class="menu-subnav">
 
-                            @can('services_manage')
+                            @can('services.list.view')
                             <li class="menu-item manage-consultancy {{ activeMenu('admin.services.index') }}" aria-haspopup="true">
                                 <a href="{{ route('admin.services.index') }}" class="menu-link">
                                     <i class="menu-bullet menu-bullet-dot">
@@ -295,7 +295,7 @@
                             </li>
                             @endcan
 
-                            @can('packages_manage')
+                            @can('bundles.list.view')
                             <li class="menu-item {{ activeMenu('admin.service-bundles.index') }}" aria-haspopup="true">
                                 <a href="{{ route('admin.service-bundles.index') }}" class="menu-link">
                                     <i class="menu-bullet menu-bullet-dot">
@@ -306,7 +306,7 @@
                             </li>
                             @endcan
 
-                            @can('packages_manage')
+                            @can('packages.list.view')
                             <li class="menu-item manage-treatment {{ activeMenu('admin.bundles.index') }}" aria-haspopup="true">
                                 <a href="{{ route('admin.bundles.index') }}" class="menu-link">
                                     <i class="menu-bullet menu-bullet-dot">
@@ -428,7 +428,7 @@
                     </a>
                 </li>
                 @endif
-                @if (Gate::allows('resourcerotas_manage') || Gate::allows('business_closures_manage'))
+                @if (Gate::allows('scheduling_shifts.list.view') || Gate::allows('business_closures.list.view'))
                 <li class="menu-item menu-item-submenu {{ openMenu(['admin.resourcerotas.schedule', 'admin.business-closures.index']) }}" aria-haspopup="true" data-menu-toggle="hover">
                     <a href="javascript:void(0);" class="menu-link menu-toggle">
                         <span class="svg-icon menu-icon"><i class="font-icon la la-calendar-alt"></i></span>
@@ -438,7 +438,7 @@
                     <div class="menu-submenu">
                         <i class="menu-arrow"></i>
                         <ul class="menu-subnav">
-                            @if (Gate::allows('resourcerotas_manage'))
+                            @if (Gate::allows('scheduling_shifts.list.view'))
                             <li class="menu-item {{ activeMenu('admin.resourcerotas.schedule') }} {{ activeMenu('admin.resourcerotas.repeating-shifts') }}" aria-haspopup="true">
                                 <a href="{{ route('admin.resourcerotas.schedule') }}" class="menu-link">
                                     <i class="menu-bullet menu-bullet-dot">

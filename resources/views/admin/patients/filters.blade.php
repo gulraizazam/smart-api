@@ -41,7 +41,7 @@
         </div>
     </div>
     <div class="row mb-8 advance-filters" style="display: none;">
-        @if(\Illuminate\Support\Facades\Gate::allows("view_inactive_patients"))
+        @if(\Illuminate\Support\Facades\Gate::allows("patients.list.view_inactive"))
         <div class="col-lg-3 mb-lg-0">
             <label>Status:</label>
             <select class="form-control filter-field select2" id="search_status">

@@ -10,7 +10,7 @@ class UpdatePackagesRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true;
+        return \Illuminate\Support\Facades\Gate::allows('plans.edit');
     }
 
     public function rules(): array

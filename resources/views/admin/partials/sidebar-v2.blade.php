@@ -469,12 +469,12 @@
         {{-- ══════════════════════════════════════════════════════════════
              CLINIC — patient journey
              ══════════════════════════════════════════════════════════════ --}}
-        @if (Gate::allows('patients_manage')
-            || Gate::allows('leads_manage')
+        @if (Gate::allows('patients.list.view')
+            || Gate::allows('leads.list.view')
             || Gate::allows('consultations_manage')
             || Gate::allows('treatments_manage')
-            || Gate::allows('resourcerotas_manage')
-            || Gate::allows('business_closures_manage'))
+            || Gate::allows('scheduling_shifts.list.view')
+            || Gate::allows('business_closures.list.view'))
             <div>
                 <button type="button"
                         class="cs-group-btn"
@@ -486,11 +486,11 @@
                     <i class="la la-angle-right cs-chev" aria-hidden="true"></i>
                 </button>
                 <div class="cs-group-body" :class="{ 'is-open': openGroup === 'clinic' }">
-                    @can('patients_manage')
+                    @can('patients.list.view')
                         <a href="{{ route('admin.patients.index') }}"
                            class="cs-sub {{ $isActive(['admin.patients.index', 'admin.patients.preview']) }}"><span>Patients</span></a>
                     @endcan
-                    @can('leads_manage')
+                    @can('leads.list.view')
                         {{-- Single Leads entry — Create is reachable from the leads
                              page, and Junk is a status filter on the same list. --}}
                         <a href="{{ route('admin.leads.index') }}"
@@ -504,11 +504,11 @@
                         <a href="{{ route('admin.treatment.index') }}"
                            class="cs-sub {{ $isActive(['admin.treatment.index']) }}"><span>Treatments</span></a>
                     @endcan
-                    @can('resourcerotas_manage')
+                    @can('scheduling_shifts.list.view')
                         <a href="{{ route('admin.resourcerotas.schedule') }}"
                            class="cs-sub {{ $isActive(['admin.resourcerotas.schedule', 'admin.resourcerotas.repeating-shifts']) }}"><span>Scheduling Shifts</span></a>
                     @endcan
-                    @can('business_closures_manage')
+                    @can('business_closures.list.view')
                         <a href="{{ route('admin.business-closures.index') }}"
                            class="cs-sub {{ $isActive(['admin.business-closures.index']) }}"><span>Business Closed Periods</span></a>
                     @endcan
@@ -519,10 +519,11 @@
         {{-- ══════════════════════════════════════════════════════════════
              CATALOG — what you sell
              ══════════════════════════════════════════════════════════════ --}}
-        @if (Gate::allows('services_manage')
-            || Gate::allows('packages_manage')
+        @if (Gate::allows('services.list.view')
+            || Gate::allows('packages.list.view')
+            || Gate::allows('bundles.list.view')
             || Gate::allows('discounts_manage')
-            || Gate::allows('plans_manage')
+            || Gate::allows('plans.list.view')
             || Gate::allows('voucher_types_manage')
             || Gate::allows('vouchers_manage')
             || Gate::allows('memberships_manage')
@@ -538,19 +539,19 @@
                     <i class="la la-angle-right cs-chev" aria-hidden="true"></i>
                 </button>
                 <div class="cs-group-body" :class="{ 'is-open': openGroup === 'catalog' }">
-                    @can('services_manage')
+                    @can('services.list.view')
                         <a href="{{ route('admin.services.index') }}"
                            class="cs-sub {{ $isActive(['admin.services.index']) }}"><span>Services</span></a>
                     @endcan
-                    @can('packages_manage')
+                    @can('bundles.list.view')
                         <a href="{{ route('admin.service-bundles.index') }}"
                            class="cs-sub {{ $isActive(['admin.service-bundles.index']) }}"><span>Bundles</span></a>
                     @endcan
-                    @can('packages_manage')
+                    @can('packages.list.view')
                         <a href="{{ route('admin.bundles.index') }}"
                            class="cs-sub {{ $isActive(['admin.bundles.index']) }}"><span>Packages</span></a>
                     @endcan
-                    @can('plans_manage')
+                    @can('plans.list.view')
                         <a href="{{ route('admin.packages.index') }}"
                            class="cs-sub {{ $isActive(['admin.packages.index']) }}"><span>@lang('global.packages.title')</span></a>
                     @endcan

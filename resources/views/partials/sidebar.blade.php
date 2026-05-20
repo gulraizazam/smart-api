@@ -63,7 +63,7 @@
             </li>
             @endcan
 
-            @if(Gate::allows('patients_manage'))
+            @if(Gate::allows('patients.list.view'))
             <li class="nav-item start @if($request->segment(2) == 'patients' || $request->segment(2) == 'customformfeedbackspatient' || $request->segment(2) == 'plans' || $request->segment(2) == 'finances' || $request->segment(2) == 'patients' || $request->segment(2) == 'refundpatient' || $request->segment(2) == 'invoicepatient') active open @endif">
                 <a href="javascript:;" class="nav-link nav-toggle">
                     <i class="icon-users"></i>
@@ -80,7 +80,7 @@
             </li>
             @endif
 
-            @if(Gate::allows('leads_manage') || Gate::allows('leads_junk'))
+            @if(Gate::allows('leads.list.view') || Gate::allows('leads.list.view_junk'))
             <li class="nav-item start @if($request->segment(2) == 'leads') active open @endif">
                 <a href="javascript:;" class="nav-link nav-toggle">
                     <i class="icon-briefcase"></i>
@@ -88,21 +88,21 @@
                     <span class="arrow"></span>
                 </a>
                 <ul class="sub-menu">
-                    @if(Gate::allows('leads_create'))
+                    @if(Gate::allows('leads.create'))
                     <li class="nav-item start {{ ($request->segment(2) == 'leads' && $request->segment(3) == 'create') ? 'active' : '' }}">
                         <a href="{{ route('admin.leads.create') }}">
                             <span class="title">Create Lead</span>
                         </a>
                     </li>
                     @endif
-                    @if(Gate::allows('leads_manage'))
+                    @if(Gate::allows('leads.list.view'))
                     <li class="nav-item start {{ ($request->segment(2) == 'leads' && $request->segment(3) != 'create' && $request->segment(3) != 'junk') ? 'active' : '' }}">
                         <a href="{{ route('admin.leads.index') }}">
                             <span class="title">@lang('global.leads.title')</span>
                         </a>
                     </li>
                     @endif
-                    @if(Gate::allows('leads_junk'))
+                    @if(Gate::allows('leads.list.view_junk'))
                     <li class="nav-item start {{ ($request->segment(2) == 'leads' && $request->segment(3) == 'junk' && $request->segment(3) != 'create') ? 'active' : '' }}">
                         <a href="{{ route('admin.leads.junk') }}">
                             <span class="title">Junk @lang('global.leads.title')</span>
@@ -160,16 +160,16 @@
             Gate::allows('staff_targets_manage') ||
             Gate::allows('centre_targets_manage') ||
             Gate::allows('lead_sources_manage') ||
-            Gate::allows('services_manage') ||
+            Gate::allows('services.list.view') ||
             Gate::allows('lead_statuses_manage') ||
             Gate::allows('appointment_statuses_manage') ||
             Gate::allows('cancellation_reasons_manage')||
             Gate::allows('resources_manage') ||
-            Gate::allows('resourcerotas_manage') ||
+            Gate::allows('scheduling_shifts.list.view') ||
             Gate::allows('discounts_manage') ||
             Gate::allows('logs_manage') ||
-            Gate::allows('packages_manage') ||
-            Gate::allows('plans_manage') ||
+            Gate::allows('packages.list.view') ||
+            Gate::allows('plans.list.view') ||
             Gate::allows('finances_manage') ||
             Gate::allows('invoices_manage') ||
             Gate::allows('refunds_manage') ||
@@ -321,7 +321,7 @@
                         </a>
                     </li>
                     @endif
-                    @if(Gate::allows('services_manage'))
+                    @if(Gate::allows('services.list.view'))
                     <li class="nav-item start {{ $request->segment(2) == 'services' || $request->segment(2) == 'services_sort' ? 'active active-sub' : '' }}">
                         <a href="{{ route('admin.services.index') }}">
                             <span class="title">@lang('global.services.title')</span>
@@ -363,7 +363,7 @@
                 </a>
             </li>
             @endif
-            @if(Gate::allows('resourcerotas_manage'))
+            @if(Gate::allows('scheduling_shifts.list.view'))
             <li class="nav-item start {{ $request->segment(2) == 'resourcerotas' ? 'active active-sub' : '' }}">
                 <a href="{{ route('admin.resourcerotas.schedule') }}">
                     <span class="title">@lang('global.resourcerotas.title')</span>
@@ -377,14 +377,14 @@
                 </a>
             </li>
             @endif
-            @if(Gate::allows('packages_manage'))
+            @if(Gate::allows('packages.list.view'))
             <li class="nav-item start {{ $request->segment(2) == 'bundles' ? 'active active-sub' : '' }}">
                 <a href="{{ route('admin.bundles.index') }}">
                     <span class="title">@lang('global.bundles.title')</span>
                 </a>
             </li>
             @endif
-            @if(Gate::allows('plans_manage'))
+            @if(Gate::allows('plans.list.view'))
             <li class="nav-item start {{ $request->segment(2) == 'packages' ? 'active active-sub' : '' }}">
                 <a href="{{ route('admin.packages.index') }}">
                     <span class="title">@lang('global.packages.title')</span>

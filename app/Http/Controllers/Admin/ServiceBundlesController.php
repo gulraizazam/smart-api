@@ -11,7 +11,7 @@ class ServiceBundlesController extends Controller
 {
     public function index(): \Illuminate\View\View
     {
-        if (! Gate::allows('packages_manage')) {
+        if (! Gate::allows('bundles.list.view')) {
             abort(401);
         }
 
@@ -20,7 +20,7 @@ class ServiceBundlesController extends Controller
 
     public function sort(): \Illuminate\View\View
     {
-        if (! Gate::allows('packages_edit')) {
+        if (! Gate::allows('bundles.sort')) {
             abort(401);
         }
 

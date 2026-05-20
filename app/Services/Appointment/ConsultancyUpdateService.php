@@ -40,9 +40,9 @@ class ConsultancyUpdateService
         $oldValues = $this->captureOldValues($appointment);
 
         $permissions = [
-            'service' => Gate::allows('update_consultation_service'),
-            'doctor' => Gate::allows('update_consultation_doctor'),
-            'schedule' => Gate::allows('update_consultation_schedule'),
+            'service' => Gate::allows('consultations.edit.service'),
+            'doctor' => Gate::allows('consultations.edit.doctor'),
+            'schedule' => Gate::allows('consultations.edit.schedule'),
         ];
 
         $isArrivedOrConverted = $this->isArrivedOrConverted($appointment);
@@ -108,7 +108,7 @@ class ConsultancyUpdateService
 
     protected function validateNormalConsultationUpdate(Appointments $appointment, array $requestData): void
     {
-        if (!Gate::allows('edit_after_arrived')) {
+        if (!Gate::allows('consultations.edit.after_arrived')) {
             $hasInvoice = Invoices::where('appointment_id', $appointment->id)->exists();
             if ($hasInvoice) {
                 throw AppointmentException::invalidData('Invoice already generated. Appointment cannot be rescheduled.');

@@ -164,7 +164,7 @@ class ConsultancyDatatableService
         }
 
         $referenceData = $this->loadReferenceData($appointments);
-        $canViewContact = Gate::allows('contact');
+        $canViewContact = Gate::allows('consultations.list.view_contact');
 
         foreach ($appointments as $index => $appointment) {
             $records['data'][$index] = $this->buildAppointmentRow($appointment, $referenceData, $canViewContact);
@@ -290,9 +290,9 @@ class ConsultancyDatatableService
         $appointmentStatuses = $appointmentStatuses?->pluck('name', 'id');
 
         $appointmentTypes = match (true) {
-            Gate::allows('consultations_manage') && Gate::allows('treatments_services')
+            Gate::allows('consultations.list.view') && Gate::allows('treatments_services')
                 => AppointmentTypes::pluck('name', 'id'),
-            Gate::allows('consultations_manage')
+            Gate::allows('consultations.list.view')
                 => AppointmentTypes::where('slug', 'consultancy')->pluck('name', 'id'),
             Gate::allows('treatments_services')
                 => AppointmentTypes::where('slug', 'treatment')->pluck('name', 'id'),
@@ -318,7 +318,7 @@ class ConsultancyDatatableService
 
     private function handleDelete(string $deleteIds, array &$records): void
     {
-        if (!Gate::allows('appointments_destroy')) {
+        if (!Gate::allows('consultations.delete')) {
             $records['status'] = false;
             $records['message'] = 'You are not authorized to delete records.';
             return;
@@ -336,31 +336,42 @@ class ConsultancyDatatableService
     /**
      * @return array<string, bool>
      */
+    /**
+     * Datatable permission map — consumed by the legacy admin-v1 KTDatatable
+     * (the SPA reads gates directly from `usePermissions().has()` instead of
+     * this response). Consultation-owned flags use the new dotted catalog;
+     * attachment / cross-module flags (image / measurement / medical form /
+     * plans / patient_card) stay on the legacy `appointments_*` perms until
+     * those modules are audited.
+     */
     private function getPermissions(): array
     {
-        $canManage = Gate::allows('appointments_consultancy');
+        $canEdit = Gate::allows('consultations.edit');
 
         return [
-            'edit' => $canManage && Gate::allows('appointments_edit'),
-            'consultancy' => Gate::allows('consultations_manage'),
+            'edit' => $canEdit,
+            'consultancy' => Gate::allows('consultations.list.view'),
             'treatment' => Gate::allows('treatments_manage'),
-            'delete' => $canManage && Gate::allows('appointments_destroy'),
-            'active' => $canManage && Gate::allows('appointments_active'),
-            'inactive' => $canManage && Gate::allows('appointments_inactive'),
-            'create' => $canManage && Gate::allows('appointments_create'),
+            'delete' => Gate::allows('consultations.delete'),
+            // active / inactive / create-row toggles aren't surfaced in the
+            // SPA — flags retained for the admin-v1 datatable but always
+            // resolved via the dotted catalog now.
+            'active' => false,
+            'inactive' => false,
+            'create' => Gate::allows('consultations.create'),
             'log' => Gate::allows('appointments_log'),
-            'status' => $canManage && Gate::allows('appointments_appointment_status'),
-            'invoice' => Gate::allows('appointments_invoice'),
-            'invoice_display' => Gate::allows('appointments_invoice_display'),
+            'status' => Gate::allows('consultations.update_status'),
+            'invoice' => Gate::allows('consultations.invoice.create'),
+            'invoice_display' => Gate::allows('consultations.invoice.view'),
             'image_manage' => Gate::allows('appointments_image_manage'),
             'measurement_manage' => Gate::allows('appointments_measurement_manage'),
             'medical_form_manage' => Gate::allows('appointments_medical_form_manage'),
-            'plans_create' => $canManage && Gate::allows('appointments_plans_create'),
+            'plans_create' => $canEdit && Gate::allows('appointments_plans_create'),
             'patient_card' => Gate::allows('appointments_patient_card'),
-            'contact' => Gate::allows('contact'),
-            'update_consultation_service' => $canManage && Gate::allows('update_consultation_service'),
-            'update_consultation_doctor' => $canManage && Gate::allows('update_consultation_doctor'),
-            'update_consultation_schedule' => $canManage && Gate::allows('update_consultation_schedule'),
+            'contact' => Gate::allows('consultations.list.view_contact'),
+            'update_consultation_service' => $canEdit && Gate::allows('consultations.edit.service'),
+            'update_consultation_doctor' => $canEdit && Gate::allows('consultations.edit.doctor'),
+            'update_consultation_schedule' => $canEdit && Gate::allows('consultations.edit.schedule'),
         ];
     }
 }

@@ -17,7 +17,7 @@ class PatientPolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->can('patients_manage');
+        return $user->can('patients.list.view');
     }
 
     /**
@@ -25,15 +25,18 @@ class PatientPolicy
      */
     public function view(User $user): bool
     {
-        return $user->can('patients_manage');
+        return $user->can('patients.card.view');
     }
 
     /**
-     * Create a new patient.
+     * Create a new patient. Direct creation is currently disabled — patients
+     * are created as a side-effect of booking — but the policy retains the
+     * gate so future direct-create paths can opt in. `patients.edit` is the
+     * pragmatic reuse since creation requires the same write privilege.
      */
     public function create(User $user): bool
     {
-        return $user->can('patients_manage');
+        return $user->can('patients.edit');
     }
 
     /**
@@ -41,7 +44,7 @@ class PatientPolicy
      */
     public function update(User $user): bool
     {
-        return $user->can('patients_manage');
+        return $user->can('patients.edit');
     }
 
     /**
@@ -49,7 +52,7 @@ class PatientPolicy
      */
     public function delete(User $user): bool
     {
-        return $user->can('patients_manage');
+        return $user->can('patients.delete');
     }
 
     /**
@@ -89,7 +92,7 @@ class PatientPolicy
      */
     public function manageDocuments(User $user): bool
     {
-        return $user->can('patient_documents');
+        return $user->can('patients.documents.view');
     }
 
     /**
@@ -121,7 +124,7 @@ class PatientPolicy
      */
     public function viewContact(User $user): bool
     {
-        return $user->can('contact');
+        return $user->can('patients.list.view_contact');
     }
 
     /**
@@ -137,6 +140,6 @@ class PatientPolicy
      */
     public function export(User $user): bool
     {
-        return $user->can('patients_manage') || $user->can('patients_export');
+        return $user->can('patients.list.view') || $user->can('patients_export');
     }
 }

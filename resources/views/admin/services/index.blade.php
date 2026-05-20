@@ -105,7 +105,7 @@
                         </div>
 
                         <div class="card-toolbar">
-                            @can('services_destroy')
+                            @can('services.destroy')
                                 <div class="delete-records d-none">
                                     <span>Selected: <span class="checkbox-count"></span></span>
                                     <a id="delete-table-rows" href="javascript:void(0);" class="btn btn-sm btn-danger">
@@ -113,12 +113,12 @@
                                     </a>
                                 </div>
                             @endcan
-                            @can('services_edit')
+                            @can('services.sort')
                                 <a href="{{route('admin.services.sort_get')}}" class="btn btn-sm btn-info mr-2">
                                     <i class="fa fa-sort-amount-up"></i> Sort
                                 </a>
                             @endcan
-                            @can('services_create')
+                            @can('services.create')
                                 <a href="javascript:void(0);" onclick="createService('{{ route('admin.services.create') }}');" class="btn btn-sm btn-primary" data-toggle="modal" data-target="#modal_add_services">
                                     <i class="la la-plus"></i> Add New
                                 </a>
@@ -216,7 +216,7 @@
 
     @push('datatable-js')
         <script>
-            var hasEditRights = {{ Gate::allows('services_edit') || Gate::allows('services_destroy') || Gate::allows('services_active') || Gate::allows('services_inactive') ? 'true' : 'false' }};
+            var hasEditRights = {{ Gate::allows('services.edit') || Gate::allows('services.destroy') || Gate::allows('services.activate') || Gate::allows('services.deactivate') ? 'true' : 'false' }};
         </script>
         <script src="{{asset('assets/js/pages/admin_settings/services.js')}}"></script>
     @endpush

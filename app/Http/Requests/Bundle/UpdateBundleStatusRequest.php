@@ -14,8 +14,8 @@ class UpdateBundleStatusRequest extends FormRequest
     public function authorize(): bool
     {
         return match ((int) $this->input('status')) {
-            0       => Gate::allows('packages_inactive'),
-            default => Gate::allows('packages_active'),
+            0       => Gate::allows('packages.deactivate'),
+            default => Gate::allows('packages.activate'),
         };
     }
 
