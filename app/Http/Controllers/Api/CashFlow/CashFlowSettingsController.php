@@ -32,6 +32,8 @@ class CashFlowSettingsController extends Controller
     public function settingsData(): JsonResponse
     {
 
+        if (Gate::denies('cashflow.settings.manage')) { return response()->json(['success' => false, 'message' => 'You are not authorized to access this resource.', 'data' => null], 403); }
+
         try {
 
             $accountId = Auth::user()->account_id;
@@ -75,7 +77,7 @@ class CashFlowSettingsController extends Controller
 
         try {
 
-            if (!Gate::allows('cashflow_settings')) {
+            if (!Gate::allows('cashflow.settings.manage')) {
 
                 throw CashflowException::unauthorized('manage settings');
 
@@ -144,7 +146,7 @@ class CashFlowSettingsController extends Controller
 
         try {
 
-            if (!Gate::allows('cashflow_settings')) {
+            if (!Gate::allows('cashflow.settings.manage')) {
 
                 throw CashflowException::unauthorized('reset module');
 
@@ -247,6 +249,8 @@ class CashFlowSettingsController extends Controller
     public function eligibleStaffList(): JsonResponse
     {
 
+        if (Gate::denies('cashflow.settings.manage')) { return response()->json(['success' => false, 'message' => 'You are not authorized to access this resource.', 'data' => null], 403); }
+
         try {
 
             $accountId = Auth::user()->account_id;
@@ -283,6 +287,8 @@ class CashFlowSettingsController extends Controller
      */
     public function toggleStaffEligibility(Request $request): JsonResponse
     {
+
+        if (Gate::denies('cashflow.settings.manage')) { return response()->json(['success' => false, 'message' => 'You are not authorized to access this resource.', 'data' => null], 403); }
 
         try {
 
@@ -355,7 +361,7 @@ class CashFlowSettingsController extends Controller
 
         try {
 
-            if (!\Illuminate\Support\Facades\Gate::allows('cashflow_audit_view')) {
+            if (!\Illuminate\Support\Facades\Gate::allows('cashflow.audit.view')) {
 
                 throw CashflowException::unauthorized('view audit log');
 

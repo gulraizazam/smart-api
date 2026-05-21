@@ -14,7 +14,7 @@
         <!--end::Aside Mobile Toggle-->
 
         <!--begin::Cashflow Notifications-->
-        @can('cashflow_manage')
+        @can('cashflow.manage')
         <div class="position-relative ml-3" id="m_cashflow_bell">
             <button class="btn btn-hover-text-primary p-0 position-relative" id="m_cashflow_toggle">
                 <i class="la la-bell" style="font-size:20px;"></i>

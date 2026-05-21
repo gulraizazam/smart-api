@@ -13,7 +13,7 @@ class UserVoucherUpdateRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return Gate::allows('vouchers_edit');
+        return Gate::allows('vouchers.edit');
     }
 
     public function rules(): array

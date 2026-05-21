@@ -1,13 +1,13 @@
-@if(Gate::allows('discounts_allocate'))
+@if(Gate::allows('discounts.allocate'))
     <a class="btn btn-xs btn-success" href="{{ route('admin.discounts.location_manage',[$discount->id]) }}"
        data-target="#ajax_discounts" data-toggle="modal">@lang('global.doctors.fields.location')</a>
 @endif
-@if(Gate::allows('discounts_edit'))
+@if(Gate::allows('discounts.edit'))
     <a class="btn btn-xs btn-info" href="{{ route('admin.discounts.edit',[$discount->id]) }}"
        data-target="#ajax_discounts"
        data-toggle="modal">@lang('global.app_edit')</a>
 @endif
-@if(Gate::allows('discounts_destroy'))
+@if(Gate::allows('discounts.destroy'))
     {!! Form::open(array(
         'style' => 'display: inline-block;',
         'method' => 'DELETE',

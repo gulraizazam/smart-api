@@ -36,7 +36,7 @@
 
                         <div class="card-toolbar">
 
-                            @if (Gate::allows('invoices_log_excel'))
+                            @if (Gate::allows('invoices.log.view'))
                                 @php
                                     $patient_id = request('patient_id');
                                     if (isset($patient_id)) {

@@ -132,7 +132,7 @@ class PatientPolicy
      */
     public function refund(User $user): bool
     {
-        return $user->can('patient_refund') || $user->can('refunds_manage');
+        return $user->can('patient_refund') || $user->can('refunds.refund');
     }
 
     /**

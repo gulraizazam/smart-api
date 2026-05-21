@@ -32,7 +32,7 @@ final class DiscountsController extends Controller
 
     public function create(): JsonResponse
     {
-        if (Gate::denies('discounts_create')) {
+        if (Gate::denies('discounts.create')) {
             return $this->unauthorized();
         }
 
@@ -50,7 +50,7 @@ final class DiscountsController extends Controller
 
     public function store(Request $request): JsonResponse
     {
-        if (Gate::denies('discounts_create')) {
+        if (Gate::denies('discounts.create')) {
             return $this->unauthorized();
         }
 
@@ -97,7 +97,7 @@ final class DiscountsController extends Controller
 
     public function edit(int $id): JsonResponse
     {
-        if (Gate::denies('discounts_edit')) {
+        if (Gate::denies('discounts.edit')) {
             return $this->unauthorized();
         }
 
@@ -119,6 +119,12 @@ final class DiscountsController extends Controller
 
     public function update(UpdateDiscountRequest $request, int $id): JsonResponse
     {
+        // Second-line gate alongside UpdateDiscountRequest::authorize(),
+        // so the perm name lives in one place for the audit trail.
+        if (Gate::denies('discounts.edit')) {
+            return $this->unauthorized();
+        }
+
         try {
             $data = $request->all();
 
@@ -147,6 +153,16 @@ final class DiscountsController extends Controller
 
     public function status(ToggleStatusRequest $request): JsonResponse
     {
+        // ToggleStatusRequest::authorize() already picks between
+        // discounts.activate / discounts.deactivate based on the requested
+        // status, but mirror the gate here so the perm name is visible at
+        // the controller too.
+        $targetStatus = (int) $request->validated('status');
+        $needed = $targetStatus === 1 ? 'discounts.activate' : 'discounts.deactivate';
+        if (Gate::denies($needed)) {
+            return $this->unauthorized();
+        }
+
         try {
             $result = $this->discountService->toggleStatus(
                 (int) $request->validated('id'),
@@ -168,7 +184,7 @@ final class DiscountsController extends Controller
 
     public function destroy(int $id): JsonResponse
     {
-        if (Gate::denies('discounts_destroy')) {
+        if (Gate::denies('discounts.destroy')) {
             return $this->unauthorized();
         }
 
@@ -187,14 +203,22 @@ final class DiscountsController extends Controller
 
     public function datatable(DiscountDatatableRequest $request): JsonResponse
     {
+        if (Gate::denies('discounts.list.view')) {
+            return $this->unauthorized();
+        }
+
         try {
             $filters      = $request->filters();
             $applyFilter  = checkFilters($filters, 'discounts');
 
             $bulkDeleted = false;
 
-            // Handle bulk delete via filter
+            // Bulk delete via filter — gated separately from list.view so
+            // a read-only role can't slip in a `delete=1,2,3` param.
             if (hasFilter($filters, 'delete')) {
+                if (Gate::denies('discounts.destroy')) {
+                    return $this->unauthorized();
+                }
                 $ids = array_filter(array_map('intval', explode(',', $filters['delete'])));
                 if (!empty($ids)) {
                     \App\Models\Discount::whereIn('id', $ids)->delete();
@@ -260,7 +284,7 @@ final class DiscountsController extends Controller
 
     public function displayLocation(int $id): JsonResponse
     {
-        if (Gate::denies('discounts_allocate')) {
+        if (Gate::denies('discounts.allocate')) {
             return $this->unauthorized();
         }
 
@@ -276,7 +300,7 @@ final class DiscountsController extends Controller
 
     public function getServices(Request $request): JsonResponse
     {
-        if (Gate::denies('discounts_allocate')) {
+        if (Gate::denies('discounts.allocate')) {
             return $this->unauthorized();
         }
 
@@ -299,7 +323,7 @@ final class DiscountsController extends Controller
 
     public function getDiscountServices(Request $request): JsonResponse
     {
-        if (Gate::denies('discounts_allocate')) {
+        if (Gate::denies('discounts.allocate')) {
             return $this->unauthorized();
         }
 
@@ -316,7 +340,7 @@ final class DiscountsController extends Controller
 
     public function getServicesForConfigurable(): JsonResponse
     {
-        if (Gate::denies('discounts_create') && Gate::denies('discounts_edit')) {
+        if (Gate::denies('discounts.create') && Gate::denies('discounts.edit')) {
             return $this->unauthorized();
         }
 
@@ -332,6 +356,10 @@ final class DiscountsController extends Controller
 
     public function allocateConfigurable(AllocateConfigurableRequest $request): JsonResponse
     {
+        if (Gate::denies('discounts.allocate')) {
+            return $this->unauthorized();
+        }
+
         try {
             $result = $this->discountService->allocateConfigurable(
                 (int) $request->validated('discount_id'),
@@ -353,6 +381,10 @@ final class DiscountsController extends Controller
 
     public function saveAllocations(AllocateDiscountRequest $request): JsonResponse
     {
+        if (Gate::denies('discounts.allocate')) {
+            return $this->unauthorized();
+        }
+
         try {
             $result = $this->discountService->saveAllocations($request->all());
 
@@ -372,7 +404,7 @@ final class DiscountsController extends Controller
 
     public function deleteAllocation(Request $request): JsonResponse
     {
-        if (Gate::denies('discounts_allocate')) {
+        if (Gate::denies('discounts.allocate')) {
             return $this->unauthorized();
         }
 
@@ -388,7 +420,7 @@ final class DiscountsController extends Controller
 
     public function deleteAllocationGroup(Request $request): JsonResponse
     {
-        if (Gate::denies('discounts_allocate')) {
+        if (Gate::denies('discounts.allocate')) {
             return $this->unauthorized();
         }
 
@@ -408,12 +440,12 @@ final class DiscountsController extends Controller
     private function resolvePermissions(): array
     {
         return [
-            'edit'     => Gate::allows('discounts_edit'),
-            'delete'   => Gate::allows('discounts_destroy'),
-            'active'   => Gate::allows('discounts_active'),
-            'inactive' => Gate::allows('discounts_inactive'),
-            'create'   => Gate::allows('discounts_create'),
-            'allocate' => Gate::allows('discounts_allocate'),
+            'edit'     => Gate::allows('discounts.edit'),
+            'delete'   => Gate::allows('discounts.destroy'),
+            'active'   => Gate::allows('discounts.activate'),
+            'inactive' => Gate::allows('discounts.deactivate'),
+            'create'   => Gate::allows('discounts.create'),
+            'allocate' => Gate::allows('discounts.allocate'),
         ];
     }
 

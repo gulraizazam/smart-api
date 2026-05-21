@@ -10,6 +10,7 @@ use App\Models\CashFlow\ExpenseCategory;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Gate;
 
 /**
  * Lightweight controller for cashflow lookup / dropdown data.
@@ -24,6 +25,8 @@ class CashflowLookupsController extends Controller
      */
     public function expensesFormData(): JsonResponse
     {
+        if (! Gate::any(['cashflow.expense.create', 'cashflow.expense.edit', 'cashflow.manage'])) { return response()->json(['success' => false, 'message' => 'You are not authorized to access this resource.', 'data' => null], 403); }
+
         try {
             $accountId = Auth::user()->account_id;
 
@@ -51,6 +54,8 @@ class CashflowLookupsController extends Controller
      */
     public function vendorFormData(): JsonResponse
     {
+        if (! Gate::any(['cashflow.vendor.create', 'cashflow.vendor.edit', 'cashflow.vendor.manage', 'cashflow.manage'])) { return response()->json(['success' => false, 'message' => 'You are not authorized to access this resource.', 'data' => null], 403); }
+
         try {
             $accountId = Auth::user()->account_id;
             $categories = \App\Models\CashFlow\ExpenseCategory::forAccount($accountId)
@@ -76,6 +81,8 @@ class CashflowLookupsController extends Controller
      */
     public function lookups(): JsonResponse
     {
+        if (! Gate::any(['cashflow.dashboard.view', 'cashflow.expense.view', 'cashflow.transfer.view', 'cashflow.vendor.view', 'cashflow.staff_advance.view', 'cashflow.reports.view', 'cashflow.settings.manage', 'cashflow.manage'])) { return response()->json(['success' => false, 'message' => 'You are not authorized to access this resource.', 'data' => null], 403); }
+
         try {
             $accountId = Auth::user()->account_id;
 

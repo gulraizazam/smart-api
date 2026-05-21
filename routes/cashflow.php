@@ -35,7 +35,7 @@ Route::prefix('cashflow')->name('cashflow.')->group(function () {
     Route::get('lookups', [CashflowLookupsController::class, 'lookups'])->name('lookups');
 
     // Settings
-    Route::prefix('settings')->name('settings.')->middleware('permission:cashflow_settings')->group(function () {
+    Route::prefix('settings')->name('settings.')->middleware('permission:cashflow.settings.manage')->group(function () {
         Route::get('data', [CashFlowSettingsController::class, 'settingsData'])->name('data');
         Route::post('save', [CashFlowSettingsController::class, 'settingsUpdate'])->name('save');
         Route::post('update', [CashFlowSettingsController::class, 'settingsUpdate'])->name('update');
@@ -45,10 +45,10 @@ Route::prefix('cashflow')->name('cashflow.')->group(function () {
     });
 
     // Audit Logs (under settings section)
-    Route::get('settings/audit-logs', [CashFlowSettingsController::class, 'auditLogs'])->name('settings.audit_logs')->middleware('permission:cashflow_settings');
+    Route::get('settings/audit-logs', [CashFlowSettingsController::class, 'auditLogs'])->name('settings.audit_logs')->middleware('permission:cashflow.settings.manage');
 
     // Pools
-    Route::prefix('pools')->name('pools.')->middleware('permission:cashflow_pool_manage')->group(function () {
+    Route::prefix('pools')->name('pools.')->middleware('permission:cashflow.pool.manage')->group(function () {
         Route::get('/', [CashFlowPoolsController::class, 'poolsIndex'])->name('index');
         Route::post('store', [CashFlowPoolsController::class, 'poolsStore'])->name('store');
         Route::post('{id}/update', [CashFlowPoolsController::class, 'poolsUpdate'])->name('update');
@@ -58,7 +58,7 @@ Route::prefix('cashflow')->name('cashflow.')->group(function () {
     });
 
     // Categories
-    Route::prefix('categories')->name('categories.')->middleware('permission:cashflow_category_manage')->group(function () {
+    Route::prefix('categories')->name('categories.')->middleware('permission:cashflow.category.manage')->group(function () {
         Route::get('/', [CashFlowCategoriesController::class, 'categoriesIndex'])->name('index');
         Route::post('store', [CashFlowCategoriesController::class, 'categoriesStore'])->name('store');
         Route::post('{id}/update', [CashFlowCategoriesController::class, 'categoriesUpdate'])->name('update');
@@ -88,13 +88,13 @@ Route::prefix('cashflow')->name('cashflow.')->group(function () {
         // FormRequest::authorize() and controller-inline Gate calls are
         // also present; a forgotten inline check still gets caught here.
         Route::post('{id}/approve', [CashFlowExpensesController::class, 'expensesApprove'])
-            ->middleware(['permission:cashflow_expense_approve', 'throttle:60,1'])
+            ->middleware(['permission:cashflow.expense.approve', 'throttle:60,1'])
             ->name('approve');
         Route::post('{id}/reject', [CashFlowExpensesController::class, 'expensesReject'])
-            ->middleware(['permission:cashflow_expense_reject', 'throttle:60,1'])
+            ->middleware(['permission:cashflow.expense.reject', 'throttle:60,1'])
             ->name('reject');
         Route::post('{id}/void', [CashFlowExpensesController::class, 'expensesVoid'])
-            ->middleware(['permission:cashflow_void', 'throttle:60,1'])
+            ->middleware(['permission:cashflow.expense.void', 'throttle:60,1'])
             ->name('void');
         Route::post('{id}/unflag', [CashFlowExpensesController::class, 'expensesUnflag'])->name('unflag');
         Route::get('{id}/audit', [CashFlowExpensesController::class, 'expensesAudit'])->name('audit');
@@ -114,7 +114,7 @@ Route::prefix('cashflow')->name('cashflow.')->group(function () {
     });
 
     // Notifications (lightweight controller to avoid heavy CashFlowController instantiation on every page poll)
-    Route::prefix('notifications')->name('notifications.')->middleware('permission:cashflow_manage')->group(function () {
+    Route::prefix('notifications')->name('notifications.')->middleware('permission:cashflow.dashboard.view|cashflow.fdm.view|cashflow.manage')->group(function () {
         Route::get('/', [CashflowNotificationController::class, 'index'])->name('index');
         Route::post('mark-read', [CashflowNotificationController::class, 'markRead'])->name('mark_read');
     });
@@ -124,7 +124,7 @@ Route::prefix('cashflow')->name('cashflow.')->group(function () {
     // throughout the shadow-run window so a flag flip restores the legacy UI.
     // Route-level gate is intentionally permissive (any of the view slugs); each
     // action's controller method re-checks the per-kind slug before dispatching.
-    Route::prefix('movements')->name('movements.')->middleware('permission:cashflow_transfer_view|cashflow_staff_advance_view|cashflow_staff_advance|cashflow_manage')->group(function () {
+    Route::prefix('movements')->name('movements.')->middleware('permission:cashflow.transfer.view|cashflow.staff_advance.view|cashflow.manage')->group(function () {
         Route::get('data', [CashFlowMovementsController::class, 'movementsData'])->name('data');
         Route::get('form-data', [CashFlowMovementsController::class, 'formData'])->name('form_data');
         Route::post('store', [CashFlowMovementsController::class, 'store'])
@@ -159,7 +159,7 @@ Route::prefix('cashflow')->name('cashflow.')->group(function () {
     // Transfers — defense-in-depth: a route-level gate that fails closed if a
     // controller ever forgets its inline `Gate::allows` check. Either of the
     // listed slugs is sufficient (`cashflow_manage` is the super-slug).
-    Route::prefix('transfers')->name('transfers.')->middleware('permission:cashflow_transfer_view|cashflow_manage')->group(function () {
+    Route::prefix('transfers')->name('transfers.')->middleware('permission:cashflow.transfer.view|cashflow.manage')->group(function () {
         Route::get('data', [CashFlowTransfersController::class, 'transfersData'])->name('data');
         Route::post('store', [CashFlowTransfersController::class, 'transfersStore'])
             ->middleware(['throttle:60,1', 'idempotent'])
@@ -173,7 +173,7 @@ Route::prefix('cashflow')->name('cashflow.')->group(function () {
     Route::get('vendors/form-data', [CashflowLookupsController::class, 'vendorFormData'])->name('vendors.form_data');
 
     // Vendors — defense-in-depth (see Transfers note above).
-    Route::prefix('vendors')->name('vendors.')->middleware('permission:cashflow_vendor_view|cashflow_vendor_manage|cashflow_manage')->group(function () {
+    Route::prefix('vendors')->name('vendors.')->middleware('permission:cashflow.vendor.view|cashflow.vendor.manage|cashflow.manage')->group(function () {
         Route::get('data', [CashFlowVendorsController::class, 'vendorsData'])->name('data');
         Route::get('overview', [CashFlowVendorsController::class, 'vendorsOverview'])->name('overview');
         Route::get('transactions', [CashFlowVendorsController::class, 'vendorsTransactions'])->name('transactions');
@@ -205,7 +205,7 @@ Route::prefix('cashflow')->name('cashflow.')->group(function () {
     // Vendor Requests — defense-in-depth (suggestion store + approve/dismiss).
     // Any of these slugs admits the user; controller methods still gate
     // approve/dismiss on `cashflow_vendor_manage` inline.
-    Route::prefix('vendor-requests')->name('vendor_requests.')->middleware('permission:cashflow_vendor_request|cashflow_vendor_manage|cashflow_manage')->group(function () {
+    Route::prefix('vendor-requests')->name('vendor_requests.')->middleware('permission:cashflow.vendor.request|cashflow.vendor.manage|cashflow.manage')->group(function () {
         Route::get('data', [CashFlowVendorsController::class, 'vendorRequestsData'])->name('data');
         Route::post('store', [CashFlowVendorsController::class, 'vendorRequestsStore'])->name('store');
         Route::post('{id}/approve', [CashFlowVendorsController::class, 'vendorRequestsApprove'])->name('approve');
@@ -215,7 +215,7 @@ Route::prefix('cashflow')->name('cashflow.')->group(function () {
     // Category Requests — defense-in-depth. Anyone with create-expense can
     // suggest a category (since that's the surface the UI offers it from);
     // category-manage admins approve/dismiss.
-    Route::prefix('category-requests')->name('category_requests.')->middleware('permission:cashflow_expense_create|cashflow_category_manage|cashflow_manage')->group(function () {
+    Route::prefix('category-requests')->name('category_requests.')->middleware('permission:cashflow.expense.create|cashflow.category.manage|cashflow.manage')->group(function () {
         Route::get('data', [CashFlowCategoriesController::class, 'categoryRequestsData'])->name('data');
         Route::post('store', [CashFlowCategoriesController::class, 'categoryRequestsStore'])->name('store');
         Route::post('{id}/approve', [CashFlowCategoriesController::class, 'categoryRequestsApprove'])->name('approve');
@@ -223,7 +223,7 @@ Route::prefix('cashflow')->name('cashflow.')->group(function () {
     });
 
     // Staff Advances & Returns
-    Route::prefix('staff')->name('staff.')->middleware('permission:cashflow_staff_advance_view|cashflow_staff_advance|cashflow_staff_advance_create|cashflow_staff_advance_edit|cashflow_staff_advance_void|cashflow_staff_return_create|cashflow_staff_return_void|cashflow_staff_transfer_create|cashflow_staff_transfer_void|cashflow_manage')->group(function () {
+    Route::prefix('staff')->name('staff.')->middleware('permission:cashflow.staff_advance.view|cashflow.staff_advance.create|cashflow.staff_advance.edit|cashflow.staff_advance.void|cashflow.staff_return.create|cashflow.staff_return.void|cashflow.staff_transfer.create|cashflow.staff_transfer.void|cashflow.manage')->group(function () {
         Route::get('summary', [CashFlowStaffController::class, 'staffSummary'])->name('summary');
         Route::get('recent-activity', [CashFlowStaffController::class, 'staffRecentActivity'])->name('recent_activity');
         Route::get('{userId}/ledger', [CashFlowStaffController::class, 'staffLedger'])->name('ledger');
@@ -242,26 +242,26 @@ Route::prefix('cashflow')->name('cashflow.')->group(function () {
     });
 
     // Dashboard
-    Route::prefix('dashboard')->name('dashboard.')->middleware('permission:cashflow_dashboard')->group(function () {
+    Route::prefix('dashboard')->name('dashboard.')->middleware('permission:cashflow.dashboard.view')->group(function () {
         Route::get('data', [CashFlowDashboardController::class, 'dashboardData'])->name('data');
         Route::get('snapshot', [CashFlowDashboardController::class, 'dashboardSnapshot'])->name('snapshot');
         Route::get('reconciliation', [CashFlowDashboardController::class, 'dashboardReconciliation'])->name('reconciliation');
     });
 
     // FDM Cash View
-    Route::prefix('fdm')->name('fdm.')->middleware('permission:cashflow_fdm_view')->group(function () {
+    Route::prefix('fdm')->name('fdm.')->middleware('permission:cashflow.fdm.view')->group(function () {
         Route::get('data', [CashFlowDashboardController::class, 'fdmData'])->name('data');
     });
 
     // Period Locks
-    Route::prefix('period-locks')->name('period_locks.')->middleware('permission:cashflow_settings')->group(function () {
+    Route::prefix('period-locks')->name('period_locks.')->middleware('permission:cashflow.settings.manage')->group(function () {
         Route::get('data', [CashFlowPeriodLocksController::class, 'periodLocksData'])->name('data');
         Route::post('lock', [CashFlowPeriodLocksController::class, 'periodLocksLock'])->name('lock');
         Route::post('{id}/unlock', [CashFlowPeriodLocksController::class, 'periodLocksUnlock'])->name('unlock');
     });
 
     // Reports
-    Route::prefix('reports')->name('reports.')->middleware('permission:cashflow_reports')->group(function () {
+    Route::prefix('reports')->name('reports.')->middleware('permission:cashflow.reports.view')->group(function () {
         Route::get('cashflow-statement', [CashFlowReportsController::class, 'reportCashFlowStatement'])->name('cashflow_statement');
         Route::get('branch-comparison', [CashFlowReportsController::class, 'reportBranchComparison'])->name('branch_comparison');
         Route::get('category-trend', [CashFlowReportsController::class, 'reportCategoryTrend'])->name('category_trend');

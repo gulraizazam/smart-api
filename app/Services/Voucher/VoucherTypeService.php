@@ -392,13 +392,13 @@ final class VoucherTypeService
     public function getPermissions(): array
     {
         return [
-            'edit' => Gate::allows('voucher_types_edit'),
-            'delete' => Gate::allows('voucher_types_destroy'),
-            'active' => Gate::allows('voucher_types_active'),
-            'inactive' => Gate::allows('voucher_types_inactive'),
-            'create' => Gate::allows('voucher_types_create'),
-            'allocate' => Gate::allows('voucher_types_allocate'),
-            'assign' => Gate::allows('voucher_types_assign'),
+            'edit'     => Gate::allows('voucher_types.edit'),
+            'delete'   => Gate::allows('voucher_types.destroy'),
+            'active'   => Gate::allows('voucher_types.activate'),
+            'inactive' => Gate::allows('voucher_types.deactivate'),
+            'create'   => Gate::allows('voucher_types.create'),
+            'allocate' => Gate::allows('voucher_types.allocate'),
+            'assign'   => Gate::allows('voucher_types.assign'),
         ];
     }
 

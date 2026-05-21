@@ -26,7 +26,7 @@ class CashFlowPeriodLocksController extends Controller
 
         try {
 
-            if (!Gate::allows('cashflow_settings')) {
+            if (!Gate::allows('cashflow.settings.manage')) {
 
                 throw CashflowException::unauthorized('view period locks');
 
@@ -67,7 +67,7 @@ class CashFlowPeriodLocksController extends Controller
 
         try {
 
-            if (!Gate::allows('cashflow_settings')) {
+            if (!Gate::allows('cashflow.settings.manage')) {
 
                 throw CashflowException::unauthorized('lock periods');
 
@@ -126,7 +126,7 @@ class CashFlowPeriodLocksController extends Controller
 
         try {
 
-            if (!Gate::allows('cashflow_settings')) {
+            if (!Gate::allows('cashflow.settings.manage')) {
 
                 throw CashflowException::unauthorized('unlock periods');
 

@@ -1362,8 +1362,8 @@ class PatientService
                 'sort' => $order,
             ],
             'permissions' => [
-                'edit' => Gate::allows('vouchers_edit'),
-                'delete' => Gate::allows('vouchers_destroy'),
+                'edit'   => Gate::allows('vouchers.edit'),
+                'delete' => Gate::allows('vouchers.destroy'),
             ],
             'filter_values' => ['patient' => null],
             'active_filters' => [],

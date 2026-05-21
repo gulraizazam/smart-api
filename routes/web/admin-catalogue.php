@@ -71,14 +71,14 @@ use Illuminate\Support\Facades\Route;
         //Refunds route end
 
         //Discount route Start
-        Route::resource('discounts', DiscountsController::class)->only('index')->middleware('permission:discounts_manage');
-        Route::resource('voucherTypes', VouchersController::class)->only('index')->middleware('permission:discounts_manage');
+        Route::resource('discounts', DiscountsController::class)->only('index')->middleware('permission:discounts.list.view');
+        Route::resource('voucherTypes', VouchersController::class)->only('index')->middleware('permission:voucher_types.list.view');
          Route::resource('vouchers', UserVouchersController::class)->only('index')->middleware('permission:discounts_manage');
-        Route::get('vouchersTypes/getListing', [VouchersController::class, 'getListing'])->name('vouchersTypes.getListing')->middleware('permission:discounts_manage');
+        Route::get('vouchersTypes/getListing', [VouchersController::class, 'getListing'])->name('vouchersTypes.getListing')->middleware('permission:voucher_types.list.view');
 
         //User Vouchers route Start
-        Route::resource('user-vouchers', UserVouchersController::class)->only(['index', 'show'])->middleware('permission:vouchers_manage');
-        Route::post('user-vouchers/datatable', [UserVouchersController::class, 'datatable'])->name('user-vouchers.datatable')->middleware('permission:vouchers_manage');
+        Route::resource('user-vouchers', UserVouchersController::class)->only(['index', 'show'])->middleware('permission:vouchers.list.view');
+        Route::post('user-vouchers/datatable', [UserVouchersController::class, 'datatable'])->name('user-vouchers.datatable')->middleware('permission:vouchers.list.view');
         //User Vouchers route end
         //Discount route end
 
@@ -111,7 +111,7 @@ use Illuminate\Support\Facades\Route;
 
         //Invoice Management route start
         Route::get('invoices/log/{id}/{type}/{patient_id?}', [InvoicesController::class, 'invoicelog'])->name('invoices.invoice_log');
-        Route::resource('invoices', InvoicesController::class)->only('index')->middleware('permission:invoices_manage');
+        Route::resource('invoices', InvoicesController::class)->only('index')->middleware('permission:invoices.list.view');
         //Invoice Management route end
         Route::get('invoices/pdf/{id}/{download?}/{flag?}', [InvoicesController::class, 'invoice_pdf'])->name('invoices.invoice_pdf');
 

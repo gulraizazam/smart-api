@@ -144,9 +144,9 @@ class VendorTransactionAttachmentsController extends Controller
 
         $isOwner = (int) $row->uploaded_by === (int) $user->id;
         if (! $isOwner
-            && ! $user->can('cashflow_vendor_view')
-            && ! $user->can('cashflow_vendor_manage')
-            && ! $user->can('cashflow_manage')) {
+            && ! $user->can('cashflow.vendor.view')
+            && ! $user->can('cashflow.vendor.manage')
+            && ! $user->can('cashflow.manage')) {
             abort(403);
         }
 
@@ -175,9 +175,9 @@ class VendorTransactionAttachmentsController extends Controller
 
         $isOwner = (int) $row->uploaded_by === (int) $user->id;
         if (! $isOwner
-            && ! $user->can('cashflow_vendor_transaction')
-            && ! $user->can('cashflow_vendor_manage')
-            && ! $user->can('cashflow_manage')) {
+            && ! $user->can('cashflow.vendor.transaction.create')
+            && ! $user->can('cashflow.vendor.manage')
+            && ! $user->can('cashflow.manage')) {
             abort(403);
         }
 

@@ -12,7 +12,7 @@ final class AllocateDiscountRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()?->can('discounts_allocate') ?? false;
+        return $this->user()?->can('discounts.allocate') ?? false;
     }
 
     public function rules(): array
@@ -59,7 +59,7 @@ final class AllocateDiscountRequest extends FormRequest
                 'status'  => false,
                 'message' => 'You are not authorized to access this resource.',
                 'data'    => null,
-            ], 401)
+            ], 403)
         );
     }
 }

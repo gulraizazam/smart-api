@@ -8,8 +8,16 @@ use App\Models\User;
 /**
  * Authorization policy for Invoices.
  *
- * Invoices may be generated from appointments or patient plans.
- * Both permission paths are covered here.
+ * Invoices may be generated from appointments or patient plans. Three
+ * permission paths are kept in play:
+ *
+ *   - `invoices.*`              global module (Finance > Invoices)
+ *   - `consultations.invoice.*` appointment-side (Consultations module)
+ *   - `patient_invoices`        patient-card scope (Patients audit)
+ *
+ * Combining them here is intentional — anyone who can act on an
+ * appointment's invoice should also see / download it from the global
+ * invoices page (and vice versa).
  */
 class InvoicePolicy
 {
@@ -18,7 +26,9 @@ class InvoicePolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->can('invoices_manage') || $user->can('appointments_invoice') || $user->can('patient_invoices');
+        return $user->can('invoices.list.view')
+            || $user->can('consultations.invoice.view')
+            || $user->can('patient_invoices');
     }
 
     /**
@@ -26,7 +36,9 @@ class InvoicePolicy
      */
     public function view(User $user): bool
     {
-        return $user->can('invoices_manage') || $user->can('appointments_invoice') || $user->can('patient_invoices');
+        return $user->can('invoices.detail.view')
+            || $user->can('consultations.invoice.view')
+            || $user->can('patient_invoices');
     }
 
     /**
@@ -34,7 +46,8 @@ class InvoicePolicy
      */
     public function create(User $user): bool
     {
-        return $user->can('invoices_manage') || $user->can('appointments_invoice');
+        return $user->can('invoices.create')
+            || $user->can('consultations.invoice.create');
     }
 
     /**
@@ -42,7 +55,7 @@ class InvoicePolicy
      */
     public function update(User $user): bool
     {
-        return $user->can('invoices_manage');
+        return $user->can('invoices.edit');
     }
 
     /**
@@ -50,7 +63,8 @@ class InvoicePolicy
      */
     public function delete(User $user): bool
     {
-        return $user->can('invoices_manage') || $user->can('invoices_destroy');
+        return $user->can('invoices.destroy')
+            || $user->can('invoices.cancel');
     }
 
     /**
@@ -58,7 +72,9 @@ class InvoicePolicy
      */
     public function download(User $user): bool
     {
-        return $user->can('invoices_manage') || $user->can('appointments_invoice') || $user->can('patient_invoices');
+        return $user->can('invoices.print')
+            || $user->can('consultations.invoice.view')
+            || $user->can('patient_invoices');
     }
 
     /**
@@ -66,7 +82,7 @@ class InvoicePolicy
      */
     public function refund(User $user): bool
     {
-        return $user->can('refunds_manage') || $user->can('patient_refund');
+        return $user->can('refunds.refund') || $user->can('patient_refund');
     }
 
     /**
@@ -74,6 +90,6 @@ class InvoicePolicy
      */
     public function export(User $user): bool
     {
-        return $user->can('invoices_manage') || $user->can('invoices_export');
+        return $user->can('invoices.export');
     }
 }

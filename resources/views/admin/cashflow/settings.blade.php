@@ -19,7 +19,7 @@
                             <h3 class="card-label"><i class="la la-cog mr-2"></i>General Settings</h3>
                         </div>
                         <div class="card-toolbar">
-                            @if(Gate::allows('cashflow_settings'))
+                            @if(Gate::allows('cashflow.settings.manage'))
                                 <button id="btn-reset-module" class="btn btn-outline-danger mr-2 d-none">
                                     <i class="la la-trash"></i> Reset Module
                                 </button>
@@ -110,7 +110,7 @@
                             <h3 class="card-label"><i class="la la-university mr-2"></i>Cash Pools</h3>
                         </div>
                         <div class="card-toolbar">
-                            @if(Gate::allows('cashflow_pool_manage'))
+                            @if(Gate::allows('cashflow.pool.manage'))
                                 <button id="btn-recalculate-pools" class="btn btn-warning mr-2">
                                     <i class="la la-calculator"></i> Recalculate Balances
                                 </button>
@@ -146,14 +146,14 @@
                 </div>
 
                 <!--begin::Pending Requests Card-->
-                @if(Gate::allows('cashflow_category_manage') || Gate::allows('cashflow_vendor_manage'))
+                @if(Gate::allows('cashflow.category.manage') || Gate::allows('cashflow.vendor.manage'))
                 <div class="card card-custom mb-5 d-none" id="pending-requests-card">
                     <div class="card-header py-3">
                         <div class="card-title"><h3 class="card-label"><i class="la la-inbox mr-2 text-warning"></i>Pending Requests</h3></div>
                     </div>
                     <div class="card-body">
                         <div class="row">
-                            @can('cashflow_category_manage')
+                            @can('cashflow.category.manage')
                             <div class="col-lg-6">
                                 <h6 class="font-weight-bold mb-3">Category Requests</h6>
                                 <div class="table-responsive">
@@ -164,7 +164,7 @@
                                 </div>
                             </div>
                             @endcan
-                            @can('cashflow_vendor_manage')
+                            @can('cashflow.vendor.manage')
                             <div class="col-lg-6">
                                 <h6 class="font-weight-bold mb-3">Vendor Requests</h6>
                                 <div class="table-responsive">
@@ -187,7 +187,7 @@
                             <h3 class="card-label"><i class="la la-tags mr-2"></i>Expense Categories</h3>
                         </div>
                         <div class="card-toolbar">
-                            @if(Gate::allows('cashflow_category_manage'))
+                            @if(Gate::allows('cashflow.category.manage'))
                                 <button id="btn-add-category" class="btn btn-primary" data-toggle="modal" data-target="#modal_add_category">
                                     <i class="la la-plus"></i> Add Category
                                 </button>
@@ -221,7 +221,7 @@
                             <h3 class="card-label"><i class="la la-credit-card mr-2"></i>Payment Method → Pool Mapping</h3>
                         </div>
                         <div class="card-toolbar">
-                            @if(Gate::allows('cashflow_settings'))
+                            @if(Gate::allows('cashflow.settings.manage'))
                                 <button id="btn-save-pm-mapping" class="btn btn-primary"><i class="la la-save"></i> Save Mapping</button>
                             @endif
                         </div>

@@ -11,7 +11,6 @@ use App\Helpers\GeneralFunctions;
 use App\Models\Appointments;
 use App\Models\AppointmentStatuses;
 use App\Models\BusinessClosure;
-use App\Models\Invoices;
 use App\Models\Leads;
 use App\Models\Locations;
 use App\Models\ResourceHasRota;
@@ -48,15 +47,9 @@ final class TreatmentUpdateService
         $isArrivedOrConverted = $this->isArrivedOrConverted($appointment);
 
         $permissions = [
-            'service'  => Gate::allows('update_treatment_service')
-                || Gate::allows('treatments_edit_after_arrived')
-                || Gate::allows('treatments_edit'),
-            'doctor'   => Gate::allows('update_treatment_doctor')
-                || Gate::allows('treatments_edit_after_arrived')
-                || Gate::allows('treatments_edit'),
-            'schedule' => Gate::allows('update_treatment_schedule')
-                || Gate::allows('treatments_edit_after_arrived')
-                || Gate::allows('treatments_edit'),
+            'service'  => Gate::allows('treatments.edit.service.after_arrived'),
+            'doctor'   => Gate::allows('treatments.edit.doctor.after_arrived'),
+            'schedule' => Gate::allows('treatments.edit.schedule.after_arrived'),
         ];
 
         if ($isArrivedOrConverted) {
@@ -133,13 +126,11 @@ final class TreatmentUpdateService
 
     private function validateNormalTreatmentUpdate(Appointments $appointment, array $requestData): void
     {
-        if (!Gate::allows('treatments_edit_after_arrived')) {
-            $hasInvoice = Invoices::where('appointment_id', $appointment->id)->exists();
-            if ($hasInvoice) {
-                throw TreatmentException::invoiceExists();
-            }
-        }
-
+        // Pre-arrival edits are unrestricted at the field level — anyone
+        // with `treatments.edit` can change service/doctor/schedule. The
+        // per-field `treatments.edit.{field}.after_arrived` perms only
+        // kick in once the treatment reaches the arrived/converted
+        // states (see validateArrivedTreatmentUpdate above).
         $doctorId   = (int) ($requestData['doctor_id'] ?? $appointment->doctor_id);
         $locationId = (int) ($requestData['location_id'] ?? $appointment->location_id);
         $serviceId  = isset($requestData['service_id'])

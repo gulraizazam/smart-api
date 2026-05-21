@@ -28,7 +28,7 @@
                             <div class="card-header py-3" style="min-height:auto;">
                                 <div class="card-title mb-0"><h3 class="card-label font-size-h6 mb-0"><i class="la la-store mr-1"></i>Vendors</h3></div>
                                 <div class="card-toolbar">
-                                    @if(Gate::allows('cashflow_vendor_create'))
+                                    @if(Gate::allows('cashflow.vendor.create'))
                                         <button class="btn btn-sm btn-primary" data-toggle="modal" data-target="#modal_vendor"><i class="la la-plus"></i> Add</button>
                                     @endif
                                 </div>
@@ -68,7 +68,7 @@
                             <div class="card-header py-3" style="min-height:auto;">
                                 <div class="card-title mb-0"><h3 class="card-label font-size-h6 mb-0"><i class="la la-inbox mr-1"></i>Vendor Requests</h3></div>
                                 <div class="card-toolbar">
-                                    @if(Gate::allows('cashflow_vendor_request'))
+                                    @if(Gate::allows('cashflow.vendor.request'))
                                         <button class="btn btn-sm btn-info" id="btn-open-vendor-request"><i class="la la-plus"></i> Request</button>
                                     @endif
                                 </div>
@@ -188,10 +188,10 @@
                                             </div>
                                         </div>
                                         <div class="d-flex align-items-center">
-                                            @if(Gate::allows('cashflow_vendor_transaction'))
+                                            @if(Gate::allows('cashflow.vendor.transaction.create'))
                                                 <button class="btn btn-sm btn-primary mr-2" id="btn-record-purchase"><i class="la la-shopping-cart mr-1"></i>Record Purchase</button>
                                             @endif
-                                            @if(Gate::allows('cashflow_vendor_edit'))
+                                            @if(Gate::allows('cashflow.vendor.edit'))
                                                 <button class="btn btn-sm btn-light-primary mr-2" id="btn-edit-current-vendor" title="Edit Vendor"><i class="la la-edit"></i></button>
                                             @endif
                                             
@@ -255,7 +255,7 @@
                                             <option value="ordered">Ordered</option>
                                             <option value="delivered">Delivered</option>
                                         </select>
-                                        @if(Gate::allows('cashflow_vendor_ledger_export'))
+                                        @if(Gate::allows('cashflow.vendor.ledger.export'))
                                         <button class="btn btn-sm btn-outline-secondary py-1 px-2" id="btn-export-ledger" title="Export CSV"><i class="la la-download p-0"></i></button>
                                         @endif
                                     </div>
@@ -408,7 +408,7 @@
 
 
     <!-- Record Purchase Modal -->
-    @if(Gate::allows('cashflow_vendor_transaction'))
+    @if(Gate::allows('cashflow.vendor.transaction.create'))
     <div class="modal fade" id="modal_purchase" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -478,7 +478,7 @@
     @endif
 
     <!-- Mark as Delivered Modal -->
-    @if(Gate::allows('cashflow_vendor_deliver'))
+    @if(Gate::allows('cashflow.vendor.deliver'))
     <div class="modal fade" id="modal_deliver" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered" style="max-width:480px;">
             <div class="modal-content">
@@ -556,18 +556,18 @@
     @push('js')
         <script>
             var cfPerms = {
-                canManage: {{ Gate::allows('cashflow_vendor_manage') ? 'true' : 'false' }},
-                canCreate: {{ Gate::allows('cashflow_vendor_create') ? 'true' : 'false' }},
-                canEdit: {{ Gate::allows('cashflow_vendor_edit') ? 'true' : 'false' }},
-                canToggle: {{ Gate::allows('cashflow_vendor_toggle') ? 'true' : 'false' }},
-                canTransaction: {{ Gate::allows('cashflow_vendor_transaction') ? 'true' : 'false' }},
-                canTransactionEdit: {{ Gate::allows('cashflow_vendor_transaction_edit') ? 'true' : 'false' }},
-                canTransactionDelete: {{ Gate::allows('cashflow_vendor_transaction_delete') ? 'true' : 'false' }},
-                canDeliver: {{ Gate::allows('cashflow_vendor_deliver') ? 'true' : 'false' }},
-                canLedgerExport: {{ Gate::allows('cashflow_vendor_ledger_export') ? 'true' : 'false' }},
-                canExpenseCreate: {{ Gate::allows('cashflow_expense_create') ? 'true' : 'false' }},
-                canAudit: {{ Gate::allows('cashflow_audit_view') ? 'true' : 'false' }},
-                canRequest: {{ Gate::allows('cashflow_vendor_request') ? 'true' : 'false' }}
+                canManage: {{ Gate::allows('cashflow.vendor.manage') ? 'true' : 'false' }},
+                canCreate: {{ Gate::allows('cashflow.vendor.create') ? 'true' : 'false' }},
+                canEdit: {{ Gate::allows('cashflow.vendor.edit') ? 'true' : 'false' }},
+                canToggle: {{ Gate::allows('cashflow.vendor.toggle') ? 'true' : 'false' }},
+                canTransaction: {{ Gate::allows('cashflow.vendor.transaction.create') ? 'true' : 'false' }},
+                canTransactionEdit: {{ Gate::allows('cashflow.vendor.transaction.edit') ? 'true' : 'false' }},
+                canTransactionDelete: {{ Gate::allows('cashflow.vendor.transaction.delete') ? 'true' : 'false' }},
+                canDeliver: {{ Gate::allows('cashflow.vendor.deliver') ? 'true' : 'false' }},
+                canLedgerExport: {{ Gate::allows('cashflow.vendor.ledger.export') ? 'true' : 'false' }},
+                canExpenseCreate: {{ Gate::allows('cashflow.expense.create') ? 'true' : 'false' }},
+                canAudit: {{ Gate::allows('cashflow.audit.view') ? 'true' : 'false' }},
+                canRequest: {{ Gate::allows('cashflow.vendor.request') ? 'true' : 'false' }}
             };
         </script>
         <script src="{{ asset('assets/js/pages/cashflow/vendors.js') }}"></script>

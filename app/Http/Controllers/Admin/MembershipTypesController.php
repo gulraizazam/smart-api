@@ -21,8 +21,8 @@ class MembershipTypesController extends Controller
 
     public function index(): \Illuminate\View\View
     {
-        if (! Gate::allows('membershiptypes_manage')) {
-            return abort(401);
+        if (! Gate::allows('membership_types.list.view')) {
+            return abort(403);
         }
 
         return view('admin.memberships_types.index');
@@ -30,6 +30,10 @@ class MembershipTypesController extends Controller
 
     public function datatable(Request $request): JsonResponse
     {
+        if (! Gate::allows('membership_types.list.view')) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
+        }
+
         $filters     = getFilters($request->all());
         $applyFilter = checkFilters($filters, 'membership_types');
 
@@ -80,11 +84,11 @@ class MembershipTypesController extends Controller
             }
 
             $records['permissions'] = [
-                'edit'     => Gate::allows('membershiptypes_edit'),
-                'delete'   => Gate::allows('membershiptypes_destroy'),
-                'active'   => Gate::allows('membershiptypes_active'),
-                'inactive' => Gate::allows('membershiptypes_inactive'),
-                'create'   => Gate::allows('membershiptypes_create'),
+                'edit'     => Gate::allows('membership_types.edit'),
+                'delete'   => Gate::allows('membership_types.destroy'),
+                'active'   => Gate::allows('membership_types.activate'),
+                'inactive' => Gate::allows('membership_types.deactivate'),
+                'create'   => Gate::allows('membership_types.create'),
             ];
 
             $records['meta'] = [
@@ -101,8 +105,8 @@ class MembershipTypesController extends Controller
 
     public function store(StoreMembershipTypeRequest $request): JsonResponse
     {
-        if (! Gate::allows('membershiptypes_create')) {
-            return $this->errorResponse('You are not authorized to access this resource.', 401);
+        if (! Gate::allows('membership_types.create')) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
         }
 
         $record = $this->membershipTypeService->createMembershipType($request->validated());
@@ -116,8 +120,8 @@ class MembershipTypesController extends Controller
 
     public function edit(int $id): JsonResponse
     {
-        if (! Gate::allows('membershiptypes_edit')) {
-            return $this->errorResponse('You are not authorized to access this resource.', 401);
+        if (! Gate::allows('membership_types.edit')) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
         }
 
         $data = $this->membershipTypeService->getEditFormData($id);
@@ -127,8 +131,8 @@ class MembershipTypesController extends Controller
 
     public function update(UpdateMembershipTypeRequest $request, int $id): JsonResponse
     {
-        if (! Gate::allows('membershiptypes_edit')) {
-            return abort(401);
+        if (! Gate::allows('membership_types.edit')) {
+            return abort(403);
         }
 
         $this->membershipTypeService->updateMembershipType($id, $request->all());
@@ -138,8 +142,8 @@ class MembershipTypesController extends Controller
 
     public function destroy(int $id): JsonResponse
     {
-        if (! Gate::allows('membershiptypes_destroy')) {
-            return $this->errorResponse('You are not authorized to access this resource.', 401);
+        if (! Gate::allows('membership_types.destroy')) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
         }
 
         $result = $this->membershipTypeService->deleteMembershipType($id);
@@ -157,8 +161,12 @@ class MembershipTypesController extends Controller
 
     public function status(Request $request): JsonResponse
     {
-        if (! Gate::allows('membershiptypes_active')) {
-            return $this->errorResponse('You are not authorized to access this resource.', 401);
+        // Legacy `membershiptypes_active` covered both directions; new
+        // catalog splits activate/deactivate. Pick the perm by status.
+        $targetStatus = (int) $request->input('status');
+        $needed = $targetStatus === 1 ? 'membership_types.activate' : 'membership_types.deactivate';
+        if (! Gate::allows($needed)) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
         }
 
         $success = $this->membershipTypeService->toggleStatus(

@@ -36,7 +36,7 @@
 
                         <div class="card-toolbar">
                             <!--begin::Dropdown-->
-                            @if(Gate::allows('invoices_destroy'))
+                            @if(Gate::allows('invoices.destroy'))
                                 <div class="delete-records d-none">
                                     <span>Selected Rows: <span class="checkbox-count"></span></span>
                                     <a id="delete-table-rows" href="javascript:void(0);" class="btn btn-danger font-weight-bolder">
@@ -45,7 +45,7 @@
                                 </div>&nbsp;&nbsp;&nbsp;
                             @endif
 
-                            @if(Gate::allows('invoices_create'))
+                            @if(Gate::allows('invoices.create'))
                                 <a href="javascript:void(0);" onclick="createRota('{{ route('admin.invoices.create') }}');" class="btn btn-primary" data-toggle="modal" data-target="#modal_add_invoices">
                                     <i class="la la-plus"></i>
                                     Add New

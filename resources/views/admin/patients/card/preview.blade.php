@@ -121,7 +121,7 @@
                                     </button>
                                 </div>
                                 <div class="card-toolbar submit-btn toolbar-voucher-form d-none">
-                                    @if(Gate::allows('vouchers_create'))
+                                    @if(Gate::allows('patients.voucher.assign'))
                                         <button type="button" class="btn btn-sm btn-primary mr-2 change-tab" onclick="assignVoucherToPatient();" data-toggle="modal" data-target="#modal_assign_voucher_patient">
                                             <i class="la la-plus"></i> Add Voucher
                                         </button>

@@ -33,8 +33,8 @@ class RefundsController extends Controller
      */
     public function index(): \Illuminate\View\View
     {
-        if (! Gate::allows('refunds_manage')) {
-            return abort(401);
+        if (! Gate::allows('refunds.list.view')) {
+            return abort(403);
         }
 
         return view('admin.refunds.index');
@@ -48,6 +48,13 @@ class RefundsController extends Controller
      */
     public function datatable(Request $request, $id = false): \Illuminate\Http\JsonResponse
     {
+        // Patient-card embed ($id != false) is gated by patient-card
+        // perms (handled by the parent route); the global module
+        // datatable requires the catalogue list-view perm.
+        if ($id === false && ! Gate::allows('refunds.list.view')) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
+        }
+
         try {
 
             $filename = 'plansrefunds';
@@ -160,12 +167,12 @@ class RefundsController extends Controller
             }
 
             $records['permissions'] = [
-                'create'=>Gate::allows('refunds_create'),
-                'delete' => Gate::allows('refunds_destroy'),
-                'active' => Gate::allows('refunds_active'),
-                'inactive' => Gate::allows('refunds_inactive'),
-                'refund' => Gate::allows('refunds_refund'),
-                'edit' => Gate::allows('refunds_edit'),
+                'create'=>Gate::allows('refunds.create'),
+                'delete' => Gate::allows('refunds.destroy'),
+                'active' => Gate::allows('refunds.activate'),
+                'inactive' => Gate::allows('refunds.deactivate'),
+                'refund' => Gate::allows('refunds.refund'),
+                'edit' => Gate::allows('refunds.edit'),
             ];
 
             $patient_id = request('patient_id');
@@ -338,8 +345,8 @@ class RefundsController extends Controller
      */
     public function refund_create(int $id): \Illuminate\Http\JsonResponse
     {
-        if (! Gate::allows('refunds_create')) {
-            return $this->errorResponse('You are not authorized to access this resource.', 401);
+        if (! Gate::allows('refunds.create')) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
         }
 
         $return_tax_amount = '';
@@ -493,8 +500,8 @@ class RefundsController extends Controller
      */
     public function store(RefundCreateRequest $request): \Illuminate\Http\JsonResponse
     {
-        if (! Gate::allows('refunds_create')) {
-            return $this->errorResponse('You are not authorized to access this resource.', 401);
+        if (! Gate::allows('refunds.create')) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
         }
         $package_advance_last_in = PackageAdvances::where([
             ['cash_flow', '=', 'in'],
@@ -529,8 +536,8 @@ class RefundsController extends Controller
     public function detail(int $id): \Illuminate\View\View
     {
 
-        if (! Gate::allows('refunds_manage')) {
-            return abort(401);
+        if (! Gate::allows('refunds.detail.view')) {
+            return abort(403);
         }
         // Round 4 IDOR sweep — User extends Authenticatable (no getData() helper).
         // Tenant-scope by account_id so the patient ledger view can't be opened

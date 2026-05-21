@@ -25,6 +25,8 @@ class CashFlowCategoriesController extends Controller
     public function categoriesIndex(): JsonResponse
     {
 
+        if (! Gate::any(['cashflow.category.manage', 'cashflow.expense.view', 'cashflow.expense.create', 'cashflow.manage'])) { return response()->json(['success' => false, 'message' => 'You are not authorized to access this resource.', 'data' => null], 403); }
+
         try {
 
             $accountId = Auth::user()->account_id;
@@ -54,7 +56,7 @@ class CashFlowCategoriesController extends Controller
 
         try {
 
-            if (!Gate::allows('cashflow_category_manage')) {
+            if (!Gate::allows('cashflow.category.manage')) {
 
                 throw CashflowException::unauthorized('manage categories');
 
@@ -107,7 +109,7 @@ class CashFlowCategoriesController extends Controller
 
         try {
 
-            if (!Gate::allows('cashflow_category_manage')) {
+            if (!Gate::allows('cashflow.category.manage')) {
 
                 throw CashflowException::unauthorized('manage categories');
 
@@ -160,7 +162,7 @@ class CashFlowCategoriesController extends Controller
 
         try {
 
-            if (!Gate::allows('cashflow_category_manage')) {
+            if (!Gate::allows('cashflow.category.manage')) {
 
                 throw CashflowException::unauthorized('manage categories');
 
@@ -198,6 +200,8 @@ class CashFlowCategoriesController extends Controller
      */
     public function categoryRequestsData(Request $request): JsonResponse
     {
+
+        if (! Gate::any(['cashflow.category.manage', 'cashflow.expense.create', 'cashflow.manage'])) { return response()->json(['success' => false, 'message' => 'You are not authorized to access this resource.', 'data' => null], 403); }
 
         try {
 
@@ -244,6 +248,8 @@ class CashFlowCategoriesController extends Controller
     public function categoryRequestsStore(StoreCategorySuggestionRequest $request): JsonResponse
     {
 
+        if (! Gate::any(['cashflow.expense.create', 'cashflow.category.manage', 'cashflow.manage'])) { return response()->json(['success' => false, 'message' => 'You are not authorized to access this resource.', 'data' => null], 403); }
+
         try {
 
             $accountId = Auth::user()->account_id;
@@ -271,7 +277,7 @@ class CashFlowCategoriesController extends Controller
 
         try {
 
-            if (!Gate::allows('cashflow_category_manage')) {
+            if (!Gate::allows('cashflow.category.manage')) {
 
                 throw CashflowException::unauthorized('approve category requests');
 
@@ -312,7 +318,7 @@ class CashFlowCategoriesController extends Controller
 
         try {
 
-            if (!Gate::allows('cashflow_category_manage')) {
+            if (!Gate::allows('cashflow.category.manage')) {
 
                 throw CashflowException::unauthorized('dismiss category requests');
 

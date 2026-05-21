@@ -34,7 +34,7 @@ class CashFlowStaffController extends Controller
 
         try {
 
-            if (!Gate::any(['cashflow_staff_advance_view', 'cashflow_staff_advance'])) {
+            if (!Gate::any(['cashflow.staff_advance.view', 'cashflow.staff_advance.view'])) {
 
                 return response()->json(['success' => false, 'message' => 'Unauthorized.'], 403);
 
@@ -69,7 +69,7 @@ class CashFlowStaffController extends Controller
 
         try {
 
-            if (!Gate::any(['cashflow_staff_advance_view', 'cashflow_staff_advance'])) {
+            if (!Gate::any(['cashflow.staff_advance.view', 'cashflow.staff_advance.view'])) {
 
                 return response()->json(['success' => false, 'message' => 'Unauthorized.'], 403);
 
@@ -107,7 +107,7 @@ class CashFlowStaffController extends Controller
 
         try {
 
-            if (!Gate::any(['cashflow_staff_advance_view', 'cashflow_staff_advance'])) {
+            if (!Gate::any(['cashflow.staff_advance.view', 'cashflow.staff_advance.view'])) {
 
                 return response()->json(['success' => false, 'message' => 'Unauthorized.'], 403);
 
@@ -142,7 +142,7 @@ class CashFlowStaffController extends Controller
 
         try {
 
-            if (!Gate::any(['cashflow_staff_advance_view', 'cashflow_staff_advance'])) {
+            if (!Gate::any(['cashflow.staff_advance.view', 'cashflow.staff_advance.view'])) {
 
                 return response()->json(['success' => false, 'message' => 'Unauthorized.'], 403);
 
@@ -227,7 +227,7 @@ class CashFlowStaffController extends Controller
 
         try {
 
-            if (!Gate::allows('cashflow_staff_advance_void')) {
+            if (!Gate::allows('cashflow.staff_advance.void')) {
 
                 throw CashflowException::unauthorized('void staff advances');
 
@@ -269,7 +269,7 @@ class CashFlowStaffController extends Controller
 
         try {
 
-            if (!Gate::allows('cashflow_staff_advance_edit')) {
+            if (!Gate::allows('cashflow.staff_advance.edit')) {
 
                 throw CashflowException::unauthorized('edit staff advances');
 
@@ -321,7 +321,7 @@ class CashFlowStaffController extends Controller
 
         try {
 
-            if (!Gate::allows('cashflow_audit_view')) {
+            if (!Gate::allows('cashflow.audit.view')) {
 
                 throw CashflowException::unauthorized('view audit trail');
 
@@ -386,7 +386,7 @@ class CashFlowStaffController extends Controller
 
         try {
 
-            if (!Gate::allows('cashflow_staff_return_void')) {
+            if (!Gate::allows('cashflow.staff_return.void')) {
 
                 throw CashflowException::unauthorized('void staff returns');
 
@@ -428,7 +428,7 @@ class CashFlowStaffController extends Controller
 
         try {
 
-            if (!Gate::allows('cashflow_audit_view')) {
+            if (!Gate::allows('cashflow.audit.view')) {
 
                 throw CashflowException::unauthorized('view audit trail');
 

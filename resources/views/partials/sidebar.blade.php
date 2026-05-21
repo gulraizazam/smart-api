@@ -152,7 +152,7 @@
             Gate::allows('sms_templates_manage') ||
             Gate::allows('regions_manage') ||
             Gate::allows('cities_manage') ||
-            Gate::allows('payment_modes_manage') ||
+            Gate::allows('payment_modes.list.view') ||
             Gate::allows('custom_forms_manage') ||
             Gate::allows('custom_form_feedbacks_manage') ||
             Gate::allows('locations_manage') ||
@@ -166,13 +166,13 @@
             Gate::allows('cancellation_reasons_manage')||
             Gate::allows('resources_manage') ||
             Gate::allows('scheduling_shifts.list.view') ||
-            Gate::allows('discounts_manage') ||
+            Gate::allows('discounts.list.view') ||
             Gate::allows('logs_manage') ||
             Gate::allows('packages.list.view') ||
             Gate::allows('plans.list.view') ||
             Gate::allows('finances_manage') ||
-            Gate::allows('invoices_manage') ||
-            Gate::allows('refunds_manage') ||
+            Gate::allows('invoices.list.view') ||
+            Gate::allows('refunds.list.view') ||
             Gate::allows('machineType_manage') ||
             Gate::allows('towns_manage')
 
@@ -230,7 +230,7 @@
                         </a>
                     </li>
                     @endif
-                    @if(Gate::allows('payment_modes_manage'))
+                    @if(Gate::allows('payment_modes.list.view'))
                     <li class="nav-item start {{ $request->segment(2) == 'payment_modes' ? 'active active-sub' : '' }}">
                         <a href="{{ route('admin.payment_modes.index') }}">
                             <span class="title">@lang('global.payment_modes.title')</span>
@@ -370,7 +370,7 @@
                 </a>
             </li>
             @endif
-            @if(Gate::allows('discounts_manage'))
+            @if(Gate::allows('discounts.list.view'))
             <li class="nav-item start {{ $request->segment(2) == 'discounts' ? 'active active-sub' : '' }}">
                 <a href="{{ route('admin.discounts.index') }}">
                     <span class="title">@lang('global.discounts.title')</span>
@@ -399,7 +399,7 @@
                 </a>
             </li>
             @endif
-            @if(Gate::allows('invoices_manage'))
+            @if(Gate::allows('invoices.list.view'))
             <li class="nav-item start {{ $request->segment(2) == 'invoices' ? 'active active-sub' : '' }}">
                 <a href="{{ route('admin.invoices.index') }}">
                     <span class="title">@lang('global.invoices.title')</span>
@@ -407,7 +407,7 @@
             </li>
             @endif
             {{--Refunds Start--}}
-            @if(Gate::allows('refunds_manage'))
+            @if(Gate::allows('refunds.list.view'))
             <li class="nav-item start {{ $request->segment(2) == 'refunds' ? 'active active-sub' : '' }}">
                 <a href="{{ route('admin.refunds.index') }}">
                     <span class="title">@lang('global.refunds.title')</span>

@@ -369,9 +369,15 @@ class ConsultancyDatatableService
             'plans_create' => $canEdit && Gate::allows('appointments_plans_create'),
             'patient_card' => Gate::allows('appointments_patient_card'),
             'contact' => Gate::allows('consultations.list.view_contact'),
-            'update_consultation_service' => $canEdit && Gate::allows('consultations.edit.service'),
-            'update_consultation_doctor' => $canEdit && Gate::allows('consultations.edit.doctor'),
-            'update_consultation_schedule' => $canEdit && Gate::allows('consultations.edit.schedule'),
+            // These flags advertise the per-field after-arrival override
+            // capability. The SPA reads them only when the row is in an
+            // arrived/converted state; pre-arrival edits are gated by
+            // `consultations.edit` alone, so the flag stays true for the
+            // legacy admin's interpretation but the per-row arrival check
+            // belongs on the consumer.
+            'update_consultation_service' => $canEdit && Gate::allows('consultations.edit.service.after_arrived'),
+            'update_consultation_doctor' => $canEdit && Gate::allows('consultations.edit.doctor.after_arrived'),
+            'update_consultation_schedule' => $canEdit && Gate::allows('consultations.edit.schedule.after_arrived'),
         ];
     }
 }

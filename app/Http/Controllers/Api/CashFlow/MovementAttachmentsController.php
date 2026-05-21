@@ -126,9 +126,9 @@ class MovementAttachmentsController extends Controller
         $row = MovementAttachment::forAccount((int) $user->account_id)->findOrFail($id);
 
         $isOwner = (int) $row->uploaded_by === (int) $user->id;
-        $hasView = $user->can('cashflow_staff_advance_view')
-            || $user->can('cashflow_transfer_view')
-            || $user->can('cashflow_manage');
+        $hasView = $user->can('cashflow.staff_advance.view')
+            || $user->can('cashflow.transfer.view')
+            || $user->can('cashflow.manage');
         if (! $isOwner && ! $hasView) {
             abort(403);
         }
@@ -152,10 +152,10 @@ class MovementAttachmentsController extends Controller
         $row = MovementAttachment::forAccount($accountId)->findOrFail($id);
 
         $isOwner = (int) $row->uploaded_by === (int) $user->id;
-        $canEdit = $user->can('cashflow_staff_advance_create')
-            || $user->can('cashflow_staff_return_create')
-            || $user->can('cashflow_staff_transfer_create')
-            || $user->can('cashflow_manage');
+        $canEdit = $user->can('cashflow.staff_advance.create')
+            || $user->can('cashflow.staff_return.create')
+            || $user->can('cashflow.staff_transfer.create')
+            || $user->can('cashflow.manage');
         if (! $isOwner && ! $canEdit) {
             abort(403);
         }

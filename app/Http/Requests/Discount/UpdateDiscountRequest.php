@@ -12,7 +12,7 @@ final class UpdateDiscountRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()?->can('discounts_edit') ?? false;
+        return $this->user()?->can('discounts.edit') ?? false;
     }
 
     public function rules(): array
@@ -89,7 +89,7 @@ final class UpdateDiscountRequest extends FormRequest
                 'status'  => false,
                 'message' => 'You are not authorized to access this resource.',
                 'data'    => null,
-            ], 401)
+            ], 403)
         );
     }
 }

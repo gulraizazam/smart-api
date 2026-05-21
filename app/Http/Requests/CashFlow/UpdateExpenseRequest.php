@@ -17,7 +17,7 @@ class UpdateExpenseRequest extends FormRequest
         $user = Auth::user();
         if (! $user) return false;
         // Standard edit gate — admins / editors get through here.
-        if ($user->can('cashflow_expense_edit')) {
+        if ($user->can('cashflow.expense.edit')) {
             return true;
         }
         // Creator escape hatch (2026-05-14): the row's creator can

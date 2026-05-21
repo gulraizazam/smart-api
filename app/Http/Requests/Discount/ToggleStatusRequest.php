@@ -12,7 +12,20 @@ final class ToggleStatusRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()?->can('discounts_active') ?? false;
+        $user = $this->user();
+        if (! $user) {
+            return false;
+        }
+
+        // The legacy umbrella `discounts_active` covered both directions.
+        // The new catalog splits it: `discounts.activate` to flip status
+        // ON, `discounts.deactivate` to flip it OFF. Resolve the perm
+        // from the requested status so a role can have one without the
+        // other (e.g. an operator who can pause but not reactivate).
+        $targetStatus = (int) $this->input('status');
+        $needed = $targetStatus === 1 ? 'discounts.activate' : 'discounts.deactivate';
+
+        return $user->can($needed);
     }
 
     public function rules(): array
@@ -51,7 +64,7 @@ final class ToggleStatusRequest extends FormRequest
                 'status'  => false,
                 'message' => 'You are not authorized to access this resource.',
                 'data'    => null,
-            ], 401)
+            ], 403)
         );
     }
 }

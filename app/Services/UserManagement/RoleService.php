@@ -83,10 +83,10 @@ class RoleService
     {
         $notInNamesForNonSuper = [
             'view_inactive_users', 'view_inactive_appointment_statuses', 'view_inactive_centres',
-            'view_inactive_cities', 'view_inactive_discounts', 'view_inactive_doctors',
+            'view_inactive_cities', 'discounts.list.view_inactive', 'view_inactive_doctors',
             'view_inactive_lead_sources', 'leads.list.view_inactive', 'view_inactive_lead_statuses',
             'view_inactive_machine_types', 'packages.list.view_inactive', 'patients.list.view_inactive',
-            'view_inactive_payment_modes', 'plans.list.view_inactive', 'view_inactive_products',
+            'payment_modes.list.view_inactive', 'plans.list.view_inactive', 'view_inactive_products',
             'view_inactive_regions', 'view_inactive_custom_forms', 'view_inactive_towns',
             'view_inactive_resources', 'view_inactive_rota', 'view_inactive_rotas',
             'services.list.view_inactive', 'view_inactive_sms_templates',

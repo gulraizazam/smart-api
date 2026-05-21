@@ -30,6 +30,14 @@ final class RefundsController extends Controller
 
     public function datatable(RefundDatatableRequest $request): JsonResponse
     {
+        if (Gate::denies('refunds.list.view')) {
+            return response()->json([
+                'status' => false,
+                'message' => 'You are not authorized to access this resource.',
+                'data' => null,
+            ], 403);
+        }
+
         try {
             $this->handleFilterCancellation($request, 'plansrefunds');
 
@@ -137,11 +145,11 @@ final class RefundsController extends Controller
      * Lightweight list of a patient's plans (id + name) for the refund
      * creation dialog. The legacy `refunds.getplans` endpoint only returns
      * names, which is unusable for picking a plan to refund against. Gate
-     * this on `refunds_create` since it's only used by the refund flow.
+     * this on `refunds.create` since it's only used by the refund flow.
      */
     public function plansForPatient(int $patientId): JsonResponse
     {
-        if (Gate::denies('refunds_create')) {
+        if (Gate::denies('refunds.create')) {
             return response()->json([
                 'status' => false,
                 'message' => 'You are not authorized to access this resource.',
@@ -183,7 +191,7 @@ final class RefundsController extends Controller
 
     public function calculate(int $id): JsonResponse
     {
-        if (Gate::denies('refunds_create')) {
+        if (Gate::denies('refunds.create')) {
             return response()->json([
                 'status' => false,
                 'message' => 'You are not authorized to access this resource.',
@@ -227,6 +235,16 @@ final class RefundsController extends Controller
 
     public function store(StoreRefundRequest $request): JsonResponse
     {
+        // StoreRefundRequest::authorize() already checks refunds.refund OR
+        // patients_refund_refund; mirror the gate here for visibility.
+        if (Gate::denies('refunds.refund') && Gate::denies('patients_refund_refund')) {
+            return response()->json([
+                'status' => false,
+                'message' => 'You are not authorized to access this resource.',
+                'data' => null,
+            ], 403);
+        }
+
         try {
             $result = $this->refundService->createRefund(
                 $request->validated(),
@@ -269,7 +287,7 @@ final class RefundsController extends Controller
      */
     public function history(int $packageId): JsonResponse
     {
-        if (Gate::denies('refunds_manage')) {
+        if (Gate::denies('refunds.detail.view')) {
             return response()->json([
                 'status' => false,
                 'message' => 'You are not authorized to access this resource.',
@@ -338,7 +356,7 @@ final class RefundsController extends Controller
 
     public function detail(int $id): JsonResponse
     {
-        if (Gate::denies('refunds_manage')) {
+        if (Gate::denies('refunds.detail.view')) {
             return response()->json([
                 'status' => false,
                 'message' => 'You are not authorized to access this resource.',

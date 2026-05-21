@@ -36,7 +36,7 @@
 
                         <div class="card-toolbar">
                             <!--begin::Dropdown-->
-                            @if(Gate::allows('discounts_destroy'))
+                            @if(Gate::allows('discounts.destroy'))
                                 <div class="delete-records d-none">
                                     <span>Selected Rows: <span class="checkbox-count"></span></span>
                                     <a id="delete-table-rows" href="javascript:void(0);" class="btn btn-danger font-weight-bolder">
@@ -45,7 +45,7 @@
                                 </div>&nbsp;&nbsp;&nbsp;
                             @endif
 
-                            @if(Gate::allows('discounts_create'))
+                            @if(Gate::allows('discounts.create'))
                                 <a href="javascript:void(0);" onclick="createDiscount('{{ route('admin.discounts.create') }}');" class="btn btn-primary" data-toggle="modal" data-target="#modal_add_discounts">
                                     <i class="la la-plus"></i>
                                     Add Discount

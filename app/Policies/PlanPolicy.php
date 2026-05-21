@@ -109,7 +109,7 @@ class PlanPolicy
      */
     public function allocateDiscount(User $user): bool
     {
-        return $user->can('discounts_allocate');
+        return $user->can('discounts.allocate');
     }
 
     /**

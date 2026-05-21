@@ -13,7 +13,7 @@ class UserVoucherStoreRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return Gate::allows('vouchers_create');
+        return Gate::allows('vouchers.create');
     }
 
     public function rules(): array

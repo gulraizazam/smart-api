@@ -25,8 +25,8 @@ class UserVouchersController extends Controller
 
     public function index(): \Illuminate\View\View
     {
-        if (!Gate::allows('vouchers_manage')) {
-            return abort(401);
+        if (!Gate::allows('vouchers.list.view')) {
+            return abort(403);
         }
 
         return view('admin.vouchers.index');
@@ -34,6 +34,13 @@ class UserVouchersController extends Controller
 
     public function datatable(Request $request, ?int $patientId = null): JsonResponse
     {
+        // Patient-card embed (patientId != null) is gated by the parent
+        // route's `patients.vouchers.view` perm via api.php middleware;
+        // the global module datatable requires the catalogue perm.
+        if ($patientId === null && !Gate::allows('vouchers.list.view')) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
+        }
+
         try {
             $filters = getFilters($request->all());
 
@@ -79,8 +86,8 @@ class UserVouchersController extends Controller
 
     public function store(UserVoucherStoreRequest $request): JsonResponse
     {
-        if (!Gate::allows('vouchers_create')) {
-            return $this->errorResponse('You are not authorized to access this resource.', 401);
+        if (!Gate::allows('vouchers.create')) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
         }
 
         try {
@@ -94,8 +101,8 @@ class UserVouchersController extends Controller
 
     public function edit(int $id): JsonResponse
     {
-        if (!Gate::allows('vouchers_edit')) {
-            return $this->errorResponse('You are not authorized to access this resource.', 401);
+        if (!Gate::allows('vouchers.edit')) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
         }
 
         try {
@@ -117,8 +124,8 @@ class UserVouchersController extends Controller
 
     public function update(UserVoucherUpdateRequest $request, int $id): JsonResponse
     {
-        if (!Gate::allows('vouchers_edit')) {
-            return $this->errorResponse('You are not authorized to access this resource.', 401);
+        if (!Gate::allows('vouchers.edit')) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
         }
 
         try {
@@ -134,8 +141,8 @@ class UserVouchersController extends Controller
 
     public function destroy(int $id): JsonResponse
     {
-        if (!Gate::allows('vouchers_destroy')) {
-            return $this->errorResponse('You are not authorized to access this resource.', 401);
+        if (!Gate::allows('vouchers.destroy')) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
         }
 
         try {
@@ -151,12 +158,14 @@ class UserVouchersController extends Controller
 
     public function show(Request $request, int $id): \Illuminate\View\View|JsonResponse
     {
-        if (!Gate::allows('vouchers_manage')) {
+        // Single-voucher view gets its own perm (`vouchers.detail.view`);
+        // legacy umbrella `vouchers_manage` covered both list and detail.
+        if (!Gate::allows('vouchers.detail.view')) {
             if ($request->ajax()) {
-                return $this->errorResponse('You are not authorized to access this resource.', 401);
+                return $this->errorResponse('You are not authorized to access this resource.', 403);
             }
 
-            return abort(401);
+            return abort(403);
         }
 
         try {

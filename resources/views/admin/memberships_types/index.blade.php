@@ -37,7 +37,7 @@
                         <div class="card-toolbar">
                             
 
-                            @if(Gate::allows('membershiptypes_create'))
+                            @if(Gate::allows('membership_types.create'))
                                 <a href="javascript:void(0);" class="btn btn-primary" data-toggle="modal" data-target="#modal_add_membershiptypes">
                                     <i class="la la-plus"></i>
                                     Add New

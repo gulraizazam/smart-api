@@ -29,6 +29,9 @@ class CashFlowDashboardController extends Controller
      */
     public function dashboardData(Request $request): JsonResponse
     {
+        if (Gate::denies('cashflow.dashboard.view')) {
+            return response()->json(['success' => false, 'message' => 'You are not authorized to access this resource.', 'data' => null], 403);
+        }
 
         try {
 
@@ -44,7 +47,7 @@ class CashFlowDashboardController extends Controller
 
             // Add accountant widgets if user is accountant
 
-            if (Gate::allows('cashflow_expense_create') && !Gate::allows('cashflow_settings')) {
+            if (Gate::allows('cashflow.expense.create') && !Gate::allows('cashflow.settings.manage')) {
 
                 $data['accountant_widgets'] = $this->dashboardService->getAccountantWidgets($accountId, Auth::id());
 
@@ -73,6 +76,8 @@ class CashFlowDashboardController extends Controller
      */
     public function dashboardSnapshot(Request $request): JsonResponse
     {
+        if (Gate::denies('cashflow.dashboard.view')) { return response()->json(['success' => false, 'message' => 'You are not authorized to access this resource.', 'data' => null], 403); }
+
         try {
 
             $accountId = Auth::user()->account_id;
@@ -108,7 +113,7 @@ class CashFlowDashboardController extends Controller
 
         try {
 
-            if (!Gate::allows('cashflow_settings')) {
+            if (!Gate::allows('cashflow.settings.manage')) {
 
                 throw CashflowException::unauthorized('run reconciliation');
 
@@ -143,6 +148,8 @@ class CashFlowDashboardController extends Controller
      */
     public function fdmData(Request $request): JsonResponse
     {
+
+        if (Gate::denies('cashflow.fdm.view')) { return response()->json(['success' => false, 'message' => 'You are not authorized to access this resource.', 'data' => null], 403); }
 
         try {
 
@@ -756,6 +763,8 @@ class CashFlowDashboardController extends Controller
     public function notificationsIndex(): JsonResponse
     {
 
+        if (! Gate::any(['cashflow.dashboard.view', 'cashflow.manage', 'cashflow.fdm.view'])) { return response()->json(['success' => false, 'message' => 'You are not authorized to access this resource.', 'data' => null], 403); }
+
         try {
 
             $userId = Auth::id();
@@ -786,6 +795,8 @@ class CashFlowDashboardController extends Controller
      */
     public function notificationsMarkRead(Request $request): JsonResponse
     {
+
+        if (! Gate::any(['cashflow.dashboard.view', 'cashflow.manage', 'cashflow.fdm.view'])) { return response()->json(['success' => false, 'message' => 'You are not authorized to access this resource.', 'data' => null], 403); }
 
         try {
 
@@ -821,6 +832,8 @@ class CashFlowDashboardController extends Controller
      */
     public function lookups(): JsonResponse
     {
+
+        if (! Gate::any(['cashflow.dashboard.view', 'cashflow.expense.view', 'cashflow.transfer.view', 'cashflow.vendor.view', 'cashflow.staff_advance.view', 'cashflow.reports.view', 'cashflow.settings.manage', 'cashflow.manage'])) { return response()->json(['success' => false, 'message' => 'You are not authorized to access this resource.', 'data' => null], 403); }
 
         try {
 

@@ -38,15 +38,15 @@
                         <div class="card-toolbar">
                             <!--begin::Dropdown-->
                             
-                            @if(Gate::allows('memberships_create'))
+                            @if(Gate::allows('memberships.codes.manage'))
                                 <a href="javascript:void(0);" class="btn btn-success" data-toggle="modal" data-target="#modal_generate_codes">
                                     <i class="la la-layer-group"></i>
                                     Create Bulk Codes
                                 </a>
                             @endif
                             &nbsp;&nbsp;
-                          
-                            @if(Gate::allows('memberships_create'))
+
+                            @if(Gate::allows('memberships.create'))
                                 <a href="javascript:void(0);" id="create_memberships" onclick="createMembership('{{ route('admin.memberships.create') }}');" class="btn btn-primary" data-toggle="modal" data-target="#modal_add_memberships">
                                     <i class="la la-plus"></i>
                                     Add New

@@ -26,6 +26,8 @@ class CashFlowReportsController extends Controller
     public function reportCashFlowStatement(Request $request): JsonResponse
     {
 
+        if (Gate::denies('cashflow.reports.view')) { return response()->json(['success' => false, 'message' => 'You are not authorized to access this resource.'], 403); }
+
         try {
 
             $accountId = Auth::user()->account_id;
@@ -53,6 +55,8 @@ class CashFlowReportsController extends Controller
     public function reportBranchComparison(Request $request): JsonResponse
     {
 
+        if (Gate::denies('cashflow.reports.view')) { return response()->json(['success' => false, 'message' => 'You are not authorized to access this resource.'], 403); }
+
         try {
 
             $accountId = Auth::user()->account_id;
@@ -77,6 +81,8 @@ class CashFlowReportsController extends Controller
      */
     public function reportCategoryTrend(Request $request): JsonResponse
     {
+
+        if (Gate::denies('cashflow.reports.view')) { return response()->json(['success' => false, 'message' => 'You are not authorized to access this resource.'], 403); }
 
         try {
 
@@ -103,6 +109,8 @@ class CashFlowReportsController extends Controller
     public function reportVendorOutstanding(): JsonResponse
     {
 
+        if (Gate::denies('cashflow.reports.view')) { return response()->json(['success' => false, 'message' => 'You are not authorized to access this resource.'], 403); }
+
         try {
 
             $accountId = Auth::user()->account_id;
@@ -127,6 +135,8 @@ class CashFlowReportsController extends Controller
      */
     public function reportStaffAdvance(): JsonResponse
     {
+
+        if (Gate::denies('cashflow.reports.view')) { return response()->json(['success' => false, 'message' => 'You are not authorized to access this resource.'], 403); }
 
         try {
 
@@ -153,6 +163,8 @@ class CashFlowReportsController extends Controller
     public function reportDailyMovement(Request $request): JsonResponse
     {
 
+        if (Gate::denies('cashflow.reports.view')) { return response()->json(['success' => false, 'message' => 'You are not authorized to access this resource.'], 403); }
+
         try {
 
             $accountId = Auth::user()->account_id;
@@ -177,6 +189,8 @@ class CashFlowReportsController extends Controller
      */
     public function reportTransferLog(Request $request): JsonResponse
     {
+
+        if (Gate::denies('cashflow.reports.view')) { return response()->json(['success' => false, 'message' => 'You are not authorized to access this resource.'], 403); }
 
         try {
 
@@ -203,6 +217,8 @@ class CashFlowReportsController extends Controller
     public function reportFlaggedEntries(Request $request): JsonResponse
     {
 
+        if (Gate::denies('cashflow.reports.view')) { return response()->json(['success' => false, 'message' => 'You are not authorized to access this resource.'], 403); }
+
         try {
 
             $accountId = Auth::user()->account_id;
@@ -227,6 +243,8 @@ class CashFlowReportsController extends Controller
      */
     public function reportDormantVendors(): JsonResponse
     {
+
+        if (Gate::denies('cashflow.reports.view')) { return response()->json(['success' => false, 'message' => 'You are not authorized to access this resource.'], 403); }
 
         try {
 
@@ -255,7 +273,7 @@ class CashFlowReportsController extends Controller
 
         try {
 
-            if (!Gate::allows('cashflow_reports_export')) {
+            if (!Gate::allows('cashflow.reports.export')) {
 
                 throw CashflowException::unauthorized('export reports');
 

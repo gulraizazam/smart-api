@@ -294,8 +294,8 @@ class RefundsController extends Controller
     public function detail(int $id): \Illuminate\View\View
     {
 
-        if (! Gate::allows('refunds_manage') || ! Gate::allows('users_manage')) {
-            return abort(401);
+        if (! Gate::allows('refunds.detail.view') || ! Gate::allows('users_manage')) {
+            return abort(403);
         }
         $patient_name = User::find($id);
         $package_advances = PackageAdvances::where([

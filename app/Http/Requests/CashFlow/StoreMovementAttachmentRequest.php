@@ -26,10 +26,10 @@ class StoreMovementAttachmentRequest extends FormRequest
             return false;
         }
 
-        return $user->can('cashflow_staff_advance_create')
-            || $user->can('cashflow_staff_return_create')
-            || $user->can('cashflow_staff_transfer_create')
-            || $user->can('cashflow_manage');
+        return $user->can('cashflow.staff_advance.create')
+            || $user->can('cashflow.staff_return.create')
+            || $user->can('cashflow.staff_transfer.create')
+            || $user->can('cashflow.manage');
     }
 
     public function rules(): array

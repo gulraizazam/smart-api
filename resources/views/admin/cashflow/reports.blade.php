@@ -32,7 +32,7 @@
                                 <button id="btn-run-report" class="btn btn-primary mr-2"><i class="la la-play"></i> Generate</button>
                             </div>
                             <div>
-                                @can('cashflow_reports_export')
+                                @can('cashflow.reports.export')
                                 <button id="btn-export-csv" class="btn btn-light-success"><i class="la la-file-excel"></i> Export Excel</button>
                                 <button id="btn-export-pdf" class="btn btn-light-danger ml-2"><i class="la la-file-pdf"></i> Export PDF</button>
                                 @endcan

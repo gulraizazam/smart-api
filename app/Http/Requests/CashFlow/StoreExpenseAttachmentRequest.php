@@ -30,9 +30,9 @@ class StoreExpenseAttachmentRequest extends FormRequest
             return false;
         }
 
-        return $user->can('cashflow_expense_create')
-            || $user->can('cashflow_expense_edit')
-            || $user->can('cashflow_manage');
+        return $user->can('cashflow.expense.create')
+            || $user->can('cashflow.expense.edit')
+            || $user->can('cashflow.manage');
     }
 
     public function rules(): array

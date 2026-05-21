@@ -40,6 +40,8 @@ class CashFlowExpensesController extends Controller
     public function expensesData(Request $request): JsonResponse
     {
 
+        if (! Gate::any(['cashflow.expense.view', 'cashflow.manage'])) { return response()->json(['success' => false, 'message' => 'You are not authorized to access this resource.', 'data' => null], 403); }
+
         try {
 
             $accountId = Auth::user()->account_id;
@@ -98,6 +100,8 @@ class CashFlowExpensesController extends Controller
      */
     public function expensesFormData(): JsonResponse
     {
+
+        if (! Gate::any(['cashflow.expense.create', 'cashflow.expense.edit', 'cashflow.manage'])) { return response()->json(['success' => false, 'message' => 'You are not authorized to access this resource.', 'data' => null], 403); }
 
         try {
 
@@ -201,7 +205,7 @@ class CashFlowExpensesController extends Controller
     // closes the loop. See ExpenseService::reject / approve.
     public function expensesApprove(int $id): JsonResponse
     {
-        if (! Auth::user()->can('cashflow_expense_approve')) {
+        if (! Auth::user()->can('cashflow.expense.approve')) {
             abort(403);
         }
         $accountId = (int) Auth::user()->account_id;
@@ -267,6 +271,8 @@ class CashFlowExpensesController extends Controller
     public function expensesEdit(UpdateExpenseRequest $request, int $id): JsonResponse
     {
 
+        if (! Gate::any(['cashflow.expense.view', 'cashflow.expense.edit', 'cashflow.manage'])) { return response()->json(['success' => false, 'message' => 'You are not authorized to access this resource.', 'data' => null], 403); }
+
         try {
 
             $accountId = Auth::user()->account_id;
@@ -298,7 +304,7 @@ class CashFlowExpensesController extends Controller
 
         try {
 
-            if (!Gate::allows('cashflow_expense_unflag')) {
+            if (!Gate::allows('cashflow.expense.unflag')) {
 
                 throw CashflowException::unauthorized('unflag expenses');
 
@@ -389,7 +395,7 @@ class CashFlowExpensesController extends Controller
 
         try {
 
-            if (!Gate::allows('cashflow_audit_view')) {
+            if (!Gate::allows('cashflow.audit.view')) {
 
                 throw CashflowException::unauthorized('view audit trail');
 
@@ -428,7 +434,7 @@ class CashFlowExpensesController extends Controller
 
         try {
 
-            if (!Gate::allows('cashflow_expense_export')) {
+            if (!Gate::allows('cashflow.expense.export')) {
 
                 throw CashflowException::unauthorized('export expenses');
 

@@ -18,7 +18,9 @@ final class StoreRefundRequest extends FormRequest
             return false;
         }
 
-        return $user->can('refunds_create') || $user->can('patients_refund_refund');
+        // Either side is enough — global module refund perm or the
+        // patient-card refund perm from the Patients audit.
+        return $user->can('refunds.refund') || $user->can('patients_refund_refund');
     }
 
     public function rules(): array

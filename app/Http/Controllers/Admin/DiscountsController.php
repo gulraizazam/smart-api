@@ -34,8 +34,8 @@ class DiscountsController extends Controller
      */
     public function index(): \Illuminate\View\View
     {
-        if (!Gate::allows('discounts_manage')) {
-            return abort(401);
+        if (!Gate::allows('discounts.list.view')) {
+            return abort(403);
         }
 
         return view('admin.discounts.index');
@@ -49,8 +49,8 @@ class DiscountsController extends Controller
     public function create(): \Illuminate\Http\JsonResponse
     {
 
-        if (!Gate::allows('discounts_create')) {
-            return $this->errorResponse('You are not authorized to access this resource.', 401);
+        if (!Gate::allows('discounts.create')) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
         }
 
         try {
@@ -78,8 +78,8 @@ class DiscountsController extends Controller
     public function store(StoreDiscountRequest $request): \Illuminate\Http\JsonResponse
     {
 
-        if (!Gate::allows('discounts_create')) {
-            return $this->errorResponse('You are not authorized to access this resource.', 401);
+        if (!Gate::allows('discounts.create')) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
         }
 
         try {
@@ -122,6 +122,9 @@ class DiscountsController extends Controller
      */
     public function datatable(Request $request): \Illuminate\Http\JsonResponse
     {
+        if (!Gate::allows('discounts.list.view')) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
+        }
 
         try {
 
@@ -133,6 +136,11 @@ class DiscountsController extends Controller
             $apply_filter = checkFilters($filters, $filename);
 
             if (hasFilter($filters, 'delete')) {
+                // Bulk delete via filter — gated separately so a viewer
+                // can't slip in a `delete=1,2,3` query and wipe rows.
+                if (!Gate::allows('discounts.destroy')) {
+                    return $this->errorResponse('You are not authorized to access this resource.', 403);
+                }
                 $ids = explode(',', $filters['delete']);
                 $Discounts = Discounts::whereIn('id', $ids);
                 if ($Discounts) {
@@ -146,7 +154,7 @@ class DiscountsController extends Controller
 
             $total_query = Discounts::select('id')->where('discount_type',"!=",'voucher');
             if (count($where)) {
-                if (\Illuminate\Support\Facades\Gate::allows('view_inactive_discounts')) {
+                if (\Illuminate\Support\Facades\Gate::allows('discounts.list.view_inactive')) {
                     $total_query->where($where);
                 } else {
                     $total_query->where($where)->where('active', 1);
@@ -167,7 +175,7 @@ class DiscountsController extends Controller
             }
 
             if (count($where)) {
-                if (\Illuminate\Support\Facades\Gate::allows('view_inactive_discounts')) {
+                if (\Illuminate\Support\Facades\Gate::allows('discounts.list.view_inactive')) {
                     $query->where($where);
                 } else {
                     $query->where($where)->where('active', 1);
@@ -193,12 +201,12 @@ class DiscountsController extends Controller
             }
 
             $records['permissions'] = [
-                'edit' => Gate::allows('discounts_edit'),
-                'delete' => Gate::allows('discounts_destroy'),
-                'active' => Gate::allows('discounts_active'),
-                'inactive' => Gate::allows('discounts_inactive'),
-                'create' => Gate::allows('discounts_create'),
-                'allocate' => Gate::allows('discounts_allocate'),
+                'edit'     => Gate::allows('discounts.edit'),
+                'delete'   => Gate::allows('discounts.destroy'),
+                'active'   => Gate::allows('discounts.activate'),
+                'inactive' => Gate::allows('discounts.deactivate'),
+                'create'   => Gate::allows('discounts.create'),
+                'allocate' => Gate::allows('discounts.allocate'),
             ];
 
             return response()->json($records);
@@ -457,8 +465,8 @@ class DiscountsController extends Controller
      */
     public function edit(int $id): \Illuminate\Http\JsonResponse
     {
-        if (!Gate::allows('discounts_edit')) {
-            return $this->errorResponse('You are not authorized to access this resource.', 401);
+        if (!Gate::allows('discounts.edit')) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
         }
 
         try {
@@ -523,8 +531,8 @@ class DiscountsController extends Controller
     public function update(StoreDiscountRequest $request, int $id): \Illuminate\Http\JsonResponse
     {
 
-        if (!Gate::allows('discounts_edit')) {
-            return $this->errorResponse('You are not authorized to access this resource.', 401);
+        if (!Gate::allows('discounts.edit')) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
         }
 
         $data = $request->all();
@@ -562,8 +570,13 @@ class DiscountsController extends Controller
      */
     public function status(Request $request): \Illuminate\Http\JsonResponse
     {
-        if (!Gate::allows('discounts_active')) {
-            return $this->errorResponse('You are not authorized to access this resource.', 401);
+        // Legacy `discounts_active` covered both directions; the new
+        // catalog splits activate/deactivate so a role can hold one
+        // without the other. Pick the perm from the requested status.
+        $targetStatus = (int) $request->input('status');
+        $needed = $targetStatus === 1 ? 'discounts.activate' : 'discounts.deactivate';
+        if (!Gate::allows($needed)) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
         }
 
         try {
@@ -592,8 +605,8 @@ class DiscountsController extends Controller
      */
     public function destroy(int $id): \Illuminate\Http\JsonResponse
     {
-        if (!Gate::allows('discounts_destroy')) {
-            return $this->errorResponse('You are not authorized to access this resource.', 401);
+        if (!Gate::allows('discounts.destroy')) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
         }
 
         try {
@@ -616,8 +629,8 @@ class DiscountsController extends Controller
      */
     public function displayDlocation(int $id): \Illuminate\Http\JsonResponse
     {
-        if (!Gate::allows('discounts_allocate')) {
-            return $this->errorResponse('You are not authorized to access this resource.', 401);
+        if (!Gate::allows('discounts.allocate')) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
         }
 
         try {
@@ -668,8 +681,8 @@ class DiscountsController extends Controller
      */
     public function getDservices(Request $request): \Illuminate\Http\JsonResponse
     {
-        if (!Gate::allows('discounts_allocate')) {
-            return $this->errorResponse('You are not authorized to access this resource.', 401);
+        if (!Gate::allows('discounts.allocate')) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
         }
         $discount_info = Discounts::find($request->discount_id);
         if ($discount_info->discount_type == Config::get('constants.Service')) {
@@ -689,8 +702,8 @@ class DiscountsController extends Controller
     }
     public function getDiscountServices(Request $request): \Illuminate\Http\JsonResponse
     {
-        if (!Gate::allows('discounts_allocate')) {
-            return $this->errorResponse('You are not authorized to access this resource.', 401);
+        if (!Gate::allows('discounts.allocate')) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
         }
 
         $serive = ServiceWidget::generateServiceArrayDiscount($request, Auth::user()->account_id);
@@ -707,8 +720,8 @@ class DiscountsController extends Controller
      */
     public function getServicesForConfigurable(): \Illuminate\Http\JsonResponse
     {
-        if (!Gate::allows('discounts_create') && !Gate::allows('discounts_edit')) {
-            return $this->errorResponse('You are not authorized to access this resource.', 401);
+        if (!Gate::allows('discounts.create') && !Gate::allows('discounts.edit')) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
         }
 
         try {
@@ -729,8 +742,8 @@ class DiscountsController extends Controller
      */
     public function allocateConfigurable(AllocateConfigurableDiscountRequest $request): \Illuminate\Http\JsonResponse
     {
-        if (!Gate::allows('discounts_allocate')) {
-            return $this->errorResponse('You are not authorized to access this resource.', 401);
+        if (!Gate::allows('discounts.allocate')) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
         }
 
         try {
@@ -818,8 +831,8 @@ class DiscountsController extends Controller
      */
     public function saveDservices(SaveDiscountServicesRequest $request): \Illuminate\Http\JsonResponse
     {
-        if (!Gate::allows('discounts_allocate')) {
-            return $this->errorResponse('You are not authorized to access this resource.', 401);
+        if (!Gate::allows('discounts.allocate')) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
         }
 
         $location_id = $request->location_id;
@@ -972,8 +985,8 @@ class DiscountsController extends Controller
     public function deleteDservice(Request $request): \Illuminate\Http\JsonResponse
     {
 
-        if (!Gate::allows('discounts_allocate')) {
-            return $this->errorResponse('You are not authorized to access this resource.', 401);
+        if (!Gate::allows('discounts.allocate')) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
         }
 
         DiscountHasLocations::find($request->id)?->delete();
@@ -990,8 +1003,8 @@ class DiscountsController extends Controller
      */
     public function deleteDserviceGroup(Request $request): \Illuminate\Http\JsonResponse
     {
-        if (!Gate::allows('discounts_allocate')) {
-            return $this->errorResponse('You are not authorized to access this resource.', 401);
+        if (!Gate::allows('discounts.allocate')) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
         }
 
         $ids = explode(',', $request->ids);

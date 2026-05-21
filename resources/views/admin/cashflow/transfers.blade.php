@@ -11,7 +11,7 @@
                             <h3 class="card-label"><i class="la la-exchange-alt mr-2"></i>Cash Transfers</h3>
                         </div>
                         <div class="card-toolbar">
-                            @if(Gate::allows('cashflow_transfer_create'))
+                            @if(Gate::allows('cashflow.transfer.create'))
                                 <button id="btn-add-transfer" class="btn btn-primary" data-toggle="modal" data-target="#modal_transfer">
                                     <i class="la la-plus"></i> New Transfer
                                 </button>
@@ -252,10 +252,10 @@
     @push('js')
         <script>
             var cfPerms = {
-                canCreate: {{ Gate::allows('cashflow_transfer_create') ? 'true' : 'false' }},
-                canEdit: {{ Gate::allows('cashflow_transfer_edit') ? 'true' : 'false' }},
-                canVoid: {{ Gate::allows('cashflow_transfer_void') ? 'true' : 'false' }},
-                canAudit: {{ Gate::allows('cashflow_audit_view') ? 'true' : 'false' }}
+                canCreate: {{ Gate::allows('cashflow.transfer.create') ? 'true' : 'false' }},
+                canEdit: {{ Gate::allows('cashflow.transfer.edit') ? 'true' : 'false' }},
+                canVoid: {{ Gate::allows('cashflow.transfer.void') ? 'true' : 'false' }},
+                canAudit: {{ Gate::allows('cashflow.audit.view') ? 'true' : 'false' }}
             };
         </script>
         <script src="{{ asset('assets/js/pages/cashflow/transfers.js') }}"></script>

@@ -36,7 +36,7 @@
 
                         <div class="card-toolbar">
 
-                            @if (Gate::allows('invoices_log_excel'))
+                            @if (Gate::allows('invoices.log.view'))
                                 <a href="{{ route('admin.invoices.invoice_log', [ $id, 'excel']) }}" class="btn btn-primary">
                                     <i class="la la-file-export"></i>
                                     Excel

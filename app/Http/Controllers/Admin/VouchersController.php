@@ -25,8 +25,8 @@ class VouchersController extends Controller
 
     public function index(): View
     {
-        if (! Gate::allows('voucher_types_manage')) {
-            return abort(401);
+        if (! Gate::allows('voucher_types.list.view')) {
+            return abort(403);
         }
 
         return view('admin.voucherTypes.index');
@@ -34,8 +34,8 @@ class VouchersController extends Controller
 
     public function create(): JsonResponse
     {
-        if (! Gate::allows('voucher_types_create')) {
-            return $this->errorResponse('You are not authorized to access this resource.', 401);
+        if (! Gate::allows('voucher_types.create')) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
         }
 
         try {
@@ -49,8 +49,8 @@ class VouchersController extends Controller
 
     public function store(StoreVoucherTypeRequest $request): JsonResponse
     {
-        if (! Gate::allows('voucher_types_create')) {
-            return $this->errorResponse('You are not authorized to access this resource.', 401);
+        if (! Gate::allows('voucher_types.create')) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
         }
 
         try {
@@ -64,6 +64,10 @@ class VouchersController extends Controller
 
     public function datatable(Request $request): JsonResponse
     {
+        if (! Gate::allows('voucher_types.list.view')) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
+        }
+
         try {
             $filters = getFilters($request->all());
             $applyFilter = checkFilters($filters, 'vouchers');
@@ -97,8 +101,8 @@ class VouchersController extends Controller
 
     public function edit(int $id): JsonResponse
     {
-        if (! Gate::allows('voucher_types_edit')) {
-            return $this->errorResponse('You are not authorized to access this resource.', 401);
+        if (! Gate::allows('voucher_types.edit')) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
         }
 
         try {
@@ -116,8 +120,8 @@ class VouchersController extends Controller
 
     public function update(UpdateVoucherTypeRequest $request, int $id): JsonResponse
     {
-        if (! Gate::allows('voucher_types_edit')) {
-            return $this->errorResponse('You are not authorized to access this resource.', 401);
+        if (! Gate::allows('voucher_types.edit')) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
         }
 
         try {
@@ -133,8 +137,13 @@ class VouchersController extends Controller
 
     public function status(VoucherTypeStatusRequest $request): JsonResponse
     {
-        if (! Gate::allows('voucher_types_active')) {
-            return $this->errorResponse('You are not authorized to access this resource.', 401);
+        // Legacy `voucher_types_active` covered both directions; the new
+        // catalog splits activate/deactivate so a role can hold one
+        // without the other. Pick the perm from the requested status.
+        $targetStatus = (int) $request->validated('status');
+        $needed = $targetStatus === 1 ? 'voucher_types.activate' : 'voucher_types.deactivate';
+        if (! Gate::allows($needed)) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
         }
 
         try {
@@ -153,8 +162,8 @@ class VouchersController extends Controller
 
     public function destroy(int $id): JsonResponse
     {
-        if (! Gate::allows('voucher_types_destroy')) {
-            return $this->errorResponse('You are not authorized to access this resource.', 401);
+        if (! Gate::allows('voucher_types.destroy')) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
         }
 
         try {
@@ -170,8 +179,8 @@ class VouchersController extends Controller
 
     public function displayDlocation(int $id): JsonResponse
     {
-        if (! Gate::allows('voucher_types_allocate')) {
-            return $this->errorResponse('You are not authorized to access this resource.', 401);
+        if (! Gate::allows('voucher_types.allocate')) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
         }
 
         try {
@@ -185,8 +194,8 @@ class VouchersController extends Controller
 
     public function getDservices(Request $request): JsonResponse
     {
-        if (! Gate::allows('voucher_types_allocate')) {
-            return $this->errorResponse('You are not authorized to access this resource.', 401);
+        if (! Gate::allows('voucher_types.allocate')) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
         }
 
         try {
@@ -200,8 +209,8 @@ class VouchersController extends Controller
 
     public function getDiscountServices(Request $request): JsonResponse
     {
-        if (! Gate::allows('voucher_types_allocate')) {
-            return $this->errorResponse('You are not authorized to access this resource.', 401);
+        if (! Gate::allows('voucher_types.allocate')) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
         }
 
         try {
@@ -215,8 +224,8 @@ class VouchersController extends Controller
 
     public function saveDservices(SaveVoucherTypeServiceRequest $request): JsonResponse
     {
-        if (! Gate::allows('voucher_types_allocate')) {
-            return $this->errorResponse('You are not authorized to access this resource.', 401);
+        if (! Gate::allows('voucher_types.allocate')) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
         }
 
         try {
@@ -236,8 +245,8 @@ class VouchersController extends Controller
 
     public function deleteDservice(Request $request): JsonResponse
     {
-        if (! Gate::allows('voucher_types_allocate')) {
-            return $this->errorResponse('You are not authorized to access this resource.', 401);
+        if (! Gate::allows('voucher_types.allocate')) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
         }
 
         try {
@@ -253,6 +262,14 @@ class VouchersController extends Controller
 
     public function getListing(Request $request): JsonResponse
     {
+        // Lookup endpoint used by the assign-to-patient dialog. Reading
+        // the catalogue requires either the list view or the assign perm
+        // (so a role that can issue vouchers without managing the catalog
+        // still has access to the dropdown).
+        if (! Gate::any(['voucher_types.list.view', 'voucher_types.assign'])) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
+        }
+
         try {
             $search = $request->filled('search') ? (string) $request->input('search') : null;
             $vouchers = $this->voucherTypeService->getListing($search);
@@ -265,8 +282,8 @@ class VouchersController extends Controller
 
     public function assignToPatient(AssignVoucherToPatientRequest $request): JsonResponse
     {
-        if (! Gate::allows('voucher_types_assign')) {
-            return $this->errorResponse('You are not authorized to access this resource.', 401);
+        if (! Gate::allows('voucher_types.assign')) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
         }
 
         try {

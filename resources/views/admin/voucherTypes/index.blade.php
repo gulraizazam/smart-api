@@ -36,7 +36,7 @@
 
                         <div class="card-toolbar">
                             <!--begin::Dropdown-->
-                            @if(Gate::allows('voucher_types_destroy'))
+                            @if(Gate::allows('voucher_types.destroy'))
                                 <div class="delete-records d-none">
                                     <span>Selected Rows: <span class="checkbox-count"></span></span>
                                     <a id="delete-table-rows" href="javascript:void(0);" class="btn btn-danger font-weight-bolder">
@@ -45,7 +45,7 @@
                                 </div>&nbsp;&nbsp;&nbsp;
                             @endif
 
-                            @if(Gate::allows('voucher_types_create'))
+                            @if(Gate::allows('voucher_types.create'))
                                 <a href="javascript:void(0);" onclick="createVoucher('{{ route('admin.voucherTypes.create') }}');" class="btn btn-primary" data-toggle="modal" data-target="#modal_add_voucher">
                                     <i class="la la-plus"></i>
                                     Add New

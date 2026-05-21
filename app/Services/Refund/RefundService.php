@@ -504,12 +504,12 @@ final class RefundService
     public function globalPermissions(): array
     {
         return [
-            'create' => Gate::allows('refunds_create'),
-            'delete' => Gate::allows('refunds_destroy'),
-            'active' => Gate::allows('refunds_active'),
-            'inactive' => Gate::allows('refunds_inactive'),
-            'refund' => Gate::allows('refunds_refund'),
-            'edit' => Gate::allows('refunds_edit'),
+            'create'   => Gate::allows('refunds.create'),
+            'delete'   => Gate::allows('refunds.destroy'),
+            'active'   => Gate::allows('refunds.activate'),
+            'inactive' => Gate::allows('refunds.deactivate'),
+            'refund'   => Gate::allows('refunds.refund'),
+            'edit'     => Gate::allows('refunds.edit'),
         ];
     }
 

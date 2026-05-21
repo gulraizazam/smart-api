@@ -13,7 +13,7 @@ class SaveVoucherTypeServiceRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return Gate::allows('voucher_types_allocate');
+        return Gate::allows('voucher_types.allocate');
     }
 
     public function rules(): array

@@ -13,7 +13,10 @@ class VoucherTypeStatusRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return Gate::any(['voucher_types_active', 'voucher_types_inactive']);
+        // Either side of the activate/deactivate split is enough to pass
+        // the FormRequest gate; the controller then re-checks the perm
+        // that actually matches the requested status.
+        return Gate::any(['voucher_types.activate', 'voucher_types.deactivate']);
     }
 
     public function rules(): array

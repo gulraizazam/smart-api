@@ -27,6 +27,8 @@ class CashFlowTransfersController extends Controller
     public function transfersData(Request $request): JsonResponse
     {
 
+        if (! Gate::any(['cashflow.transfer.view', 'cashflow.manage'])) { return response()->json(['success' => false, 'message' => 'You are not authorized to access this resource.', 'data' => null], 403); }
+
         try {
 
             $accountId = Auth::user()->account_id;
@@ -118,7 +120,7 @@ class CashFlowTransfersController extends Controller
 
         try {
 
-            if (!Gate::allows('cashflow_transfer_void')) {
+            if (!Gate::allows('cashflow.transfer.void')) {
 
                 throw CashflowException::unauthorized('void transfers');
 
@@ -168,7 +170,7 @@ class CashFlowTransfersController extends Controller
 
         try {
 
-            if (!Gate::allows('cashflow_transfer_edit')) {
+            if (!Gate::allows('cashflow.transfer.edit')) {
 
                 throw CashflowException::unauthorized('edit transfers');
 
@@ -232,7 +234,7 @@ class CashFlowTransfersController extends Controller
 
         try {
 
-            if (!Gate::allows('cashflow_audit_view')) {
+            if (!Gate::allows('cashflow.audit.view')) {
 
                 throw CashflowException::unauthorized('view audit trail');
 

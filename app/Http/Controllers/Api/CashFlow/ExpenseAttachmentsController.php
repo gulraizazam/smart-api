@@ -175,7 +175,7 @@ class ExpenseAttachmentsController extends Controller
         // Uploader sees their own files; anyone with view / manage
         // permission sees all account attachments.
         $isOwner = (int) $row->uploaded_by === (int) $user->id;
-        if (! $isOwner && ! $user->can('cashflow_expense_view') && ! $user->can('cashflow_manage')) {
+        if (! $isOwner && ! $user->can('cashflow.expense.view') && ! $user->can('cashflow.manage')) {
             abort(403);
         }
 
@@ -208,7 +208,7 @@ class ExpenseAttachmentsController extends Controller
         // Only the uploader, an editor, or someone with manage rights
         // can detach. View permission alone is not enough.
         $isOwner = (int) $row->uploaded_by === (int) $user->id;
-        if (! $isOwner && ! $user->can('cashflow_expense_edit') && ! $user->can('cashflow_manage')) {
+        if (! $isOwner && ! $user->can('cashflow.expense.edit') && ! $user->can('cashflow.manage')) {
             abort(403);
         }
 

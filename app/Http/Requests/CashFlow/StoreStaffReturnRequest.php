@@ -11,7 +11,7 @@ class StoreStaffReturnRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return Auth::user()->can('cashflow_staff_return_create');
+        return Auth::user()->can('cashflow.staff_return.create');
     }
 
     protected function prepareForValidation(): void

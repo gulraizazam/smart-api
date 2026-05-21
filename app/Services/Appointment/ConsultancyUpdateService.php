@@ -10,7 +10,6 @@ use App\Helpers\Filters;
 use App\Helpers\GeneralFunctions;
 use App\Models\Appointments;
 use App\Models\AppointmentStatuses;
-use App\Models\Invoices;
 use App\Models\Leads;
 use App\Models\Locations;
 use App\Models\ResourceHasRotaDays;
@@ -40,9 +39,9 @@ class ConsultancyUpdateService
         $oldValues = $this->captureOldValues($appointment);
 
         $permissions = [
-            'service' => Gate::allows('consultations.edit.service'),
-            'doctor' => Gate::allows('consultations.edit.doctor'),
-            'schedule' => Gate::allows('consultations.edit.schedule'),
+            'service' => Gate::allows('consultations.edit.service.after_arrived'),
+            'doctor' => Gate::allows('consultations.edit.doctor.after_arrived'),
+            'schedule' => Gate::allows('consultations.edit.schedule.after_arrived'),
         ];
 
         $isArrivedOrConverted = $this->isArrivedOrConverted($appointment);
@@ -108,13 +107,11 @@ class ConsultancyUpdateService
 
     protected function validateNormalConsultationUpdate(Appointments $appointment, array $requestData): void
     {
-        if (!Gate::allows('consultations.edit.after_arrived')) {
-            $hasInvoice = Invoices::where('appointment_id', $appointment->id)->exists();
-            if ($hasInvoice) {
-                throw AppointmentException::invalidData('Invoice already generated. Appointment cannot be rescheduled.');
-            }
-        }
-
+        // Pre-arrival edits are unrestricted at the field level — anyone
+        // with `consultations.edit` can change service/doctor/schedule.
+        // The per-field `consultations.edit.{field}.after_arrived` perms
+        // only kick in once the consultation reaches the arrived/converted
+        // states (see validateArrivedConsultationUpdate above).
         $doctorId = (int) ($requestData['doctor_id'] ?? $appointment->doctor_id);
         $locationId = (int) ($requestData['location_id'] ?? $appointment->location_id);
         $serviceId = (int) ($requestData['treatment_id'] ?? $requestData['service_id'] ?? $appointment->service_id);

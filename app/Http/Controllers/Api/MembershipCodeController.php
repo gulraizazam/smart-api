@@ -25,8 +25,8 @@ class MembershipCodeController extends Controller
      */
     public function generateCodes(GenerateCodesRequest $request): \Illuminate\Http\JsonResponse
     {
-        if (!Gate::allows('memberships_create')) {
-            return $this->errorResponse('You are not authorized to generate membership codes.', 401);
+        if (!Gate::allows('memberships.codes.manage')) {
+            return $this->errorResponse('You are not authorized to generate membership codes.', 403);
         }
 
         try {

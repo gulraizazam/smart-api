@@ -13,7 +13,10 @@ class AssignVoucherRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return Gate::any(['voucher_types_assign', 'vouchers_create']);
+        // Patient-card "assign voucher" action — either a Voucher-Types
+        // user (catalogue side) or a Vouchers user (issued side) can
+        // legitimately create a user-voucher row.
+        return Gate::any(['voucher_types.assign', 'vouchers.create']);
     }
 
     public function rules(): array

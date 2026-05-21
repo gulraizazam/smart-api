@@ -1,16 +1,16 @@
-@if(Gate::allows('voucher_types_allocate'))
+@if(Gate::allows('voucher_types.allocate'))
     <a class="btn btn-xs btn-success" href="{{ route('admin.voucherTypes.location_manage',[$voucher->id]) }}"
        data-target="#ajax_vouchers" data-toggle="modal">@lang('global.voucherTypes.fields.location')</a>
 @endif
-@if(Gate::allows('voucher_types_assign'))
+@if(Gate::allows('voucher_types.assign'))
     <a class="btn btn-xs btn-warning" href="javascript:void(0);" onclick="assignVoucherToPatient({{ $voucher->id }});" data-toggle="modal" data-target="#modal_assign_voucher_to_patient">Assign to Patient</a>
 @endif
-@if(Gate::allows('voucher_types_edit'))
+@if(Gate::allows('voucher_types.edit'))
     <a class="btn btn-xs btn-info" href="{{ route('admin.voucherTypes.edit',[$voucher->id]) }}"
        data-target="#ajax_vouchers"
        data-toggle="modal">@lang('global.app_edit')</a>
 @endif
-@if(Gate::allows('voucher_types_destroy'))
+@if(Gate::allows('voucher_types.destroy'))
     {!! Form::open(array(
         'style' => 'display: inline-block;',
         'method' => 'DELETE',

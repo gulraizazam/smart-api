@@ -7,6 +7,9 @@ use App\Models\User;
 
 /**
  * Authorization policy for Memberships and Membership Codes.
+ *
+ * Now uses the dotted `memberships.*` catalog. Legacy `memberships_manage`
+ * collapsed list + detail; the new catalog splits them.
  */
 class MembershipPolicy
 {
@@ -15,7 +18,7 @@ class MembershipPolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->can('memberships_manage');
+        return $user->can('memberships.list.view');
     }
 
     /**
@@ -23,7 +26,7 @@ class MembershipPolicy
      */
     public function view(User $user): bool
     {
-        return $user->can('memberships_manage');
+        return $user->can('memberships.detail.view');
     }
 
     /**
@@ -31,7 +34,7 @@ class MembershipPolicy
      */
     public function create(User $user): bool
     {
-        return $user->can('memberships_manage');
+        return $user->can('memberships.create');
     }
 
     /**
@@ -39,7 +42,7 @@ class MembershipPolicy
      */
     public function update(User $user): bool
     {
-        return $user->can('memberships_manage');
+        return $user->can('memberships.edit');
     }
 
     /**
@@ -47,7 +50,7 @@ class MembershipPolicy
      */
     public function delete(User $user): bool
     {
-        return $user->can('memberships_manage');
+        return $user->can('memberships.destroy');
     }
 
     /**
@@ -55,7 +58,7 @@ class MembershipPolicy
      */
     public function manageCodes(User $user): bool
     {
-        return $user->can('membership_codes_manage') || $user->can('memberships_manage');
+        return $user->can('memberships.codes.manage');
     }
 
     /**
@@ -63,7 +66,7 @@ class MembershipPolicy
      */
     public function assignCode(User $user): bool
     {
-        return $user->can('membership_codes_manage') || $user->can('memberships_manage');
+        return $user->can('memberships.codes.manage');
     }
 
     /**
@@ -71,6 +74,6 @@ class MembershipPolicy
      */
     public function export(User $user): bool
     {
-        return $user->can('memberships_manage') || $user->can('memberships_export');
+        return $user->can('memberships.export');
     }
 }
