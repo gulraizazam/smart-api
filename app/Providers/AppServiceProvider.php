@@ -364,13 +364,22 @@ class AppServiceProvider extends ServiceProvider
         // aliased name so granting either side in the role editor actually
         // satisfies the gate. See App\Support\PermissionAliasMap for the map.
         Gate::before(function ($user, string $ability) {
-            $aliased = \App\Support\PermissionAliasMap::aliasFor($ability);
-            if ($aliased === null) {
-                return null;
+            // PermissionAliasMap returns every equivalent slug. Granting any
+            // of them satisfies the original check. Uses hasPermissionTo
+            // (Spatie's direct lookup) so the callback doesn't recurse back
+            // into Gate::allows. Suppresses Spatie's
+            // PermissionDoesNotExist exception for aliases that haven't
+            // been seeded yet — a missing alias is "no match", not an error.
+            foreach (\App\Support\PermissionAliasMap::aliasesFor($ability) as $aliased) {
+                try {
+                    if ($user->hasPermissionTo($aliased)) {
+                        return true;
+                    }
+                } catch (\Spatie\Permission\Exceptions\PermissionDoesNotExist $e) {
+                    continue;
+                }
             }
-            // Use the Spatie HasRoles helper directly to avoid recursing
-            // back into Gate::allows (which would re-enter this callback).
-            return $user->hasPermissionTo($aliased) ? true : null;
+            return null;
         });
     }
 

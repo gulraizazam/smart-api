@@ -219,11 +219,25 @@ class User extends Authenticatable
             $payload['api_token'] = $this->api_token;
         }
 
-        $payload['role']        = $this->roles->pluck('name')->first();
-        $payload['permissions'] = $this->getAllPermissions()
-            ->pluck('name')
-            ->values()
-            ->all();
+        $payload['role'] = $this->roles->pluck('name')->first();
+
+        // Expand permissions through PermissionAliasMap so SPA gates work
+        // for either the legacy snake_case (`plans_cash_edit_amount`) or
+        // the new dotted slug (`plans.cash.edit_amount`). The role editor
+        // only saves dotted slugs today, but most SPA call-sites still
+        // reference the legacy names — the same Gate::before bridge runs
+        // server-side, this mirrors that behaviour for the client.
+        // aliasesFor returns a list because some dotted slugs collapse two
+        // legacy gates (e.g. plans.log.view → plans_log + patients_plan_log).
+        $names = $this->getAllPermissions()->pluck('name')->all();
+        $expanded = [];
+        foreach ($names as $name) {
+            $expanded[$name] = true;
+            foreach (\App\Support\PermissionAliasMap::aliasesFor($name) as $aliased) {
+                $expanded[$aliased] = true;
+            }
+        }
+        $payload['permissions'] = array_values(array_keys($expanded));
 
         // Authoritative ACL-scoped centre assignment so the SPA can
         // auto-select + lock centre filters when the user is bound to a
@@ -294,37 +308,6 @@ class User extends Authenticatable
     public function getRoles(): string
     {
         return $this->user_roles()->pluck('name')->implode(',');
-    }
-
-    /**
-     * Build the serialized payload returned by /api/login and /api/user.
-     * The SPA's `usePermissions().has(gate)` reads `permissions` to decide
-     * which menu items / pages to show; omitting it falls back to allow-all
-     * (legacy compat) and silently exposes every gated surface.
-     */
-    public function toAuthPayload(): array
-    {
-        $payload = $this->toArray();
-        $payload['role'] = $this->getRoleNames()->first();
-
-        // Expand the permission set through PermissionAliasMap so SPA
-        // `usePermissions().has(gate)` works against either the legacy
-        // snake_case or the new dotted slug — the role editor only saves
-        // the dotted side, but most SPA call-sites still reference the
-        // legacy names (see plans.tsx, etc.). Same Gate::before bridge runs
-        // server-side; this mirrors that behaviour for the client.
-        $names = $this->getAllPermissions()->pluck('name')->all();
-        $expanded = [];
-        foreach ($names as $name) {
-            $expanded[$name] = true;
-            $aliased = \App\Support\PermissionAliasMap::aliasFor($name);
-            if ($aliased !== null) {
-                $expanded[$aliased] = true;
-            }
-        }
-        $payload['permissions'] = array_values(array_keys($expanded));
-
-        return $payload;
     }
 
     public function doctorhaslocation(): HasMany
