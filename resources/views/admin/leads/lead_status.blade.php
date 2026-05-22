@@ -5,7 +5,7 @@
     {{--@if($lead->lead_status_id){{ $lead->lead_status->name }}@else{{''}}@endif--}}
 {{--</a>--}}
 
-@if(Gate::allows('leads_lead_status'))
+@if(Gate::allows('leads.update_status'))
     <a id="lead{{ $lead->lead_id }}" href="{{ route('admin.leads.showleadstatus',['id' => $lead->lead_id]) }}" data-target="#ajax" data-toggle="modal">@if($lead->lead_id){{ $lead_status_data->name }}@else{{''}}@endif</a>
 @else
     @if($lead->lead_id){{ $lead_status_data->name }}@else{{''}}@endif

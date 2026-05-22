@@ -21,7 +21,7 @@ class EmployeeDatatableController extends Controller
     {
         try {
             if (!Gate::allows('hr_employees_view')) {
-                return $this->errorResponse('You are not authorized to access this resource.', 401);
+                return $this->errorResponse('You are not authorized to access this resource.', 403);
             }
 
             $accountId = Auth::user()->account_id;
@@ -50,14 +50,8 @@ class EmployeeDatatableController extends Controller
                 'name' => $user->name,
                 'email' => $user->email,
                 'phone' => $user->phone,
-                // Relative path so it rides the SPA's session cookie via
-                // the dev proxy / same-origin in prod (same reasoning as
-                // EmployeeResource::personalInformation).
-                'avatar_url' => $user->image_src
-                    ? route('admin.files.patient_image_api', ['filename' => $user->image_src], false)
-                    : null,
-                'designation' => $user->designation_name ?? '—',
-                'hire_date' => $user->hire_date ? \Carbon\Carbon::parse($user->hire_date)->format('d M Y') : '—',
+                'designation' => $user->designation_name ?? 'â€”',
+                'hire_date' => $user->hire_date ? \Carbon\Carbon::parse($user->hire_date)->format('d M Y') : 'â€”',
                 'active' => $user->active,
             ]);
 

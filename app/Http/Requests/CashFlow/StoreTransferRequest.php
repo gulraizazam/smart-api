@@ -12,7 +12,7 @@ class StoreTransferRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return Auth::user()->can('cashflow_transfer_create');
+        return Auth::user()->can('cashflow.transfer.create');
     }
 
     public function rules(): array

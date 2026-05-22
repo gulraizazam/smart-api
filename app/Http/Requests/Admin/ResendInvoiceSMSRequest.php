@@ -14,7 +14,7 @@ class ResendInvoiceSMSRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return Auth::check() && Gate::allows('invoices_sms_log');
+        return Auth::check() && Gate::allows('invoices.sms_log.view');
     }
 
     /**

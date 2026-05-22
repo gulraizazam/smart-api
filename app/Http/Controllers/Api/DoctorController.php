@@ -31,13 +31,13 @@ class DoctorController extends Controller
     {
         try {
             if (!Gate::allows('doctors_manage')) {
-                return $this->errorResponse('You are not authorized to access this resource.', 401);
+                return $this->errorResponse('You are not authorized to access this resource.', 403);
             }
 
             $deleteIds = $request->getDeleteIds();
             if (!empty($deleteIds)) {
                 if (!Gate::allows('doctors_destroy')) {
-                    return $this->errorResponse('You are not authorized to delete doctors.', 401);
+                    return $this->errorResponse('You are not authorized to delete doctors.', 403);
                 }
 
                 $this->doctorService->bulkDelete($deleteIds);
@@ -83,7 +83,7 @@ class DoctorController extends Controller
     {
         try {
             if (!Gate::allows('doctors_create')) {
-                return $this->errorResponse('You are not authorized to access this resource.', 401);
+                return $this->errorResponse('You are not authorized to access this resource.', 403);
             }
 
             return $this->successResponse('Data found', $this->doctorService->getCreateData());
@@ -96,7 +96,7 @@ class DoctorController extends Controller
     {
         try {
             if (!Gate::allows('doctors_create')) {
-                return $this->errorResponse('You are not authorized to access this resource.', 401);
+                return $this->errorResponse('You are not authorized to access this resource.', 403);
             }
 
             $user = $this->doctorService->create($request->validated());
@@ -113,7 +113,7 @@ class DoctorController extends Controller
     {
         try {
             if (!Gate::allows('doctors_edit')) {
-                return $this->errorResponse('You are not authorized to access this resource.', 401);
+                return $this->errorResponse('You are not authorized to access this resource.', 403);
             }
 
             $data = $this->doctorService->getEditData($id);
@@ -130,7 +130,7 @@ class DoctorController extends Controller
     {
         try {
             if (!Gate::allows('doctors_edit')) {
-                return $this->errorResponse('You are not authorized to access this resource.', 401);
+                return $this->errorResponse('You are not authorized to access this resource.', 403);
             }
 
             $user = $this->doctorService->update($id, $request->all());
@@ -147,7 +147,7 @@ class DoctorController extends Controller
     {
         try {
             if (!Gate::allows('doctors_destroy')) {
-                return $this->errorResponse('You are not authorized to access this resource.', 401);
+                return $this->errorResponse('You are not authorized to access this resource.', 403);
             }
 
             $result = $this->doctorService->delete($id);
@@ -168,7 +168,7 @@ class DoctorController extends Controller
             };
 
             if ($permission && !Gate::allows($permission)) {
-                return $this->errorResponse('You are not authorized to access this resource.', 401);
+                return $this->errorResponse('You are not authorized to access this resource.', 403);
             }
 
             $result = $this->doctorService->changeStatus((int) $request->id, (int) $request->status);
@@ -185,7 +185,7 @@ class DoctorController extends Controller
     {
         try {
             if (!Gate::allows('doctors_change_password')) {
-                return $this->errorResponse('You are not authorized to access this resource.', 401);
+                return $this->errorResponse('You are not authorized to access this resource.', 403);
             }
 
             $user = $this->doctorService->getPasswordChangeData($id);
@@ -202,7 +202,7 @@ class DoctorController extends Controller
     {
         try {
             if (!Gate::allows('doctors_change_password')) {
-                return $this->errorResponse('You are not authorized to access this resource.', 401);
+                return $this->errorResponse('You are not authorized to access this resource.', 403);
             }
 
             $result = $this->doctorService->changePassword((int) $request->validated('id'), $request->validated('password'));
@@ -219,7 +219,7 @@ class DoctorController extends Controller
     {
         try {
             if (!Gate::allows('doctors_allocate')) {
-                return $this->errorResponse('You are not authorized to access this resource.', 401);
+                return $this->errorResponse('You are not authorized to access this resource.', 403);
             }
 
             return $this->successResponse('Service Allocated', $this->doctorService->getLocationAllocationData($id));
@@ -232,7 +232,7 @@ class DoctorController extends Controller
     {
         try {
             if (!Gate::allows('doctors_allocate')) {
-                return $this->errorResponse('You are not authorized to access this resource.', 401);
+                return $this->errorResponse('You are not authorized to access this resource.', 403);
             }
 
             return $this->successResponse('Success', $this->doctorService->getServicesForLocation($request));
@@ -245,7 +245,7 @@ class DoctorController extends Controller
     {
         try {
             if (!Gate::allows('doctors_allocate')) {
-                return $this->errorResponse('You are not authorized to access this resource.', 401);
+                return $this->errorResponse('You are not authorized to access this resource.', 403);
             }
 
             $result = $this->doctorService->saveServiceAllocation((int) $request->doctor_id, $request->id);
@@ -262,7 +262,7 @@ class DoctorController extends Controller
     {
         try {
             if (!Gate::allows('doctors_allocate')) {
-                return $this->errorResponse('You are not authorized to access this resource.', 401);
+                return $this->errorResponse('You are not authorized to access this resource.', 403);
             }
 
             $result = $this->doctorService->deleteServiceAllocation((int) $request->id);

@@ -469,12 +469,12 @@
         {{-- ══════════════════════════════════════════════════════════════
              CLINIC — patient journey
              ══════════════════════════════════════════════════════════════ --}}
-        @if (Gate::allows('patients_manage')
-            || Gate::allows('leads_manage')
+        @if (Gate::allows('patients.list.view')
+            || Gate::allows('leads.list.view')
             || Gate::allows('consultations_manage')
             || Gate::allows('treatments_manage')
-            || Gate::allows('resourcerotas_manage')
-            || Gate::allows('business_closures_manage'))
+            || Gate::allows('scheduling_shifts.list.view')
+            || Gate::allows('business_closures.list.view'))
             <div>
                 <button type="button"
                         class="cs-group-btn"
@@ -486,11 +486,11 @@
                     <i class="la la-angle-right cs-chev" aria-hidden="true"></i>
                 </button>
                 <div class="cs-group-body" :class="{ 'is-open': openGroup === 'clinic' }">
-                    @can('patients_manage')
+                    @can('patients.list.view')
                         <a href="{{ route('admin.patients.index') }}"
                            class="cs-sub {{ $isActive(['admin.patients.index', 'admin.patients.preview']) }}"><span>Patients</span></a>
                     @endcan
-                    @can('leads_manage')
+                    @can('leads.list.view')
                         {{-- Single Leads entry — Create is reachable from the leads
                              page, and Junk is a status filter on the same list. --}}
                         <a href="{{ route('admin.leads.index') }}"
@@ -504,11 +504,11 @@
                         <a href="{{ route('admin.treatment.index') }}"
                            class="cs-sub {{ $isActive(['admin.treatment.index']) }}"><span>Treatments</span></a>
                     @endcan
-                    @can('resourcerotas_manage')
+                    @can('scheduling_shifts.list.view')
                         <a href="{{ route('admin.resourcerotas.schedule') }}"
                            class="cs-sub {{ $isActive(['admin.resourcerotas.schedule', 'admin.resourcerotas.repeating-shifts']) }}"><span>Scheduling Shifts</span></a>
                     @endcan
-                    @can('business_closures_manage')
+                    @can('business_closures.list.view')
                         <a href="{{ route('admin.business-closures.index') }}"
                            class="cs-sub {{ $isActive(['admin.business-closures.index']) }}"><span>Business Closed Periods</span></a>
                     @endcan
@@ -519,14 +519,15 @@
         {{-- ══════════════════════════════════════════════════════════════
              CATALOG — what you sell
              ══════════════════════════════════════════════════════════════ --}}
-        @if (Gate::allows('services_manage')
-            || Gate::allows('packages_manage')
-            || Gate::allows('discounts_manage')
-            || Gate::allows('plans_manage')
-            || Gate::allows('voucher_types_manage')
-            || Gate::allows('vouchers_manage')
-            || Gate::allows('memberships_manage')
-            || Gate::allows('membershiptypes_manage'))
+        @if (Gate::allows('services.list.view')
+            || Gate::allows('packages.list.view')
+            || Gate::allows('bundles.list.view')
+            || Gate::allows('discounts.list.view')
+            || Gate::allows('plans.list.view')
+            || Gate::allows('voucher_types.list.view')
+            || Gate::allows('vouchers.list.view')
+            || Gate::allows('memberships.list.view')
+            || Gate::allows('membership_types.list.view'))
             <div>
                 <button type="button"
                         class="cs-group-btn"
@@ -538,39 +539,39 @@
                     <i class="la la-angle-right cs-chev" aria-hidden="true"></i>
                 </button>
                 <div class="cs-group-body" :class="{ 'is-open': openGroup === 'catalog' }">
-                    @can('services_manage')
+                    @can('services.list.view')
                         <a href="{{ route('admin.services.index') }}"
                            class="cs-sub {{ $isActive(['admin.services.index']) }}"><span>Services</span></a>
                     @endcan
-                    @can('packages_manage')
+                    @can('bundles.list.view')
                         <a href="{{ route('admin.service-bundles.index') }}"
                            class="cs-sub {{ $isActive(['admin.service-bundles.index']) }}"><span>Bundles</span></a>
                     @endcan
-                    @can('packages_manage')
+                    @can('packages.list.view')
                         <a href="{{ route('admin.bundles.index') }}"
                            class="cs-sub {{ $isActive(['admin.bundles.index']) }}"><span>Packages</span></a>
                     @endcan
-                    @can('plans_manage')
+                    @can('plans.list.view')
                         <a href="{{ route('admin.packages.index') }}"
                            class="cs-sub {{ $isActive(['admin.packages.index']) }}"><span>@lang('global.packages.title')</span></a>
                     @endcan
-                    @can('discounts_manage')
+                    @can('discounts.list.view')
                         <a href="{{ route('admin.discounts.index') }}"
                            class="cs-sub {{ $isActive(['admin.discounts.index']) }}"><span>Discounts</span></a>
                     @endcan
-                    @can('voucher_types_manage')
+                    @can('voucher_types.list.view')
                         <a href="{{ route('admin.voucherTypes.index') }}"
                            class="cs-sub {{ $isActive(['admin.voucherTypes.index']) }}"><span>Voucher Types</span></a>
                     @endcan
-                    @can('vouchers_manage')
+                    @can('vouchers.list.view')
                         <a href="{{ route('admin.vouchers.index') }}"
                            class="cs-sub {{ $isActive(['admin.vouchers.index']) }}"><span>Vouchers</span></a>
                     @endcan
-                    @can('membershiptypes_manage')
+                    @can('membership_types.list.view')
                         <a href="{{ route('admin.membershiptypes.index') }}"
                            class="cs-sub {{ $isActive(['admin.membershiptypes.index']) }}"><span>Membership Types</span></a>
                     @endcan
-                    @can('memberships_manage')
+                    @can('memberships.list.view')
                         <a href="{{ route('admin.memberships.index') }}"
                            class="cs-sub {{ $isActive(['admin.memberships.index']) }}"><span>Memberships</span></a>
                     @endcan
@@ -581,11 +582,11 @@
         {{-- ══════════════════════════════════════════════════════════════
              FINANCE — invoices, refunds, advances, payment modes, cash flow
              ══════════════════════════════════════════════════════════════ --}}
-        @if (Gate::allows('invoices_manage')
-            || Gate::allows('refunds_manage')
+        @if (Gate::allows('invoices.list.view')
+            || Gate::allows('refunds.list.view')
             || Gate::allows('finances_manage')
-            || Gate::allows('payment_modes_manage')
-            || Gate::allows('cashflow_manage'))
+            || Gate::allows('payment_modes.list.view')
+            || Gate::allows('cashflow.manage'))
             <div>
                 <button type="button"
                         class="cs-group-btn"
@@ -597,11 +598,11 @@
                     <i class="la la-angle-right cs-chev" aria-hidden="true"></i>
                 </button>
                 <div class="cs-group-body" :class="{ 'is-open': openGroup === 'finance' }">
-                    @can('invoices_manage')
+                    @can('invoices.list.view')
                         <a href="{{ route('admin.invoices.index') }}"
                            class="cs-sub {{ $isActive(['admin.invoices.index']) }}"><span>Invoices</span></a>
                     @endcan
-                    @can('refunds_manage')
+                    @can('refunds.list.view')
                         <a href="{{ route('admin.refunds.index') }}"
                            class="cs-sub {{ $isActive(['admin.refunds.index']) }}"><span>Refunds</span></a>
                     @endcan
@@ -609,41 +610,41 @@
                         <a href="{{ route('admin.packagesadvances.index') }}"
                            class="cs-sub {{ $isActive(['admin.packagesadvances.index']) }}"><span>Advances</span></a>
                     @endcan
-                    @can('payment_modes_manage')
+                    @can('payment_modes.list.view')
                         <a href="{{ route('admin.payment_modes.index') }}"
                            class="cs-sub {{ $isActive(['admin.payment_modes.index', 'admin.payment_modes.sort']) }}"><span>Payment Modes</span></a>
                     @endcan
-                    @can('cashflow_manage')
+                    @can('cashflow.manage')
                         <div class="cs-subsection">Cash Flow</div>
-                        @can('cashflow_dashboard')
+                        @can('cashflow.dashboard.view')
                             <a href="{{ route('admin.cashflow.dashboard') }}"
                                class="cs-sub {{ $isActive(['admin.cashflow.dashboard']) }}"><span>Dashboard</span></a>
                         @endcan
-                        @canany(['cashflow_expense_view', 'cashflow_expense_create', 'cashflow_expense_approve', 'cashflow_expense_reject', 'cashflow_expense_edit', 'cashflow_expense_void'])
+                        @canany(['cashflow.expense.view', 'cashflow.expense.create', 'cashflow.expense.approve', 'cashflow.expense.reject', 'cashflow.expense.edit', 'cashflow.expense.void'])
                             <a href="{{ route('admin.cashflow.expenses') }}"
                                class="cs-sub {{ $isActive(['admin.cashflow.expenses']) }}"><span>Expenses</span></a>
                         @endcanany
-                        @canany(['cashflow_transfer_view', 'cashflow_transfer_create', 'cashflow_transfer_edit', 'cashflow_transfer_void'])
+                        @canany(['cashflow.transfer.view', 'cashflow.transfer.create', 'cashflow.transfer.edit', 'cashflow.transfer.void'])
                             <a href="{{ route('admin.cashflow.transfers') }}"
                                class="cs-sub {{ $isActive(['admin.cashflow.transfers']) }}"><span>Transfers</span></a>
                         @endcanany
-                        @canany(['cashflow_vendor_view', 'cashflow_vendor_create', 'cashflow_vendor_edit', 'cashflow_vendor_manage', 'cashflow_vendor_ledger_view', 'cashflow_vendor_transaction'])
+                        @canany(['cashflow.vendor.view', 'cashflow.vendor.create', 'cashflow.vendor.edit', 'cashflow.vendor.manage', 'cashflow.vendor.ledger.view', 'cashflow.vendor.transaction.create'])
                             <a href="{{ route('admin.cashflow.vendors') }}"
                                class="cs-sub {{ $isActive(['admin.cashflow.vendors']) }}"><span>Vendors</span></a>
                         @endcanany
-                        @canany(['cashflow_staff_advance_view', 'cashflow_staff_advance_create', 'cashflow_staff_advance_edit', 'cashflow_staff_advance_void', 'cashflow_staff_return_create', 'cashflow_staff_return_void'])
+                        @canany(['cashflow.staff_advance.view', 'cashflow.staff_advance.create', 'cashflow.staff_advance.edit', 'cashflow.staff_advance.void', 'cashflow.staff_return.create', 'cashflow.staff_return.void'])
                             <a href="{{ route('admin.cashflow.staff') }}"
                                class="cs-sub {{ $isActive(['admin.cashflow.staff']) }}"><span>Staff Advances</span></a>
                         @endcanany
-                        @can('cashflow_fdm_view')
+                        @can('cashflow.fdm.view')
                             <a href="{{ route('admin.cashflow.fdm') }}"
                                class="cs-sub {{ $isActive(['admin.cashflow.fdm']) }}"><span>FDM View</span></a>
                         @endcan
-                        @can('cashflow_reports')
+                        @can('cashflow.reports.view')
                             <a href="{{ route('admin.cashflow.reports') }}"
                                class="cs-sub {{ $isActive(['admin.cashflow.reports']) }}"><span>Reports</span></a>
                         @endcan
-                        @can('cashflow_settings')
+                        @can('cashflow.settings.manage')
                             <a href="{{ route('admin.cashflow.settings') }}"
                                class="cs-sub {{ $isActive(['admin.cashflow.settings']) }}"><span>Settings</span></a>
                         @endcan

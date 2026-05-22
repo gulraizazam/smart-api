@@ -13,7 +13,7 @@ class AssignVoucherToPatientRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return Gate::allows('voucher_types_assign');
+        return Gate::allows('voucher_types.assign');
     }
 
     public function rules(): array

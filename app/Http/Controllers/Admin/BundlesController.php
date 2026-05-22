@@ -24,7 +24,7 @@ class BundlesController extends Controller
      */
     public function index(): \Illuminate\View\View
     {
-        if (!Gate::allows('packages_manage')) {
+        if (!Gate::allows('packages.list.view')) {
             return abort(401);
         }
 
@@ -33,7 +33,7 @@ class BundlesController extends Controller
 
     public function sort(): \Illuminate\View\View
     {
-        if (!Gate::allows('packages_edit')) {
+        if (!Gate::allows('packages.sort')) {
             return abort(401);
         }
 

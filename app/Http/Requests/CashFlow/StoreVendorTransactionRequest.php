@@ -11,7 +11,7 @@ class StoreVendorTransactionRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return Auth::user()->can('cashflow_vendor_transaction');
+        return Auth::user()->can('cashflow.vendor.transaction.create');
     }
 
     public function rules(): array

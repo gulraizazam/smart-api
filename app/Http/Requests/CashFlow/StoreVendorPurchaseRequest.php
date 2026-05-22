@@ -12,9 +12,9 @@ class StoreVendorPurchaseRequest extends FormRequest
     {
         // Edit uses route param txId, create does not
         if ($this->route('txId')) {
-            return Auth::user()->can('cashflow_vendor_transaction_edit');
+            return Auth::user()->can('cashflow.vendor.transaction.edit');
         }
-        return Auth::user()->can('cashflow_vendor_transaction');
+        return Auth::user()->can('cashflow.vendor.transaction.create');
     }
 
     public function rules(): array

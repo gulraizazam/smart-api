@@ -53,8 +53,8 @@ class InvoicesController extends Controller
      */
     public function index(): \Illuminate\View\View
     {
-        if (! Gate::allows('invoices_manage')) {
-            return abort(401);
+        if (! Gate::allows('invoices.list.view')) {
+            return abort(403);
         }
 
         return view('admin.invoices.index');
@@ -151,10 +151,10 @@ class InvoicesController extends Controller
             }
 
             $records['permissions'] = [
-                'manage' => Gate::allows('invoices_manage'),
-                'cancel' => Gate::allows('invoices_cancel'),
-                'log' => Gate::allows('invoices_log'),
-                'sms_log' => Gate::allows('invoices_sms_log'),
+                'manage'  => Gate::allows('invoices.list.view'),
+                'cancel'  => Gate::allows('invoices.cancel'),
+                'log'     => Gate::allows('invoices.log.view'),
+                'sms_log' => Gate::allows('invoices.sms_log.view'),
             ];
 
             if ($id) {
@@ -232,7 +232,7 @@ class InvoicesController extends Controller
 
     public function cancel(int $id): \Illuminate\Http\JsonResponse
     {
-        if (! Gate::allows('invoices_cancel')) {
+        if (! Gate::allows('invoices.cancel')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
 
@@ -349,8 +349,8 @@ class InvoicesController extends Controller
      * */
     public function displayInvoice(int $id): \Illuminate\Http\JsonResponse
     {
-        if (! Gate::allows('invoices_manage')) {
-            return $this->errorResponse('You are not authorized to access this resource.', 401);
+        if (! Gate::allows('invoices.detail.view')) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
         }
         // Round 4 IDOR sweep — tenant-scope by account_id so a guessed
         // cross-tenant invoice id can't be displayed to a user from another
@@ -435,8 +435,10 @@ class InvoicesController extends Controller
      * */
     public function invoice_pdf(int $id, mixed $download = null, int $flag = 0): \Symfony\Component\HttpFoundation\Response
     {
-        if (! Gate::allows('invoices_manage') && ! Gate::allows('appointments_invoice_display')) {
-            return abort(401);
+        // Print PDF — either the global invoices print perm or the
+        // appointment-side view perm (Consultations module) is enough.
+        if (! Gate::allows('invoices.print') && ! Gate::allows('consultations.invoice.view')) {
+            return abort(403);
         }
         
         // 'print' is used as placeholder to pass flag without downloading
@@ -553,8 +555,8 @@ class InvoicesController extends Controller
      */
     public function invoicelog(int $id, string $type, ?int $patient_id = null): \Illuminate\View\View
     {
-        if (! Gate::allows('invoices_log')) {
-            return abort(401);
+        if (! Gate::allows('invoices.log.view')) {
+            return abort(403);
         }
 
         $action_array = [

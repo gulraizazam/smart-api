@@ -125,7 +125,7 @@ Route::post('wrong-conversions/reset/{id}', [WrongConversionsController::class, 
 Route::post('wrong-conversions/reset-all', [WrongConversionsController::class, 'resetAll'])->name('wrong-conversions.reset-all');
 
 // Cash Flow Module (view-only routes)
-Route::prefix('cashflow')->name('cashflow.')->middleware('permission:cashflow_manage')->group(function () {
+Route::prefix('cashflow')->name('cashflow.')->middleware('permission:cashflow.manage')->group(function () {
     Route::get('/', [CashFlowController::class, 'dashboard'])->name('dashboard');
     Route::get('expenses', [CashFlowController::class, 'expenses'])->name('expenses');
     Route::get('transfers', [CashFlowController::class, 'transfers'])->name('transfers');

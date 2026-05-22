@@ -241,20 +241,7 @@ class LeadsController extends Controller
 
             return $this->successResponse('Status updated successfully!');
         } catch (LeadException $e) {
-            // LeadException here is a business-rule violation —
-            // statusChangeNotAllowed (lead at Arrived/Converted) or
-            // targetStatusNotAllowed (operator picked a system-managed
-            // target). 422 is the right shape: the SPA's `api.ts` masks
-            // 5xx as a generic "Something went wrong on our end" toast,
-            // which hides the actual reason. With 422 the SPA surfaces
-            // the message verbatim and can wire `setError` against the
-            // field key. Defense-in-depth — the SPA's Option A locked
-            // dropdown already prevents reaching this path under normal
-            // use; this is for races, direct API hits, and future
-            // refactors that drop the locked-state check.
-            return $this->errorResponse($e->getMessage(), 422, [
-                'lead_status_parent_id' => [$e->getMessage()],
-            ]);
+            return $this->errorResponse($e->getMessage(), 500);
         } catch (\Exception $e) {
             return $this->handleException($e, 'LeadsController');
         }
@@ -491,23 +478,9 @@ class LeadsController extends Controller
 
     public function loadLeadStatuses(): JsonResponse
     {
-        // `is_*` flags are surfaced so the SPA's manual-status dropdown
-        // can hide automation-only statuses (Booked → set on appointment
-        // create, Arrived → set on consultation invoice paid, Converted
-        // → set on first package payment, Junk → owned by the dedicated
-        // Move-to-junk action). Without these flags the SPA filter
-        // `!s.is_booked && !s.is_arrived && …` evaluates `!undefined`
-        // = true for every row and hides nothing.
         return response()->json(
             LeadStatuses::getActiveOnly()
-                ->map(fn ($status): array => [
-                    'value'        => $status->id,
-                    'text'         => $status->name,
-                    'is_booked'    => (bool) $status->is_booked,
-                    'is_arrived'   => (bool) $status->is_arrived,
-                    'is_converted' => (bool) $status->is_converted,
-                    'is_junk'      => (bool) $status->is_junk,
-                ])
+                ->map(fn ($status): array => ['value' => $status->id, 'text' => $status->name])
                 ->toArray()
         );
     }
@@ -619,15 +592,27 @@ class LeadsController extends Controller
 
     protected function getPermissions(): array
     {
+        // SPA reads `perms.X === true` (strict — undefined defaults to
+        // hidden), so every action gate the leads page renders MUST be
+        // emitted here. Missing keys made Import / Export / Junk / Comment
+        // invisible for every role including Super-Admin, because the
+        // `Gate::before` short-circuit only runs when a Gate::allows call
+        // is made — there was no call to short-circuit through.
         return [
-            'edit' => Gate::allows('leads_edit'),
-            'delete' => Gate::allows('leads_destroy'),
-            'active' => Gate::allows('leads_active'),
-            'inactive' => Gate::allows('leads_inactive'),
-            'create' => Gate::allows('leads_create'),
-            'convert' => Gate::allows('leads_convert'),
-            'contact' => Gate::allows('contact'),
+            'edit'          => Gate::allows('leads_edit'),
+            'delete'        => Gate::allows('leads_destroy'),
+            'active'        => Gate::allows('leads_active'),
+            'inactive'      => Gate::allows('leads_inactive'),
+            'create'        => Gate::allows('leads_create'),
+            'convert'       => Gate::allows('leads_convert'),
+            'contact'       => Gate::allows('contact'),
             'update_status' => Gate::allows('leads_lead_status'),
+            // Toolbar affordances surfaced from the same response so the
+            // SPA never has to make a second permission lookup.
+            'import'    => Gate::allows('leads.import'),
+            'export'    => Gate::allows('leads.export'),
+            'view_junk' => Gate::allows('leads.list.view_junk'),
+            'comment'   => Gate::allows('leads.comment.create'),
         ];
     }
 }

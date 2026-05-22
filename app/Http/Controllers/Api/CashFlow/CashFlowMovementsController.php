@@ -36,6 +36,8 @@ class CashFlowMovementsController extends Controller
      */
     public function movementsData(Request $request): JsonResponse
     {
+        if (! Gate::any(['cashflow.transfer.view', 'cashflow.staff_advance.view', 'cashflow.manage'])) { return response()->json(['success' => false, 'message' => 'You are not authorized to access this resource.', 'data' => null], 403); }
+
         try {
             if (!$this->canViewMovements()) {
                 return response()->json(['success' => false, 'message' => 'Unauthorized.'], 403);
@@ -74,6 +76,8 @@ class CashFlowMovementsController extends Controller
      */
     public function formData(Request $request): JsonResponse
     {
+        if (! Gate::any(['cashflow.transfer.create', 'cashflow.staff_advance.create', 'cashflow.staff_return.create', 'cashflow.staff_transfer.create', 'cashflow.manage'])) { return response()->json(['success' => false, 'message' => 'You are not authorized to access this resource.', 'data' => null], 403); }
+
         try {
             if (!$this->canViewMovements()) {
                 return response()->json(['success' => false, 'message' => 'Unauthorized.'], 403);
@@ -128,6 +132,8 @@ class CashFlowMovementsController extends Controller
 
     public function void(Request $request, string $kind, int $id): JsonResponse
     {
+        if (! Gate::any(['cashflow.transfer.void', 'cashflow.staff_advance.void', 'cashflow.staff_return.void', 'cashflow.staff_transfer.void', 'cashflow.manage'])) { return response()->json(['success' => false, 'message' => 'You are not authorized to access this resource.', 'data' => null], 403); }
+
         try {
             if (!$this->canVoidMovement($kind)) {
                 return response()->json(['success' => false, 'message' => 'Unauthorized.'], 403);
@@ -158,7 +164,7 @@ class CashFlowMovementsController extends Controller
     public function audit(string $kind, int $id): JsonResponse
     {
         try {
-            if (!Gate::allows('cashflow_audit_view')) {
+            if (!Gate::allows('cashflow.audit.view')) {
                 return response()->json(['success' => false, 'message' => 'Unauthorized.'], 403);
             }
 
@@ -204,10 +210,9 @@ class CashFlowMovementsController extends Controller
     private function canViewMovements(): bool
     {
         return Gate::any([
-            'cashflow_transfer_view',
-            'cashflow_staff_advance_view',
-            'cashflow_staff_advance',
-            'cashflow_manage',
+            'cashflow.transfer.view',
+            'cashflow.staff_advance.view',
+            'cashflow.manage',
         ]);
     }
 
@@ -217,15 +222,15 @@ class CashFlowMovementsController extends Controller
      */
     private function canVoidMovement(string $kind): bool
     {
-        if (Gate::allows('cashflow_manage')) {
+        if (Gate::allows('cashflow.manage')) {
             return true;
         }
 
         return match ($kind) {
-            MovementService::KIND_TRANSFER => Gate::allows('cashflow_transfer_void'),
-            MovementService::KIND_STAFF_ADVANCE => Gate::allows('cashflow_staff_advance_void'),
-            MovementService::KIND_STAFF_RETURN => Gate::allows('cashflow_staff_return_void'),
-            MovementService::KIND_STAFF_TRANSFER => Gate::allows('cashflow_staff_transfer_void'),
+            MovementService::KIND_TRANSFER => Gate::allows('cashflow.transfer.void'),
+            MovementService::KIND_STAFF_ADVANCE => Gate::allows('cashflow.staff_advance.void'),
+            MovementService::KIND_STAFF_RETURN => Gate::allows('cashflow.staff_return.void'),
+            MovementService::KIND_STAFF_TRANSFER => Gate::allows('cashflow.staff_transfer.void'),
             default => false,
         };
     }

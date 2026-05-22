@@ -137,7 +137,7 @@
 
                 <!--Patient menu-->
 
-                @if (Gate::allows('patients_manage'))
+                @if (Gate::allows('patients.list.view'))
                 <li class="menu-item {{ activeMenu('admin.patients.index') }} {{ activeMenu('admin.patients.preview') }}" aria-haspopup="true">
                     <a href="{{ route('admin.patients.index') }}" class="menu-link">
                         <span class="svg-icon menu-icon">
@@ -150,7 +150,7 @@
 
                 <!-- Leads menu -->
 
-                @if (Gate::allows('leads_manage'))
+                @if (Gate::allows('leads.list.view'))
                 <li class="menu-item menu-item-submenu {{ openMenu(['admin.leads.index']) }}" aria-haspopup="true" data-menu-toggle="hover">
 
                     <a href="javascript:void(0);" class="menu-link menu-toggle">
@@ -164,7 +164,7 @@
                         <i class="menu-arrow"></i>
                         <ul class="menu-subnav">
 
-                            @can('leads_create')
+                            @can('leads.create')
                             <li class="menu-item {{ isActive(url('admin/leads?create=create'), 'create') }}" aria-haspopup="true">
                                 <a href="{{ route('admin.leads.index', ['create' => 'create']) }}" class="menu-link">
                                     <i class="menu-bullet menu-bullet-dot">
@@ -175,7 +175,7 @@
                             </li>
                             @endcan
 
-                            @can('leads_manage')
+                            @can('leads.list.view')
                             <li class="menu-item {{ isActive(url('admin/leads'), 'other') }}" aria-haspopup="true">
                                 <a href="{{ route('admin.leads.index') }}" class="menu-link">
                                     <i class="menu-bullet menu-bullet-dot">
@@ -186,7 +186,7 @@
                             </li>
                             @endcan
 
-                            @can('leads_junk')
+                            @can('leads.list.view_junk')
                             <li class="menu-item {{ isActive(url('admin/leads?type=junk'), 'junk') }}" aria-haspopup="true">
                                 <a href="{{ route('admin.leads.index', ['type' => 'junk']) }}" class="menu-link">
                                     <i class="menu-bullet menu-bullet-dot">
@@ -253,7 +253,7 @@
 
                 <!-- End Appointment menu -->
 
-                @if (Gate::allows('plans_manage'))
+                @if (Gate::allows('plans.list.view'))
                 <li class="menu-item {{ activeMenu('admin.packages.index') }}" aria-haspopup="true">
                     <a href="{{ route('admin.packages.index') }}" class="menu-link">
                         <span class="svg-icon menu-icon"><i class="font-icon la la-cog"></i></span>
@@ -261,7 +261,7 @@
                     </a>
                 </li>
                 @endif
-                @if (Gate::allows('refunds_manage'))
+                @if (Gate::allows('refunds.list.view'))
                 <li class="menu-item {{ activeMenu('admin.refunds.index') }}" aria-haspopup="true">
                     <a href="{{ route('admin.refunds.index') }}" class="menu-link">
                         <span class="svg-icon menu-icon"><i class="font-icon la la-refresh"></i></span>
@@ -269,7 +269,7 @@
                     </a>
                 </li>
                 @endif
-                @if (Gate::allows('services_manage') || Gate::allows('packages_manage') || Gate::allows('discounts_manage'))
+                @if (Gate::allows('services.list.view') || Gate::allows('packages.list.view') || Gate::allows('bundles.list.view') || Gate::allows('discounts.list.view'))
                 <li class="menu-item menu-item-submenu {{ openMenu(['admin.services.index']) }} {{ openMenu(['admin.service-bundles.index']) }} {{ openMenu(['admin.bundles.index']) }} {{ openMenu(['admin.discounts.index']) }}" aria-haspopup="true" data-menu-toggle="hover">
 
                     <a href="javascript:void(0);" class="menu-link menu-toggle">
@@ -284,7 +284,7 @@
 
                         <ul class="menu-subnav">
 
-                            @can('services_manage')
+                            @can('services.list.view')
                             <li class="menu-item manage-consultancy {{ activeMenu('admin.services.index') }}" aria-haspopup="true">
                                 <a href="{{ route('admin.services.index') }}" class="menu-link">
                                     <i class="menu-bullet menu-bullet-dot">
@@ -295,7 +295,7 @@
                             </li>
                             @endcan
 
-                            @can('packages_manage')
+                            @can('bundles.list.view')
                             <li class="menu-item {{ activeMenu('admin.service-bundles.index') }}" aria-haspopup="true">
                                 <a href="{{ route('admin.service-bundles.index') }}" class="menu-link">
                                     <i class="menu-bullet menu-bullet-dot">
@@ -306,7 +306,7 @@
                             </li>
                             @endcan
 
-                            @can('packages_manage')
+                            @can('packages.list.view')
                             <li class="menu-item manage-treatment {{ activeMenu('admin.bundles.index') }}" aria-haspopup="true">
                                 <a href="{{ route('admin.bundles.index') }}" class="menu-link">
                                     <i class="menu-bullet menu-bullet-dot">
@@ -317,7 +317,7 @@
                             </li>
                             @endcan
 
-                            @can('discounts_manage')
+                            @can('discounts.list.view')
                             <li class="menu-item manage-treatment {{ activeMenu('admin.discounts.index') }}" aria-haspopup="true">
                                 <a href="{{ route('admin.discounts.index') }}" class="menu-link">
                                     <i class="menu-bullet menu-bullet-dot">
@@ -333,7 +333,7 @@
 
                 </li>
                 @endif
-                @if (Gate::allows('vouchers_manage') || Gate::allows('voucher_types_manage'))
+                @if (Gate::allows('vouchers.list.view') || Gate::allows('voucher_types.list.view'))
                 <li class="menu-item menu-item-submenu {{ openMenu(['admin.voucherTypes.index', 'admin.vouchers.index']) }} " aria-haspopup="true" data-menu-toggle="hover">
 
                     <a href="javascript:void(0);" class="menu-link menu-toggle">
@@ -348,7 +348,7 @@
 
                         <ul class="menu-subnav">
 
-                            @can('voucher_types_manage')
+                            @can('voucher_types.list.view')
                             <li class="menu-item {{ activeMenu('admin.voucherTypes.index') }}" aria-haspopup="true">
                                 <a href="{{ route('admin.voucherTypes.index') }}" class="menu-link">
                                     <i class="menu-bullet menu-bullet-dot">
@@ -359,7 +359,7 @@
                             </li>
                             @endcan
 
-                            @can('vouchers_manage')
+                            @can('vouchers.list.view')
                             <li class="menu-item {{ activeMenu('admin.vouchers.index') }}" aria-haspopup="true">
                                 <a href="{{ route('admin.vouchers.index') }}" class="menu-link">
                                     <i class="menu-bullet menu-bullet-dot">
@@ -378,7 +378,7 @@
                 </li>
                 @endif
 
-                @if (Gate::allows('memberships_manage') || Gate::allows('membershiptypes_manage'))
+                @if (Gate::allows('memberships.list.view') || Gate::allows('membership_types.list.view'))
                 <li class="menu-item menu-item-submenu {{ openMenu(['admin.membershiptypes.index', 'admin.memberships.index']) }} " aria-haspopup="true" data-menu-toggle="hover">
 
                     <a href="javascript:void(0);" class="menu-link menu-toggle">
@@ -393,7 +393,7 @@
 
                         <ul class="menu-subnav">
 
-                            @can('membershiptypes_manage')
+                            @can('membership_types.list.view')
                             <li class="menu-item {{ activeMenu('admin.membershiptypes.index') }}" aria-haspopup="true">
                                 <a href="{{ route('admin.membershiptypes.index') }}" class="menu-link">
                                     <i class="menu-bullet menu-bullet-dot">
@@ -404,7 +404,7 @@
                             </li>
                             @endcan
 
-                            @can('memberships_manage')
+                            @can('memberships.list.view')
                             <li class="menu-item {{ activeMenu('admin.memberships.index') }}" aria-haspopup="true">
                                 <a href="{{ route('admin.memberships.index') }}" class="menu-link">
                                     <i class="menu-bullet menu-bullet-dot">
@@ -428,7 +428,7 @@
                     </a>
                 </li>
                 @endif
-                @if (Gate::allows('resourcerotas_manage') || Gate::allows('business_closures_manage'))
+                @if (Gate::allows('scheduling_shifts.list.view') || Gate::allows('business_closures.list.view'))
                 <li class="menu-item menu-item-submenu {{ openMenu(['admin.resourcerotas.schedule', 'admin.business-closures.index']) }}" aria-haspopup="true" data-menu-toggle="hover">
                     <a href="javascript:void(0);" class="menu-link menu-toggle">
                         <span class="svg-icon menu-icon"><i class="font-icon la la-calendar-alt"></i></span>
@@ -438,7 +438,7 @@
                     <div class="menu-submenu">
                         <i class="menu-arrow"></i>
                         <ul class="menu-subnav">
-                            @if (Gate::allows('resourcerotas_manage'))
+                            @if (Gate::allows('scheduling_shifts.list.view'))
                             <li class="menu-item {{ activeMenu('admin.resourcerotas.schedule') }} {{ activeMenu('admin.resourcerotas.repeating-shifts') }}" aria-haspopup="true">
                                 <a href="{{ route('admin.resourcerotas.schedule') }}" class="menu-link">
                                     <i class="menu-bullet menu-bullet-dot">
@@ -468,7 +468,7 @@
                 Gate::allows('sms_templates_manage') ||
                 Gate::allows('regions_manage') ||
                 Gate::allows('cities_manage') ||
-                Gate::allows('payment_modes_manage') ||
+                Gate::allows('payment_modes.list.view') ||
                 Gate::allows('custom_forms_manage') ||
                 Gate::allows('custom_form_feedbacks_manage') ||
                 Gate::allows('locations_manage') ||
@@ -481,7 +481,7 @@
                 Gate::allows('resources_manage') ||
                 Gate::allows('logs_manage') ||
                 Gate::allows('finances_manage') ||
-                Gate::allows('invoices_manage') ||
+                Gate::allows('invoices.list.view') ||
                 Gate::allows('machineType_manage') ||
                 Gate::allows('towns_manage'))
 
@@ -563,7 +563,7 @@
                     </div>
                     @endcan
 
-                    @can('payment_modes_manage')
+                    @can('payment_modes.list.view')
                     <div class="menu-submenu">
                         <i class="menu-arrow"></i>
                         <ul class="menu-subnav">
@@ -818,7 +818,7 @@
                     </div>
                     @endcan
 
-                    @can('invoices_manage')
+                    @can('invoices.list.view')
                     <div class="menu-submenu">
                         <i class="menu-arrow"></i>
                         <ul class="menu-subnav">
@@ -1316,7 +1316,7 @@
                 @endif
 
                 {{-- Cash Flow Module --}}
-                @can('cashflow_manage')
+                @can('cashflow.manage')
                 <li class="menu-item menu-item-submenu {{ openMenu(['admin.cashflow.dashboard','admin.cashflow.expenses','admin.cashflow.transfers','admin.cashflow.vendors','admin.cashflow.staff','admin.cashflow.fdm','admin.cashflow.reports','admin.cashflow.settings']) }}" aria-haspopup="true" data-menu-toggle="hover">
                     <a href="javascript:;" class="menu-link menu-toggle">
                         <i class="menu-icon la la-money-bill-wave"></i>
@@ -1329,7 +1329,7 @@
                             <li class="menu-item menu-item-parent" aria-haspopup="true">
                                 <span class="menu-link"><span class="menu-text">Cash Flow</span></span>
                             </li>
-                            @can('cashflow_dashboard')
+                            @can('cashflow.dashboard.view')
                             <li class="menu-item {{ activeMenu('admin.cashflow.dashboard') }}" aria-haspopup="true">
                                 <a href="{{ route('admin.cashflow.dashboard') }}" class="menu-link">
                                     <i class="menu-bullet menu-bullet-dot"><span></span></i>
@@ -1337,7 +1337,7 @@
                                 </a>
                             </li>
                             @endcan
-                            @canany(['cashflow_expense_view', 'cashflow_expense_create', 'cashflow_expense_approve', 'cashflow_expense_reject', 'cashflow_expense_edit', 'cashflow_expense_void'])
+                            @canany(['cashflow.expense.view', 'cashflow.expense.create', 'cashflow.expense.approve', 'cashflow.expense.reject', 'cashflow.expense.edit', 'cashflow.expense.void'])
                             <li class="menu-item {{ activeMenu('admin.cashflow.expenses') }}" aria-haspopup="true">
                                 <a href="{{ route('admin.cashflow.expenses') }}" class="menu-link">
                                     <i class="menu-bullet menu-bullet-dot"><span></span></i>
@@ -1345,7 +1345,7 @@
                                 </a>
                             </li>
                             @endcanany
-                            @canany(['cashflow_transfer_view', 'cashflow_transfer_create', 'cashflow_transfer_edit', 'cashflow_transfer_void'])
+                            @canany(['cashflow.transfer.view', 'cashflow.transfer.create', 'cashflow.transfer.edit', 'cashflow.transfer.void'])
                             <li class="menu-item {{ activeMenu('admin.cashflow.transfers') }}" aria-haspopup="true">
                                 <a href="{{ route('admin.cashflow.transfers') }}" class="menu-link">
                                     <i class="menu-bullet menu-bullet-dot"><span></span></i>
@@ -1353,7 +1353,7 @@
                                 </a>
                             </li>
                             @endcanany
-                            @canany(['cashflow_vendor_view', 'cashflow_vendor_create', 'cashflow_vendor_edit', 'cashflow_vendor_manage', 'cashflow_vendor_ledger_view', 'cashflow_vendor_transaction'])
+                            @canany(['cashflow.vendor.view', 'cashflow.vendor.create', 'cashflow.vendor.edit', 'cashflow.vendor.manage', 'cashflow.vendor.ledger.view', 'cashflow.vendor.transaction.create'])
                             <li class="menu-item {{ activeMenu('admin.cashflow.vendors') }}" aria-haspopup="true">
                                 <a href="{{ route('admin.cashflow.vendors') }}" class="menu-link">
                                     <i class="menu-bullet menu-bullet-dot"><span></span></i>
@@ -1361,7 +1361,7 @@
                                 </a>
                             </li>
                             @endcanany
-                            @canany(['cashflow_staff_advance_view', 'cashflow_staff_advance_create', 'cashflow_staff_advance_edit', 'cashflow_staff_advance_void', 'cashflow_staff_return_create', 'cashflow_staff_return_void'])
+                            @canany(['cashflow.staff_advance.view', 'cashflow.staff_advance.create', 'cashflow.staff_advance.edit', 'cashflow.staff_advance.void', 'cashflow.staff_return.create', 'cashflow.staff_return.void'])
                             <li class="menu-item {{ activeMenu('admin.cashflow.staff') }}" aria-haspopup="true">
                                 <a href="{{ route('admin.cashflow.staff') }}" class="menu-link">
                                     <i class="menu-bullet menu-bullet-dot"><span></span></i>
@@ -1369,7 +1369,7 @@
                                 </a>
                             </li>
                             @endcanany
-                            @can('cashflow_fdm_view')
+                            @can('cashflow.fdm.view')
                             <li class="menu-item {{ activeMenu('admin.cashflow.fdm') }}" aria-haspopup="true">
                                 <a href="{{ route('admin.cashflow.fdm') }}" class="menu-link">
                                     <i class="menu-bullet menu-bullet-dot"><span></span></i>
@@ -1377,7 +1377,7 @@
                                 </a>
                             </li>
                             @endcan
-                            @can('cashflow_reports')
+                            @can('cashflow.reports.view')
                             <li class="menu-item {{ activeMenu('admin.cashflow.reports') }}" aria-haspopup="true">
                                 <a href="{{ route('admin.cashflow.reports') }}" class="menu-link">
                                     <i class="menu-bullet menu-bullet-dot"><span></span></i>
@@ -1385,7 +1385,7 @@
                                 </a>
                             </li>
                             @endcan
-                            @can('cashflow_settings')
+                            @can('cashflow.settings.manage')
                             <li class="menu-item {{ activeMenu('admin.cashflow.settings') }}" aria-haspopup="true">
                                 <a href="{{ route('admin.cashflow.settings') }}" class="menu-link">
                                     <i class="menu-bullet menu-bullet-dot"><span></span></i>

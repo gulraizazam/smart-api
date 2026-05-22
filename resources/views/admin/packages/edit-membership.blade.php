@@ -32,8 +32,8 @@
             <input type="hidden" name="random_id" id="edit_random_id_membership">
             <input type="hidden" name="patient_id" id="edit_patient_id_membership">
             <input type="hidden" name="location_id" id="edit_location_id_membership">
-            <input type="hidden" id="edit_membership_has_edit_permission" value="{{ Gate::allows('plans_edit') ? '1' : '0' }}">
-            <input type="hidden" id="edit_membership_has_edit_sold_by_permission" value="{{ Gate::allows('plans_edit_sold_by') ? '1' : '0' }}">
+            <input type="hidden" id="edit_membership_has_edit_permission" value="{{ Gate::allows('plans.edit') ? '1' : '0' }}">
+            <input type="hidden" id="edit_membership_has_edit_sold_by_permission" value="{{ Gate::allows('plans.sold_by.edit') ? '1' : '0' }}">
             
             <div class="d-flex flex-column scroll-y me-n7 pe-7">
                 <!-- Patient and Location Info (Read-only) -->
@@ -102,7 +102,7 @@
                                 <th>Tax</th>
                                 <th>Total</th>
                                 <th>Sold By</th>
-                                @if(Gate::allows('plans_edit'))
+                                @if(Gate::allows('plans.edit'))
                                 <th>Actions</th>
                                 @endif
                             </tr>

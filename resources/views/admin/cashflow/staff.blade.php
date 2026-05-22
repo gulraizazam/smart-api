@@ -16,10 +16,10 @@
                                     <h3 class="card-label font-size-h6 mb-0"><i class="la la-users mr-1"></i>Staff Members</h3>
                                 </div>
                                 <div class="card-toolbar" style="gap:6px;display:flex;">
-                                    @if(Gate::allows('cashflow_staff_advance_create'))
+                                    @if(Gate::allows('cashflow.staff_advance.create'))
                                         <button class="btn btn-sm btn-primary" data-toggle="modal" data-target="#modal_advance"><i class="la la-plus"></i> Advance</button>
                                     @endif
-                                    @if(Gate::allows('cashflow_staff_return_create'))
+                                    @if(Gate::allows('cashflow.staff_return.create'))
                                         <button class="btn btn-sm btn-success" data-toggle="modal" data-target="#modal_return"><i class="la la-undo"></i> Return</button>
                                     @endif
                                 </div>
@@ -337,12 +337,12 @@
     @push('js')
         <script>
             var cfPerms = {
-                canAdvanceCreate: {{ Gate::allows('cashflow_staff_advance_create') ? 'true' : 'false' }},
-                canEdit: {{ Gate::allows('cashflow_staff_advance_edit') ? 'true' : 'false' }},
-                canVoid: {{ Gate::allows('cashflow_staff_advance_void') ? 'true' : 'false' }},
-                canReturnCreate: {{ Gate::allows('cashflow_staff_return_create') ? 'true' : 'false' }},
-                canReturnVoid: {{ Gate::allows('cashflow_staff_return_void') ? 'true' : 'false' }},
-                canAudit: {{ Gate::allows('cashflow_audit_view') ? 'true' : 'false' }}
+                canAdvanceCreate: {{ Gate::allows('cashflow.staff_advance.create') ? 'true' : 'false' }},
+                canEdit: {{ Gate::allows('cashflow.staff_advance.edit') ? 'true' : 'false' }},
+                canVoid: {{ Gate::allows('cashflow.staff_advance.void') ? 'true' : 'false' }},
+                canReturnCreate: {{ Gate::allows('cashflow.staff_return.create') ? 'true' : 'false' }},
+                canReturnVoid: {{ Gate::allows('cashflow.staff_return.void') ? 'true' : 'false' }},
+                canAudit: {{ Gate::allows('cashflow.audit.view') ? 'true' : 'false' }}
             };
         </script>
         <script src="{{ asset('assets/js/pages/cashflow/staff.js') }}"></script>

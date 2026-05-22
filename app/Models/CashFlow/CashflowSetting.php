@@ -11,7 +11,7 @@ class CashflowSetting extends Model
 {
     use GuardsTenantBoundary;
 
-    protected $table = 'cashflow_settings';
+    protected $table = 'cashflow.settings.manage';
 
     protected $fillable = ['account_id', 'key', 'value', 'description'];
 

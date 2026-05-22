@@ -12,7 +12,7 @@ class StoreExpenseRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return Auth::user()->can('cashflow_expense_create');
+        return Auth::user()->can('cashflow.expense.create');
     }
 
     public function rules(): array

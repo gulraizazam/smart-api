@@ -144,11 +144,12 @@ final class PackagesController extends Controller
      * GET /api/packages/{id}
      *
      * Detail (bundle + bundle_services + relationships).
-     * Permission: `packages_manage`.
+     * Permission: `packages.detail.view` (new dotted slug from the role
+     * editor) OR `packages_manage` (legacy admin gate).
      */
     public function show(int $id): JsonResponse
     {
-        if (! Gate::allows('packages_manage')) {
+        if (! Gate::allows('packages.detail.view') && ! Gate::allows('packages_manage')) {
             return $this->unauthorizedResponse();
         }
 
@@ -276,10 +277,7 @@ final class PackagesController extends Controller
      */
     public function sortOrderSave(Request $request): JsonResponse
     {
-        // Gated on the dedicated reorder permission so a role can have
-        // packages_edit (price/duration edits) without being able to
-        // change global ordering. Seeded by PermissionSeeder (parent_id=195).
-        if (! Gate::allows('packages_sort')) {
+        if (! Gate::allows('packages_edit')) {
             return $this->unauthorizedResponse();
         }
 

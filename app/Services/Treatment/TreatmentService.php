@@ -736,7 +736,7 @@ final class TreatmentService
 
     private function getRecordsCount(array $where, array $filters, int $treatmentTypeId): int
     {
-        if (! Gate::allows('treatments_manage')) {
+        if (! Gate::allows('treatments.list.view')) {
             return 0;
         }
 
@@ -851,7 +851,7 @@ final class TreatmentService
      */
     private function transformAppointments(EloquentCollection $appointments, array $lookupData): array
     {
-        $canViewContact = Gate::allows('contact');
+        $canViewContact = Gate::allows('treatments.list.view_contact');
         $regions = $lookupData['regions'];
         $users = $lookupData['users'];
         $appointmentStatuses = $lookupData['appointment_statuses'];
@@ -927,8 +927,8 @@ final class TreatmentService
 
     private function getAppointmentTypes(): mixed
     {
-        $canConsultancy = Gate::allows('consultations_manage');
-        $canServices = Gate::allows('treatments_manage');
+        $canConsultancy = Gate::allows('consultations.list.view');
+        $canServices = Gate::allows('treatments.list.view');
 
         return match (true) {
             $canConsultancy && $canServices => AppointmentTypes::pluck('name', 'id'),
@@ -939,33 +939,41 @@ final class TreatmentService
     }
 
     /**
+     * Datatable permission map — consumed by the legacy admin-v1 KTDatatable
+     * (the SPA uses `usePermissions().has()` directly). Treatment-owned flags
+     * now use the new dotted catalog; cross-module attachment flags
+     * (image / measurement / medical_form / plans / patient_card) stay on
+     * legacy `appointments_*` until those modules are audited.
+     *
      * @return array<string, bool>
      */
     private function getPermissions(): array
     {
-        $canManage = Gate::allows('treatments_services');
+        $canEdit = Gate::allows('treatments.edit');
 
         return [
-            'edit' => $canManage && Gate::allows('appointments_edit'),
-            'consultancy' => Gate::allows('consultations_manage'),
-            'treatment' => Gate::allows('treatments_manage'),
-            'delete' => $canManage && Gate::allows('appointments_destroy'),
-            'active' => $canManage && Gate::allows('appointments_active'),
-            'inactive' => $canManage && Gate::allows('appointments_inactive'),
-            'create' => $canManage && Gate::allows('appointments_create'),
+            'edit' => $canEdit,
+            'consultancy' => Gate::allows('consultations.list.view'),
+            'treatment' => Gate::allows('treatments.list.view'),
+            'delete' => Gate::allows('treatments.delete'),
+            // active / inactive / create-row toggles aren't surfaced in the
+            // SPA — kept for legacy admin-v1 datatable but always false now.
+            'active' => false,
+            'inactive' => false,
+            'create' => Gate::allows('treatments.create'),
             'log' => Gate::allows('appointments_log'),
-            'status' => $canManage && Gate::allows('treatments_appointment_status'),
-            'schedule_edit' => $canManage && Gate::allows('update_treatment_schedule'),
-            'invoice' => Gate::allows('appointments_invoice'),
-            'invoice_display' => Gate::allows('appointments_invoice_display'),
+            'status' => Gate::allows('treatments.update_status'),
+            'schedule_edit' => Gate::allows('treatments.reschedule'),
+            'invoice' => Gate::allows('treatments.invoice.create'),
+            'invoice_display' => Gate::allows('treatments.invoice.view'),
             'image_manage' => Gate::allows('appointments_image_manage'),
             'measurement_manage' => Gate::allows('appointments_measurement_manage'),
             'medical_form_manage' => Gate::allows('appointments_medical_form_manage'),
-            'plans_create' => $canManage && Gate::allows('appointments_plans_create'),
+            'plans_create' => $canEdit && Gate::allows('appointments_plans_create'),
             'patient_card' => Gate::allows('appointments_patient_card'),
-            'contact' => Gate::allows('contact'),
-            'add_feedback' => $canManage && Gate::allows('feedbacks_create'),
-            'can_edit_doctor' => $canManage && Gate::allows('can_edit_doctor'),
+            'contact' => Gate::allows('treatments.list.view_contact'),
+            'add_feedback' => $canEdit && Gate::allows('feedbacks_create'),
+            'can_edit_doctor' => $canEdit && Gate::allows('can_edit_doctor'),
         ];
     }
 

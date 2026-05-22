@@ -19,8 +19,8 @@ class PaymentModesController extends Controller
 
     public function index(): \Illuminate\View\View
     {
-        if (! Gate::allows('payment_modes_manage')) {
-            return abort(401);
+        if (! Gate::allows('payment_modes.list.view')) {
+            return abort(403);
         }
         $filters = Filters::all(Auth::user()->id, 'payment_modes');
 
@@ -35,8 +35,8 @@ class PaymentModesController extends Controller
     public function datatable(Request $request): \Illuminate\Http\JsonResponse
     {
         try {
-            if (! Gate::allows('payment_modes_manage')) {
-                return $this->errorResponse('You are not authorized to access this resource.', 401);
+            if (! Gate::allows('payment_modes.list.view')) {
+                return $this->errorResponse('You are not authorized to access this resource.', 403);
             }
 
             $records = $this->paymentModeService->getDatatableData($request, Auth::user()->account_id);
@@ -54,8 +54,8 @@ class PaymentModesController extends Controller
      */
     public function create(): \Illuminate\View\View
     {
-        if (! Gate::allows('payment_modes_create')) {
-            return abort(401);
+        if (! Gate::allows('payment_modes.create')) {
+            return abort(403);
         }
 
         return view('admin.payment_modes.create', compact('city'));
@@ -64,8 +64,8 @@ class PaymentModesController extends Controller
     public function sortorder_save(Request $request): \Illuminate\Http\JsonResponse
     {
         try {
-            if (! Gate::allows('payment_modes_sort')) {
-                return $this->errorResponse('You are not authorized to access this resource.', 401);
+            if (! Gate::allows('payment_modes.sort')) {
+                return $this->errorResponse('You are not authorized to access this resource.', 403);
             }
 
             if ($this->paymentModeService->saveSortOrder($request->item_ids)) {
@@ -80,8 +80,8 @@ class PaymentModesController extends Controller
 
     public function sortorder(): \Illuminate\View\View
     {
-        if (! Gate::allows('payment_modes_sort')) {
-            return abort(401);
+        if (! Gate::allows('payment_modes.sort')) {
+            return abort(403);
         }
 
         return view('admin.payment_modes.sort');
@@ -95,8 +95,8 @@ class PaymentModesController extends Controller
     public function sortOrderGet(): \Illuminate\Http\JsonResponse
     {
         try {
-            if (! Gate::allows('payment_modes_sort')) {
-                return $this->errorResponse('You are not authorized to access this resource.', 401);
+            if (! Gate::allows('payment_modes.sort')) {
+                return $this->errorResponse('You are not authorized to access this resource.', 403);
             }
             $payment_modes = $this->paymentModeService->getSortedPaymentModes(Auth::user()->account_id);
 
@@ -114,8 +114,8 @@ class PaymentModesController extends Controller
     public function store(Request $request): \Illuminate\Http\JsonResponse
     {
         try {
-            if (! Gate::allows('payment_modes_create')) {
-                return $this->errorResponse('You are not authorized to access this resource.', 401);
+            if (! Gate::allows('payment_modes.create')) {
+                return $this->errorResponse('You are not authorized to access this resource.', 403);
             }
 
             $result = $this->paymentModeService->validateAndCreate($request->all(), Auth::user()->account_id);
@@ -138,8 +138,8 @@ class PaymentModesController extends Controller
     public function edit(int $id): \Illuminate\Http\JsonResponse
     {
         try {
-            if (! Gate::allows('payment_modes_edit')) {
-                return $this->errorResponse('You are not authorized to access this resource.', 401);
+            if (! Gate::allows('payment_modes.edit')) {
+                return $this->errorResponse('You are not authorized to access this resource.', 403);
             }
 
             $result = $this->paymentModeService->getEditData($id);
@@ -162,8 +162,8 @@ class PaymentModesController extends Controller
     public function update(Request $request, int $id): \Illuminate\Http\JsonResponse
     {
         try {
-            if (! Gate::allows('payment_modes_edit')) {
-                return $this->errorResponse('You are not authorized to access this resource.', 401);
+            if (! Gate::allows('payment_modes.edit')) {
+                return $this->errorResponse('You are not authorized to access this resource.', 403);
             }
 
             $result = $this->paymentModeService->validateAndUpdate($request->all(), $id, Auth::user()->account_id);
@@ -186,8 +186,8 @@ class PaymentModesController extends Controller
     public function destroy(int $id): \Illuminate\Http\JsonResponse
     {
         try {
-            if (! Gate::allows('payment_modes_destroy')) {
-                return $this->errorResponse('You are not authorized to access this resource.', 401);
+            if (! Gate::allows('payment_modes.destroy')) {
+                return $this->errorResponse('You are not authorized to access this resource.', 403);
             }
 
             $response = $this->paymentModeService->deletePaymentMode($id);
@@ -206,13 +206,15 @@ class PaymentModesController extends Controller
     public function status(Request $request): \Illuminate\Http\JsonResponse
     {
         try {
-            if ($request->status == 0) {
-                if (! Gate::allows('payment_modes_inactive')) {
-                    return $this->errorResponse('You are not authorized to access this resource.', 401);
+            // Legacy payment_modes_active / payment_modes_inactive split
+            // by the request payload; new catalog keeps that semantics.
+            if ((int) $request->status === 0) {
+                if (! Gate::allows('payment_modes.deactivate')) {
+                    return $this->errorResponse('You are not authorized to access this resource.', 403);
                 }
             } else {
-                if (! Gate::allows('payment_modes_active')) {
-                    return $this->errorResponse('You are not authorized to access this resource.', 401);
+                if (! Gate::allows('payment_modes.activate')) {
+                    return $this->errorResponse('You are not authorized to access this resource.', 403);
                 }
             }
 

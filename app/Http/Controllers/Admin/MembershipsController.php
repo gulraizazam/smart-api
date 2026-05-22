@@ -34,8 +34,8 @@ class MembershipsController extends Controller
 
     public function index(): \Illuminate\View\View
     {
-        if (! Gate::allows('memberships_manage')) {
-            return abort(401);
+        if (! Gate::allows('memberships.list.view')) {
+            return abort(403);
         }
 
         return view('admin.memberships.index');
@@ -43,6 +43,10 @@ class MembershipsController extends Controller
 
     public function datatable(Request $request): JsonResponse
     {
+        if (! Gate::allows('memberships.list.view')) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
+        }
+
         try {
             $filters     = getFilters($request->all());
             $applyFilter = checkFilters($filters, 'memberships');
@@ -112,13 +116,13 @@ class MembershipsController extends Controller
                 }
 
                 $records['permissions'] = [
-                    'edit'         => Gate::allows('memberships_edit'),
-                    'delete'       => Gate::allows('memberships_destroy'),
-                    'active'       => Gate::allows('memberships_active'),
-                    'inactive'     => Gate::allows('memberships_inactive'),
-                    'create'       => Gate::allows('memberships_create'),
-                    'sort'         => Gate::allows('memberships_sort'),
-                    'view_details' => Gate::allows('memberships_manage'),
+                    'edit'         => Gate::allows('memberships.edit'),
+                    'delete'       => Gate::allows('memberships.destroy'),
+                    'active'       => Gate::allows('memberships.activate'),
+                    'inactive'     => Gate::allows('memberships.deactivate'),
+                    'create'       => Gate::allows('memberships.create'),
+                    'sort'         => Gate::allows('memberships.sort'),
+                    'view_details' => Gate::allows('memberships.detail.view'),
                 ];
 
                 $records['meta'] = [
@@ -139,8 +143,8 @@ class MembershipsController extends Controller
 
     public function create(): JsonResponse
     {
-        if (! Gate::allows('memberships_create')) {
-            return $this->errorResponse('You are not authorized to access this resource.', 401);
+        if (! Gate::allows('memberships.create')) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
         }
 
         $membershipType = MembershipType::parentsOnly()
@@ -152,8 +156,8 @@ class MembershipsController extends Controller
 
     public function store(StoreMembershipRequest $request): JsonResponse
     {
-        if (! Gate::allows('memberships_create')) {
-            return $this->errorResponse('You are not authorized to access this resource.', 401);
+        if (! Gate::allows('memberships.create')) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
         }
 
         $data               = $request->all();
@@ -171,8 +175,12 @@ class MembershipsController extends Controller
 
     public function status(Request $request): JsonResponse
     {
-        if (! Gate::allows('memberships_active')) {
-            return $this->errorResponse('You are not authorized to access this resource.', 401);
+        // Legacy `memberships_active` covered both directions; new
+        // catalog splits activate/deactivate. Pick the perm by status.
+        $targetStatus = (int) $request->input('status');
+        $needed = $targetStatus === 1 ? 'memberships.activate' : 'memberships.deactivate';
+        if (! Gate::allows($needed)) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
         }
 
         if ($request->status == '0') {
@@ -201,8 +209,8 @@ class MembershipsController extends Controller
 
     public function edit(int $id): JsonResponse
     {
-        if (! Gate::allows('memberships_edit')) {
-            return $this->errorResponse('You are not authorized to access this resource.', 401);
+        if (! Gate::allows('memberships.edit')) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
         }
 
         $membership     = Membership::find($id);
@@ -216,8 +224,8 @@ class MembershipsController extends Controller
 
     public function update(StoreMembershipRequest $request, int $id): JsonResponse
     {
-        if (! Gate::allows('memberships_edit')) {
-            return abort(401);
+        if (! Gate::allows('memberships.edit')) {
+            return abort(403);
         }
 
         $data               = $request->all();
@@ -236,8 +244,8 @@ class MembershipsController extends Controller
 
     public function destroy(int $id): JsonResponse
     {
-        if (! Gate::allows('memberships_destroy')) {
-            return $this->errorResponse('You are not authorized to access this resource.', 401);
+        if (! Gate::allows('memberships.destroy')) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
         }
 
         $membership = Membership::find($id);
@@ -253,8 +261,8 @@ class MembershipsController extends Controller
 
     public function uploadMemberships(ImportMembershipsRequest $request): JsonResponse
     {
-        if (! Gate::allows('memberships_import')) {
-            return $this->errorResponse('You are not authorized to access this resource.', 401);
+        if (! Gate::allows('memberships.import')) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
         }
 
         try {

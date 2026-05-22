@@ -182,6 +182,19 @@ class AppointmentsController extends Controller
     public function scheduled(Request $request): \Illuminate\Http\JsonResponse
     {
         try {
+            // Shared with treatments — fetches all scheduled appointments
+            // (the calendar filter narrows by appointment_type_id). Either
+            // module's list-view perm grants access; legacy umbrellas kept
+            // as transitional fallbacks for older role configurations.
+            if (
+                !Gate::allows('consultations.list.view')
+                && !Gate::allows('treatments.list.view')
+                && !Gate::allows('appointments_manage')
+                && !Gate::allows('treatments_manage')
+            ) {
+                return $this->errorResponse('You are not authorized to access this resource.', 403);
+            }
+
             $account_id = \Illuminate\Support\Facades\Auth::user()->account_id;
 
             $filters = $request->only([

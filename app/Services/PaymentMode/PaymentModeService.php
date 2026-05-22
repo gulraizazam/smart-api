@@ -45,10 +45,10 @@ class PaymentModeService
         }
         $records['data'] = $PaymentModes;
         $records['permissions'] = [
-            'edit' => Gate::allows('payment_modes_edit'),
-            'delete' => Gate::allows('payment_modes_destroy'),
-            'active' => Gate::allows('payment_modes_active'),
-            'inactive' => Gate::allows('payment_modes_inactive'),
+            'edit'     => Gate::allows('payment_modes.edit'),
+            'delete'   => Gate::allows('payment_modes.destroy'),
+            'active'   => Gate::allows('payment_modes.activate'),
+            'inactive' => Gate::allows('payment_modes.deactivate'),
         ];
         $records['meta'] = [
             'field' => $orderBy,

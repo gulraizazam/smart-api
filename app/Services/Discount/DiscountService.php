@@ -208,7 +208,7 @@ final class DiscountService
     public function getDatatableData(array $filters, bool $applyFilter): array
     {
         $where = $this->buildFilterConditions($filters, $applyFilter);
-        $canViewInactive = Gate::allows('view_inactive_discounts');
+        $canViewInactive = Gate::allows('discounts.list.view_inactive');
 
         $query = Discount::query()->excludeVouchers();
 
@@ -243,7 +243,7 @@ final class DiscountService
         ?string $endDate = null,
         array $filters = [],
     ): Collection {
-        $canViewInactive = Gate::allows('view_inactive_discounts');
+        $canViewInactive = Gate::allows('discounts.list.view_inactive');
 
         $query = Discount::query()->excludeVouchers();
 

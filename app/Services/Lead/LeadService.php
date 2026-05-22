@@ -677,7 +677,7 @@ class LeadService
 
     public function searchLeadsById(string $search, int $accountId): Collection
     {
-        $canViewContact = Gate::allows('contact');
+        $canViewContact = Gate::allows('leads.list.view_contact');
 
         if (is_numeric($search)) {
             $leads = Leads::where([
@@ -728,8 +728,9 @@ class LeadService
 
     public function searchByPhone(string $phone, int $accountId): Collection
     {
-        // Blanket deny: a phone-prefix lookup has no legitimate use without contact permission.
-        if (! Gate::allows('contact')) {
+        // Blanket deny: a phone-prefix lookup has no legitimate use without
+        // the leads-module contact perm.
+        if (! Gate::allows('leads.list.view_contact')) {
             return new Collection;
         }
 

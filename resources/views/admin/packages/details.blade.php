@@ -40,7 +40,7 @@
                         </div>
                         <div class="card-toolbar">
                             <!--begin::Dropdown-->
-                            @if (Gate::allows('plans_edit'))
+                            @if (Gate::allows('plans.edit'))
                                 <a href="javascript:void(0);" onclick="editRow('{{ $url }}');" class="btn btn-primary" data-toggle="modal" data-target="#modal_add_plan">
                                     <i class="la la-pencil"></i>
                                     Edit

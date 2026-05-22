@@ -3,7 +3,7 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h4 class="mb-0">Plans</h4>
         <div>
-            @can('plans_create')
+            @can('plans.create')
                 <a href="javascript:void(0);" onclick="createPlan('{{ route('admin.packages.create') }}');" class="btn btn-primary btn-sm" data-toggle="modal" data-target="#modal_add_plan">
                     <i class="la la-plus"></i> Add Procedures
                 </a>

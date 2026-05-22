@@ -139,9 +139,34 @@ class DashboardTabPermissionSeeder extends Seeder
         $allPanelPerms = [];
 
         DB::transaction(function () use (&$fdmPanelPerms, &$allPanelPerms): void {
-            // Keep the existing management_dashboard parent (owned by migration
-            // 2026_04_14_120300) clustered with the new tab groups in the editor.
-            Permission::where('name', 'management_dashboard')->update(['category' => 'Dashboard']);
+            // Guarantee the umbrella `management_dashboard` parent + its `view`
+            // child exist (owned by migration 2026_04_14_120300, which may be
+            // pending in some environments). The `/api/management-dashboard/*`
+            // route group is gated by `can:management_dashboard.view`, so every
+            // FDM-tab panel API call 403s without this permission — even though
+            // the per-panel `dashboard.fdm.*` perms are granted below. Creating
+            // it here keeps the seeder self-healing.
+            $mdParent = Permission::updateOrCreate(
+                ['name' => 'management_dashboard'],
+                [
+                    'title' => 'Management Dashboard',
+                    'main_group' => 1,
+                    'parent_id' => 0,
+                    'status' => 1,
+                    'category' => 'Dashboard',
+                    'guard_name' => self::GUARD,
+                ],
+            );
+            Permission::updateOrCreate(
+                ['name' => 'management_dashboard.view'],
+                [
+                    'title' => 'View Dashboard',
+                    'main_group' => 0,
+                    'parent_id' => $mdParent->id,
+                    'status' => 1,
+                    'guard_name' => self::GUARD,
+                ],
+            );
 
             foreach ($this->catalog() as $parentName => $def) {
                 $parent = Permission::updateOrCreate(
@@ -178,16 +203,23 @@ class DashboardTabPermissionSeeder extends Seeder
                 }
             }
 
-            // Admin roles: every panel (preserves "admin sees everything").
+            // Admin roles: every panel (preserves "admin sees everything") +
+            // the umbrella `management_dashboard.view` gate the route group needs.
             foreach (Role::whereIn('name', self::ADMIN_ROLES)->get() as $role) {
                 $role->givePermissionTo($allPanelPerms);
+                $role->givePermissionTo('management_dashboard.view');
             }
 
             // FDM role: the purpose-built FDM tab only. The SPA auto-hides the
             // other tabs, so this becomes the role's default dashboard view.
+            // `management_dashboard.view` is also granted — without it the
+            // route-group middleware 403s every panel call regardless of the
+            // per-panel grants below (they're per-panel UX gates, not the
+            // backend route gate).
             $fdm = Role::where('name', 'FDM')->where('guard_name', self::GUARD)->first();
             if ($fdm) {
                 $fdm->givePermissionTo($fdmPanelPerms);
+                $fdm->givePermissionTo('management_dashboard.view');
             } else {
                 $this->command?->warn('FDM role not found — skipped FDM grant. Assign dashboard.fdm.* via the role editor.');
             }

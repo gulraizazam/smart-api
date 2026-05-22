@@ -25,8 +25,8 @@ class StoreCashTransferAttachmentRequest extends FormRequest
             return false;
         }
 
-        return $user->can('cashflow_transfer_create')
-            || $user->can('cashflow_manage');
+        return $user->can('cashflow.transfer.create')
+            || $user->can('cashflow.manage');
     }
 
     public function rules(): array

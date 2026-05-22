@@ -7,6 +7,12 @@ use App\Models\User;
 
 /**
  * Authorization policy for Leads (potential patients).
+ *
+ * Gates use the `leads.<area>.<action>` catalog seeded by
+ * 2026_05_21_120000_add_leads_module_permissions. Legacy snake_case
+ * names (`leads_manage`, `lead_call`, `lead_email`) were removed
+ * after the audit — `leads_view`, `lead_call`, and `lead_email` were
+ * dangling code refs with no DB row.
  */
 class LeadPolicy
 {
@@ -15,7 +21,7 @@ class LeadPolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->can('leads_manage') || $user->can('leads_view');
+        return $user->can('leads.list.view');
     }
 
     /**
@@ -23,7 +29,7 @@ class LeadPolicy
      */
     public function view(User $user): bool
     {
-        return $user->can('leads_manage') || $user->can('leads_view');
+        return $user->can('leads.detail.view');
     }
 
     /**
@@ -31,7 +37,7 @@ class LeadPolicy
      */
     public function create(User $user): bool
     {
-        return $user->can('leads_create') || $user->can('leads_manage');
+        return $user->can('leads.create');
     }
 
     /**
@@ -39,7 +45,7 @@ class LeadPolicy
      */
     public function update(User $user): bool
     {
-        return $user->can('leads_edit') || $user->can('leads_manage');
+        return $user->can('leads.edit');
     }
 
     /**
@@ -47,23 +53,27 @@ class LeadPolicy
      */
     public function delete(User $user): bool
     {
-        return $user->can('leads_destroy');
+        return $user->can('leads.delete');
     }
 
     /**
-     * Make a call to a lead (view phone number for calling).
+     * Make a call to a lead (view phone number for calling). Inherits
+     * the same gate as viewing phone in the list — both are about
+     * seeing the contact number.
      */
     public function call(User $user): bool
     {
-        return $user->can('lead_call') || $user->can('contact');
+        return $user->can('leads.list.view_contact');
     }
 
     /**
-     * Send an email to a lead.
+     * Send an email to a lead. No dedicated email action exists in the
+     * SPA right now; gate on the contact view perm so the surface
+     * stays consistent with `call()` until an email feature ships.
      */
     public function email(User $user): bool
     {
-        return $user->can('lead_email') || $user->can('leads_manage');
+        return $user->can('leads.list.view_contact');
     }
 
     /**
@@ -71,6 +81,6 @@ class LeadPolicy
      */
     public function export(User $user): bool
     {
-        return $user->can('leads_manage') || $user->can('leads_export');
+        return $user->can('leads.export');
     }
 }

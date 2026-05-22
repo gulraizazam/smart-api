@@ -7,13 +7,14 @@ namespace App\Http\Requests\Membership;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
 
 final class StoreMembershipTypeRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true;
+        return Gate::allows('membership_types.create');
     }
 
     public function rules(): array
@@ -34,6 +35,17 @@ final class StoreMembershipTypeRequest extends FormRequest
                 'message' => $validator->errors()->first(),
                 'data'    => null,
             ], 200)
+        );
+    }
+
+    protected function failedAuthorization(): void
+    {
+        throw new HttpResponseException(
+            response()->json([
+                'status'  => false,
+                'message' => 'You are not authorized to access this resource.',
+                'data'    => null,
+            ], 403)
         );
     }
 }

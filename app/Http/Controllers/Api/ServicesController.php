@@ -33,14 +33,22 @@ final class ServicesController extends Controller
      */
     public function datatable(Request $request): JsonResponse
     {
+        if (! Gate::allows('services.list.view')) {
+            return $this->unauthorizedResponse();
+        }
+
         try {
             $user = Auth::user();
             $accountId = $user->account_id;
             $filters = getFilters($request->all());
             $records = ['data' => []];
 
-            // Handle bulk delete
+            // Bulk delete branch — re-gate on `services.destroy` because
+            // top-level `services.list.view` only authorises reads.
             if (hasFilter($filters, 'delete')) {
+                if (! Gate::allows('services.destroy')) {
+                    return $this->unauthorizedResponse();
+                }
                 $ids = array_filter(array_map('intval', explode(',', $filters['delete'])));
                 foreach ($ids as $id) {
                     try {
@@ -89,7 +97,7 @@ final class ServicesController extends Controller
      */
     public function create(): JsonResponse
     {
-        if (! Gate::allows('services_create')) {
+        if (! Gate::allows('services.create')) {
             return $this->unauthorizedResponse();
         }
 
@@ -130,7 +138,7 @@ final class ServicesController extends Controller
      */
     public function edit(int $id): JsonResponse
     {
-        if (! Gate::allows('services_edit')) {
+        if (! Gate::allows('services.edit')) {
             return $this->unauthorizedResponse();
         }
 
@@ -148,7 +156,7 @@ final class ServicesController extends Controller
      */
     public function show(int $id): JsonResponse
     {
-        if (! Gate::allows('services_manage')) {
+        if (! Gate::allows('services.detail.view')) {
             return $this->unauthorizedResponse();
         }
 
@@ -211,7 +219,7 @@ final class ServicesController extends Controller
      */
     public function destroy(int $id): JsonResponse
     {
-        if (! Gate::allows('services_destroy')) {
+        if (! Gate::allows('services.destroy')) {
             return $this->unauthorizedResponse();
         }
 
@@ -256,7 +264,7 @@ final class ServicesController extends Controller
      */
     public function duplicate(int $id): JsonResponse
     {
-        if (! Gate::allows('services_duplicate')) {
+        if (! Gate::allows('services.duplicate')) {
             return $this->unauthorizedResponse();
         }
 
@@ -274,7 +282,7 @@ final class ServicesController extends Controller
      */
     public function storeDuplicate(StoreServiceRequest $request): JsonResponse
     {
-        if (! Gate::allows('services_duplicate')) {
+        if (! Gate::allows('services.duplicate')) {
             return $this->unauthorizedResponse();
         }
 
@@ -301,7 +309,7 @@ final class ServicesController extends Controller
      */
     public function sortOrderGet(): JsonResponse
     {
-        if (! Gate::allows('services_sort')) {
+        if (! Gate::allows('services.sort')) {
             return $this->unauthorizedResponse();
         }
 
@@ -339,7 +347,7 @@ final class ServicesController extends Controller
      */
     public function categorySortOrderSave(Request $request): JsonResponse
     {
-        if (! Gate::allows('services_sort')) {
+        if (! Gate::allows('services.sort')) {
             return $this->unauthorizedResponse();
         }
 

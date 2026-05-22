@@ -46,12 +46,12 @@ class InvoicesController extends Controller
      * is the stable, tenant-independent way to target a status (e.g. the
      * "Cancelled" quick filter) since status ids can differ per tenant.
      *
-     * Permission: `invoices_manage`.
+     * Permission: `invoices.list.view`.
      */
     public function index(Request $request): JsonResponse
     {
         try {
-            if (! Gate::allows('invoices_manage')) {
+            if (! Gate::allows('invoices.list.view')) {
                 return $this->errorResponse('You are not authorized to access this resource.', 403);
             }
 
@@ -167,7 +167,7 @@ class InvoicesController extends Controller
     public function show(Invoices $invoice): JsonResponse
     {
         try {
-            if (! Gate::allows('invoices_manage')) {
+            if (! Gate::allows('invoices.detail.view')) {
                 return $this->errorResponse('You are not authorized to access this resource.', 403);
             }
 
@@ -228,7 +228,7 @@ class InvoicesController extends Controller
     public function cancel(Invoices $invoice): JsonResponse
     {
         try {
-            if (! Gate::allows('invoices_cancel')) {
+            if (! Gate::allows('invoices.cancel')) {
                 return $this->errorResponse('You are not authorized to perform this action.', 403);
             }
 
@@ -247,12 +247,12 @@ class InvoicesController extends Controller
      *
      * Returns the SMS log history for this invoice, newest first.
      *
-     * Permission: `invoices_sms_log`.
+     * Permission: `invoices.sms_log.view`.
      */
     public function smsLogs(Invoices $invoice): JsonResponse
     {
         try {
-            if (! Gate::allows('invoices_sms_log')) {
+            if (! Gate::allows('invoices.sms_log.view')) {
                 return $this->errorResponse('You are not authorized to access this resource.', 403);
             }
 

@@ -15,7 +15,7 @@ class ResourceRotasController extends Controller
      */
     public function scheduleCalendar(): \Illuminate\View\View
     {
-        if (! Gate::allows('resourcerotas_manage')) {
+        if (! Gate::allows('scheduling_shifts.list.view')) {
             return abort(401);
         }
 
@@ -29,7 +29,7 @@ class ResourceRotasController extends Controller
      */
     public function repeatingShifts(): \Illuminate\View\View
     {
-        if (! Gate::allows('resourcerotas_manage')) {
+        if (! Gate::allows('scheduling_shifts.list.view')) {
             return abort(401);
         }
 

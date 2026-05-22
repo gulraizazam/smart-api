@@ -11,7 +11,7 @@ class StoreVendorSuggestionRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return Auth::user()->can('cashflow_vendor_request');
+        return Auth::user()->can('cashflow.vendor.request');
     }
 
     public function rules(): array

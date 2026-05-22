@@ -12,7 +12,7 @@ final class PlanBulkDeleteRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()?->can('plans_destroy') ?? false;
+        return $this->user()?->can('plans.destroy') ?? false;
     }
 
     public function rules(): array

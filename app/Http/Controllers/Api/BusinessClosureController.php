@@ -30,7 +30,7 @@ class BusinessClosureController extends Controller
      *
      * Paginated REST list of business closures with locations + creator
      * eager-loaded. Filters: `location_id`, `start_date`, `end_date`,
-     * `search` (title), `per_page` (1–200; default 25).
+     * `search` (title), `per_page` (1â€“200; default 25).
      *
      * Permission: `business_closures_manage`.
      */
@@ -102,7 +102,7 @@ class BusinessClosureController extends Controller
      * GET /api/catalogue/business-closures/{businessClosure}
      *
      * REST detail endpoint. Unlike `edit`, does not include a locations
-     * dropdown payload — pure resource shape for mobile / read clients.
+     * dropdown payload â€” pure resource shape for mobile / read clients.
      */
     public function show(BusinessClosure $businessClosure): JsonResponse
     {
@@ -405,7 +405,7 @@ class BusinessClosureController extends Controller
     public function edit(int $id): JsonResponse
     {
         if (! Gate::allows('business_closures_edit')) {
-            return $this->errorResponse('You are not authorized to access this resource.', 401);
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
         }
 
         try {
@@ -443,7 +443,7 @@ class BusinessClosureController extends Controller
     public function update(UpdateBusinessClosureRequest $request, int $id): JsonResponse
     {
         if (! Gate::allows('business_closures_edit')) {
-            return $this->errorResponse('You are not authorized to access this resource.', 401);
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
         }
 
         try {
@@ -463,7 +463,7 @@ class BusinessClosureController extends Controller
     public function destroy(int $id): JsonResponse
     {
         if (! Gate::allows('business_closures_delete')) {
-            return $this->errorResponse('You are not authorized to access this resource.', 401);
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
         }
 
         try {

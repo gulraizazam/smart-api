@@ -78,7 +78,7 @@ class NotificationService
      */
     public function notifyExpensePending(Expense $expense, int $accountId): void
     {
-        $admins = $this->getUsersWithPermission('cashflow_expense_approve', $accountId);
+        $admins = $this->getUsersWithPermission('cashflow.expense.approve', $accountId);
 
         foreach ($admins as $admin) {
             if ($admin->id === $expense->created_by) continue;
@@ -127,7 +127,7 @@ class NotificationService
      */
     public function notifyVendorRequest(string $vendorName, string $requestedByName, int $accountId): void
     {
-        $admins = $this->getUsersWithPermission('cashflow_vendor_manage', $accountId);
+        $admins = $this->getUsersWithPermission('cashflow.vendor.manage', $accountId);
 
         foreach ($admins as $admin) {
             $this->notify(
@@ -146,7 +146,7 @@ class NotificationService
      */
     public function notifyCategoryRequest(string $categoryName, string $requestedByName, int $accountId): void
     {
-        $admins = $this->getUsersWithPermission('cashflow_category_manage', $accountId);
+        $admins = $this->getUsersWithPermission('cashflow.category.manage', $accountId);
 
         foreach ($admins as $admin) {
             $this->notify(
@@ -165,7 +165,7 @@ class NotificationService
      */
     public function notifyStaffAdvanceGiven(string $staffName, float $amount, int $accountId): void
     {
-        $admins = $this->getUsersWithPermission('cashflow_expense_approve', $accountId);
+        $admins = $this->getUsersWithPermission('cashflow.expense.approve', $accountId);
 
         foreach ($admins as $admin) {
             $this->notify(
@@ -184,7 +184,7 @@ class NotificationService
      */
     public function notifyNegativePool(string $poolName, float $balance, ?int $branchId, int $accountId): void
     {
-        $admins = $this->getUsersWithPermission('cashflow_expense_approve', $accountId);
+        $admins = $this->getUsersWithPermission('cashflow.expense.approve', $accountId);
         $notifiedIds = [];
 
         foreach ($admins as $admin) {
@@ -286,7 +286,7 @@ class NotificationService
     {
         return User::where('account_id', $accountId)
             ->where('active', 1)
-            ->permission('cashflow_dashboard')
+            ->permission('cashflow.dashboard.view')
             ->whereHas('user_has_locations', function ($q) use ($branchId) {
                 $q->where('location_id', $branchId);
             })

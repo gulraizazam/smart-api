@@ -12,7 +12,7 @@ final class StoreDiscountRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()?->can('discounts_create') ?? false;
+        return $this->user()?->can('discounts.create') ?? false;
     }
 
     public function rules(): array
@@ -67,7 +67,7 @@ final class StoreDiscountRequest extends FormRequest
                 'status'  => false,
                 'message' => 'You are not authorized to access this resource.',
                 'data'    => null,
-            ], 401)
+            ], 403)
         );
     }
 }

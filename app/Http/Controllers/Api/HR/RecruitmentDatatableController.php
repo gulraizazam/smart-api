@@ -21,7 +21,7 @@ class RecruitmentDatatableController extends Controller
     {
         try {
             if (!Gate::allows('hr_recruitment_view')) {
-                return $this->errorResponse('You are not authorized to access this resource.', 401);
+                return $this->errorResponse('You are not authorized to access this resource.', 403);
             }
 
             $accountId = Auth::user()->account_id;
@@ -51,15 +51,15 @@ class RecruitmentDatatableController extends Controller
                 'id' => $c->id,
                 'name' => $c->name,
                 'designation' => $c->designation_name,
-                'city' => $c->city_name ?? '—',
-                'location' => $c->location_name ?? '—',
+                'city' => $c->city_name ?? 'â€”',
+                'location' => $c->location_name ?? 'â€”',
                 'status' => $c->status,
                 'has_cv' => (bool) $c->cv_file_path,
                 'created_at' => $c->created_at->format('d M Y'),
                 'interviews_count' => $c->interviews_count,
-                'last_interviewer' => $c->interviews->first()?->interviewer?->name ?? '—',
-                'last_type' => $c->interviews->first()?->interview_type?->label() ?? '—',
-                'last_verdict' => $c->interviews->first()?->verdict?->label() ?? '—',
+                'last_interviewer' => $c->interviews->first()?->interviewer?->name ?? 'â€”',
+                'last_type' => $c->interviews->first()?->interview_type?->label() ?? 'â€”',
+                'last_verdict' => $c->interviews->first()?->verdict?->label() ?? 'â€”',
             ]);
 
             return response()->json([

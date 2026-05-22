@@ -27,21 +27,21 @@ class LeadsController extends Controller
 {
     public function index(): View
     {
-        abort_unless(Gate::allows('leads_manage'), 401);
+        abort_unless(Gate::allows('leads.list.view'), 401);
 
         return view('admin.leads.index');
     }
 
     public function junk(): View
     {
-        abort_unless(Gate::allows('leads_junk'), 401);
+        abort_unless(Gate::allows('leads.list.view_junk'), 401);
 
         return view('admin.leads.junk');
     }
 
     public function importLeads(): View|RedirectResponse
     {
-        if (!Gate::allows('leads_import')) {
+        if (!Gate::allows('leads.import')) {
             flash('You are not authorized to access this resource.')->error()->important();
             return redirect()->route('admin.leads.index');
         }
@@ -51,7 +51,7 @@ class LeadsController extends Controller
 
     public function make_pop(): View
     {
-        abort_unless(Gate::allows('leads_create'), 401);
+        abort_unless(Gate::allows('leads.create'), 401);
 
         $cities = Cities::getActiveSortedFeatured(ACL::getUserCities());
         $cities->prepend('Select a City', '');

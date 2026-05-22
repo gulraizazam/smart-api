@@ -35,7 +35,7 @@
                         </div>
                         <div class="card-toolbar">
                             <!--begin::Dropdown-->
-                            @if(Gate::allows('payment_modes_destroy'))
+                            @if(Gate::allows('payment_modes.destroy'))
                                 <div class="delete-records d-none">
                                     <span>Selected Rows: <span class="checkbox-count"></span></span>
                                     <a id="delete-table-rows" href="javascript:void(0);" class="btn btn-danger font-weight-bolder">
@@ -43,12 +43,12 @@
                                     </a>
                                 </div>&nbsp;&nbsp;&nbsp;
                             @endif
-                            @can('payment_modes_sort')
+                            @can('payment_modes.sort')
                             <a id="delete-table-rows" href="{{route('admin.payment_modes.sort')}}" class="btn btn-info">
                                 <i class="fa fa-sort-amount-up"></i>Sort
                             </a>&nbsp;&nbsp;
                             @endcan
-                            @if(Gate::allows('payment_modes_create'))
+                            @if(Gate::allows('payment_modes.create'))
                                 <a href="javascript:void(0);" class="btn btn-primary" data-toggle="modal" data-target="#modal_add_payment_mode">
                                     <!--begin::Svg Icon | path: icons/duotune/arrows/arr075.svg-->
                                     <i class="la la-plus"></i>

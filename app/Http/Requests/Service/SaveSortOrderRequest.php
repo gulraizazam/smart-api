@@ -12,10 +12,9 @@ final class SaveSortOrderRequest extends FormRequest
     public function authorize(): bool
     {
         // Gated on the dedicated reorder permission so a role can have
-        // services_edit (inline name/price edits) without being able to
-        // change global ordering. `services_sort` is seeded by
-        // PermissionSeeder (parent_id=46) — admins assign it explicitly.
-        return Gate::allows('services_sort');
+        // services.edit (inline name/price edits) without being able to
+        // change global ordering.
+        return Gate::allows('services.sort');
     }
 
     /**

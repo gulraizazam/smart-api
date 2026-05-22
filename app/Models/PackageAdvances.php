@@ -659,7 +659,7 @@ class PackageAdvances extends BaseModel
             ->where('is_refund', 1)
             ->whereIn('location_id', ACL::getUserCentres());
 
-        if (! Gate::allows('view_inactive_plans')) {
+        if (! Gate::allows('plans.list.view_inactive')) {
             $query->where('active', 1);
         }
 
@@ -691,7 +691,7 @@ class PackageAdvances extends BaseModel
             ->where('is_refund', 1)
             ->whereIn('location_id', ACL::getUserCentres());
 
-        if (! Gate::allows('view_inactive_plans')) {
+        if (! Gate::allows('plans.list.view_inactive')) {
             $query->where('active', 1);
         }
 
@@ -723,7 +723,7 @@ class PackageAdvances extends BaseModel
             $query->where($where);
         }
 
-        if (! Gate::allows('view_inactive_plans')) {
+        if (! Gate::allows('plans.list.view_inactive')) {
             $query->where('active', 1);
         }
 
@@ -745,7 +745,7 @@ class PackageAdvances extends BaseModel
             $query->where($where)->where('is_refund', 1);
         }
 
-        if (! Gate::allows('view_inactive_plans')) {
+        if (! Gate::allows('plans.list.view_inactive')) {
             $query->where('active', 1);
         }
 

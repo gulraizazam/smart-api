@@ -70,7 +70,7 @@ class PermissionController extends Controller
     {
         try {
             if (!Gate::allows('permissions_manage')) {
-                return $this->errorResponse('You are not authorized to access this resource.', 401);
+                return $this->errorResponse('You are not authorized to access this resource.', 403);
             }
 
             return $this->successResponse('Record found', [
@@ -85,7 +85,7 @@ class PermissionController extends Controller
     {
         try {
             if (!Gate::allows('permissions_create')) {
-                return $this->errorResponse('You are not authorized to create permissions.', 401);
+                return $this->errorResponse('You are not authorized to create permissions.', 403);
             }
 
             $this->permissionService->create($request->validated());
@@ -100,7 +100,7 @@ class PermissionController extends Controller
     {
         try {
             if (!Gate::allows('permissions_edit')) {
-                return $this->errorResponse('You are not authorized to edit permissions.', 401);
+                return $this->errorResponse('You are not authorized to edit permissions.', 403);
             }
 
             return $this->successResponse('Record found', [
@@ -116,7 +116,7 @@ class PermissionController extends Controller
     {
         try {
             if (!Gate::allows('permissions_manage')) {
-                return $this->errorResponse('You are not authorized to access this resource.', 401);
+                return $this->errorResponse('You are not authorized to access this resource.', 403);
             }
 
             return $this->successResponse('Record found', [
@@ -131,7 +131,7 @@ class PermissionController extends Controller
     {
         try {
             if (!Gate::allows('permissions_edit')) {
-                return $this->errorResponse('You are not authorized to edit permissions.', 401);
+                return $this->errorResponse('You are not authorized to edit permissions.', 403);
             }
 
             $this->permissionService->update($id, $request->validated());
@@ -146,7 +146,7 @@ class PermissionController extends Controller
     {
         try {
             if (!Gate::allows('permissions_destroy')) {
-                return $this->errorResponse('You are not authorized to delete permissions.', 401);
+                return $this->errorResponse('You are not authorized to delete permissions.', 403);
             }
 
             $this->permissionService->delete($id);
@@ -184,7 +184,7 @@ class PermissionController extends Controller
     {
         try {
             if (!Gate::allows('permissions_manage')) {
-                return $this->errorResponse('You are not authorized to access this resource.', 401);
+                return $this->errorResponse('You are not authorized to access this resource.', 403);
             }
 
             return $this->successResponse('Parent groups retrieved', [

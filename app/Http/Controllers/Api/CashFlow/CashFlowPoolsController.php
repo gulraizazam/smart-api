@@ -24,6 +24,8 @@ class CashFlowPoolsController extends Controller
     public function poolsIndex(): JsonResponse
     {
 
+        if (! Gate::any(['cashflow.pool.manage', 'cashflow.transfer.view', 'cashflow.transfer.create', 'cashflow.expense.create', 'cashflow.manage'])) { return response()->json(['success' => false, 'message' => 'You are not authorized to access this resource.', 'data' => null], 403); }
+
         try {
 
             $accountId = Auth::user()->account_id;
@@ -53,7 +55,7 @@ class CashFlowPoolsController extends Controller
 
         try {
 
-            if (!Gate::allows('cashflow_pool_manage')) {
+            if (!Gate::allows('cashflow.pool.manage')) {
 
                 throw CashflowException::unauthorized('manage pools');
 
@@ -106,7 +108,7 @@ class CashFlowPoolsController extends Controller
 
         try {
 
-            if (!Gate::allows('cashflow_pool_manage')) {
+            if (!Gate::allows('cashflow.pool.manage')) {
 
                 throw CashflowException::unauthorized('manage pools');
 
@@ -179,7 +181,7 @@ class CashFlowPoolsController extends Controller
 
         try {
 
-            if (!Gate::allows('cashflow_pool_manage')) {
+            if (!Gate::allows('cashflow.pool.manage')) {
 
                 throw CashflowException::unauthorized('manage pools');
 
@@ -220,7 +222,7 @@ class CashFlowPoolsController extends Controller
 
         try {
 
-            if (!Gate::allows('cashflow_pool_manage')) {
+            if (!Gate::allows('cashflow.pool.manage')) {
 
                 throw CashflowException::unauthorized('manage pools');
 
@@ -263,7 +265,7 @@ class CashFlowPoolsController extends Controller
 
         try {
 
-            if (!Gate::allows('cashflow_settings')) {
+            if (!Gate::allows('cashflow.settings.manage')) {
 
                 throw CashflowException::unauthorized('recalculate pool balances');
 

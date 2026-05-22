@@ -30,7 +30,7 @@ class StoreMovementRequest extends FormRequest
         }
         // The super-slug admits everything — keep the inline check identical
         // to how the existing per-kind controllers treat it.
-        if ($user->can('cashflow_manage')) {
+        if ($user->can('cashflow.manage')) {
             return true;
         }
 
@@ -38,16 +38,16 @@ class StoreMovementRequest extends FormRequest
         $destType = $this->input('dest_type');
 
         if ($sourceType === 'pool' && $destType === 'pool') {
-            return $user->can('cashflow_transfer_create');
+            return $user->can('cashflow.transfer.create');
         }
         if ($sourceType === 'pool' && $destType === 'staff') {
-            return $user->can('cashflow_staff_advance_create');
+            return $user->can('cashflow.staff_advance.create');
         }
         if ($sourceType === 'staff' && $destType === 'pool') {
-            return $user->can('cashflow_staff_return_create');
+            return $user->can('cashflow.staff_return.create');
         }
         if ($sourceType === 'staff' && $destType === 'staff') {
-            return $user->can('cashflow_staff_transfer_create');
+            return $user->can('cashflow.staff_transfer.create');
         }
 
         return false;

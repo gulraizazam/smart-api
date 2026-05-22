@@ -264,10 +264,10 @@ final class UserVoucherService
     public function getPermissions(): array
     {
         return [
-            'view' => Gate::allows('vouchers_view'),
-            'create' => Gate::allows('vouchers_create'),
-            'edit' => Gate::allows('vouchers_edit'),
-            'delete' => Gate::allows('vouchers_destroy'),
+            'view'   => Gate::allows('vouchers.detail.view'),
+            'create' => Gate::allows('vouchers.create'),
+            'edit'   => Gate::allows('vouchers.edit'),
+            'delete' => Gate::allows('vouchers.destroy'),
         ];
     }
 

@@ -74,35 +74,13 @@ use App\Http\Controllers\Api\ScheduleController;
 |
 */
 
-Route::post('login', [\App\Http\Controllers\Api\AuthController::class, 'login'])->middleware('throttle:30,1');
-
-// Cookie-mode logout. Idempotent: an expired-session caller still gets a
-// clean 200 with the session and CSRF rotated. Bearer-mode SPA builds also
-// hit this endpoint to revoke the per-request Sanctum PAT. Passport-mode
-// uses /api/v2/auth/logout instead (token-bearer auth only).
-Route::post('logout', [\App\Http\Controllers\Api\AuthController::class, 'logout']);
-
-// SPA-facing forgot / reset password. Replaces the legacy Blade pair
-// (web.php /password/email + /password/reset) for the SPA login screen.
-// The reset email's URL is overridden in AppServiceProvider::boot to
-// land on the SPA's /reset-password/{token}?email= route instead of the
-// legacy Blade view, so the email link survives Blade retirement.
-//
-// Throttle: 5/hour for `email` (matches the legacy Blade route limit;
-// stops abuse of the email-sender as a spam vector). 10/hour for `reset`
-// (matches the legacy throttle; tokens are single-use anyway).
-Route::post('password/email', [\App\Http\Controllers\Api\ForgotPasswordController::class, 'send'])
-    ->middleware('throttle:5,60')
-    ->name('api.password.email');
-Route::post('password/reset', [\App\Http\Controllers\Api\ForgotPasswordController::class, 'reset'])
-    ->middleware('throttle:10,60')
-    ->name('api.password.reset');
+Route::post('login', [\App\Http\Controllers\Api\AuthController::class, 'login'])->middleware('throttle:60,1');
 
 // v2 auth — Passport password grant. Runs alongside the Sanctum /api/login
 // during the staged migration. See app/Http/Controllers/Api/V2/AuthController.
 Route::prefix('v2/auth')->name('api.v2.auth.')->group(function (): void {
     Route::post('login', [\App\Http\Controllers\Api\V2\AuthController::class, 'login'])
-        ->middleware('throttle:30,1')
+        ->middleware('throttle:5,1')
         ->name('login');
     Route::post('refresh', [\App\Http\Controllers\Api\V2\AuthController::class, 'refresh'])
         ->middleware('throttle:10,1')
@@ -129,14 +107,17 @@ Route::middleware('auth.api.dual')->name('admin.')->group(function () {
 });
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
-    /** @var \App\Models\User $user */
+    /** @var \App\Models\User|null $user */
     $user = $request->user();
+    if (! $user) {
+        return response()->json(['success' => false, 'message' => 'Unauthenticated.', 'data' => null], 401);
+    }
 
-    // toAuthPayload() folds in the effective permission gate names + the
-    // primary role, both of which the SPA's `usePermissions().has()`
-    // needs to render menus and actions per-role. Defined on User so
-    // every auth-returning endpoint (login + this one) stays aligned.
-    return $user->toAuthPayload();
+    return response()->json([
+        'success' => true,
+        'message' => 'Success',
+        'data' => $user->toAuthPayload(),
+    ]);
 });
 
 // Meta Conversion API Routes

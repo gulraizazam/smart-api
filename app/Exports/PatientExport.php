@@ -18,7 +18,7 @@ class PatientExport implements FromCollection, WithHeadings, ShouldAutoSize
     public function __construct(
         private readonly array $filters,
     ) {
-        $this->canViewContact = Gate::allows('contact');
+        $this->canViewContact = Gate::allows('patients.list.view_contact');
     }
 
     public function collection(): \Illuminate\Support\Collection

@@ -10,7 +10,7 @@ class VoidExpenseRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return Auth::user()->can('cashflow_expense_void');
+        return Auth::user()->can('cashflow.expense.void');
     }
 
     public function rules(): array

@@ -8,6 +8,7 @@ use App\Models\CashFlow\CashflowNotification;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
 
 /**
  * Lightweight controller for cashflow notifications.
@@ -18,6 +19,8 @@ class CashflowNotificationController extends Controller
 {
     public function index(): JsonResponse
     {
+        if (! Gate::any(['cashflow.dashboard.view', 'cashflow.manage', 'cashflow.fdm.view'])) { return response()->json(['success' => false, 'message' => 'You are not authorized to access this resource.', 'data' => null], 403); }
+
         try {
             $userId = Auth::id();
 
@@ -34,6 +37,8 @@ class CashflowNotificationController extends Controller
 
     public function markRead(Request $request): JsonResponse
     {
+        if (! Gate::any(['cashflow.dashboard.view', 'cashflow.manage', 'cashflow.fdm.view'])) { return response()->json(['success' => false, 'message' => 'You are not authorized to access this resource.', 'data' => null], 403); }
+
         try {
             $userId = Auth::id();
 

@@ -31,12 +31,20 @@ trait SimpleApiResponse
         ], 500);
     }
 
+    /**
+     * Authz refusal helper — used after a Gate::denies(...) check, so the
+     * user is already authenticated and the right HTTP status is 403
+     * (Forbidden), not 401 (Unauthenticated). The SPA's `api.ts` treats
+     * any 401 as session-expired and force-logs-the-user-out; returning
+     * 403 here keeps the session intact and surfaces a real "you can't
+     * do that" error instead.
+     */
     private function unauthorized(): JsonResponse
     {
         return response()->json([
             'status'  => false,
             'message' => 'You are not authorized to access this resource.',
             'data'    => null,
-        ], 401);
+        ], 403);
     }
 }

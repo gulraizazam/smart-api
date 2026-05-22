@@ -13,7 +13,7 @@ class UpdateServiceBundleRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return Gate::allows('packages_edit');
+        return Gate::allows('bundles.edit');
     }
 
     /**

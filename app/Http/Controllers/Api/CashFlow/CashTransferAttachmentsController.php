@@ -129,7 +129,7 @@ class CashTransferAttachmentsController extends Controller
         $row = CashTransferAttachment::forAccount((int) $user->account_id)->findOrFail($id);
 
         $isOwner = (int) $row->uploaded_by === (int) $user->id;
-        if (! $isOwner && ! $user->can('cashflow_transfer_view') && ! $user->can('cashflow_manage')) {
+        if (! $isOwner && ! $user->can('cashflow.transfer.view') && ! $user->can('cashflow.manage')) {
             abort(403);
         }
 
@@ -152,7 +152,7 @@ class CashTransferAttachmentsController extends Controller
         $row = CashTransferAttachment::forAccount($accountId)->findOrFail($id);
 
         $isOwner = (int) $row->uploaded_by === (int) $user->id;
-        if (! $isOwner && ! $user->can('cashflow_transfer_create') && ! $user->can('cashflow_manage')) {
+        if (! $isOwner && ! $user->can('cashflow.transfer.create') && ! $user->can('cashflow.manage')) {
             abort(403);
         }
 

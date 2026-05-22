@@ -17,7 +17,9 @@ final class RefundDatatableRequest extends FormRequest
             return false;
         }
 
-        return $user->can('refunds_manage') || $user->can('patients_refund_manage');
+        // Either side is enough — global module list-view or the
+        // patient-card scope perm from the Patients audit.
+        return $user->can('refunds.list.view') || $user->can('patients_refund_manage');
     }
 
     public function rules(): array

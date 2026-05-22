@@ -31,6 +31,8 @@ class CashFlowVendorsController extends Controller
     public function vendorsData(Request $request): JsonResponse
     {
 
+        if (! Gate::any(['cashflow.vendor.view', 'cashflow.vendor.manage', 'cashflow.manage'])) { return response()->json(['success' => false, 'message' => 'You are not authorized to access this resource.', 'data' => null], 403); }
+
         try {
 
             $accountId = Auth::user()->account_id;
@@ -75,6 +77,8 @@ class CashFlowVendorsController extends Controller
      */
     public function vendorsOverview(Request $request): JsonResponse
     {
+
+        if (! Gate::any(['cashflow.vendor.view', 'cashflow.vendor.manage', 'cashflow.manage'])) { return response()->json(['success' => false, 'message' => 'You are not authorized to access this resource.', 'data' => null], 403); }
 
         try {
 
@@ -161,7 +165,7 @@ class CashFlowVendorsController extends Controller
 
         try {
 
-            if (!Gate::allows('cashflow_vendor_toggle')) {
+            if (!Gate::allows('cashflow.vendor.toggle')) {
 
                 throw CashflowException::unauthorized('activate/deactivate vendors');
 
@@ -225,6 +229,8 @@ class CashFlowVendorsController extends Controller
      */
     public function vendorsTransactions(Request $request): JsonResponse
     {
+        if (! Gate::any(['cashflow.vendor.view', 'cashflow.vendor.manage', 'cashflow.vendor.ledger.view', 'cashflow.manage'])) { return response()->json(['success' => false, 'message' => 'You are not authorized to access this resource.', 'data' => null], 403); }
+
         try {
             $accountId = Auth::user()->account_id;
             $filters = $request->only(['type', 'date_from', 'date_to', 'status']);
@@ -246,6 +252,8 @@ class CashFlowVendorsController extends Controller
 
     public function vendorsLedger(Request $request, int $id): JsonResponse
     {
+
+        if (! Gate::any(['cashflow.vendor.ledger.view', 'cashflow.vendor.view', 'cashflow.vendor.manage', 'cashflow.manage'])) { return response()->json(['success' => false, 'message' => 'You are not authorized to access this resource.', 'data' => null], 403); }
 
         try {
 
@@ -344,7 +352,7 @@ class CashFlowVendorsController extends Controller
 
         try {
 
-            if (!Auth::user()->can('cashflow_vendor_deliver')) {
+            if (!Auth::user()->can('cashflow.vendor.deliver')) {
 
                 return response()->json(['success' => false, 'message' => 'Unauthorized.'], 403);
 
@@ -396,7 +404,7 @@ class CashFlowVendorsController extends Controller
 
         try {
 
-            if (!Auth::user()->can('cashflow_vendor_transaction_delete')) {
+            if (!Auth::user()->can('cashflow.vendor.transaction.delete')) {
 
                 return response()->json(['success' => false, 'message' => 'Unauthorized.'], 403);
 
@@ -429,7 +437,7 @@ class CashFlowVendorsController extends Controller
 
         try {
 
-            if (!Gate::allows('cashflow_audit_view')) {
+            if (!Gate::allows('cashflow.audit.view')) {
 
                 throw CashflowException::unauthorized('view audit trail');
 
@@ -460,7 +468,7 @@ class CashFlowVendorsController extends Controller
     public function vendorsLedgerExport(Request $request, int $id): \Symfony\Component\HttpFoundation\Response
     {
         try {
-            if (!Gate::allows('cashflow_vendor_ledger_export')) {
+            if (!Gate::allows('cashflow.vendor.ledger.export')) {
                 throw CashflowException::unauthorized('export vendor ledger');
             }
             $accountId = Auth::user()->account_id;
@@ -483,7 +491,7 @@ class CashFlowVendorsController extends Controller
     public function vendorsTransactionsExport(Request $request): \Symfony\Component\HttpFoundation\Response
     {
         try {
-            if (!Gate::allows('cashflow_vendor_ledger_export')) {
+            if (!Gate::allows('cashflow.vendor.ledger.export')) {
                 throw CashflowException::unauthorized('export vendor ledger');
             }
             $accountId = Auth::user()->account_id;
@@ -535,6 +543,8 @@ class CashFlowVendorsController extends Controller
      */
     public function vendorRequestsData(Request $request): JsonResponse
     {
+
+        if (! Gate::any(['cashflow.vendor.manage', 'cashflow.vendor.request', 'cashflow.manage'])) { return response()->json(['success' => false, 'message' => 'You are not authorized to access this resource.', 'data' => null], 403); }
 
         try {
 
@@ -608,7 +618,7 @@ class CashFlowVendorsController extends Controller
 
         try {
 
-            if (!Auth::user()->can('cashflow_vendor_manage')) {
+            if (!Auth::user()->can('cashflow.vendor.manage')) {
 
                 throw CashflowException::unauthorized('approve vendor requests');
 
@@ -645,7 +655,7 @@ class CashFlowVendorsController extends Controller
 
         try {
 
-            if (!Gate::allows('cashflow_vendor_manage')) {
+            if (!Gate::allows('cashflow.vendor.manage')) {
 
                 throw CashflowException::unauthorized('dismiss vendor requests');
 

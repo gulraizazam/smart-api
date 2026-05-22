@@ -19,7 +19,7 @@ class CashFlowPolicy
      */
     public function viewDashboard(User $user): bool
     {
-        return $user->can('cashflow_dashboard');
+        return $user->can('cashflow.dashboard.view');
     }
 
     /**
@@ -27,7 +27,7 @@ class CashFlowPolicy
      */
     public function manageSettings(User $user): bool
     {
-        return $user->can('cashflow_settings');
+        return $user->can('cashflow.settings.manage');
     }
 
     /**
@@ -35,7 +35,7 @@ class CashFlowPolicy
      */
     public function manage(User $user): bool
     {
-        return $user->can('cashflow_manage');
+        return $user->can('cashflow.manage');
     }
 
     /**
@@ -43,7 +43,7 @@ class CashFlowPolicy
      */
     public function viewReports(User $user): bool
     {
-        return $user->can('cashflow_reports') || $user->can('cashflow_dashboard');
+        return $user->can('cashflow.reports.view') || $user->can('cashflow.dashboard.view');
     }
 
     /**
@@ -51,7 +51,7 @@ class CashFlowPolicy
      */
     public function fdmView(User $user): bool
     {
-        return $user->can('cashflow_fdm_view');
+        return $user->can('cashflow.fdm.view');
     }
 
     /**
@@ -59,7 +59,7 @@ class CashFlowPolicy
      */
     public function manageVendors(User $user): bool
     {
-        return $user->can('cashflow_vendor') || $user->can('cashflow_manage');
+        return $user->can('cashflow.vendor.manage') || $user->can('cashflow.manage');
     }
 
     /**
@@ -67,7 +67,7 @@ class CashFlowPolicy
      */
     public function manageExpenses(User $user): bool
     {
-        return $user->can('cashflow_expense') || $user->can('cashflow_manage');
+        return $user->can('cashflow.expense.create') || $user->can('cashflow.manage');
     }
 
     /**
@@ -75,7 +75,7 @@ class CashFlowPolicy
      */
     public function managePools(User $user): bool
     {
-        return $user->can('cashflow_pool_manage') || $user->can('cashflow_manage');
+        return $user->can('cashflow.pool.manage') || $user->can('cashflow.manage');
     }
 
     /**
@@ -83,7 +83,7 @@ class CashFlowPolicy
      */
     public function manageCategories(User $user): bool
     {
-        return $user->can('cashflow_category_manage') || $user->can('cashflow_manage');
+        return $user->can('cashflow.category.manage') || $user->can('cashflow.manage');
     }
 
     /**
@@ -91,7 +91,7 @@ class CashFlowPolicy
      */
     public function lockPeriod(User $user): bool
     {
-        return $user->can('cashflow_period_lock') || $user->can('cashflow_manage');
+        return $user->can('cashflow.period.lock') || $user->can('cashflow.manage');
     }
 
     /**
@@ -99,7 +99,7 @@ class CashFlowPolicy
      */
     public function manageStaffAdvances(User $user): bool
     {
-        return $user->can('cashflow_staff_advance') || $user->can('cashflow_manage');
+        return $user->can('cashflow.staff_advance.view') || $user->can('cashflow.manage');
     }
 
     /**
@@ -107,7 +107,7 @@ class CashFlowPolicy
      */
     public function transfer(User $user): bool
     {
-        return $user->can('cashflow_transfer') || $user->can('cashflow_manage');
+        return $user->can('cashflow.transfer.create') || $user->can('cashflow.manage');
     }
 
     /**
@@ -115,7 +115,8 @@ class CashFlowPolicy
      */
     public function approveRequests(User $user): bool
     {
-        return $user->can('cashflow_manage') || $user->can('cashflow_approve');
+        // Approval is most-aligned with vendor/expense approve flows.
+        return $user->can('cashflow.manage') || $user->can('cashflow.expense.approve');
     }
 
     /**
@@ -123,6 +124,6 @@ class CashFlowPolicy
      */
     public function export(User $user): bool
     {
-        return $user->can('cashflow_reports') || $user->can('cashflow_manage');
+        return $user->can('cashflow.reports.view') || $user->can('cashflow.manage');
     }
 }

@@ -65,7 +65,7 @@
                             <h3 class="card-label">Bundles</h3>
                         </div>
                         <div class="card-toolbar">
-                            @can('packages_destroy')
+                            @can('bundles.destroy')
                                 <div class="delete-records d-none">
                                     <span>Selected: <span class="checkbox-count"></span></span>
                                     <a id="delete-table-rows" href="javascript:void(0);" class="btn btn-sm btn-danger">
@@ -73,12 +73,12 @@
                                     </a>
                                 </div>
                             @endcan
-                            @can('packages_edit')
+                            @can('bundles.sort')
                                 <a href="{{ route('admin.service-bundles.sort') }}" class="btn btn-sm btn-info mr-2">
                                     <i class="fa fa-sort-amount-up"></i> Sort
                                 </a>
                             @endcan
-                            @can('packages_create')
+                            @can('bundles.create')
                                 <a href="javascript:void(0);" class="btn btn-sm btn-success mr-2" id="bulk-create-btn" data-toggle="modal" data-target="#modal_bulk_bundles">
                                     <i class="la la-layer-group"></i> Bulk Create
                                 </a>
@@ -121,7 +121,7 @@
 
     @push('datatable-js')
         <script>
-            var hasEditRights = {{ Gate::allows('packages_edit') || Gate::allows('packages_destroy') || Gate::allows('packages_active') || Gate::allows('packages_inactive') ? 'true' : 'false' }};
+            var hasEditRights = {{ Gate::allows('bundles.edit') || Gate::allows('bundles.destroy') || Gate::allows('bundles.activate') || Gate::allows('bundles.deactivate') ? 'true' : 'false' }};
         </script>
         <script src="{{asset('assets/js/pages/admin_settings/service-bundles.js')}}"></script>
     @endpush

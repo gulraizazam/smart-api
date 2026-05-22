@@ -35,7 +35,7 @@ class ConsultancyController extends Controller
     public function index(Request $request): JsonResponse
     {
         try {
-            if (!Gate::allows('consultations_manage')) {
+            if (!Gate::allows('consultations.list.view')) {
                 throw AppointmentException::unauthorized();
             }
 
@@ -85,7 +85,7 @@ class ConsultancyController extends Controller
     public function store(StoreConsultancyRequest $request): JsonResponse
     {
         try {
-            if (!Gate::allows('appointments_consultancy')) {
+            if (!Gate::allows('consultations.create')) {
                 throw AppointmentException::unauthorized();
             }
 
@@ -106,7 +106,7 @@ class ConsultancyController extends Controller
     public function show(int $id): JsonResponse
     {
         try {
-            if (!Gate::allows('consultations_manage') && !Gate::allows('appointments_view')) {
+            if (!Gate::allows('consultations.detail.view')) {
                 throw AppointmentException::unauthorized();
             }
 
@@ -126,7 +126,7 @@ class ConsultancyController extends Controller
     public function update(UpdateConsultancyRequest $request, int $id): JsonResponse
     {
         try {
-            if (!Gate::allows('appointments_consultancy')) {
+            if (!Gate::allows('consultations.edit')) {
                 throw AppointmentException::unauthorized();
             }
 
@@ -146,7 +146,7 @@ class ConsultancyController extends Controller
     public function destroy(int $id): JsonResponse
     {
         try {
-            if (!Gate::allows('appointments_consultancy')) {
+            if (!Gate::allows('consultations.delete')) {
                 throw AppointmentException::unauthorized();
             }
 
@@ -163,7 +163,7 @@ class ConsultancyController extends Controller
     public function updateStatus(UpdateAppointmentStatusRequest $request, int $id): JsonResponse
     {
         try {
-            if (!Gate::allows('appointments_manage') && !Gate::allows('appointments_status_update')) {
+            if (!Gate::allows('consultations.update_status')) {
                 throw AppointmentException::unauthorized();
             }
 
@@ -183,7 +183,7 @@ class ConsultancyController extends Controller
     public function schedule(ScheduleConsultancyRequest $request, int $id): JsonResponse
     {
         try {
-            if (!Gate::allows('appointments_consultancy')) {
+            if (!Gate::allows('consultations.reschedule')) {
                 throw AppointmentException::unauthorized();
             }
 
@@ -203,7 +203,7 @@ class ConsultancyController extends Controller
     public function scheduled(Request $request): JsonResponse
     {
         try {
-            if (!Gate::allows('consultations_manage')) {
+            if (!Gate::allows('consultations.list.view')) {
                 throw AppointmentException::unauthorized();
             }
 
@@ -228,7 +228,7 @@ class ConsultancyController extends Controller
     public function nonScheduled(Request $request): JsonResponse
     {
         try {
-            if (!Gate::allows('consultations_manage')) {
+            if (!Gate::allows('consultations.list.view')) {
                 throw AppointmentException::unauthorized();
             }
 
@@ -264,7 +264,7 @@ class ConsultancyController extends Controller
     public function activities(int $id): JsonResponse
     {
         try {
-            if (! Gate::allows('consultations_manage') && ! Gate::allows('appointments_view')) {
+            if (! Gate::allows('consultations.view_activity')) {
                 throw AppointmentException::unauthorized();
             }
 
@@ -334,7 +334,7 @@ class ConsultancyController extends Controller
     public function statistics(Request $request): JsonResponse
     {
         try {
-            if (!Gate::allows('consultations_manage')) {
+            if (!Gate::allows('consultations.list.view')) {
                 throw AppointmentException::unauthorized();
             }
 
@@ -409,7 +409,7 @@ class ConsultancyController extends Controller
     public function whatsappData(int $id): JsonResponse
     {
         try {
-            if (!Gate::allows('consultations_manage') && !Gate::allows('appointments_view')) {
+            if (!Gate::allows('consultations.copy_whatsapp')) {
                 throw AppointmentException::unauthorized();
             }
 
@@ -502,8 +502,7 @@ class ConsultancyController extends Controller
      */
     public function export(Request $request): BinaryFileResponse
     {
-        if (!Gate::allows('consultations_manage') && !Gate::allows('appointments_export_all')
-            && !Gate::allows('appointments_export_today') && !Gate::allows('appointments_export_this_month')) {
+        if (!Gate::allows('consultations.export')) {
             abort(403, 'You are not authorised to export consultancies.');
         }
 

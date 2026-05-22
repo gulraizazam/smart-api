@@ -89,15 +89,15 @@ final class ServiceHelper
     public static function getPermissions(): array
     {
         return [
-            'edit'      => Gate::allows('services_edit'),
-            'delete'    => Gate::allows('services_destroy'),
-            'active'    => Gate::allows('services_active'),
-            'inactive'  => Gate::allows('services_inactive'),
-            'create'    => Gate::allows('services_create'),
-            'sort'      => Gate::allows('services_sort'),
-            'export'    => Gate::allows('services_export'),
-            'duplicate' => Gate::allows('services_duplicate'),
-            'detail'    => Gate::allows('services_detail'),
+            'edit'      => Gate::allows('services.edit'),
+            'delete'    => Gate::allows('services.destroy'),
+            'active'    => Gate::allows('services.activate'),
+            'inactive'  => Gate::allows('services.deactivate'),
+            'create'    => Gate::allows('services.create'),
+            'sort'      => Gate::allows('services.sort'),
+            'export'    => Gate::allows('services.export'),
+            'duplicate' => Gate::allows('services.duplicate'),
+            'detail'    => Gate::allows('services.detail.view'),
         ];
     }
 
@@ -106,7 +106,7 @@ final class ServiceHelper
      */
     public static function canViewInactive(): bool
     {
-        return Gate::allows('view_inactive_services');
+        return Gate::allows('services.list.view_inactive');
     }
 
     /**

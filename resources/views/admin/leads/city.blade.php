@@ -1,4 +1,4 @@
-@if(Gate::allows('leads_city'))
+@if(Gate::allows('leads.update_city'))
     <a href="{{ route('admin.leads.cities') }}"
        class="city" data-type="select"
        data-pk="{{ $lead->lead_id }}" data-value="@if($lead->city_id){{ $lead->city->id }}@else{{''}}@endif"

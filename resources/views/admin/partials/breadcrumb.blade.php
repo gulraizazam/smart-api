@@ -31,7 +31,7 @@
         <div style="float: right" class="topbar d-none d-lg-flex">
 
             <!--begin::Cashflow Notifications-->
-            @can('cashflow_manage')
+            @can('cashflow.manage')
             <div class="topbar-item mr-3 position-relative" id="cashflow-notification-bell">
                 <div class="btn btn-icon btn-clean btn-lg position-relative" id="cashflow_notification_toggle">
                     <i class="la la-bell icon-lg"></i>

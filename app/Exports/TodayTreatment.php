@@ -22,7 +22,7 @@ class TodayTreatment implements FromQuery, WithHeadings, WithMapping, WithEvents
         private readonly int $limit = 1000,
         private readonly int $offset = 0,
     ) {
-        $this->canViewContact = Gate::allows('contact');
+        $this->canViewContact = Gate::allows('treatments.list.view_contact');
     }
 
     public function query()

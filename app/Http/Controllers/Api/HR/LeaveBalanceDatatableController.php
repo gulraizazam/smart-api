@@ -20,7 +20,7 @@ class LeaveBalanceDatatableController extends Controller
     {
         try {
             if (!Gate::allows('hr_leave_manage')) {
-                return $this->errorResponse('You are not authorized to access this resource.', 401);
+                return $this->errorResponse('You are not authorized to access this resource.', 403);
             }
 
             $accountId = Auth::user()->account_id;

@@ -73,7 +73,7 @@
         </div>
     @endcan
 
-    @can("patients_document_manage")
+    @can("patients.documents.view")
         <div class="navi-item mb-2">
             <a href="javascript:void(0);" onclick="changeProfilePage($(this), 'document-form');" class="change-tab document-form-tab navi-link py-4">
                 <span class="navi-icon mr-2">

@@ -11,16 +11,16 @@
                     <div class="card-body py-3">
                         <div class="d-flex justify-content-between align-items-center flex-wrap">
                             <div class="d-flex align-items-center">
-                                @can('cashflow_expense_create')
+                                @can('cashflow.expense.create')
                                 <a href="{{ route('admin.cashflow.expenses') }}?action=add" class="btn btn-primary mr-2"><i class="la la-plus"></i> Expense</a>
                                 @endcan
-                                @can('cashflow_transfer_create')
+                                @can('cashflow.transfer.create')
                                 <a href="{{ route('admin.cashflow.transfers') }}?action=add" class="btn btn-info mr-2"><i class="la la-exchange-alt"></i> Transfer</a>
                                 @endcan
-                                @can('cashflow_vendor_transaction')
+                                @can('cashflow.vendor.transaction.create')
                                 <a href="{{ route('admin.cashflow.vendors') }}?action=add" class="btn btn-warning mr-2"><i class="la la-shopping-cart"></i> Vendor Purchase</a>
                                 @endcan
-                                @can('cashflow_staff_advance')
+                                @can('cashflow.staff_advance.view')
                                 <a href="{{ route('admin.cashflow.staff') }}?action=add" class="btn btn-success"><i class="la la-hand-holding-usd"></i> Advance</a>
                                 @endcan
                             </div>
@@ -42,7 +42,7 @@
                 </div>
 
                 <!-- Pending Expenses Inline List (Sec 16 Screen 1) -->
-                @can('cashflow_expense_approve')
+                @can('cashflow.expense.approve')
                 <div class="row mb-5 d-none" id="pending-list-row">
                     <div class="col-lg-12">
                         <div class="card card-custom">
@@ -225,7 +225,7 @@
                         </div>
                     </div>
                     <div class="col-lg-4">
-                        @can('cashflow_settings')
+                        @can('cashflow.settings.manage')
                         <div class="card card-custom">
                             <div class="card-header py-3"><div class="card-title"><h3 class="card-label"><i class="la la-balance-scale mr-2"></i>Reconciliation</h3></div></div>
                             <div class="card-body text-center">

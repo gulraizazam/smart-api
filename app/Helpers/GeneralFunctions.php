@@ -97,7 +97,7 @@ class GeneralFunctions
                     }
                 }
             }
-            if (Gate::allows('view_inactive_services')) {
+            if (Gate::allows('services.list.view_inactive')) {
                 $services = Services::where('slug', '!=', 'all')
                     ->whereNull('parent_id')
                     ->orderBy('id', 'asc')
@@ -116,7 +116,7 @@ class GeneralFunctions
 
                 if ($parentMatches) {
                     // Parent matches: get ALL children (only filter by status, not by name)
-                    if (Gate::allows('view_inactive_services')) {
+                    if (Gate::allows('services.list.view_inactive')) {
                         $children = Services::where(['parent_id' => $service->id])
                             ->when(hasFilter($filters, 'status'), fn ($q) => $q->where(['active' => $filters['status']]))
                             ->orderBy('sort_number', 'asc')
@@ -134,7 +134,7 @@ class GeneralFunctions
                     }
                 } else {
                     // Parent doesn't match: get children that match the name filter
-                    if (Gate::allows('view_inactive_services')) {
+                    if (Gate::allows('services.list.view_inactive')) {
                         $children = Services::where(['parent_id' => $service->id])
                             ->where('name', 'like', '%' . $filters['name'] . '%')
                             ->when(hasFilter($filters, 'status'), fn ($q) => $q->where(['active' => $filters['status']]))
@@ -210,7 +210,7 @@ class GeneralFunctions
                         foreach ($services as $key => $service) {
                             // $service is already loaded from the parent query — no need to re-fetch.
                             if ($service->parent_id == '0') {
-                                if (Gate::allows('view_inactive_services')) {
+                                if (Gate::allows('services.list.view_inactive')) {
                                     $children = Services::where(['parent_id' => $service->id, 'active' => $filters['status']])->orderBy('name')->get();
                                 } else {
                                     $children = Services::where(['parent_id' => $service->id, 'active' => 1])->orderBy('name')->get();
@@ -244,7 +244,7 @@ class GeneralFunctions
                         foreach ($services as $key => $service) {
                             // $service is already loaded from the parent query — no need to re-fetch.
                             if ($service->parent_id == '0') {
-                                if (Gate::allows('view_inactive_services')) {
+                                if (Gate::allows('services.list.view_inactive')) {
                                     $children = Services::where(['parent_id' => $service->id, 'active' => $filters['status']])->orderBy('name')->get();
                                 } else {
                                     $children = Services::where(['parent_id' => $service->id, 'active' => 1])->orderBy('name')->get();
@@ -275,7 +275,7 @@ class GeneralFunctions
                     $services = $query->get();
                     $mergedServices = [];
                     foreach ($services as $key => $service) {
-                        if (Gate::allows('view_inactive_services')) {
+                        if (Gate::allows('services.list.view_inactive')) {
                             $children = Services::where(['parent_id' => $service->id, 'active' => $filters['status']])->orderBy('name')->get();
                         } else {
                             $children = Services::where(['parent_id' => $service->id, 'active' => 1])->orderBy('name')->get();
@@ -296,7 +296,7 @@ class GeneralFunctions
                     $services = $query->get();
                     $mergedServices = [];
                     foreach ($services as $key => $service) {
-                        if (Gate::allows('view_inactive_services')) {
+                        if (Gate::allows('services.list.view_inactive')) {
                             $children = Services::where(['parent_id' => $service->id, 'active' => $filters['status']])->orderBy('name')->get();
                         } else {
                             $children = Services::where(['parent_id' => $service->id, 'active' => 1])->orderBy('name')->get();
@@ -338,7 +338,7 @@ class GeneralFunctions
             $services = $query->get();
             $mergedServices = [];
             foreach ($services as $key => $service) {
-                if (Gate::allows('view_inactive_services')) {
+                if (Gate::allows('services.list.view_inactive')) {
                     $children = Services::where(['parent_id' => $service->id])->orderBy('name')->get();
                 } else {
                     $children = Services::where(['parent_id' => $service->id, 'active' => 1])->orderBy('name')->get();
@@ -438,7 +438,7 @@ class GeneralFunctions
                             foreach ($services as $key => $service) {
                                 // $service is already loaded from the parent query — no need to re-fetch.
                                 if ($service->parent_id == '0') {
-                                    if (Gate::allows('view_inactive_services')) {
+                                    if (Gate::allows('services.list.view_inactive')) {
                                         $children = Services::where('parent_id', $service->id)->where('active', $filters['status'])->orderBy('name')->get();
                                     } else {
                                         $children = Services::where('parent_id', $service->id)->where('active', 1)->orderBy('name')->get();
@@ -480,7 +480,7 @@ class GeneralFunctions
                             foreach ($services as $key => $service) {
                                 // $service is already loaded from the parent query — no need to re-fetch.
                                 if ($service->parent_id == '0') {
-                                    if (Gate::allows('view_inactive_services')) {
+                                    if (Gate::allows('services.list.view_inactive')) {
                                         $children = Services::where(['parent_id' => $service->id, 'active' => $filters['status']])->orderBy('name')->get();
                                     } else {
                                         $children = Services::where(['parent_id' => $service->id, 'active' => 1])->orderBy('name')->get();
@@ -515,7 +515,7 @@ class GeneralFunctions
                         $services = $query->get();
                         $mergedServices = [];
                         foreach ($services as $key => $service) {
-                            if (Gate::allows('view_inactive_services')) {
+                            if (Gate::allows('services.list.view_inactive')) {
                                 $children = Services::where(['parent_id' => $service->id, 'active' => $filters['status']])->orderBy('name')->get();
                             } else {
                                 $children = Services::where(['parent_id' => $service->id, 'active' => 1])->orderBy('name')->get();
@@ -536,7 +536,7 @@ class GeneralFunctions
                         $services = $query->get();
                         $mergedServices = [];
                         foreach ($services as $key => $service) {
-                            if (Gate::allows('view_inactive_services')) {
+                            if (Gate::allows('services.list.view_inactive')) {
                                 $children = Services::where(['parent_id' => $service->id, 'active' => $filters['status']])->where()->orderBy('name')->get();
                             } else {
                                 $children = Services::where(['parent_id' => $service->id, 'active' => 1])->orderBy('name')->get();

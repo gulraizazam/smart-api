@@ -89,7 +89,7 @@
                             <h3 class="card-label">Packages</h3>
                         </div>
                         <div class="card-toolbar">
-                            @can('packages_destroy')
+                            @can('packages.destroy')
                                 <div class="delete-records d-none">
                                     <span>Selected: <span class="checkbox-count"></span></span>
                                     <a id="delete-table-rows" href="javascript:void(0);" class="btn btn-sm btn-danger">
@@ -97,12 +97,12 @@
                                     </a>
                                 </div>
                             @endcan
-                            @can('packages_edit')
+                            @can('packages.sort')
                                 <a href="{{ route('admin.bundles.sort') }}" class="btn btn-sm btn-info mr-2">
                                     <i class="fa fa-sort-amount-up"></i> Sort
                                 </a>
                             @endcan
-                            @can('packages_create')
+                            @can('packages.create')
                                 <a href="javascript:void(0);" class="btn btn-sm btn-primary" id="create-btn" data-toggle="modal" data-target="#modal_bundles">
                                     <i class="la la-plus"></i> Create Package
                                 </a>
@@ -135,7 +135,7 @@
 
     @push('datatable-js')
         <script>
-            var hasEditRights = {{ Gate::allows('packages_edit') || Gate::allows('packages_destroy') || Gate::allows('packages_active') || Gate::allows('packages_inactive') ? 'true' : 'false' }};
+            var hasEditRights = {{ Gate::allows('packages.edit') || Gate::allows('packages.destroy') || Gate::allows('packages.activate') || Gate::allows('packages.deactivate') ? 'true' : 'false' }};
         </script>
         <script src="{{asset('assets/js/pages/admin_settings/bundles.js')}}"></script>
     @endpush

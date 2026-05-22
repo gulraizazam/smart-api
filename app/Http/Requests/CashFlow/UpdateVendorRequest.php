@@ -11,7 +11,7 @@ class UpdateVendorRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return Auth::user()->can('cashflow_vendor_edit');
+        return Auth::user()->can('cashflow.vendor.edit');
     }
 
     public function rules(): array

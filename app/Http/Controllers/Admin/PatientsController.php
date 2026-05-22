@@ -33,7 +33,7 @@ class PatientsController extends Controller
 {
     public function index(): View
     {
-        if (! Gate::allows('patients_manage')) {
+        if (! Gate::allows('patients.list.view')) {
             return abort(401);
         }
 
@@ -42,7 +42,7 @@ class PatientsController extends Controller
 
     public function preview(int $id): View
     {
-        if (! Gate::allows('patients_manage')) {
+        if (! Gate::allows('patients.card.view')) {
             return abort(401);
         }
 
@@ -55,19 +55,24 @@ class PatientsController extends Controller
      */
     public function cardV2(int $id, string $section = 'profile'): View
     {
-        if (! Gate::allows('patients_manage')) {
+        if (! Gate::allows('patients.card.view')) {
             return abort(401);
         }
 
+        // Per-section gates — each tab in the patient card is its own
+        // patients-module perm. The owning module's broader manage perm
+        // (consultations_manage etc.) is no longer checked here; it gates
+        // the standalone modules. This lets ops revoke a tab inside the
+        // card without affecting the user's access to the global module.
         $sectionPermissions = [
-            'profile' => 'patients_manage',
-            'consultations' => 'consultations_manage',
-            'treatments' => 'treatments_manage',
-            'plans' => 'plans_manage',
-            'invoices' => 'invoices_manage',
-            'refunds' => 'refunds_manage',
-            'documents' => 'patients_manage',
-            'activity' => 'patients_manage',
+            'profile' => 'patients.profile.view',
+            'consultations' => 'patients.consultations.view',
+            'treatments' => 'patients.treatments.view',
+            'plans' => 'patients.plans.view',
+            'invoices' => 'patients.invoices.view',
+            'refunds' => 'patients.refunds.view',
+            'documents' => 'patients.documents.view',
+            'activity' => 'patients.activity.view',
         ];
 
         if (! array_key_exists($section, $sectionPermissions)) {
@@ -106,17 +111,17 @@ class PatientsController extends Controller
             ->first();
 
         $permissions = [
-            'edit' => Gate::allows('patients_edit'),
-            'delete' => Gate::allows('patients_delete'),
+            'edit' => Gate::allows('patients.edit'),
+            'delete' => Gate::allows('patients.delete'),
             'status' => Gate::allows('appointments_status'),
             'consultancy' => Gate::allows('appointments_manage'),
             'treatment' => Gate::allows('treatments_manage'),
             'invoice' => Gate::allows('consultancy_invoice'),
             'invoice_display' => Gate::allows('consultancy_invoice_display'),
             'log' => Gate::allows('appointments_log'),
-            'plans_create' => Gate::allows('plans_create'),
-            'plans_manage' => Gate::allows('plans_manage'),
-            'contact' => Gate::allows('contact'),
+            'plans_create' => Gate::allows('plans.create'),
+            'plans_manage' => Gate::allows('plans.list.view'),
+            'contact' => Gate::allows('patients.list.view_contact'),
         ];
 
         return view('admin.patients.card-v2.index', compact('patient', 'section', 'permissions', 'membership') + ['patientId' => $id]);
@@ -157,7 +162,7 @@ class PatientsController extends Controller
 
     public function leads(int $id): View
     {
-        if (! Gate::allows('patients_manage') && ! Gate::allows('leads_manage') && ! Gate::allows('leads_view')) {
+        if (! Gate::allows('patients.card.view') && ! Gate::allows('leads.list.view')) {
             return abort(401);
         }
 
@@ -188,7 +193,7 @@ class PatientsController extends Controller
 
     public function leadsDatatable(int $id, Request $request): JsonResponse
     {
-        if (! Gate::allows('patients_manage') && ! Gate::allows('leads_manage') && ! Gate::allows('leads_view')) {
+        if (! Gate::allows('patients.card.view') && ! Gate::allows('leads.list.view')) {
             return abort(401);
         }
 
@@ -278,7 +283,7 @@ class PatientsController extends Controller
             $records['data'][$index] = [
                 'PatientId' => $lead->PatientId,
                 'name' => $lead->name,
-                'phone' => Gate::allows('contact') ? GeneralFunctions::prepareNumber4Call($lead->patient->phone) : '***********',
+                'phone' => Gate::allows('patients.list.view_contact') ? GeneralFunctions::prepareNumber4Call($lead->patient->phone) : '***********',
                 'city_id' => $lead->city?->name ?? '',
                 'lead_status_id' => $lead->lead_status?->name ?? '',
                 'service_id' => $lead->service?->name ?? '',
@@ -312,7 +317,7 @@ class PatientsController extends Controller
 
     public function imageindex(int $id): View
     {
-        if (! Gate::allows('patients_manage') && ! Gate::allows('users_manage')) {
+        if (! Gate::allows('users_manage')) {
             return abort(401);
         }
 
@@ -326,7 +331,7 @@ class PatientsController extends Controller
 
     public function documentindex(int $id): View
     {
-        if (! Gate::allows('patients_document_manage')) {
+        if (! Gate::allows('patients.documents.view')) {
             return abort(401);
         }
 
@@ -343,7 +348,7 @@ class PatientsController extends Controller
 
     public function documentCreate(int $id): View
     {
-        if (! Gate::allows('patients_document_create')) {
+        if (! Gate::allows('patients.documents.upload')) {
             return abort(401);
         }
 
@@ -354,7 +359,7 @@ class PatientsController extends Controller
 
     public function documentstore(PatientDocumentStoreRequest $request): JsonResponse
     {
-        if (! Gate::allows('patients_document_create')) {
+        if (! Gate::allows('patients.documents.upload')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
 
@@ -417,9 +422,9 @@ class PatientsController extends Controller
         }
 
         $records['permissions'] = [
-            'edit' => Gate::allows('patients_document_edit'),
-            'delete' => Gate::allows('patients_document_destroy'),
-            'manage' => Gate::allows('patients_document_manage'),
+            'edit' => Gate::allows('patients.documents.edit'),
+            'delete' => Gate::allows('patients.documents.delete'),
+            'manage' => Gate::allows('patients.documents.view'),
         ];
 
         return response()->json($records);
@@ -427,7 +432,7 @@ class PatientsController extends Controller
 
     public function documentedit(int $id): View
     {
-        if (! Gate::allows('patients_document_edit')) {
+        if (! Gate::allows('patients.documents.edit')) {
             return abort(401);
         }
 
@@ -447,7 +452,7 @@ class PatientsController extends Controller
 
     public function documentupdate(UpdatePatientDocumentRequest $request, int $id): JsonResponse
     {
-        if (! Gate::allows('patients_document_edit')) {
+        if (! Gate::allows('patients.documents.edit')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
 
@@ -460,7 +465,7 @@ class PatientsController extends Controller
 
     public function documentdelete(int $id): JsonResponse
     {
-        if (! Gate::allows('patients_document_destroy')) {
+        if (! Gate::allows('patients.documents.delete')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
 

@@ -7,12 +7,27 @@ namespace App\Http\Requests\Membership;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
+use Illuminate\Support\Facades\Gate;
 
 final class ToggleMembershipStatusRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true;
+        // Either side of the activate/deactivate split is enough to pass
+        // the FormRequest gate; the controller re-checks the perm that
+        // actually matches the requested status.
+        return Gate::any(['memberships.activate', 'memberships.deactivate']);
+    }
+
+    protected function failedAuthorization(): void
+    {
+        throw new HttpResponseException(
+            response()->json([
+                'status'  => false,
+                'message' => 'You are not authorized to access this resource.',
+                'data'    => null,
+            ], 403)
+        );
     }
 
     public function rules(): array

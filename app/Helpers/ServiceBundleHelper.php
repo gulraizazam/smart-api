@@ -85,11 +85,11 @@ class ServiceBundleHelper
     public static function getPermissions(): array
     {
         return [
-            'edit'     => Gate::allows('packages_edit'),
-            'delete'   => Gate::allows('packages_destroy'),
-            'active'   => Gate::allows('packages_active'),
-            'inactive' => Gate::allows('packages_inactive'),
-            'details'  => Gate::allows('packages_manage'),
+            'edit'     => Gate::allows('bundles.edit'),
+            'delete'   => Gate::allows('bundles.destroy'),
+            'active'   => Gate::allows('bundles.activate'),
+            'inactive' => Gate::allows('bundles.deactivate'),
+            'details'  => Gate::allows('bundles.detail.view'),
         ];
     }
 

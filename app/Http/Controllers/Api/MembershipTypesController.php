@@ -29,6 +29,10 @@ final class MembershipTypesController extends Controller
 
     public function datatable(MembershipTypeDatatableRequest $request): JsonResponse
     {
+        if (Gate::denies('membership_types.list.view')) {
+            return $this->unauthorized();
+        }
+
         try {
             $filters     = $request->filters();
             $applyFilter = checkFilters($filters, 'membership_types');
@@ -52,11 +56,11 @@ final class MembershipTypesController extends Controller
 
             if ($rows->isNotEmpty()) {
                 $records['permissions'] = [
-                    'edit'   => Gate::allows('membershiptypes_edit'),
-                    'delete' => Gate::allows('membershiptypes_destroy'),
-                    'active' => Gate::allows('membershiptypes_active'),
-                    'inactive' => Gate::allows('membershiptypes_inactive'),
-                    'create' => Gate::allows('membershiptypes_create'),
+                    'edit'   => Gate::allows('membership_types.edit'),
+                    'delete' => Gate::allows('membership_types.destroy'),
+                    'active' => Gate::allows('membership_types.activate'),
+                    'inactive' => Gate::allows('membership_types.deactivate'),
+                    'create' => Gate::allows('membership_types.create'),
                 ];
 
                 $records['meta'] = [
@@ -80,7 +84,7 @@ final class MembershipTypesController extends Controller
 
     public function store(StoreMembershipTypeRequest $request): JsonResponse
     {
-        if (Gate::denies('membershiptypes_create')) {
+        if (Gate::denies('membership_types.create')) {
             return $this->unauthorized();
         }
 
@@ -99,7 +103,7 @@ final class MembershipTypesController extends Controller
 
     public function edit(int $id): JsonResponse
     {
-        if (Gate::denies('membershiptypes_edit')) {
+        if (Gate::denies('membership_types.edit')) {
             return $this->unauthorized();
         }
 
@@ -118,7 +122,7 @@ final class MembershipTypesController extends Controller
 
     public function update(UpdateMembershipTypeRequest $request, int $id): JsonResponse
     {
-        if (Gate::denies('membershiptypes_edit')) {
+        if (Gate::denies('membership_types.edit')) {
             return $this->unauthorized();
         }
 
@@ -137,7 +141,7 @@ final class MembershipTypesController extends Controller
 
     public function destroy(int $id): JsonResponse
     {
-        if (Gate::denies('membershiptypes_destroy')) {
+        if (Gate::denies('membership_types.destroy')) {
             return $this->unauthorized();
         }
 
@@ -162,7 +166,11 @@ final class MembershipTypesController extends Controller
 
     public function status(ToggleMembershipTypeStatusRequest $request): JsonResponse
     {
-        if (Gate::denies('membershiptypes_active')) {
+        // Legacy `membershiptypes_active` covered both directions; new
+        // catalog splits activate/deactivate. Pick the perm by status.
+        $targetStatus = (int) $request->validated()['status'];
+        $needed = $targetStatus === 1 ? 'membership_types.activate' : 'membership_types.deactivate';
+        if (Gate::denies($needed)) {
             return $this->unauthorized();
         }
 

@@ -36,7 +36,7 @@
             <span class="caption-subject font-blue-madison bold uppercase">Documents</span>
         </div>
         <div class="actions">
-            @if(Gate::allows('patients_document_create') )
+            @if(Gate::allows('patients.documents.upload') )
                 <a class="btn btn-success" href="{{ route('admin.patients.createdocument',[$patient->id])}}" data-target="#ajax_patient_documents" data-toggle="modal">@lang('global.app_add_new')</a>
             @endif
         </div>

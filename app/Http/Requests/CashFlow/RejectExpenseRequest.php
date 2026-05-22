@@ -10,7 +10,7 @@ class RejectExpenseRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return Auth::user()->can('cashflow_expense_reject');
+        return Auth::user()->can('cashflow.expense.reject');
     }
 
     public function rules(): array

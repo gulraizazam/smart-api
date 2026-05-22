@@ -14,7 +14,7 @@ class PatientDetailResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
-        $canViewContact = Gate::allows('contact');
+        $canViewContact = Gate::allows('patients.list.view_contact');
 
         return [
             'id' => $this->id,

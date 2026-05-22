@@ -18,14 +18,18 @@ class RoleService
 
     /**
      * Fixed render order for permission categories on the role edit/create UI.
+     * Categories mirror the SPA sidebar groups (see sidebar-data.ts) so the
+     * role editor reads in the same order the sidebar surfaces modules.
      * A category whose value is `null` in the DB is rendered in `OTHER_CATEGORY`
      * at the end so nothing silently disappears if a new permission is added
      * without a category backfill.
+     *
+     * Companion migration: 2026_05_23_120000_recategorise_permissions_to_sidebar
+     * rewrites every visible group header's category to one of these values.
      */
     private const CATEGORY_ORDER = [
-        'Dashboard', 'System', 'Users & Access', 'Resources', 'Locations',
-        'Leads', 'Appointments', 'Catalog', 'Patients', 'Financial',
-        'Forms & SMS', 'Targets', 'Business Ops', 'HRM', 'Reports',
+        'Dashboard', 'Clinic', 'Catalog', 'Finance', 'Cash Flow',
+        'Inventory', 'Reports', 'People', 'Settings',
     ];
 
     private const OTHER_CATEGORY = 'Other';
@@ -79,13 +83,13 @@ class RoleService
     {
         $notInNamesForNonSuper = [
             'view_inactive_users', 'view_inactive_appointment_statuses', 'view_inactive_centres',
-            'view_inactive_cities', 'view_inactive_discounts', 'view_inactive_doctors',
-            'view_inactive_lead_sources', 'view_inactive_leads', 'view_inactive_lead_statuses',
-            'view_inactive_machine_types', 'view_inactive_packages', 'view_inactive_patients',
-            'view_inactive_payment_modes', 'view_inactive_plans', 'view_inactive_products',
+            'view_inactive_cities', 'discounts.list.view_inactive', 'view_inactive_doctors',
+            'view_inactive_lead_sources', 'leads.list.view_inactive', 'view_inactive_lead_statuses',
+            'view_inactive_machine_types', 'packages.list.view_inactive', 'patients.list.view_inactive',
+            'payment_modes.list.view_inactive', 'plans.list.view_inactive', 'view_inactive_products',
             'view_inactive_regions', 'view_inactive_custom_forms', 'view_inactive_towns',
             'view_inactive_resources', 'view_inactive_rota', 'view_inactive_rotas',
-            'view_inactive_services', 'view_inactive_sms_templates',
+            'services.list.view_inactive', 'view_inactive_sms_templates',
         ];
 
         $isSuperAdmin = Auth::user()->hasRole('Super-Admin');
@@ -258,5 +262,12 @@ class RoleService
         // Transitional: evict v1 keys that may linger from pre-deploy sessions.
         Cache::forget('roles.permissions_mapping.super');
         Cache::forget('roles.permissions_mapping.normal');
+
+        // Spatie caches the role->permission relation for 24h via the
+        // PermissionRegistrar. Without this, an admin saving a role takes
+        // up to a day to actually change `$user->can(...)` for everyone
+        // assigned that role — they have to re-login to force a fresh
+        // load, which is the pain users have been hitting in testing.
+        app(\Spatie\Permission\PermissionRegistrar::class)->forgetCachedPermissions();
     }
 }

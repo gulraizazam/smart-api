@@ -135,58 +135,18 @@ class AuthController extends Controller
             Auth::guard('web')->login($user);
             $user->recordSuccessfulLogin();
             $this->captcha->clear($clientIp);
-            $user->api_token = $user->createToken('login')->plainTextToken;
+            $apiToken = $user->createToken('login')->plainTextToken;
 
             $this->audit->record($request, 'api', LoginAuditLogger::OUTCOME_SUCCESS, $request->input('email'), $user);
-            // toAuthPayload() bundles permissions + role alongside the
-            // user attributes (and preserves the api_token we just set).
-            // Without this the SPA caches the user with `permissions`
-            // undefined and `usePermissions().has()` falls back to
-            // allow-all, leaking gated menu entries (Scheduling Shifts,
-            // Business Closures, Business Working Days) into roles
-            // that shouldn't see them.
+
+            // toAuthPayload() returns the user attributes + role + alias-
+            // expanded permissions[] the SPA needs. Without it, the SPA's
+            // usePermissions deny-by-default hides every gated surface.
             return $this->successResponse('Success', $user->toAuthPayload());
 
         } catch (\Exception $e) {
             \Illuminate\Support\Facades\Log::error($e->getMessage(), ['file' => $e->getFile(), 'line' => $e->getLine()]);
             return $this->errorResponse('An error occurred. Please try again.', 500);
         }
-    }
-
-    /**
-     * Logout for the cookie- and bearer-mode SPA. Passport-mode tokens are
-     * revoked by /api/v2/auth/logout, so this endpoint is a no-op for them.
-     *
-     * The endpoint is intentionally unauthenticated and idempotent: an
-     * expired-session caller still gets a clean 200 with the session and
-     * CSRF token rotated, so the client can't be wedged in a "logged-out
-     * locally, still alive on the server" state. The framework-emitted
-     * Logout event is captured by AuthActivityListener::onLogout for audit.
-     */
-    public function logout(Request $request): \Illuminate\Http\JsonResponse
-    {
-        // Cookie mode: terminate the web session, rotate the session ID
-        // and CSRF token. Safe to call when no session exists — the
-        // guard's logout() short-circuits and session()->invalidate()
-        // simply seeds a fresh empty session.
-        Auth::guard('web')->logout();
-        if ($request->hasSession()) {
-            $request->session()->invalidate();
-            $request->session()->regenerateToken();
-        }
-
-        // Bearer mode: revoke ONLY the personal access token used for
-        // this request — multi-device users keep their other sessions
-        // alive. Cookie- and passport-mode requests don't authenticate
-        // via Sanctum tokens, so this branch is a no-op for them.
-        $tokenUser = Auth::guard('sanctum')->user();
-        if ($tokenUser) {
-            $token = $tokenUser->currentAccessToken();
-            if ($token instanceof \Laravel\Sanctum\PersonalAccessToken) {
-                $token->delete();
-            }
-        }
-
-        return $this->successResponse('Logged out.', null);
     }
 }

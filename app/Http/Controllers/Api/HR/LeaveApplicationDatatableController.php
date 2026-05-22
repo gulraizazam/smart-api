@@ -20,7 +20,7 @@ class LeaveApplicationDatatableController extends Controller
     {
         try {
             if (!Gate::allows('hr_leave_view')) {
-                return $this->errorResponse('You are not authorized to access this resource.', 401);
+                return $this->errorResponse('You are not authorized to access this resource.', 403);
             }
 
             $accountId = Auth::user()->account_id;
@@ -121,7 +121,7 @@ class LeaveApplicationDatatableController extends Controller
                     'duration_type' => $app->duration_type?->label(),
                     'status' => $app->status,
                     'applied_on' => $app->created_at->format('d M Y'),
-                    'designation' => $app->designation_name ?? '—',
+                    'designation' => $app->designation_name ?? 'â€”',
                 ];
             });
 

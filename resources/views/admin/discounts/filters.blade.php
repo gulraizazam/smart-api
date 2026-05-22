@@ -19,7 +19,7 @@
                 <input type="text" class="form-control filter-field datatable-input" autocomplete="off"placeholder="To" id="search_end" />
             </div>
         </div>
-        @if(\Illuminate\Support\Facades\Gate::allows("view_inactive_discounts"))
+        @if(\Illuminate\Support\Facades\Gate::allows("discounts.list.view_inactive"))
             <div class="col-lg-2 mb-lg-0 mb-6">
                 <label>Status:</label>
                 <select class="form-control filter-field select2" name="status" id="search_status">

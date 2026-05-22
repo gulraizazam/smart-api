@@ -69,6 +69,12 @@ final class TreatmentController extends Controller
     public function datatable(Request $request, ?int $patientId = null): JsonResponse
     {
         try {
+            // Gate the legacy admin-v1 datatable. Without this, any
+            // authenticated user could enumerate every treatment.
+            if (!Gate::allows('treatments.list.view')) {
+                return $this->errorResponse('You are not authorized to access this resource.', 403);
+            }
+
             $patientId = $patientId ?: $request->integer('patient_id') ?: null;
 
             $data = $this->treatmentService->getDatatableData($request->all(), $patientId);
@@ -88,7 +94,7 @@ final class TreatmentController extends Controller
     public function store(StoreTreatmentRequest $request): JsonResponse
     {
         try {
-            if (!Gate::allows('treatments_services')) {
+            if (!Gate::allows('treatments.create')) {
                 return $this->errorResponse('You are not authorized to access this resource.', 403);
             }
 
@@ -109,7 +115,7 @@ final class TreatmentController extends Controller
     public function update(UpdateTreatmentRequest $request, int $id): JsonResponse
     {
         try {
-            if (!Gate::allows('treatments_services')) {
+            if (!Gate::allows('treatments.edit')) {
                 return $this->errorResponse('You are not authorized to access this resource.', 403);
             }
 
@@ -134,7 +140,7 @@ final class TreatmentController extends Controller
     public function dragDropReschedule(RescheduleTreatmentRequest $request): JsonResponse
     {
         try {
-            if (!Gate::allows('treatments_services')) {
+            if (!Gate::allows('treatments.reschedule')) {
                 return $this->errorResponse('You are not authorized to access this resource.', 403);
             }
 
@@ -155,6 +161,13 @@ final class TreatmentController extends Controller
     public function checkPatientLastTreatment(CheckPatientLastTreatmentRequest $request): JsonResponse
     {
         try {
+            // Lookup used during treatment creation to pre-fill recent
+            // treatment info. Gate on the create perm — without it the
+            // endpoint leaked treatment data to any authed caller.
+            if (!Gate::allows('treatments.create')) {
+                return $this->errorResponse('You are not authorized to access this resource.', 403);
+            }
+
             $data = $this->treatmentService->checkPatientLastTreatment($request->validated());
 
             return $this->successResponse('Patient treatment history retrieved.', $data);
@@ -173,7 +186,7 @@ final class TreatmentController extends Controller
     public function edit(int $id): JsonResponse
     {
         try {
-            if (!Gate::allows('treatments_services')) {
+            if (!Gate::allows('treatments.edit')) {
                 return $this->errorResponse('You are not authorized to access this resource.', 403);
             }
 
@@ -194,6 +207,13 @@ final class TreatmentController extends Controller
     public function clearCache(): JsonResponse
     {
         try {
+            // Cache flush is a privileged operation — bouncing the
+            // treatment-list cache for everyone. Gate on list view at
+            // minimum so randoms can't trigger thundering-herd recompute.
+            if (!Gate::allows('treatments.list.view')) {
+                return $this->errorResponse('You are not authorized to access this resource.', 403);
+            }
+
             $this->treatmentService->clearCache();
 
             return $this->successResponse('Cache cleared successfully.');
@@ -209,7 +229,7 @@ final class TreatmentController extends Controller
     public function index(Request $request): JsonResponse
     {
         try {
-            if (!Gate::allows('treatments_manage')) {
+            if (!Gate::allows('treatments.list.view')) {
                 return $this->errorResponse('Unauthorized.', 403);
             }
 
@@ -285,7 +305,7 @@ final class TreatmentController extends Controller
     public function show(int $id): JsonResponse
     {
         try {
-            if (!Gate::allows('treatments_manage') && !Gate::allows('appointments_view')) {
+            if (!Gate::allows('treatments.detail.view')) {
                 return $this->errorResponse('Unauthorized.', 403);
             }
 
@@ -305,7 +325,7 @@ final class TreatmentController extends Controller
     public function destroy(int $id): JsonResponse
     {
         try {
-            if (!Gate::allows('treatments_services')) {
+            if (!Gate::allows('treatments.delete')) {
                 return $this->errorResponse('Unauthorized.', 403);
             }
 
@@ -323,7 +343,7 @@ final class TreatmentController extends Controller
     public function updateStatus(UpdateAppointmentStatusRequest $request, int $id): JsonResponse
     {
         try {
-            if (!Gate::allows('appointments_manage') && !Gate::allows('appointments_status_update')) {
+            if (!Gate::allows('treatments.update_status')) {
                 return $this->errorResponse('Unauthorized.', 403);
             }
 
@@ -344,7 +364,7 @@ final class TreatmentController extends Controller
     public function schedule(ScheduleConsultancyRequest $request, int $id): JsonResponse
     {
         try {
-            if (!Gate::allows('treatments_services')) {
+            if (!Gate::allows('treatments.reschedule')) {
                 return $this->errorResponse('Unauthorized.', 403);
             }
 
@@ -365,7 +385,7 @@ final class TreatmentController extends Controller
     public function whatsappData(int $id): JsonResponse
     {
         try {
-            if (!Gate::allows('treatments_manage') && !Gate::allows('appointments_view')) {
+            if (!Gate::allows('treatments.copy_whatsapp')) {
                 return $this->errorResponse('Unauthorized.', 403);
             }
 
@@ -458,7 +478,7 @@ final class TreatmentController extends Controller
     public function invoice(int $id): JsonResponse
     {
         try {
-            if (!Gate::allows('appointments_manage') && !Gate::allows('appointments_view')) {
+            if (!Gate::allows('treatments.invoice.view')) {
                 return $this->errorResponse('Unauthorized.', 403);
             }
 
@@ -553,7 +573,7 @@ final class TreatmentController extends Controller
                     'patient' => $patient ? [
                         'id' => $patient->id,
                         'name' => $patient->name,
-                        'phone' => Gate::allows('contact') ? $patient->phone : null,
+                        'phone' => Gate::allows('treatments.list.view_contact') ? $patient->phone : null,
                     ] : null,
                     'doctor' => $appointment->doctor ? [
                         'id' => $appointment->doctor->id,
@@ -707,7 +727,7 @@ final class TreatmentController extends Controller
                 'patient' => $patient ? [
                     'id' => $patient->id,
                     'name' => $patient->name,
-                    'phone' => Gate::allows('contact') ? $patient->phone : null,
+                    'phone' => Gate::allows('treatments.list.view_contact') ? $patient->phone : null,
                 ] : null,
                 'doctor' => $appointment->doctor ? [
                     'id' => $appointment->doctor->id,
@@ -738,7 +758,7 @@ final class TreatmentController extends Controller
     public function invoicePlanInfo(int $id, int $packageId): JsonResponse
     {
         try {
-            if (!Gate::allows('appointments_manage') && !Gate::allows('appointments_view')) {
+            if (!Gate::allows('treatments.invoice.view')) {
                 return $this->errorResponse('Unauthorized.', 403);
             }
 
@@ -856,7 +876,7 @@ final class TreatmentController extends Controller
     public function invoicePackagePrice(int $id, Request $request): JsonResponse
     {
         try {
-            if (!Gate::allows('appointments_manage') && !Gate::allows('appointments_view')) {
+            if (!Gate::allows('treatments.invoice.view')) {
                 return $this->errorResponse('Unauthorized.', 403);
             }
 
@@ -967,8 +987,7 @@ final class TreatmentController extends Controller
 
     public function export(Request $request): BinaryFileResponse
     {
-        if (!Gate::allows('treatments_manage') && !Gate::allows('appointments_export_all')
-            && !Gate::allows('appointments_export_today') && !Gate::allows('appointments_export_this_month')) {
+        if (!Gate::allows('treatments.export')) {
             abort(403, 'You are not authorised to export treatments.');
         }
 
@@ -1057,7 +1076,7 @@ final class TreatmentController extends Controller
     public function scheduled(Request $request): JsonResponse
     {
         try {
-            if (!Gate::allows('treatments_manage')) {
+            if (!Gate::allows('treatments.list.view')) {
                 return $this->errorResponse('Unauthorized.', 403);
             }
 
@@ -1076,7 +1095,7 @@ final class TreatmentController extends Controller
     public function nonScheduled(Request $request): JsonResponse
     {
         try {
-            if (!Gate::allows('treatments_manage')) {
+            if (!Gate::allows('treatments.list.view')) {
                 return $this->errorResponse('Unauthorized.', 403);
             }
 
@@ -1095,7 +1114,7 @@ final class TreatmentController extends Controller
     public function statistics(Request $request): JsonResponse
     {
         try {
-            if (!Gate::allows('treatments_manage')) {
+            if (!Gate::allows('treatments.list.view')) {
                 return $this->errorResponse('Unauthorized.', 403);
             }
 
@@ -1118,7 +1137,7 @@ final class TreatmentController extends Controller
     public function availableResources(AvailableResourcesRequest $request): JsonResponse
     {
         try {
-            if (!Gate::allows('treatments_manage')) {
+            if (!Gate::allows('treatments.list.view')) {
                 return $this->errorResponse('Unauthorized.', 403);
             }
 
@@ -1137,7 +1156,7 @@ final class TreatmentController extends Controller
     public function servicesByLocation(Request $request): JsonResponse
     {
         try {
-            if (!Gate::allows('treatments_manage')) {
+            if (!Gate::allows('treatments.list.view')) {
                 return $this->errorResponse('Unauthorized.', 403);
             }
 

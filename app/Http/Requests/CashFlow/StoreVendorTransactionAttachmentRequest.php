@@ -26,9 +26,9 @@ class StoreVendorTransactionAttachmentRequest extends FormRequest
             return false;
         }
 
-        return $user->can('cashflow_vendor_transaction')
-            || $user->can('cashflow_vendor_manage')
-            || $user->can('cashflow_manage');
+        return $user->can('cashflow.vendor.transaction.create')
+            || $user->can('cashflow.vendor.manage')
+            || $user->can('cashflow.manage');
     }
 
     public function rules(): array

@@ -44,7 +44,7 @@
 
                         <div class="card-toolbar">
 
-                            @if(Gate::allows('invoices_create'))
+                            @if(Gate::allows('invoices.create'))
                                 <a href="javascript:void(0);" onclick="createRota('{{  route('admin.appointments.index')  }}');" class="btn btn-sm btn-dark">
                                     <i class="la la-arrow-left"></i>
                                     Back

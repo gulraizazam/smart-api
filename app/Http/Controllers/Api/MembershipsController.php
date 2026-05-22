@@ -37,6 +37,10 @@ final class MembershipsController extends Controller
 
     public function datatable(MembershipDatatableRequest $request): JsonResponse
     {
+        if (Gate::denies('memberships.list.view')) {
+            return $this->unauthorized();
+        }
+
         try {
             $filters     = $request->filters();
             $applyFilter = checkFilters($filters, 'memberships');
@@ -63,13 +67,13 @@ final class MembershipsController extends Controller
 
             if ($rows->isNotEmpty()) {
                 $records['permissions'] = [
-                    'edit'         => Gate::allows('memberships_edit'),
-                    'delete'       => Gate::allows('memberships_destroy'),
-                    'active'       => Gate::allows('memberships_active'),
-                    'inactive'     => Gate::allows('memberships_inactive'),
-                    'create'       => Gate::allows('memberships_create'),
-                    'sort'         => Gate::allows('memberships_sort'),
-                    'view_details' => Gate::allows('memberships_manage'),
+                    'edit'         => Gate::allows('memberships.edit'),
+                    'delete'       => Gate::allows('memberships.destroy'),
+                    'active'       => Gate::allows('memberships.activate'),
+                    'inactive'     => Gate::allows('memberships.deactivate'),
+                    'create'       => Gate::allows('memberships.create'),
+                    'sort'         => Gate::allows('memberships.sort'),
+                    'view_details' => Gate::allows('memberships.detail.view'),
                 ];
 
                 $records['meta'] = [
@@ -94,7 +98,7 @@ final class MembershipsController extends Controller
 
     public function create(): JsonResponse
     {
-        if (Gate::denies('memberships_create')) {
+        if (Gate::denies('memberships.create')) {
             return $this->unauthorized();
         }
 
@@ -107,7 +111,7 @@ final class MembershipsController extends Controller
 
     public function store(StoreMembershipRequest $request): JsonResponse
     {
-        if (Gate::denies('memberships_create')) {
+        if (Gate::denies('memberships.create')) {
             return $this->unauthorized();
         }
 
@@ -126,7 +130,7 @@ final class MembershipsController extends Controller
 
     public function edit(int $id): JsonResponse
     {
-        if (Gate::denies('memberships_edit')) {
+        if (Gate::denies('memberships.edit')) {
             return $this->unauthorized();
         }
 
@@ -145,7 +149,7 @@ final class MembershipsController extends Controller
 
     public function update(UpdateMembershipRequest $request, int $id): JsonResponse
     {
-        if (Gate::denies('memberships_edit')) {
+        if (Gate::denies('memberships.edit')) {
             return $this->unauthorized();
         }
 
@@ -164,7 +168,7 @@ final class MembershipsController extends Controller
 
     public function destroy(int $id): JsonResponse
     {
-        if (Gate::denies('memberships_destroy')) {
+        if (Gate::denies('memberships.destroy')) {
             return $this->unauthorized();
         }
 
@@ -183,7 +187,11 @@ final class MembershipsController extends Controller
 
     public function status(ToggleMembershipStatusRequest $request): JsonResponse
     {
-        if (Gate::denies('memberships_active')) {
+        // Legacy `memberships_active` covered both directions; new
+        // catalog splits activate/deactivate. Pick the perm by status.
+        $targetStatus = (int) $request->validated()['status'];
+        $needed = $targetStatus === 1 ? 'memberships.activate' : 'memberships.deactivate';
+        if (Gate::denies($needed)) {
             return $this->unauthorized();
         }
 
@@ -201,6 +209,14 @@ final class MembershipsController extends Controller
 
     public function cancelMembership(CancelMembershipRequest $request): JsonResponse
     {
+        // Cancel-membership has historically been ungated at the controller
+        // level; the action belongs to whoever can edit a membership.
+        // The patient-card variant is gated separately on
+        // `patients.membership.cancel` (see Patients audit).
+        if (Gate::denies('memberships.edit')) {
+            return $this->unauthorized();
+        }
+
         try {
             $result = $this->membershipService->cancelMembership($request->patientId());
 
@@ -216,7 +232,7 @@ final class MembershipsController extends Controller
 
     public function uploadMemberships(UploadMembershipsRequest $request): JsonResponse
     {
-        if (Gate::denies('memberships_import')) {
+        if (Gate::denies('memberships.import')) {
             return $this->unauthorized();
         }
 
@@ -265,6 +281,10 @@ final class MembershipsController extends Controller
 
     public function exportPdf(Request $request): \Symfony\Component\HttpFoundation\Response
     {
+        if (Gate::denies('memberships.export')) {
+            abort(403, 'You are not authorized to export memberships.');
+        }
+
         ini_set('memory_limit', '-1');
         set_time_limit(0);
 
@@ -301,6 +321,10 @@ final class MembershipsController extends Controller
 
     public function exportDocs(Request $request): BinaryFileResponse
     {
+        if (Gate::denies('memberships.export')) {
+            abort(403, 'You are not authorized to export memberships.');
+        }
+
         set_time_limit(0);
         ini_set('memory_limit', '-1');
 
@@ -314,6 +338,10 @@ final class MembershipsController extends Controller
 
     public function downloadStudentMembershipPatients(): BinaryFileResponse
     {
+        if (Gate::denies('memberships.export')) {
+            abort(403, 'You are not authorized to export memberships.');
+        }
+
         return Excel::download(
             new StudentMembershipPatientsExport(),
             'student_membership_patients_' . date('Y-m-d') . '.xlsx',
