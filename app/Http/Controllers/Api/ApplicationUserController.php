@@ -79,7 +79,7 @@ class ApplicationUserController extends Controller
     {
         try {
             if (!Gate::allows('users_create')) {
-                return $this->errorResponse('You are not authorized to access this resource.', 401);
+                return $this->errorResponse('You are not authorized to access this resource.', 403);
             }
 
             return $this->successResponse('Record found', $this->userService->getCreateData());
@@ -92,7 +92,7 @@ class ApplicationUserController extends Controller
     {
         try {
             if (!Gate::allows('users_create')) {
-                return $this->errorResponse('You are not authorized to access this resource.', 401);
+                return $this->errorResponse('You are not authorized to access this resource.', 403);
             }
 
             $this->userService->create($request->validated());
@@ -107,7 +107,7 @@ class ApplicationUserController extends Controller
     {
         try {
             if (!Gate::allows('users_edit')) {
-                return $this->errorResponse('You are not authorized to access this resource.', 401);
+                return $this->errorResponse('You are not authorized to access this resource.', 403);
             }
 
             $data = $this->userService->getEditData($id);
@@ -126,7 +126,7 @@ class ApplicationUserController extends Controller
     {
         try {
             if (!Gate::allows('users_edit')) {
-                return $this->errorResponse('You are not authorized to access this resource.', 401);
+                return $this->errorResponse('You are not authorized to access this resource.', 403);
             }
 
             $this->userService->update($id, $request->validated());
@@ -141,7 +141,7 @@ class ApplicationUserController extends Controller
     {
         try {
             if (!Gate::allows('users_destroy')) {
-                return $this->errorResponse('You are not authorized to access this resource.', 401);
+                return $this->errorResponse('You are not authorized to access this resource.', 403);
             }
 
             $result = $this->userService->delete($id);
@@ -158,7 +158,7 @@ class ApplicationUserController extends Controller
     {
         try {
             if (!Gate::allows('users_active')) {
-                return $this->errorResponse('You are not authorized to access this resource.', 401);
+                return $this->errorResponse('You are not authorized to access this resource.', 403);
             }
 
             $result = $this->userService->changeStatus(
@@ -178,7 +178,7 @@ class ApplicationUserController extends Controller
     {
         try {
             if (!Gate::allows('users_change_password')) {
-                return $this->errorResponse('You are not authorized to access this resource.', 401);
+                return $this->errorResponse('You are not authorized to access this resource.', 403);
             }
 
             $user = $this->userService->findByAccountId($id);
@@ -197,7 +197,7 @@ class ApplicationUserController extends Controller
     {
         try {
             if (!Gate::allows('users_change_password')) {
-                return $this->errorResponse('You are not authorized to access this resource.', 401);
+                return $this->errorResponse('You are not authorized to access this resource.', 403);
             }
 
             try {
@@ -376,7 +376,7 @@ class ApplicationUserController extends Controller
 
             // `city` is the single-city auto-select hint kept for backward
             // compatibility with existing JS (locations, appointments, leads,
-            // memberships views) — populated only when the user has exactly
+            // memberships views) â€” populated only when the user has exactly
             // one city. `cities` is the full list.
             return $this->successResponse('City found', [
                 'city' => count($cities) === 1 ? $cities[0] : null,

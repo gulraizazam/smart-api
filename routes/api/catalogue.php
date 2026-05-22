@@ -5,7 +5,6 @@
 use App\Http\Controllers\Admin\CentreTargetsController;
 use App\Http\Controllers\Admin\LogsController;
 use App\Http\Controllers\Admin\PackageAdvancesController;
-use App\Http\Controllers\Admin\PackagesController as AdminPackagesController;
 use App\Http\Controllers\Admin\ResourcesController;
 use App\Http\Controllers\Admin\SMSTemplatesController;
 use App\Http\Controllers\Admin\UserVouchersController;
@@ -117,13 +116,7 @@ Route::prefix('doctors')->name('doctors.')->middleware('permission:doctors_manag
 Route::post('refunds/datatable', [ApiRefundsController::class, 'datatable'])->name('refunds.datatable');
 Route::get('refunds/refund_create/{id}', [ApiRefundsController::class, 'calculate'])->name('refunds.refund_create');
 Route::get('refunds/detail/{id}', [ApiRefundsController::class, 'detail'])->name('refunds.detail');
-Route::get('refunds/plans-for-patient/{patientId}', [ApiRefundsController::class, 'plansForPatient'])->name('refunds.plans_for_patient');
-Route::get('refunds/history/{packageId}', [ApiRefundsController::class, 'history'])->name('refunds.history');
-Route::get('refunds/edit/{id}', [AdminPackagesController::class, 'editRefund'])->name('refunds.edit_api');
-Route::post('refunds/update', [AdminPackagesController::class, 'updateRefund'])->name('refunds.update_api');
-Route::post('refunds', [ApiRefundsController::class, 'store'])
-    ->middleware('idempotent')
-    ->name('refunds.store');
+Route::post('refunds', [ApiRefundsController::class, 'store'])->name('refunds.store');
 
 Route::resource('feedbacks', FeedbackController::class)->only(['store', 'edit', 'update', 'destroy']);
 // Discount Routes (Refactored — using API controller)
@@ -214,82 +207,118 @@ Route::post('centre_targets/datatable', [CentreTargetsController::class, 'datata
 // `show` method, so this also fixes that latent bug) and
 // `PATCH /centre_targets/{id}`. Admin UI posts updates as `PUT` via
 // `@method('put')` form-spoof, so we re-register PUT-only for legacy.
-// DELETE also left to API (legacy deleteRecord ends with a flash+redirect
-// on failure which doesn't fit a JSON response).
-Route::resource('centre_targets', CentreTargetsController::class)->except(['index', 'show', 'update', 'destroy']);
+// `destroy` is kept on the legacy resource because the admin JS calls
+// `route('admin.centre_targets.destroy', ...)`; the controller method
+// returns JSON via successResponse/handleException, so it is safe to keep.
+Route::resource('centre_targets', CentreTargetsController::class)->except(['index', 'show', 'update']);
 Route::put('centre_targets/{id}', [CentreTargetsController::class, 'update'])->name('centre_targets.update')->whereNumber('id');
 
 // Package Advance route start
 Route::post('packagesadvances/datatable', [PackageAdvancesController::class, 'datatable'])->name('packagesadvances.datatable');
 Route::post('packagesadvances/status', [PackageAdvancesController::class, 'status'])->name('packagesadvances.status');
-Route::post('packagesadvances/cancel/{id}', [PackageAdvancesController::class, 'cancel'])
-    ->middleware(['throttle:60,1', 'idempotent'])
-    ->name('packagesadvances.cancel');
+Route::post('packagesadvances/cancel/{id}', [PackageAdvancesController::class, 'cancel'])->name('packagesadvances.cancel');
 Route::get('packagesadvances/getpackages', [PackageAdvancesController::class, 'getpackages'])->name('packagesadvances.getpackages');
 Route::get('packagesadvances/getpackagesinfo', [PackageAdvancesController::class, 'getpackagesinfo'])->name('packagesadvances.getpackagesinfo');
 Route::get('packagesadvances/getpackagesinfo_update', [PackageAdvancesController::class, 'getpackagesinfo_update'])->name('packagesadvances.getpackagesinfo_update');
-// CSRF-bypass cleanup (2026-05-15): the three GET routes that used to
-// register here mutated `package_advances` via the controller's
-// `savepackagesadvances` / `updatepackagesadvances` / `update_record_final`
-// methods. Laravel's VerifyCsrfToken middleware excludes GET by design —
-// any `<img src="...">` on an attacker page would trigger the write with
-// the operator's session cookie. The orphaned routes had no SPA caller;
-// the live POST path is in routes/api/appointments-admin.php
-// (finances.savepackagesadvances). The standalone POST routes on
-// Route::resource below cover the remaining REST surface.
+Route::get('packagesadvances/savepackagesadvances', [PackageAdvancesController::class, 'savepackagesadvances'])->name('packagesadvances.savepackagesadvances');
+Route::get('packagesadvances/updatepackagesadvances', [PackageAdvancesController::class, 'updatepackagesadvances'])->name('packagesadvances.updatepackagesadvances');
+Route::get('packagesadvances/update_record_final', [PackageAdvancesController::class, 'update_record_final'])->name('packagesadvances.update_record_final');
 Route::resource('packagesadvances', PackageAdvancesController::class)->except('index');
 
 // Business Closures Management
-Route::post('business-closures/datatable', [BusinessClosureController::class, 'datatable'])->name('business-closures.datatable');
-Route::get('business-closures/create', [BusinessClosureController::class, 'create'])->name('business-closures.create');
-Route::post('business-closures', [BusinessClosureController::class, 'store'])->name('business-closures.store');
+//
+// Permission gates use the dotted slugs the role editor + SPA both speak
+// (`business_closures.list.view|create|edit|delete`). The in-controller
+// `Gate::allows('business_closures_manage')` checks are a redundant
+// belt-and-suspenders layer on the legacy slug — middleware runs first.
+Route::post('business-closures/datatable', [BusinessClosureController::class, 'datatable'])
+    ->middleware('permission:business_closures.list.view')->name('business-closures.datatable');
+Route::get('business-closures/create', [BusinessClosureController::class, 'create'])
+    ->middleware('permission:business_closures.list.view')->name('business-closures.create');
+Route::post('business-closures', [BusinessClosureController::class, 'store'])
+    ->middleware('permission:business_closures.create')->name('business-closures.store');
 
 // REST-style additions (static segments first so they don't get captured as ids)
 // Note: `business-closures.index` is reserved for the web admin page route name
 // (resources/views/admin/partials/sidebar.blade.php, schedule-calendar.js). This
 // API listing keeps a distinct name to avoid Ziggy/route() collision.
-Route::get('business-closures', [BusinessClosureController::class, 'index'])->name('business-closures.list');
-Route::get('business-closures/upcoming', [BusinessClosureController::class, 'upcoming'])->name('business-closures.upcoming');
-Route::post('business-closures/check', [BusinessClosureController::class, 'check'])->name('business-closures.check');
-Route::post('business-closures/bulk-delete', [BusinessClosureController::class, 'bulkDelete'])->name('business-closures.bulk-delete');
+Route::get('business-closures', [BusinessClosureController::class, 'index'])
+    ->middleware('permission:business_closures.list.view')->name('business-closures.list');
+Route::get('business-closures/upcoming', [BusinessClosureController::class, 'upcoming'])
+    ->middleware('permission:business_closures.list.view')->name('business-closures.upcoming');
+Route::post('business-closures/check', [BusinessClosureController::class, 'check'])
+    ->middleware('permission:business_closures.list.view')->name('business-closures.check');
+Route::post('business-closures/bulk-delete', [BusinessClosureController::class, 'bulkDelete'])
+    ->middleware('permission:business_closures.delete')->name('business-closures.bulk-delete');
 
-Route::get('business-closures/{id}/edit', [BusinessClosureController::class, 'edit'])->name('business-closures.edit');
-Route::get('business-closures/{businessClosure}', [BusinessClosureController::class, 'show'])->name('business-closures.show');
-Route::put('business-closures/{id}', [BusinessClosureController::class, 'update'])->name('business-closures.update');
-Route::delete('business-closures/{id}', [BusinessClosureController::class, 'destroy'])->name('business-closures.destroy');
+Route::get('business-closures/{id}/edit', [BusinessClosureController::class, 'edit'])
+    ->middleware('permission:business_closures.edit')->name('business-closures.edit');
+Route::get('business-closures/{businessClosure}', [BusinessClosureController::class, 'show'])
+    ->middleware('permission:business_closures.list.view')->name('business-closures.show');
+Route::put('business-closures/{id}', [BusinessClosureController::class, 'update'])
+    ->middleware('permission:business_closures.edit')->name('business-closures.update');
+Route::delete('business-closures/{id}', [BusinessClosureController::class, 'destroy'])
+    ->middleware('permission:business_closures.delete')->name('business-closures.destroy');
 
-// Business Working Days (REST — gates applied in-controller, legacy
-// /schedule/get-business-working-days + /schedule/save-business-working-days
-// kept below for backward compatibility)
+// Business Working Days (REST — gates use the dotted slugs the role editor
+// surfaces; the in-controller `Gate::allows('schedule_manage')` checks stay
+// as a redundant legacy layer). The legacy /schedule/get-business-working-days
+// + /schedule/save-business-working-days routes below mirror the same gates.
 Route::prefix('business-working-days')->name('business-working-days.')->group(function () {
-    Route::get('/', [BusinessWorkingDaysController::class, 'show'])->name('show');
-    Route::put('/', [BusinessWorkingDaysController::class, 'update'])->name('update');
-    Route::get('check', [BusinessWorkingDaysController::class, 'check'])->name('check');
-    Route::get('calendar', [BusinessWorkingDaysController::class, 'calendar'])->name('calendar');
+    Route::get('/', [BusinessWorkingDaysController::class, 'show'])
+        ->middleware('permission:business_working_days.list.view')->name('show');
+    Route::put('/', [BusinessWorkingDaysController::class, 'update'])
+        ->middleware('permission:business_working_days.edit')->name('update');
+    Route::get('check', [BusinessWorkingDaysController::class, 'check'])
+        ->middleware('permission:business_working_days.list.view')->name('check');
+    Route::get('calendar', [BusinessWorkingDaysController::class, 'calendar'])
+        ->middleware('permission:business_working_days.list.view')->name('calendar');
 
     Route::prefix('exceptions')->name('exceptions.')->group(function () {
-        Route::get('/', [BusinessWorkingDaysController::class, 'indexExceptions'])->name('index');
-        Route::post('/', [BusinessWorkingDaysController::class, 'storeException'])->name('store');
-        Route::post('bulk', [BusinessWorkingDaysController::class, 'bulkReplaceExceptions'])->name('bulk');
-        Route::get('{exception}', [BusinessWorkingDaysController::class, 'showException'])->name('show');
-        Route::patch('{exception}', [BusinessWorkingDaysController::class, 'updateException'])->name('update');
-        Route::delete('{exception}', [BusinessWorkingDaysController::class, 'destroyException'])->name('destroy');
+        Route::get('/', [BusinessWorkingDaysController::class, 'indexExceptions'])
+            ->middleware('permission:business_working_days.list.view')->name('index');
+        Route::post('/', [BusinessWorkingDaysController::class, 'storeException'])
+            ->middleware('permission:business_working_days.edit')->name('store');
+        Route::post('bulk', [BusinessWorkingDaysController::class, 'bulkReplaceExceptions'])
+            ->middleware('permission:business_working_days.edit')->name('bulk');
+        Route::get('{exception}', [BusinessWorkingDaysController::class, 'showException'])
+            ->middleware('permission:business_working_days.list.view')->name('show');
+        Route::patch('{exception}', [BusinessWorkingDaysController::class, 'updateException'])
+            ->middleware('permission:business_working_days.edit')->name('update');
+        Route::delete('{exception}', [BusinessWorkingDaysController::class, 'destroyException'])
+            ->middleware('permission:business_working_days.edit')->name('destroy');
     });
 });
 
-// Schedule Calendar API
+// Schedule Calendar API — every endpoint was previously unauthenticated
+// beyond `auth:sanctum`. Gated now with the same dotted slugs the role
+// editor toggles (`scheduling_shifts.*`). `get-locations` stays open to
+// any authenticated user because it powers a centre-filter dropdown that
+// other surfaces (consultancy calendar etc.) reuse.
 Route::get('schedule/get-locations', [ScheduleController::class, 'getLocations'])->name('schedule.get-locations');
-Route::get('schedule/get-business-working-days', [ScheduleController::class, 'getBusinessWorkingDays'])->name('schedule.get-business-working-days');
-Route::post('schedule/save-business-working-days', [ScheduleController::class, 'saveBusinessWorkingDays'])->name('schedule.save-business-working-days');
-Route::post('schedule/get-shifts', [ScheduleController::class, 'getShifts'])->name('schedule.get-shifts');
-Route::post('schedule/store-shifts', [ScheduleController::class, 'storeShifts'])->name('schedule.store-shifts');
-Route::post('schedule/delete-shifts', [ScheduleController::class, 'deleteShifts'])->name('schedule.delete-shifts');
-Route::post('schedule/delete-single-shift', [ScheduleController::class, 'deleteSingleShift'])->name('schedule.delete-single-shift');
-Route::post('schedule/store-time-off', [ScheduleController::class, 'storeTimeOff'])->name('schedule.store-time-off');
-Route::post('schedule/get-time-offs', [ScheduleController::class, 'getTimeOffs'])->name('schedule.get-time-offs');
-Route::post('schedule/get-time-off', [ScheduleController::class, 'getTimeOff'])->name('schedule.get-time-off');
-Route::post('schedule/update-time-off', [ScheduleController::class, 'updateTimeOff'])->name('schedule.update-time-off');
-Route::post('schedule/delete-time-off', [ScheduleController::class, 'deleteTimeOff'])->name('schedule.delete-time-off');
-Route::post('schedule/store-repeating-shifts', [ScheduleController::class, 'storeRepeatingShifts'])->name('schedule.store-repeating-shifts');
-Route::post('schedule/get-resources', [ScheduleController::class, 'getResources'])->name('schedule.get-resources');
-Route::post('schedule/bulk-delete-shifts', [ScheduleController::class, 'bulkDeleteShifts'])->name('schedule.bulk-delete-shifts');
+Route::get('schedule/get-business-working-days', [ScheduleController::class, 'getBusinessWorkingDays'])
+    ->middleware('permission:business_working_days.list.view')->name('schedule.get-business-working-days');
+Route::post('schedule/save-business-working-days', [ScheduleController::class, 'saveBusinessWorkingDays'])
+    ->middleware('permission:business_working_days.edit')->name('schedule.save-business-working-days');
+Route::post('schedule/get-shifts', [ScheduleController::class, 'getShifts'])
+    ->middleware('permission:scheduling_shifts.list.view')->name('schedule.get-shifts');
+Route::post('schedule/store-shifts', [ScheduleController::class, 'storeShifts'])
+    ->middleware('permission:scheduling_shifts.create')->name('schedule.store-shifts');
+Route::post('schedule/delete-shifts', [ScheduleController::class, 'deleteShifts'])
+    ->middleware('permission:scheduling_shifts.delete')->name('schedule.delete-shifts');
+Route::post('schedule/delete-single-shift', [ScheduleController::class, 'deleteSingleShift'])
+    ->middleware('permission:scheduling_shifts.delete')->name('schedule.delete-single-shift');
+Route::post('schedule/store-time-off', [ScheduleController::class, 'storeTimeOff'])
+    ->middleware('permission:scheduling_shifts.create')->name('schedule.store-time-off');
+Route::post('schedule/get-time-offs', [ScheduleController::class, 'getTimeOffs'])
+    ->middleware('permission:scheduling_shifts.list.view')->name('schedule.get-time-offs');
+Route::post('schedule/get-time-off', [ScheduleController::class, 'getTimeOff'])
+    ->middleware('permission:scheduling_shifts.list.view')->name('schedule.get-time-off');
+Route::post('schedule/update-time-off', [ScheduleController::class, 'updateTimeOff'])
+    ->middleware('permission:scheduling_shifts.edit')->name('schedule.update-time-off');
+Route::post('schedule/delete-time-off', [ScheduleController::class, 'deleteTimeOff'])
+    ->middleware('permission:scheduling_shifts.delete')->name('schedule.delete-time-off');
+Route::post('schedule/store-repeating-shifts', [ScheduleController::class, 'storeRepeatingShifts'])
+    ->middleware('permission:scheduling_shifts.create')->name('schedule.store-repeating-shifts');
+Route::post('schedule/bulk-delete-shifts', [ScheduleController::class, 'bulkDeleteShifts'])
+    ->middleware('permission:scheduling_shifts.delete')->name('schedule.bulk-delete-shifts');

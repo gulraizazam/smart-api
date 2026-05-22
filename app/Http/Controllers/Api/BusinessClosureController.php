@@ -30,13 +30,13 @@ class BusinessClosureController extends Controller
      *
      * Paginated REST list of business closures with locations + creator
      * eager-loaded. Filters: `location_id`, `start_date`, `end_date`,
-     * `search` (title), `per_page` (1–200; default 25).
+     * `search` (title), `per_page` (1â€“200; default 25).
      *
-     * Permission: `business_closures.list.view`.
+     * Permission: `business_closures_manage`.
      */
     public function index(Request $request): JsonResponse
     {
-        if (! Gate::allows('business_closures.list.view')) {
+        if (! Gate::allows('business_closures_manage')) {
             return $this->errorResponse('You are not authorized to access this resource.', 403);
         }
 
@@ -102,11 +102,11 @@ class BusinessClosureController extends Controller
      * GET /api/catalogue/business-closures/{businessClosure}
      *
      * REST detail endpoint. Unlike `edit`, does not include a locations
-     * dropdown payload — pure resource shape for mobile / read clients.
+     * dropdown payload â€” pure resource shape for mobile / read clients.
      */
     public function show(BusinessClosure $businessClosure): JsonResponse
     {
-        if (! Gate::allows('business_closures.list.view')) {
+        if (! Gate::allows('business_closures_manage')) {
             return $this->errorResponse('You are not authorized to access this resource.', 403);
         }
 
@@ -134,7 +134,7 @@ class BusinessClosureController extends Controller
      */
     public function upcoming(Request $request): JsonResponse
     {
-        if (! Gate::allows('business_closures.list.view')) {
+        if (! Gate::allows('business_closures_manage')) {
             return $this->errorResponse('You are not authorized to access this resource.', 403);
         }
 
@@ -188,7 +188,7 @@ class BusinessClosureController extends Controller
      */
     public function check(Request $request): JsonResponse
     {
-        if (! Gate::allows('business_closures.list.view')) {
+        if (! Gate::allows('business_closures_manage')) {
             return $this->errorResponse('You are not authorized to access this resource.', 403);
         }
 
@@ -238,7 +238,7 @@ class BusinessClosureController extends Controller
      */
     public function bulkDelete(Request $request): JsonResponse
     {
-        if (! Gate::allows('business_closures.delete')) {
+        if (! Gate::allows('business_closures_delete')) {
             return $this->errorResponse('You are not authorized to perform this action.', 403);
         }
 
@@ -266,20 +266,10 @@ class BusinessClosureController extends Controller
     public function datatable(Request $request): JsonResponse
     {
         try {
-            // Gate the legacy admin-v1 datatable. Without this, any
-            // authenticated user could enumerate every closure period.
-            if (! Gate::allows('business_closures.list.view')) {
-                return $this->errorResponse('You are not authorized to access this resource.', 403);
-            }
-
             $filters = getFilters($request->all());
 
-            // Handle bulk delete — separate gate so a list-view-only user
-            // can't elevate to deletion by URL-crafting.
+            // Handle bulk delete
             if (hasFilter($filters, 'delete')) {
-                if (! Gate::allows('business_closures.delete')) {
-                    return $this->errorResponse('You are not authorized to access this resource.', 403);
-                }
                 $ids = explode(',', $filters['delete']);
                 $deleted = $this->service->bulkDelete($ids);
 
@@ -355,9 +345,9 @@ class BusinessClosureController extends Controller
             $records['active_filters'] = $filterData['active_filters'];
 
             $records['permissions'] = [
-                'create' => Gate::allows('business_closures.create'),
-                'edit' => Gate::allows('business_closures.edit'),
-                'delete' => Gate::allows('business_closures.delete'),
+                'create' => Gate::allows('business_closures_create'),
+                'edit' => Gate::allows('business_closures_edit'),
+                'delete' => Gate::allows('business_closures_delete'),
             ];
 
             return response()->json($records);
@@ -373,10 +363,6 @@ class BusinessClosureController extends Controller
     public function create(): JsonResponse
     {
         try {
-            if (! Gate::allows('business_closures.create')) {
-                return $this->errorResponse('You are not authorized to access this resource.', 403);
-            }
-
             $userCentres = ACL::getUserCentres();
             $locationsQuery = Locations::where([
                 ['account_id', '=', Auth::user()->account_id],
@@ -403,10 +389,6 @@ class BusinessClosureController extends Controller
     public function store(StoreBusinessClosureRequest $request): JsonResponse
     {
         try {
-            if (! Gate::allows('business_closures.create')) {
-                return $this->errorResponse('You are not authorized to access this resource.', 403);
-            }
-
             $closure = $this->service->create($request->validated());
 
             return $this->successResponse('Business closure created successfully.', [
@@ -422,8 +404,8 @@ class BusinessClosureController extends Controller
      */
     public function edit(int $id): JsonResponse
     {
-        if (! Gate::allows('business_closures.edit')) {
-            return $this->errorResponse('You are not authorized to access this resource.', 401);
+        if (! Gate::allows('business_closures_edit')) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
         }
 
         try {
@@ -460,8 +442,8 @@ class BusinessClosureController extends Controller
      */
     public function update(UpdateBusinessClosureRequest $request, int $id): JsonResponse
     {
-        if (! Gate::allows('business_closures.edit')) {
-            return $this->errorResponse('You are not authorized to access this resource.', 401);
+        if (! Gate::allows('business_closures_edit')) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
         }
 
         try {
@@ -480,8 +462,8 @@ class BusinessClosureController extends Controller
      */
     public function destroy(int $id): JsonResponse
     {
-        if (! Gate::allows('business_closures.delete')) {
-            return $this->errorResponse('You are not authorized to access this resource.', 401);
+        if (! Gate::allows('business_closures_delete')) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
         }
 
         try {

@@ -23,7 +23,7 @@ class UserTypeController extends Controller
     public function index(Request $request): JsonResponse
     {
         if (!Gate::allows('user_types_manage')) {
-            return $this->errorResponse('You are not authorized to access this resource.', 401);
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
         }
 
         try {
@@ -84,7 +84,7 @@ class UserTypeController extends Controller
     public function create(): JsonResponse
     {
         if (!Gate::allows('user_types_create')) {
-            return $this->errorResponse('You are not authorized to access this resource.', 401);
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
         }
 
         try {
@@ -99,7 +99,7 @@ class UserTypeController extends Controller
     public function store(UserTypeRequest $request): JsonResponse
     {
         if (!Gate::allows('user_types_create')) {
-            return $this->errorResponse('You are not authorized to access this resource.', 401);
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
         }
 
         try {
@@ -114,7 +114,7 @@ class UserTypeController extends Controller
     public function show(int $id): JsonResponse
     {
         if (!Gate::allows('user_types_manage')) {
-            return $this->errorResponse('You are not authorized to access this resource.', 401);
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
         }
 
         try {
@@ -131,7 +131,7 @@ class UserTypeController extends Controller
     public function edit(int $id): JsonResponse
     {
         if (!Gate::allows('user_types_edit')) {
-            return $this->errorResponse('You are not authorized to access this resource.', 401);
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
         }
 
         try {
@@ -153,7 +153,7 @@ class UserTypeController extends Controller
     public function update(UserTypeRequest $request, int $id): JsonResponse
     {
         if (!Gate::allows('user_types_edit')) {
-            return $this->errorResponse('You are not authorized to access this resource.', 401);
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
         }
 
         try {
@@ -170,7 +170,7 @@ class UserTypeController extends Controller
     public function destroy(int $id): JsonResponse
     {
         if (!Gate::allows('user_types_destroy')) {
-            return $this->errorResponse('You are not authorized to access this resource.', 401);
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
         }
 
         try {
@@ -185,7 +185,7 @@ class UserTypeController extends Controller
     public function activate(int $id): JsonResponse
     {
         if (!Gate::allows('user_types_active')) {
-            return $this->errorResponse('You are not authorized to access this resource.', 401);
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
         }
 
         try {
@@ -200,7 +200,7 @@ class UserTypeController extends Controller
     public function inactivate(int $id): JsonResponse
     {
         if (!Gate::allows('user_types_inactive')) {
-            return $this->errorResponse('You are not authorized to access this resource.', 401);
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
         }
 
         try {

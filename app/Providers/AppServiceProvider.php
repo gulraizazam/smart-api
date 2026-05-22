@@ -356,6 +356,22 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(ManagementDashboardPolicy::class, ManagementDashboardPolicy::class);
 
         Gate::before(fn ($user, $ability) => $user->hasRole('Super-Admin') ? true : null);
+
+        // Permission-catalog alias bridge. The role editor surfaces the new
+        // dotted slugs (`plans.cash.edit_amount`) but every Gate::allows in
+        // the codebase still references the legacy snake_case (`plans_cash_
+        // edit_amount`). When the primary check would fail, fall back to the
+        // aliased name so granting either side in the role editor actually
+        // satisfies the gate. See App\Support\PermissionAliasMap for the map.
+        Gate::before(function ($user, string $ability) {
+            $aliased = \App\Support\PermissionAliasMap::aliasFor($ability);
+            if ($aliased === null) {
+                return null;
+            }
+            // Use the Spatie HasRoles helper directly to avoid recursing
+            // back into Gate::allows (which would re-enter this callback).
+            return $user->hasPermissionTo($aliased) ? true : null;
+        });
     }
 
     private function registerObservers(): void

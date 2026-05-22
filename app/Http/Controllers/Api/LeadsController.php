@@ -49,24 +49,7 @@ class LeadsController extends Controller
             $leadType = $request->get('type');
             $filename = $leadType ? 'junk_leads' : 'leads';
 
-            // Gate the list itself. The junk tab + junk-datatable both route
-            // here; if `?type=junk` is in play, require the junk view perm
-            // too. Without these gates, a direct API hit returned every
-            // lead in the account to any authenticated user.
-            if (! Gate::allows('leads.list.view')) {
-                return $this->errorResponse('You are not authorized to access this resource.', 403);
-            }
-            if ($leadType === 'junk' && ! Gate::allows('leads.list.view_junk')) {
-                return $this->errorResponse('You are not authorized to access this resource.', 403);
-            }
-
-            // Bulk-delete is reached via the same datatable endpoint with
-            // a `delete=...` filter — separate gate so a `leads.list.view`
-            // user can't elevate to deletion by URL-crafting.
             if (hasFilter($filters, 'delete')) {
-                if (! Gate::allows('leads.delete')) {
-                    return $this->errorResponse('You are not authorized to access this resource.', 403);
-                }
                 $ids = explode(',', $filters['delete']);
                 $this->leadService->bulkDelete($ids);
 
@@ -78,7 +61,7 @@ class LeadsController extends Controller
 
             $query = $datatableData['query'];
 
-            if (! Gate::allows('leads.list.view_inactive')) {
+            if (! Gate::allows('view_inactive_leads')) {
                 $query->where('leads.active', 1);
             }
 
@@ -125,7 +108,7 @@ class LeadsController extends Controller
 
     public function create(): JsonResponse
     {
-        if (! Gate::allows('leads.create')) {
+        if (! Gate::allows('leads_create')) {
             return $this->errorResponse('You are not authorized to access this resource.', 403);
         }
 
@@ -138,13 +121,6 @@ class LeadsController extends Controller
 
     public function store(StoreLeadRequest $request): JsonResponse
     {
-        // Authoritative gate for the create flow — `create()` (the GET form
-        // initialiser) gates `leads.create` too, but a direct POST without
-        // visiting the form first would otherwise bypass that check.
-        if (! Gate::allows('leads.create')) {
-            return $this->errorResponse('You are not authorized to access this resource.', 403);
-        }
-
         try {
             $this->leadService->createLead($request->validated());
 
@@ -158,7 +134,7 @@ class LeadsController extends Controller
 
     public function detail(int $id): JsonResponse
     {
-        if (! Gate::allows('leads.detail.view')) {
+        if (! Gate::allows('leads_manage')) {
             return $this->errorResponse('You are not authorized to access this resource.', 403);
         }
 
@@ -179,7 +155,7 @@ class LeadsController extends Controller
 
     public function edit(int $id): JsonResponse
     {
-        if (! Gate::allows('leads.edit')) {
+        if (! Gate::allows('leads_edit')) {
             return $this->errorResponse('You are not authorized to access this resource.', 403);
         }
 
@@ -198,10 +174,6 @@ class LeadsController extends Controller
 
     public function update(UpdateLeadRequest $request, int $id): JsonResponse
     {
-        if (! Gate::allows('leads.edit')) {
-            return $this->errorResponse('You are not authorized to access this resource.', 403);
-        }
-
         try {
             $this->leadService->updateLead($id, $request->validated());
 
@@ -215,7 +187,7 @@ class LeadsController extends Controller
 
     public function destroy(int $id): JsonResponse
     {
-        if (! Gate::allows('leads.delete')) {
+        if (! Gate::allows('leads_destroy')) {
             return $this->errorResponse('You are not authorized to access this resource.', 403);
         }
 
@@ -231,13 +203,6 @@ class LeadsController extends Controller
     public function status(Request $request): JsonResponse
     {
         try {
-            // Toggles lead.active. Not currently surfaced in the SPA but the
-            // endpoint is alive; gate on `leads.edit` so any direct API
-            // caller still needs write privilege.
-            if (! Gate::allows('leads.edit')) {
-                return $this->errorResponse('You are not authorized to access this resource.', 403);
-            }
-
             $lead = $this->leadService->toggleStatus((int) $request->id, (int) $request->status);
 
             return $this->successResponse('Status Changed Successfully', [
@@ -254,7 +219,7 @@ class LeadsController extends Controller
 
     public function showLeadStatuses(Request $request): JsonResponse
     {
-        if (! Gate::allows('leads.update_status')) {
+        if (! Gate::allows('leads_lead_status')) {
             return $this->errorResponse('You are not authorized to access this resource.', 403);
         }
 
@@ -271,29 +236,12 @@ class LeadsController extends Controller
 
     public function storeLeadStatuses(UpdateLeadStatusRequest $request): JsonResponse
     {
-        if (! Gate::allows('leads.update_status')) {
-            return $this->errorResponse('You are not authorized to access this resource.', 403);
-        }
-
         try {
             $this->leadService->updateLeadStatus((int) $request->id, $request->validated());
 
             return $this->successResponse('Status updated successfully!');
         } catch (LeadException $e) {
-            // LeadException here is a business-rule violation —
-            // statusChangeNotAllowed (lead at Arrived/Converted) or
-            // targetStatusNotAllowed (operator picked a system-managed
-            // target). 422 is the right shape: the SPA's `api.ts` masks
-            // 5xx as a generic "Something went wrong on our end" toast,
-            // which hides the actual reason. With 422 the SPA surfaces
-            // the message verbatim and can wire `setError` against the
-            // field key. Defense-in-depth — the SPA's Option A locked
-            // dropdown already prevents reaching this path under normal
-            // use; this is for races, direct API hits, and future
-            // refactors that drop the locked-state check.
-            return $this->errorResponse($e->getMessage(), 422, [
-                'lead_status_parent_id' => [$e->getMessage()],
-            ]);
+            return $this->errorResponse($e->getMessage(), 500);
         } catch (\Exception $e) {
             return $this->handleException($e, 'LeadsController');
         }
@@ -302,13 +250,6 @@ class LeadsController extends Controller
     public function leadStatusesPopCheck(Request $request): JsonResponse
     {
         try {
-            // Helper for the status-change UI — surfaces the parent status
-            // record + children. Gate on update_status because that's the
-            // workflow that consumes it.
-            if (! Gate::allows('leads.update_status')) {
-                return $this->errorResponse('You are not authorized to access this resource.', 403);
-            }
-
             $data = $this->leadService->getStatusWithChildren((int) $request->id);
 
             if (! $data) {
@@ -324,10 +265,6 @@ class LeadsController extends Controller
     public function leadStatusChildPopCheck(Request $request): JsonResponse
     {
         try {
-            if (! Gate::allows('leads.update_status')) {
-                return $this->errorResponse('You are not authorized to access this resource.', 403);
-            }
-
             $data = $this->leadService->getChildStatusWithParent((int) $request->id);
 
             return $this->successResponse('Record found.', $data);
@@ -343,13 +280,6 @@ class LeadsController extends Controller
     public function loadChildServices(Request $request): JsonResponse
     {
         try {
-            // Dropdown loader for the lead-edit / create flow. Gate on
-            // list view so non-lead users can't enumerate service trees
-            // via this endpoint.
-            if (! Gate::allows('leads.list.view')) {
-                return $this->errorResponse('You are not authorized to access this resource.', 403);
-            }
-
             $data = $this->leadService->getChildServicesWithLead((int) $request->serviceId, (int) $request->leadId);
 
             return $this->successResponse('Record found', $data);
@@ -361,12 +291,6 @@ class LeadsController extends Controller
     public function editService(int $leadId, int $serviceId): JsonResponse
     {
         try {
-            // Returns the form data for editing a lead's inquired service.
-            // This is part of the lead-edit flow; gate on `leads.edit`.
-            if (! Gate::allows('leads.edit')) {
-                return $this->errorResponse('You are not authorized to access this resource.', 403);
-            }
-
             $data = $this->leadService->getEditServiceData($leadId, $serviceId);
 
             return $this->successResponse('Record found.', $data);
@@ -381,10 +305,6 @@ class LeadsController extends Controller
 
     public function uploadLeads(ImportLeadsRequest $request): JsonResponse
     {
-        if (! Gate::allows('leads.import')) {
-            return $this->errorResponse('You are not authorized to access this resource.', 403);
-        }
-
         set_time_limit(300);
         ini_set('max_execution_time', '300');
         ini_set('memory_limit', '512M');
@@ -426,10 +346,6 @@ class LeadsController extends Controller
 
     public function exportPdf(Request $request): BinaryFileResponse|JsonResponse
     {
-        if (! Gate::allows('leads.export')) {
-            return $this->errorResponse('You are not authorized to access this resource.', 403);
-        }
-
         ini_set('memory_limit', '-1');
         set_time_limit(0);
 
@@ -445,12 +361,8 @@ class LeadsController extends Controller
         }
     }
 
-    public function exportDocs(Request $request): BinaryFileResponse|JsonResponse
+    public function exportDocs(Request $request): BinaryFileResponse
     {
-        if (! Gate::allows('leads.export')) {
-            return $this->errorResponse('You are not authorized to access this resource.', 403);
-        }
-
         set_time_limit(0);
         ini_set('memory_limit', '-1');
 
@@ -485,13 +397,6 @@ class LeadsController extends Controller
     public function getLeadId(Request $request): JsonResponse
     {
         try {
-            // Search endpoints expose lead PII; gate on the list-view perm
-            // so non-lead users can't enumerate by id. Phone-prefix search
-            // is additionally guarded inside LeadService::searchByPhone.
-            if (! Gate::allows('leads.list.view')) {
-                return $this->errorResponse('You are not authorized to access this resource.', 403);
-            }
-
             $leads = $this->leadService->searchLeadsById($request->search, Auth::user()->account_id);
 
             return $this->successResponse('Record found.', ['leads' => $leads]);
@@ -503,10 +408,6 @@ class LeadsController extends Controller
     public function getLeadNumber(Request $request): JsonResponse
     {
         try {
-            if (! Gate::allows('leads.list.view')) {
-                return $this->errorResponse('You are not authorized to access this resource.', 403);
-            }
-
             $lead = $this->leadService->findLead((int) $request->lead_id);
 
             return $this->successResponse('Record found.', [
@@ -520,10 +421,6 @@ class LeadsController extends Controller
     public function phoneSearch(Request $request): JsonResponse
     {
         try {
-            if (! Gate::allows('leads.list.view')) {
-                return $this->errorResponse('You are not authorized to access this resource.', 403);
-            }
-
             $leads = $this->leadService->searchByPhone($request->search, Auth::user()->account_id);
 
             return $this->successResponse('Record found.', ['leads' => $leads]);
@@ -538,10 +435,6 @@ class LeadsController extends Controller
 
     public function storeComment(StoreUpdateLeadCommentsRequest $request): JsonResponse
     {
-        if (! Gate::allows('leads.comment.create')) {
-            return $this->errorResponse('You are not authorized to access this resource.', 403);
-        }
-
         try {
             $comment = $this->leadService->addComment((int) $request->lead_id, $request->comment);
             $comment->load('user');
@@ -562,11 +455,7 @@ class LeadsController extends Controller
 
     public function convert(int $id): JsonResponse
     {
-        // Convert routes the lead into the appointment booking flow, so it
-        // needs both the patient-facing convert perm AND the cross-module
-        // appointments-manage perm. The appointments perm gate will be
-        // re-pointed when the appointments module audit ships.
-        if (! Gate::allows('appointments_manage') || ! Gate::allows('leads.convert')) {
+        if (! Gate::allows('appointments_manage') || ! Gate::allows('leads_convert')) {
             return $this->errorResponse('You are not authorized to access this resource.', 403);
         }
 
@@ -589,41 +478,15 @@ class LeadsController extends Controller
 
     public function loadLeadStatuses(): JsonResponse
     {
-        // `is_*` flags are surfaced so the SPA's manual-status dropdown
-        // can hide automation-only statuses (Booked → set on appointment
-        // create, Arrived → set on consultation invoice paid, Converted
-        // → set on first package payment, Junk → owned by the dedicated
-        // Move-to-junk action). Without these flags the SPA filter
-        // `!s.is_booked && !s.is_arrived && …` evaluates `!undefined`
-        // = true for every row and hides nothing.
-        //
-        // Gate on list view — the filter shelf + the inline status-change
-        // dropdown both consume this; anyone who can see the list needs
-        // it. Without a gate, dropdown data leaked to anyone authed.
-        if (! Gate::allows('leads.list.view')) {
-            return response()->json([]);
-        }
-
         return response()->json(
             LeadStatuses::getActiveOnly()
-                ->map(fn ($status): array => [
-                    'value'        => $status->id,
-                    'text'         => $status->name,
-                    'is_booked'    => (bool) $status->is_booked,
-                    'is_arrived'   => (bool) $status->is_arrived,
-                    'is_converted' => (bool) $status->is_converted,
-                    'is_junk'      => (bool) $status->is_junk,
-                ])
+                ->map(fn ($status): array => ['value' => $status->id, 'text' => $status->name])
                 ->toArray()
         );
     }
 
     public function loadTreatments(): JsonResponse
     {
-        if (! Gate::allows('leads.list.view')) {
-            return response()->json([]);
-        }
-
         return response()->json(
             Services::getActiveOnly()
                 ->map(fn ($service): array => ['value' => $service->id, 'text' => $service->name])
@@ -633,10 +496,6 @@ class LeadsController extends Controller
 
     public function loadLeadSources(): JsonResponse
     {
-        if (! Gate::allows('leads.list.view')) {
-            return response()->json([]);
-        }
-
         return response()->json(
             LeadSources::getActiveOnly()
                 ->map(fn ($source): array => ['value' => $source->id, 'text' => $source->name])
@@ -646,11 +505,7 @@ class LeadsController extends Controller
 
     public function loadCities(): JsonResponse
     {
-        // Cities dropdown is consumed by the inline City-change action, so
-        // we gate it on the same `leads.update_city` perm. Returns [] for
-        // users without the perm to keep the SPA dropdown from rendering
-        // stale data on a 403.
-        if (! Gate::allows('leads.update_city')) {
+        if (! Gate::allows('leads_city')) {
             return response()->json([]);
         }
 
@@ -667,7 +522,7 @@ class LeadsController extends Controller
 
     public function saveCity(Request $request): JsonResponse
     {
-        if (! Gate::allows('leads.update_city')) {
+        if (! Gate::allows('leads_manage')) {
             return $this->errorResponse('You are not authorized to access this resource.', 403);
         }
 
@@ -690,7 +545,7 @@ class LeadsController extends Controller
     {
         try {
             return response()->json(
-                $this->leadService->resolveLeadData($request->all(), Gate::allows('leads.list.view'))
+                $this->leadService->resolveLeadData($request->all(), Gate::allows('leads_manage'))
             );
         } catch (\Exception $e) {
             return $this->handleException($e, 'LeadsController');
@@ -699,7 +554,7 @@ class LeadsController extends Controller
 
     public function sendSms(int $id): JsonResponse
     {
-        if (! Gate::allows('leads.send_sms')) {
+        if (! Gate::allows('leads_manage')) {
             return $this->errorResponse('You are not authorized to access this resource.', 403);
         }
 
@@ -716,12 +571,7 @@ class LeadsController extends Controller
 
     public function removeFromJunk(int $id): JsonResponse
     {
-        // Restore-from-junk is logically a status revert, not a conversion.
-        // The legacy gate was `leads_convert` — likely a copy/paste mismap
-        // (the convert flow lives in convert()). Use the dedicated
-        // update-status perm so revoking it disables both move-to-junk and
-        // restore-from-junk, matching the SPA's canUpdateStatus pattern.
-        if (! Gate::allows('leads.update_status')) {
+        if (! Gate::allows('leads_convert')) {
             return $this->errorResponse('You are not authorized to access this resource.', 403);
         }
 
@@ -743,29 +593,14 @@ class LeadsController extends Controller
     protected function getPermissions(): array
     {
         return [
-            'edit' => Gate::allows('leads.edit'),
-            'delete' => Gate::allows('leads.delete'),
-            'create' => Gate::allows('leads.create'),
-            'convert' => Gate::allows('leads.convert'),
-            // Patient-style contact gate — replaces the cross-module
-            // `contact` perm for the leads list/drawer so the role-editor
-            // toggle `leads.list.view_contact` is the authority here.
-            'contact' => Gate::allows('leads.list.view_contact'),
-            'update_status' => Gate::allows('leads.update_status'),
-            // Previously missing — the SPA's `canImport` / `canExport`
-            // gated on these keys, but the response shape didn't include
-            // them, so the buttons were hidden for everyone. Surfaced
-            // now so role-editor changes are reflected.
-            'import' => Gate::allows('leads.import'),
-            'export' => Gate::allows('leads.export'),
-            'update_city' => Gate::allows('leads.update_city'),
-            'comment' => Gate::allows('leads.comment.create'),
-            'send_sms' => Gate::allows('leads.send_sms'),
-            // Tab visibility — the SPA shows / hides the Junk tab on
-            // this flag. view_inactive is consumed by the legacy inactive
-            // filter (Admin-v1) but kept here for parity.
-            'view_junk' => Gate::allows('leads.list.view_junk'),
-            'view_inactive' => Gate::allows('leads.list.view_inactive'),
+            'edit' => Gate::allows('leads_edit'),
+            'delete' => Gate::allows('leads_destroy'),
+            'active' => Gate::allows('leads_active'),
+            'inactive' => Gate::allows('leads_inactive'),
+            'create' => Gate::allows('leads_create'),
+            'convert' => Gate::allows('leads_convert'),
+            'contact' => Gate::allows('contact'),
+            'update_status' => Gate::allows('leads_lead_status'),
         ];
     }
 }

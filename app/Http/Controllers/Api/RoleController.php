@@ -111,7 +111,7 @@ class RoleController extends Controller
     {
         try {
             if (!Gate::allows('roles_create')) {
-                return $this->errorResponse('You are not authorized to create roles.', 401);
+                return $this->errorResponse('You are not authorized to create roles.', 403);
             }
 
             $this->roleService->create($request->validated());
@@ -176,7 +176,7 @@ class RoleController extends Controller
     {
         try {
             if (!Gate::allows('roles_edit')) {
-                return $this->errorResponse('You are not authorized to edit roles.', 401);
+                return $this->errorResponse('You are not authorized to edit roles.', 403);
             }
 
             $this->roleService->update($id, $request->validated());
@@ -217,7 +217,7 @@ class RoleController extends Controller
     {
         try {
             if (!Gate::allows('roles_duplicate')) {
-                return $this->errorResponse('You are not authorized to duplicate roles.', 401);
+                return $this->errorResponse('You are not authorized to duplicate roles.', 403);
             }
 
             $this->roleService->duplicate($request->validated());
@@ -234,7 +234,7 @@ class RoleController extends Controller
     {
         try {
             if (!Gate::allows('roles_destroy')) {
-                return $this->errorResponse('You are not authorized to delete roles.', 401);
+                return $this->errorResponse('You are not authorized to delete roles.', 403);
             }
 
             $deleted = $this->roleService->delete($id);

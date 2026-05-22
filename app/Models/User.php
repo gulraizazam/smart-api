@@ -296,6 +296,37 @@ class User extends Authenticatable
         return $this->user_roles()->pluck('name')->implode(',');
     }
 
+    /**
+     * Build the serialized payload returned by /api/login and /api/user.
+     * The SPA's `usePermissions().has(gate)` reads `permissions` to decide
+     * which menu items / pages to show; omitting it falls back to allow-all
+     * (legacy compat) and silently exposes every gated surface.
+     */
+    public function toAuthPayload(): array
+    {
+        $payload = $this->toArray();
+        $payload['role'] = $this->getRoleNames()->first();
+
+        // Expand the permission set through PermissionAliasMap so SPA
+        // `usePermissions().has(gate)` works against either the legacy
+        // snake_case or the new dotted slug — the role editor only saves
+        // the dotted side, but most SPA call-sites still reference the
+        // legacy names (see plans.tsx, etc.). Same Gate::before bridge runs
+        // server-side; this mirrors that behaviour for the client.
+        $names = $this->getAllPermissions()->pluck('name')->all();
+        $expanded = [];
+        foreach ($names as $name) {
+            $expanded[$name] = true;
+            $aliased = \App\Support\PermissionAliasMap::aliasFor($name);
+            if ($aliased !== null) {
+                $expanded[$aliased] = true;
+            }
+        }
+        $payload['permissions'] = array_values(array_keys($expanded));
+
+        return $payload;
+    }
+
     public function doctorhaslocation(): HasMany
     {
         return $this->hasMany(DoctorHasLocations::class, 'user_id');

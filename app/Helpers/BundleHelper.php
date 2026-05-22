@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Helpers;
 
+use App\Models\Appointments;
 use App\Models\Bundles;
 use App\Models\PackageBundles;
 use App\Models\ServiceBundle;
@@ -160,21 +161,16 @@ class BundleHelper
 
     /**
      * Check if bundle has child records that prevent deletion.
-     *
-     * The block reason is `package_bundles` — once a bundle is sold on
-     * a plan instance, refund/audit history depends on the bundle row
-     * remaining intact. Appointments are NOT a guard here: the
-     * `appointments` table tracks services (`service_id`), not bundles,
-     * and the legacy `Appointments::where('bundle_id', ...)` query
-     * referenced a column that no longer exists, throwing a
-     * `QueryException` that masked the real reason behind a generic
-     * 500. `$accountId` is kept in the signature for call-site
-     * compatibility but is now unused.
      */
     public static function hasChildRecords(int $bundleId, int $accountId): bool
     {
-        unset($accountId);
-        return PackageBundles::where('bundle_id', $bundleId)->exists();
+        if (PackageBundles::where('bundle_id', $bundleId)->exists()) {
+            return true;
+        }
+
+        return Appointments::where('bundle_id', $bundleId)
+            ->where('account_id', $accountId)
+            ->exists();
     }
 
     /**
@@ -251,13 +247,14 @@ class BundleHelper
     public static function getPermissions(): array
     {
         return [
-            'edit'     => Gate::allows('packages.edit'),
-            'delete'   => Gate::allows('packages.destroy'),
-            'active'   => Gate::allows('packages.activate'),
-            'inactive' => Gate::allows('packages.deactivate'),
-            'details'  => Gate::allows('packages.detail.view'),
-            'create'   => Gate::allows('packages.create'),
-            'sort'     => Gate::allows('packages.sort'),
+            'edit'     => Gate::allows('packages_edit'),
+            'delete'   => Gate::allows('packages_destroy'),
+            'active'   => Gate::allows('packages_active'),
+            'inactive' => Gate::allows('packages_inactive'),
+            // `packages.detail.view` is the dotted slug exposed in the role
+            // editor; `packages_manage` is the legacy admin-bundle gate. Either
+            // grants read access to the detail dialog.
+            'details'  => Gate::allows('packages.detail.view') || Gate::allows('packages_manage'),
         ];
     }
 }
