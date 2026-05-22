@@ -357,19 +357,16 @@ class AppServiceProvider extends ServiceProvider
 
         Gate::before(fn ($user, $ability) => $user->hasRole('Super-Admin') ? true : null);
 
-        // Permission-catalog alias bridge. The role editor surfaces the new
-        // dotted slugs (`plans.cash.edit_amount`) but every Gate::allows in
-        // the codebase still references the legacy snake_case (`plans_cash_
-        // edit_amount`). When the primary check would fail, fall back to the
-        // aliased name so granting either side in the role editor actually
-        // satisfies the gate. See App\Support\PermissionAliasMap for the map.
+        // Permission-catalog alias bridge — translates between the legacy
+        // snake_case slugs (`plans_cash_edit_amount`) the codebase's
+        // Gate::allows checks reference and the new dotted slugs
+        // (`plans.cash.edit_amount`) the role editor surfaces. PermissionAliasMap
+        // returns every equivalent name; granting any of them satisfies the
+        // original check. Uses hasPermissionTo directly to avoid recursing
+        // back into Gate::allows. PermissionDoesNotExist is swallowed so an
+        // alias for a slug that hasn't been seeded yet is treated as "no
+        // match", not an error.
         Gate::before(function ($user, string $ability) {
-            // PermissionAliasMap returns every equivalent slug. Granting any
-            // of them satisfies the original check. Uses hasPermissionTo
-            // (Spatie's direct lookup) so the callback doesn't recurse back
-            // into Gate::allows. Suppresses Spatie's
-            // PermissionDoesNotExist exception for aliases that haven't
-            // been seeded yet — a missing alias is "no match", not an error.
             foreach (\App\Support\PermissionAliasMap::aliasesFor($ability) as $aliased) {
                 try {
                     if ($user->hasPermissionTo($aliased)) {

@@ -35,13 +35,24 @@ final class PermissionAliasMap
      */
     private const DOTTED_TO_LEGACY = [
         // ── Plans ─────────────────────────────────────────
-        'plans.list.view'              => ['plans_manage'],
+        //
+        // THREE legacy catalogs feed into the dotted plans catalog:
+        //   • `plans_*`         (parent 157, status=0) — global plans page
+        //   • `patients_plan_*` (parent 169, status=1) — patient-detail
+        //     "Plans" tab (Admin/Patients/PackagesController gates here)
+        //   • `view_inactive_plans` (parent 457)       — inactive-rows filter
+        //
+        // Each dotted slug below lists every legacy slug it should satisfy
+        // when granted, so a role with the dotted perm passes every
+        // controller's `Gate::allows()` regardless of which legacy slug
+        // that controller historically targeted.
+        'plans.list.view'              => ['plans_manage', 'patients_plan_manage'],
         'plans.list.view_inactive'     => ['view_inactive_plans'],
-        'plans.create'                 => ['plans_create'],
-        'plans.edit'                   => ['plans_edit'],
-        'plans.destroy'                => ['plans_destroy'],
-        'plans.activate'               => ['plans_active'],
-        'plans.deactivate'             => ['plans_inactive'],
+        'plans.create'                 => ['plans_create', 'patients_plan_create'],
+        'plans.edit'                   => ['plans_edit', 'patients_plan_edit'],
+        'plans.destroy'                => ['plans_destroy', 'patients_plan_destroy'],
+        'plans.activate'               => ['plans_active', 'patients_plan_active'],
+        'plans.deactivate'             => ['plans_inactive', 'patients_plan_inactive'],
         // `plans_log` is the response-payload flag the SPA reads;
         // `patients_plan_log` is the actual endpoint gate in
         // Api\PlansController::planLog + Admin\Patients\PackagesController.
@@ -49,13 +60,13 @@ final class PermissionAliasMap
         'plans.log.view'               => ['plans_log', 'patients_plan_log'],
         'plans.log.export'             => ['plans_log_excel', 'patients_plan_log_excel'],
         'plans.sms_log.view'           => ['plans_sms_log', 'patients_plan_sms_log'],
-        'plans.cash.edit'              => ['plans_cash_edit'],
-        'plans.cash.delete'            => ['plans_cash_delete'],
-        'plans.cash.edit_amount'       => ['plans_cash_edit_amount'],
-        'plans.cash.edit_date'         => ['plans_cash_edit_date'],
-        'plans.cash.edit_payment_mode' => ['plans_cash_edit_payment_mode'],
+        'plans.cash.edit'              => ['plans_cash_edit', 'patients_plan_cash_edit'],
+        'plans.cash.delete'            => ['plans_cash_delete', 'patients_plan_cash_delete'],
+        'plans.cash.edit_amount'       => ['plans_cash_edit_amount', 'patients_plan_cash_edit_amount'],
+        'plans.cash.edit_date'         => ['plans_cash_edit_date', 'patients_plan_cash_edit_date'],
+        'plans.cash.edit_payment_mode' => ['plans_cash_edit_payment_mode', 'patients_plan_cash_edit_payment_mode'],
         'plans.sold_by.edit'           => ['plans_edit_sold_by'],
-        'plans.service.delete'         => ['plans_service_delete'],
+        'plans.service.delete'         => ['plans_service_delete', 'patients_plan_service_delete'],
 
         // ── Packages ──────────────────────────────────────
         'packages.detail.view' => ['packages_manage'],

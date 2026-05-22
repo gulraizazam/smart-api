@@ -592,15 +592,27 @@ class LeadsController extends Controller
 
     protected function getPermissions(): array
     {
+        // SPA reads `perms.X === true` (strict — undefined defaults to
+        // hidden), so every action gate the leads page renders MUST be
+        // emitted here. Missing keys made Import / Export / Junk / Comment
+        // invisible for every role including Super-Admin, because the
+        // `Gate::before` short-circuit only runs when a Gate::allows call
+        // is made — there was no call to short-circuit through.
         return [
-            'edit' => Gate::allows('leads_edit'),
-            'delete' => Gate::allows('leads_destroy'),
-            'active' => Gate::allows('leads_active'),
-            'inactive' => Gate::allows('leads_inactive'),
-            'create' => Gate::allows('leads_create'),
-            'convert' => Gate::allows('leads_convert'),
-            'contact' => Gate::allows('contact'),
+            'edit'          => Gate::allows('leads_edit'),
+            'delete'        => Gate::allows('leads_destroy'),
+            'active'        => Gate::allows('leads_active'),
+            'inactive'      => Gate::allows('leads_inactive'),
+            'create'        => Gate::allows('leads_create'),
+            'convert'       => Gate::allows('leads_convert'),
+            'contact'       => Gate::allows('contact'),
             'update_status' => Gate::allows('leads_lead_status'),
+            // Toolbar affordances surfaced from the same response so the
+            // SPA never has to make a second permission lookup.
+            'import'    => Gate::allows('leads.import'),
+            'export'    => Gate::allows('leads.export'),
+            'view_junk' => Gate::allows('leads.list.view_junk'),
+            'comment'   => Gate::allows('leads.comment.create'),
         ];
     }
 }

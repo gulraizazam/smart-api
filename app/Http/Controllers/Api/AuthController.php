@@ -139,10 +139,10 @@ class AuthController extends Controller
 
             $this->audit->record($request, 'api', LoginAuditLogger::OUTCOME_SUCCESS, $request->input('email'), $user);
 
-            $payload = $user->toAuthPayload();
-            $payload['api_token'] = $apiToken;
-
-            return $this->successResponse('Success', $payload);
+            // toAuthPayload() returns the user attributes + role + alias-
+            // expanded permissions[] the SPA needs. Without it, the SPA's
+            // usePermissions deny-by-default hides every gated surface.
+            return $this->successResponse('Success', $user->toAuthPayload());
 
         } catch (\Exception $e) {
             \Illuminate\Support\Facades\Log::error($e->getMessage(), ['file' => $e->getFile(), 'line' => $e->getLine()]);

@@ -51,6 +51,7 @@ use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\View\View;
@@ -1491,11 +1492,17 @@ class PackagesController extends Controller
      */
     public function editpackageadvancescashindex(int $id, int $package_id): JsonResponse
     {
-        // Require plans.cash.edit to even READ the payment for editing —
-        // anything that reveals an advance's amount + payment mode +
-        // patient is sensitive. Before 2026-05-15 this endpoint was
-        // unguarded and returned ANY tenant's payment by id.
-        if (! \Illuminate\Support\Facades\Gate::allows('plans.cash.edit')) {
+        // Allow READ if the operator holds the master `plans.cash.edit`
+        // OR any of the field-level cash perms — a user with only
+        // `cash.edit_date` legitimately needs to open the form to change
+        // that field. The dialog itself locks the other inputs read-only
+        // and the save endpoint enforces per-field perms server-side, so
+        // surfacing the payment for those users isn't a leak.
+        $canOpen = \Illuminate\Support\Facades\Gate::allows('plans.cash.edit')
+            || \Illuminate\Support\Facades\Gate::allows('plans.cash.edit_amount')
+            || \Illuminate\Support\Facades\Gate::allows('plans.cash.edit_date')
+            || \Illuminate\Support\Facades\Gate::allows('plans.cash.edit_payment_mode');
+        if (! $canOpen) {
             return $this->errorResponse('Unauthorized.', 403);
         }
 
@@ -1538,7 +1545,15 @@ class PackagesController extends Controller
      */
     public function storepackageadvancescash(Request $request): JsonResponse
     {
-        if (! \Illuminate\Support\Facades\Gate::allows('plans.cash.edit')) {
+        // Master OR any field-level cash perm grants entry to the save
+        // endpoint. Per-field enforcement happens below — the operator
+        // can only mutate the fields they explicitly hold a perm for.
+        $canMaster   = \Illuminate\Support\Facades\Gate::allows('plans.cash.edit');
+        $canAmount   = $canMaster || \Illuminate\Support\Facades\Gate::allows('plans.cash.edit_amount');
+        $canDate     = $canMaster || \Illuminate\Support\Facades\Gate::allows('plans.cash.edit_date');
+        $canPayMode  = $canMaster || \Illuminate\Support\Facades\Gate::allows('plans.cash.edit_payment_mode');
+
+        if (! $canAmount && ! $canDate && ! $canPayMode) {
             return $this->errorResponse('Unauthorized.', 403);
         }
 
@@ -1558,7 +1573,32 @@ class PackagesController extends Controller
             'created_at' => 'required|date|before_or_equal:today',
         ]);
 
-        $result = $this->planService->storePayment($request->all());
+        // Per-field enforcement: for any field the operator lacks perm
+        // for, ignore the posted value and pin it to the existing row.
+        // This makes the SPA's per-field read-only UX a UX hint only —
+        // the server is the authority. Without this, a hand-crafted
+        // request could mutate amount/payment_mode while the operator
+        // technically only holds `plans.cash.edit_date`.
+        $existing = PackageAdvances::query()
+            ->where('id', (int) $request->input('package_advances_id'))
+            ->where('account_id', $accountId)
+            ->whereNull('deleted_at')
+            ->firstOrFail();
+
+        $payload = $request->all();
+        if (! $canAmount) {
+            $payload['cash_amount'] = (int) $existing->cash_amount;
+        }
+        if (! $canPayMode) {
+            $payload['payment_mode_id'] = (int) $existing->payment_mode_id;
+        }
+        if (! $canDate) {
+            // Persist the original created_at date so the storePayment
+            // service doesn't re-format it to today's clock time.
+            $payload['created_at'] = $existing->created_at?->format('Y-m-d');
+        }
+
+        $result = $this->planService->storePayment($payload);
 
         if ($result['success']) {
             return $this->successResponse($result['message'], $result['data'] ?? []);
