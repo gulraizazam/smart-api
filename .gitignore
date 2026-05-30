@@ -15,6 +15,7 @@
 .env.save*
 .env.local
 .env.*.local
+.env.rehearsal
 .phpunit.result.cache
 docker-compose.override.yml
 Homestead.json

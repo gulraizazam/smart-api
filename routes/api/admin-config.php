@@ -190,10 +190,18 @@ Route::put('cities/{id}', [CitiesController::class, 'update'])->name('cities.upd
 Route::delete('cities/{id}', [CitiesController::class, 'destroy'])->name('cities.destroy');
 Route::post('cities/status', [CitiesController::class, 'status'])->name('cities.status');
 Route::post('cities_sort_save', [CitiesController::class, 'sortOrderSave'])->name('cities.sort_save');
-Route::post('services_save', [ServicesController::class, 'sortOrderSave'])->name('services.sort_save');
+// AUTH-5 dedup: these flat legacy endpoints (kept for the Blade admin UI — see
+// note below) shared their route NAMES with the SPA-canonical grouped routes in
+// catalogue.php (`services/sort/{get,save}`, names `services.sort_save` /
+// `services.get_sort`), which broke `route:cache` (duplicate-name LogicException).
+// The SPA uses ONLY the grouped routes (src/components/services/service-sort-dialog.tsx);
+// the names now belong to those. Paths here are unchanged, so the Blade UI is
+// unaffected. The flat routes themselves are swept (with SPA/Blade verification)
+// at the Blade cutover.
+Route::post('services_save', [ServicesController::class, 'sortOrderSave'])->name('services.sort_save_legacy');
 Route::post('services_category_sort_save', [ServicesController::class, 'categorySortOrderSave'])->name('services.category_sort_save');
 Route::get('cities_sort', [CitiesController::class, 'sortOrderGet'])->name('cities.sort_get');
-Route::get('services_sort', [ServicesController::class, 'sortOrderGet'])->name('services.get_sort');
+Route::get('services_sort', [ServicesController::class, 'sortOrderGet'])->name('services.get_sort_legacy');
 
 // Cities — REST API additions (non-conflicting methods/URIs only; legacy
 // endpoints above keep the admin UI working unchanged)

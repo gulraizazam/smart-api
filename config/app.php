@@ -71,6 +71,13 @@ return [
 
     'spa_url' => env('APP_SPA_URL', rtrim(env('APP_URL', 'http://localhost'), '/').'/admin-v2'),
 
+    // Flips to true at SPA go-live (deploy step). While false (default,
+    // pre-cutover) AppServiceProvider keeps password-reset emails on Laravel's
+    // default route('password.reset') Blade link so LIVE Blade users get a
+    // working reset page; once the SPA is the live frontend it flips to true and
+    // reset emails point at the SPA /reset-password screen (go-live §5.2).
+    'spa_cutover_done' => env('APP_SPA_CUTOVER_DONE', false),
+
     /*
     |--------------------------------------------------------------------------
     | Application Timezone

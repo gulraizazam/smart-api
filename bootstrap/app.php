@@ -94,6 +94,16 @@ return Application::configure(basePath: dirname(__DIR__))
             ->withoutOverlapping()
             ->everyMinute();
 
+        // 3rd reminder ~2 hours before the appointment. The command self-
+        // guards to 09:00–19:00 (Asia/Karachi) and dedups per appointment via
+        // SMSLogs, so a frequent cadence is safe and never double-sends.
+        // Previously this ran ONLY via the GET /3rd-message-before-appointment
+        // web URL (external pinger) — scheduled here ahead of the Blade
+        // cutover that deletes that route (routes/web.php). HOLE-1.
+        $schedule->command('appointment:3rd-message-before-appointment')
+            ->everyFifteenMinutes()
+            ->withoutOverlapping();
+
         // Inactive discounts with past end date
         $schedule->command('discounts:inactive')
             ->dailyAt('01:00')->timezone($timeZone);
@@ -102,6 +112,13 @@ return Application::configure(basePath: dirname(__DIR__))
         // `bundles` table behind the SPA "Packages" page (UI label
         // /packages → DB table `bundles`).
         $schedule->command('packages:expire')
+            ->dailyAt('01:00')->timezone($timeZone);
+
+        // Expire memberships past their end_date (active → 0; referral rows
+        // cascade via the shared end_date — see project_membership_referral_lifecycle).
+        // Previously ran ONLY via the GET /check-memberships web URL — scheduled
+        // here ahead of the Blade cutover that deletes that route. HOLE-1.
+        $schedule->command('memberships:expire')
             ->dailyAt('01:00')->timezone($timeZone);
 
         // Appointment and Treatment daily stats

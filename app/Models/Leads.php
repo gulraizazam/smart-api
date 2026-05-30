@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Models;
 
-use App\Enums\Gender;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -34,7 +33,12 @@ class Leads extends BaseModel
     protected function casts(): array
     {
         return [
-            'gender' => Gender::class,
+            // `gender` is intentionally NOT cast to App\Enums\Gender. Legacy prod
+            // rows carry gender=0 (tinyint NOT NULL DEFAULT 0, "unspecified"), which
+            // is not an enum case — the enum cast threw ValueError the moment
+            // $lead->gender was touched (AppointmentService, ExportLead, list/detail
+            // resources). Kept as a raw int, consistent with Patients/User; resources
+            // label it via Gender::tryFrom on the raw attribute. (go-live §4-A)
             'active' => 'boolean',
             'created_at' => 'datetime',
             'updated_at' => 'datetime',

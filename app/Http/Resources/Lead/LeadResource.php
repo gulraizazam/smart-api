@@ -71,11 +71,18 @@ class LeadResource extends JsonResource
 
     protected function resolveGenderLabel(): string
     {
-        if ($this->gender instanceof Gender) {
-            return $this->gender->label();
+        // Read the RAW attribute, never `$this->gender`: the Leads model
+        // casts `gender => Gender::class`, and legacy rows carry the
+        // tinyint DEFAULT 0 (= "unspecified") which is not an enum case.
+        // Touching the cast accessor on such a row throws a ValueError and
+        // 500s the leads list/detail endpoints — `tryFrom` degrades cleanly.
+        $raw = $this->resource->getAttributes()['gender'] ?? null;
+
+        if ($raw instanceof Gender) {
+            return $raw->label();
         }
 
-        return Gender::tryFrom((int) $this->gender)?->label() ?? 'Unknown';
+        return Gender::tryFrom((int) $raw)?->label() ?? 'Unknown';
     }
 
     protected function resolveStatusName(): string

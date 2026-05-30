@@ -103,6 +103,20 @@ return new class extends Migration
             // Drop the misbound FK (whatever it's named / wherever it points).
             $this->dropFkByName($table, $fk->name);
 
+            // Back up the orphaned rows BEFORE pruning them. down() is
+            // intentionally irreversible, so this snapshot is the ONLY recovery
+            // path if the prune removes a live grant on prod (go-live §3). This
+            // prune branch never runs on clean dev/test (no misbound FK) — it
+            // only fires where a stale `permissions1` binding exists, exactly
+            // where the deleted rows might be real grants. Mirrors the
+            // backup-table pattern of 2026_05_22_120000_sunset_legacy_permission_assignments.
+            $backup = "{$table}_repoint_backup";
+            $this->safeStatement("DROP TABLE IF EXISTS {$backup}");
+            $this->safeStatement(
+                "CREATE TABLE {$backup} AS "
+                . "SELECT * FROM {$table} WHERE permission_id NOT IN (SELECT id FROM permissions)"
+            );
+
             // Prune rows orphaned relative to the authoritative table so the
             // corrected FK can be created (mirrors 2026_04_08_100024 line 70).
             $this->safeStatement(

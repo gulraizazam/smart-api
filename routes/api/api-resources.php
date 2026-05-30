@@ -148,6 +148,14 @@ use Illuminate\Support\Facades\Route;
     Route::post('membershiptypes/status', [MembershipTypesController::class, 'status'])->name('membershiptypes.status');
     Route::resource('membershiptypes', MembershipTypesController::class)->except('index');
     Route::get('memberships/getsoldbyusers', [MembershipsController::class, 'getSoldByUsers'])->name('memberships.getsoldbyusers');
+    // SPA membership export (Export PDF / Excel buttons in src/routes/memberships.tsx).
+    // Mirrors the legacy /admin/memberships/export/* routes (deleted at cutover) onto
+    // the surviving /api surface so the SPA stops depending on the /admin group. Distinct
+    // names (export_pdf/export_excel) avoid colliding with the still-live
+    // admin.memberships.export.* web routes. Registered before the resource so the
+    // 2-segment paths aren't shadowed by memberships/{membership}.
+    Route::get('memberships/export/pdf', [MembershipsController::class, 'exportPdf'])->name('memberships.export_pdf');
+    Route::get('memberships/export/excel', [MembershipsController::class, 'exportDocs'])->name('memberships.export_excel');
     Route::resource('memberships', MembershipsController::class)->except('index');
     Route::post('memberships/datatable', [MembershipsController::class, 'datatable'])->name('memberships.datatable');
     Route::post('memberships/status', [MembershipsController::class, 'status'])->name('memberships.status');

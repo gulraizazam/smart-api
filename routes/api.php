@@ -76,6 +76,19 @@ use App\Http\Controllers\Api\ScheduleController;
 
 Route::post('login', [\App\Http\Controllers\Api\AuthController::class, 'login'])->middleware('throttle:60,1');
 
+// SPA cookie/bearer-mode logout + password reset. These were always part of
+// the SPA contract (src/lib/auth.tsx, src/routes/forgot-password.tsx,
+// src/routes/reset-password.tsx) but the routes were dropped in a refactor,
+// leaving the SPA POST-ing at 404s. Restored ahead of the Blade cutover so the
+// SPA stops depending on the legacy web auth routes (Auth::routes() in web.php,
+// deleted at cutover). Public by design: logout must be idempotent for stale
+// tabs; password reset runs while the user is logged out.
+Route::post('logout', [\App\Http\Controllers\Api\AuthController::class, 'logout']);
+Route::post('password/email', [\App\Http\Controllers\Api\ForgotPasswordController::class, 'send'])
+    ->middleware('throttle:5,60');
+Route::post('password/reset', [\App\Http\Controllers\Api\ForgotPasswordController::class, 'reset'])
+    ->middleware('throttle:6,1');
+
 // v2 auth — Passport password grant. Runs alongside the Sanctum /api/login
 // during the staged migration. See app/Http/Controllers/Api/V2/AuthController.
 Route::prefix('v2/auth')->name('api.v2.auth.')->group(function (): void {
