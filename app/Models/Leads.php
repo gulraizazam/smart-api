@@ -164,4 +164,31 @@ class Leads extends BaseModel
             $q->whereIn('city_id', $cityIds)->orWhereNull('city_id');
         });
     }
+
+    /**
+     * Centre/branch-level ACL — the authoritative lead visibility boundary.
+     *
+     * Leads carry both a (required) city_id and a (nullable) location_id;
+     * because one city can hold several branches, scoping by city leaks a
+     * sibling branch's leads to a single-branch user. Scope by branch instead,
+     * mirroring every other surface (appointments, invoices, orders…).
+     *
+     * Semantics match ResourceScopeResolver::allowedBranchIds():
+     *   - null  → company-wide: no restriction (see all leads)
+     *   - array → restrict to those branches; leads with a null location_id are
+     *             the shared unassigned pool and stay visible to everyone.
+     *
+     * location_id is qualified (`leads.location_id`) so the scope is safe to
+     * chain onto joined queries (e.g. the lead report base query).
+     */
+    public function scopeForBranches(Builder $query, ?array $branchIds): Builder
+    {
+        if ($branchIds === null) {
+            return $query;
+        }
+
+        return $query->where(function (Builder $q) use ($branchIds): void {
+            $q->whereIn('leads.location_id', $branchIds)->orWhereNull('leads.location_id');
+        });
+    }
 }

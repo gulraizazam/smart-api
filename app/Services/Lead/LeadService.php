@@ -25,6 +25,7 @@ use App\Models\Services;
 use App\Models\Settings;
 use App\Models\Telecomprovidernumber;
 use App\Models\User;
+use App\Services\Dashboard\Support\ResourceScopeResolver;
 use App\Services\PatientManagement\PatientSearchService;
 use App\Services\Phone\PhoneFormattingService;
 use App\Services\Reports\Concerns\ParsesDateRange;
@@ -45,6 +46,21 @@ class LeadService
 
     protected ?array $lookupCache = null;
 
+    /**
+     * Branch ids the current user may see leads for, per the project-wide
+     * ResourceScopeResolver (same source the SPA reads as `assigned_centre_ids`):
+     *   null  → company-wide (no branch restriction)
+     *   array → that subset of branches (empty = none beyond the shared pool)
+     *
+     * This — not ACL::getUserCities() — is the lead visibility boundary: one
+     * city can hold several branches, so city scoping leaks a sibling branch's
+     * leads to a single-branch user.
+     */
+    protected function allowedBranchIds(): ?array
+    {
+        return app(ResourceScopeResolver::class)->allowedBranchIds(Auth::user());
+    }
+
     // =========================================================================
     // Datatable & Listing
     // =========================================================================
@@ -60,12 +76,12 @@ class LeadService
         [$orderBy, $order] = $this->getOrderParams($filters, $filename, $userId);
 
         $junkStatusId = $this->getJunkLeadStatus($accountId)?->id ?? 0;
-        $userCities = ACL::getUserCities();
+        $branchIds = $this->allowedBranchIds();
 
-        $countQuery = $this->buildCountQuery($whereConditions, $serviceConditions, $leadType, $junkStatusId, $userCities);
+        $countQuery = $this->buildCountQuery($whereConditions, $serviceConditions, $leadType, $junkStatusId, $branchIds);
         $totalRecords = $countQuery->count();
 
-        $resultQuery = $this->buildOptimizedResultQuery($whereConditions, $serviceConditions, $leadType, $junkStatusId, $userCities);
+        $resultQuery = $this->buildOptimizedResultQuery($whereConditions, $serviceConditions, $leadType, $junkStatusId, $branchIds);
 
         return [
             'total' => $totalRecords,
@@ -80,12 +96,9 @@ class LeadService
         array $whereService,
         ?string $leadType,
         int $junkStatusId,
-        array $userCities,
+        ?array $branchIds,
     ): Builder {
-        $query = Leads::where(function (Builder $q) use ($userCities): void {
-            $q->whereIn('leads.city_id', $userCities)
-                ->orWhereNull('leads.city_id');
-        });
+        $query = Leads::forBranches($branchIds);
 
         if (! empty($where)) {
             $query->where($where);
@@ -111,7 +124,7 @@ class LeadService
         array $whereService,
         ?string $leadType,
         int $junkStatusId,
-        array $userCities,
+        ?array $branchIds,
     ): Builder {
         $query = Leads::with([
             'lead_service' => function ($q): void {
@@ -120,10 +133,7 @@ class LeadService
             },
             'city:id,name',
             'towns:id,name',
-        ])->where(function (Builder $q) use ($userCities): void {
-            $q->whereIn('leads.city_id', $userCities)
-                ->orWhereNull('leads.city_id');
-        });
+        ])->forBranches($branchIds);
 
         if (! empty($where)) {
             $query->where($where);
@@ -1114,8 +1124,7 @@ class LeadService
             $where[] = ['name', 'like', '%'.$filters['name'].'%'];
         }
 
-        $userCities = ACL::getUserCities();
-        $query = Leads::forAccount()->forCities($userCities);
+        $query = Leads::forAccount()->forBranches($this->allowedBranchIds());
 
         if (! empty($where)) {
             $query->where($where);
@@ -1597,10 +1606,7 @@ class LeadService
 
         return Leads::join('users', 'users.id', '=', 'leads.patient_id')
             ->where('users.user_type_id', Config::get('constants.patient_id'))
-            ->where(function (Builder $query): void {
-                $query->whereIn('leads.city_id', ACL::getUserCities())
-                    ->orWhereNull('leads.city_id');
-            })
+            ->forBranches($this->allowedBranchIds())
             ->when($startDate, fn (Builder $q) => $q->whereDate($dateColumn, '>=', $startDate))
             ->when($endDate, fn (Builder $q) => $q->whereDate($dateColumn, '<=', $endDate));
     }
