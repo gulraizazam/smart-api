@@ -324,24 +324,45 @@ class OrderService
         $patientId = $buyerType === 'patient' ? ($data['patient_id'] ?? null) : null;
         $employeeId = $buyerType === 'employee' ? ($data['employee_id'] ?? null) : null;
 
-        // Patient creation is owned by consultation booking — refuse to
-        // accept a phone for an unknown patient on this endpoint. Memory
-        // rule: project_patient_creation_rule.
+        // ORDER-TIME patient creation — an intentional, ORDER-ONLY exception to
+        // project_patient_creation_rule (2026-06-01): a product order for a new
+        // phone registers a patient, matching legacy crm2 so the shared patient
+        // data stays consistent across both apps during coexistence. Other entry
+        // points (treatment / appointment / drag-drop) STILL reject; consultation
+        // remains the canonical creator.
+        // NB: crm2's bare create(['name','phone']) left user_type_id/account_id
+        // NULL (orphan rows invisible to the patients_only scope). We instead
+        // register a PROPER, account-scoped patient.
         if ($buyerType === 'patient' && empty($patientId) && !empty($data['phone'])) {
             $existing = Patients::where('phone', $data['phone'])->first();
-            if (!$existing) {
-                throw new \Symfony\Component\HttpKernel\Exception\HttpException(
-                    422,
-                    'No registered patient with this phone. Book a consultation first to register the patient.',
-                );
+            if ($existing) {
+                $patientId = $existing->id;
+            } else {
+                // Register the patient the SAME way the consultation flow does
+                // (AppointmentService::createAppointment) so order- and
+                // consultation-created patients are identical, valid rows
+                // (user_type_id=patient, account-scoped, hashed random password
+                // — `users.password` is NOT NULL on prod).
+                $newPatient = Patients::create([
+                    'name' => $data['name'] ?? null,
+                    'phone' => $data['phone'],
+                    'email' => $data['email'] ?? null,
+                    'gender' => $data['gender'] ?? 0,
+                    'account_id' => $accountId,
+                    'user_type_id' => (int) config('constants.patient_id'),
+                    'password' => \Illuminate\Support\Facades\Hash::make(\Illuminate\Support\Str::random(16)),
+                    'active' => 1,
+                    'created_by' => Auth::id(),
+                ]);
+                $patientId = $newPatient->id;
             }
-            $patientId = $existing->id;
         }
 
         if ($buyerType === 'patient' && empty($patientId)) {
+            // No existing patient and no phone to register one.
             throw new \Symfony\Component\HttpKernel\Exception\HttpException(
                 422,
-                'Please select a patient for this order.',
+                'Please select a patient (or provide a name + phone) for this order.',
             );
         }
         if ($buyerType === 'employee' && empty($employeeId)) {
