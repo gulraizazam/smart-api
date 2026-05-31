@@ -321,10 +321,11 @@ class Order extends BaseModel
             // rows from refunds tied to this order.
             Stock::where('order_id', $id)->delete();
 
-            // The order delete fires OrderObserver::deleted() which
-            // cascades to the linked package_advances rows — that's how
-            // the cash-pool credit is reversed (see
-            // app/Observers/OrderObserver.php).
+            // Inventory orders are overlay-only — they never write a
+            // package_advances row and never credit cash_pools.cached_balance,
+            // so deleting one has no stored pool credit to reverse (the display
+            // overlay simply stops counting the removed order). No observer
+            // cascade is involved.
             $order->delete();
 
             return collect(['status' => true, 'message' => 'Record has been deleted successfully.']);

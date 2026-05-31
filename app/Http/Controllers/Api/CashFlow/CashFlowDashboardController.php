@@ -201,13 +201,13 @@ class CashFlowDashboardController extends Controller
 
 
 
-            // Inventory cash sales used to be summed on top of
-            // $currentBalance here. OrderService now writes a
-            // package_advances row on order create/refund and the
-            // PackageAdvanceObserver already credits/debits the matching
-            // branch pool — so $currentBalance (derived from
-            // cash_pools.cached_balance) already reflects them. Adding
-            // an Order::sum on top would double-count.
+            // NOTE: $currentBalance is the RAW sum of cash_pools.cached_balance
+            // and EXCLUDES inventory (Order) sales, which are overlay-only and
+            // never stored. PARITY TODO (FDM week-stats): either build
+            // $pools via PoolService::getAllPools (overlaid) or add the
+            // inventory Order-sum here, to match the inventory-inclusive pool
+            // display. (Not a prod regression: prod has no order
+            // package_advances rows; this view already excluded inventory.)
             $goLiveDate = $this->settingService->getGoLiveDate($accountId) ?? '2026-03-08';
 
             // Week range: defaults to Sunday → today, but the caller can
@@ -451,13 +451,13 @@ class CashFlowDashboardController extends Controller
                     $openingBalance -= (float) $servicesOut;
                 }
 
-                // Inventory cash sales/refunds used to be summed from
-                // `orders` here to build the opening balance. Order
-                // create/refund now write to `package_advances`, which
-                // the `$servicesIn` / `$servicesOut` PackageAdvances
-                // sums above already include. Adding an Order::sum on
-                // top would double-count the inventory cash in the
-                // opening balance and break the FDM week-stats view.
+                // NOTE: inventory (Order) sales/refunds are overlay-only and
+                // are NOT in package_advances, so this opening balance
+                // currently EXCLUDES inventory. PARITY TODO: add the inventory
+                // Order-sum here (windowed to go-live..lastSaturday), mirroring
+                // crm2, so the FDM week-stats opening matches the
+                // inventory-inclusive pool figures. (Not a prod regression:
+                // prod has no order package_advances rows today.)
 
                 // Subtract expenses
                 $obExpenses = \App\Models\CashFlow\Expense::forAccount($accountId)

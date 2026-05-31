@@ -57,13 +57,12 @@ class ExpenseObserverTest extends TestCase
         $this->assertSame(5000.00, (float) $pool->fresh()->cached_balance);
     }
 
-    public function test_rejecting_an_expense_does_not_touch_the_pool(): void
+    public function test_rejecting_an_expense_reverses_the_pool(): void
     {
-        // 2026-05-14 — Model B (substance-over-form): reject is a
-        // record-correction workflow. The cash event already happened
-        // at creation; status reflects record-validity, not whether
-        // the spend occurred. Pool stays put through Approved →
-        // Rejected. Only `void` (separate flow) actually refunds.
+        // Model A: reject REVERSES the pool deduction (the money is given
+        // back). This matches the legacy app (crm2) so both stay consistent
+        // on the shared cached_balance column; the recompute likewise
+        // EXCLUDES rejected rows, so a rejected expense nets to zero.
         $pool = CashPool::factory()->withOpeningBalance(10000)->create();
         $expense = Expense::factory()->create([
             'paid_from_pool_id' => $pool->id,
@@ -76,17 +75,17 @@ class ExpenseObserverTest extends TestCase
         $expense->update(['status' => ExpenseStatus::Rejected]);
 
         $this->assertSame(
-            8000.00,
+            10000.00,
             (float) $pool->fresh()->cached_balance,
-            'Reject is metadata-only — the pool stays debited because the cash event already happened.',
+            'Reject reverses the deduction — the pool returns to its pre-expense balance.',
         );
     }
 
-    public function test_status_round_trip_between_pending_and_rejected_does_not_touch_the_pool(): void
+    public function test_status_round_trip_between_pending_and_rejected_reverses_and_reapplies(): void
     {
-        // Whether the accountant resubmits (Rejected → Pending) or
-        // the admin re-rejects (Pending → Rejected), the pool stays
-        // put. Only `void` removes money from the books.
+        // Model A: reject reverses the deduction, resubmit (Rejected ->
+        // Pending) re-applies it, and re-reject reverses it again. Each
+        // transition moves the pool; the rejected state always nets to zero.
         $pool = CashPool::factory()->withOpeningBalance(10000)->create();
         $expense = Expense::factory()->create([
             'paid_from_pool_id' => $pool->id,
@@ -95,20 +94,21 @@ class ExpenseObserverTest extends TestCase
         ]);
 
         $expense->update(['status' => ExpenseStatus::Rejected]);
-        $this->assertSame(8000.00, (float) $pool->fresh()->cached_balance);
+        $this->assertSame(10000.00, (float) $pool->fresh()->cached_balance,
+            'Reject reverses the deduction.');
 
         $expense->update(['status' => ExpenseStatus::Pending]);
         $this->assertSame(
             8000.00,
             (float) $pool->fresh()->cached_balance,
-            'Resubmit (Rejected → Pending) is metadata-only — pool unchanged.',
+            'Resubmit (Rejected -> Pending) re-applies the deduction.',
         );
 
         $expense->update(['status' => ExpenseStatus::Rejected]);
         $this->assertSame(
-            8000.00,
+            10000.00,
             (float) $pool->fresh()->cached_balance,
-            'Re-reject (Pending → Rejected) is metadata-only — pool unchanged.',
+            'Re-reject (Pending -> Rejected) reverses the deduction again.',
         );
     }
 
