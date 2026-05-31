@@ -63,28 +63,6 @@ class RoleController extends Controller
         }
     }
 
-    public function createView(): \Illuminate\View\View
-    {
-        try {
-            if (!Gate::allows('roles_create')) {
-                return abort(401);
-            }
-
-            $mapping = $this->roleService->getAllPermissionsMapping();
-            $allowed_permissions = $this->roleService->getAllowedPermissions();
-
-            return view('admin.roles.create', [
-                'categories' => $mapping['categories'],
-                'permissions' => $mapping['permissions'],
-                'dashboard_permissions' => $mapping['dashboard_permissions'],
-                'reports_permissions' => $mapping['reports_permissions'],
-                'allowed_permissions' => $allowed_permissions,
-            ]);
-        } catch (\Exception $e) {
-            return $this->handleException($e, 'RoleController');
-        }
-    }
-
     public function create(): \Illuminate\Http\JsonResponse
     {
         try {
@@ -119,30 +97,6 @@ class RoleController extends Controller
             session()->flash('success', 'Record has been created successfully.');
 
             return $this->successResponse('Record has been created successfully.');
-        } catch (\Exception $e) {
-            return $this->handleException($e, 'RoleController');
-        }
-    }
-
-    public function editView(int $role): \Illuminate\View\View
-    {
-        try {
-            if (!Gate::allows('roles_edit')) {
-                return abort(401);
-            }
-
-            $role = $this->roleService->findOrFail($role);
-            $mapping = $this->roleService->getAllPermissionsMapping();
-            $allowed_permissions = $this->roleService->getAllowedPermissions($role->id);
-
-            return view('admin.roles.edit', [
-                'role' => $role,
-                'allowed_permissions' => $allowed_permissions,
-                'categories' => $mapping['categories'],
-                'permissions' => $mapping['permissions'],
-                'dashboard_permissions' => $mapping['dashboard_permissions'],
-                'reports_permissions' => $mapping['reports_permissions'],
-            ]);
         } catch (\Exception $e) {
             return $this->handleException($e, 'RoleController');
         }

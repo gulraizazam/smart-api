@@ -290,67 +290,6 @@ class ApplicationUserController extends Controller
         }
     }
 
-    /**
-     * @deprecated Load-bearing for legacy admin Blade JS only
-     *             (admin/appointments, packages, reports, etc. via
-     *             `public/assets/js/custom.js` and friends). New SPA
-     *             flows use getpatientOptimized() instead.
-     */
-    public function getpatientid(Request $request): JsonResponse
-    {
-        try {
-            $patients = Patients::getPatientidAjax(
-                $request->input('search', ''),
-                Auth::user()->account_id,
-            );
-
-            return $this->successResponse('Record found.', [
-                'patients' => $patients,
-            ]);
-        } catch (\Exception $e) {
-            return $this->handleException($e, 'ApplicationUserController');
-        }
-    }
-
-    /**
-     * @deprecated Load-bearing for legacy admin Blade only (orders flow,
-     *             returns extra membership fields not needed by the SPA).
-     */
-    public function getpatientidOrder(Request $request): JsonResponse
-    {
-        try {
-            $patients = Patients::getPatientidAjaxOrder(
-                $request->input('search', ''),
-                Auth::user()->account_id,
-            );
-
-            return $this->successResponse('Record found.', [
-                'patients' => $patients,
-            ]);
-        } catch (\Exception $e) {
-            return $this->handleException($e, 'ApplicationUserController');
-        }
-    }
-
-    /**
-     * @deprecated Load-bearing for legacy admin Blade phone-prefix lookups.
-     */
-    public function phoneSearch(Request $request): JsonResponse
-    {
-        try {
-            $patients = Patients::getPatientPhoneAjax(
-                $request->input('search', ''),
-                Auth::user()->account_id,
-            );
-
-            return $this->successResponse('Record found.', [
-                'patients' => $patients,
-            ]);
-        } catch (\Exception $e) {
-            return $this->handleException($e, 'ApplicationUserController');
-        }
-    }
-
     public function getpatientnumber(Request $request): JsonResponse
     {
         try {

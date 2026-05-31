@@ -601,31 +601,6 @@ class ScheduleController extends Controller
     }
 
     /**
-     * List active resources (doctors by default) for a location. Used by the
-     * SPA's repeating-shifts page to populate the "also apply to" multiselect
-     * without paying the cost of `getShifts`.
-     */
-    public function getResources(Request $request): JsonResponse
-    {
-        if (! Gate::allows('scheduling_shifts.list.view')) {
-            return $this->errorResponse('You are not authorized to access this resource.', 403);
-        }
-
-        $locationId = (int) $request->input('location_id');
-        $resourceTypeId = (int) $request->input('resource_type_id', 2);
-
-        if (!$locationId) {
-            return $this->errorResponse('Missing required parameters', 400);
-        }
-
-        $resources = $this->getResourcesForLocation($locationId, $resourceTypeId);
-
-        return $this->successResponse('Resources retrieved successfully', [
-            'resources' => $resources,
-        ]);
-    }
-
-    /**
      * Delete all shifts for a resource on a specific date
      */
     public function deleteShifts(Request $request): JsonResponse

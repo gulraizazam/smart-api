@@ -137,6 +137,17 @@ class AppServiceProvider extends ServiceProvider
      */
     private function configurePasswordResetUrl(): void
     {
+        // Gate on the cutover flag: while the legacy Blade frontend is still live
+        // (flag false — the default), reset emails must keep Laravel's default
+        // route('password.reset') Blade link so live Blade users get a WORKING
+        // reset page. Overriding to the SPA /reset-password screen before the SPA
+        // is the live frontend would mail dead links to every Blade user
+        // requesting a reset (go-live §5.2). Flips to true at go-live via
+        // APP_SPA_CUTOVER_DONE in the prod .env.
+        if (! (bool) config('app.spa_cutover_done')) {
+            return;
+        }
+
         ResetPasswordNotification::createUrlUsing(function ($notifiable, string $token): string {
             $base = rtrim((string) config('app.spa_url'), '/');
             $email = urlencode((string) $notifiable->getEmailForPasswordReset());

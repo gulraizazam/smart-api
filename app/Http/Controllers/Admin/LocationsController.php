@@ -256,10 +256,4 @@ class LocationsController extends Controller
             'message' => 'Record has been verified successfully.',
         ]);
     }
-    public function getServices(Request $request): \Illuminate\Http\JsonResponse
-    {
-        $data = $this->locationService->getServicesForLocation((int) $request->id, Auth::user()->account_id);
-
-        return $this->successResponse('Success', $data);
-    }
 }

@@ -716,9 +716,12 @@ class Resources extends BaseModel
         $resource = Resources::getData($id);
 
         if (! $resource) {
-            flash('Resource not found.')->error()->important();
-
-            return redirect()->route('admin.resources.index');
+            // Cutover: return false (mirroring activeRecord) instead of
+            // redirect()->route('admin.resources.index'). The Blade route is
+            // deleted at cutover and redirect()->route() would throw
+            // RouteNotFoundException (500). The only caller,
+            // ResourceService::changeStatus, casts the result to bool.
+            return false;
         }
 
         $record = $resource->update(['active' => 0]);

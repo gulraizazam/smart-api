@@ -47,26 +47,21 @@ class CustomFormFeedbacksController extends Controller
     }
 
     /**
-     * Show the form for creating new Permission.
-     *
-     * @return \Illuminate\Http\Response
+     * Return the list of forms available to fill (consumed by the SPA).
      */
-    public function create(): \Illuminate\View\View|\Illuminate\Http\RedirectResponse
+    public function create(): \Illuminate\Http\JsonResponse
     {
         if (! Gate::allows('custom_form_feedbacks_manage')) {
-            return abort(401);
+            return $this->errorResponse('You are not authorized to perform this action.', 403);
         }
 
         $forms = $this->customFormFeedbackService->getAllForms();
 
         if (! $forms) {
-            flash('No Form Available to fill, please try again later.')->error()->important();
-
-            return redirect()->route('admin.custom_form_feedbacks.index');
-        } else {
-            return view('admin.custom_form_feedbacks.create', ['forms' => $forms]);
+            return $this->errorResponse('No Form Available to fill, please try again later.', 404);
         }
 
+        return $this->successResponse('Record found.', ['forms' => $forms]);
     }
 
     /**

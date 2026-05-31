@@ -64,11 +64,8 @@ use Illuminate\Support\Facades\Route;
     ]);
     //Invoice Management route end
 
-    Route::get('users/getpatientid', [ApplicationUserController::class, 'getpatientid'])->name('users.getpatient.id');
     Route::get('users/getpatient-optimized', [ApplicationUserController::class, 'getpatientOptimized'])->name('users.getpatient.optimized');
-    Route::get('users/getpatientorder', [ApplicationUserController::class, 'getpatientidOrder'])->name('users.getpatient.order');
     Route::get('orders/check_membership', [OrdersController::class, 'checkMembership'])->name('orders.check_membership');
-    Route::get('users/phone/search', [ApplicationUserController::class, 'phoneSearch'])->name('users.phone.search');
     Route::get('users/get_patient_number', [ApplicationUserController::class, 'getpatientnumber'])->name('users.get_patient_number');
     Route::get('users/get_cities', [ApplicationUserController::class, 'getUserCities'])->name('users.get_cities');
     Route::get('users/get_centers', [ApplicationUserController::class, 'getUserCenters'])->name('users.get_centers');
@@ -97,7 +94,6 @@ Route::get('packages/deleteplanrowtem', [PackagesController::class, 'deleteplanr
     Route::get('packages/updatepackages', [PackagesController::class, 'updatepackages'])->name('packages.updatepackages');
 
     Route::get('packages/getserviceinfo', [PackagesController::class, 'getserviceinfo'])->name('packages.getserviceinfo');
-    Route::get('packages/getvoucherinfo', [PackagesController::class, 'getvoucherinfo'])->name('packages.getvoucherinfo');
     Route::get('packages/display/{id}', [PackagesController::class, 'display'])->name('packages.display');
 
     Route::get('packages/getservice', [PackagesController::class, 'getservices'])->name('packages.getservice');
@@ -177,25 +173,24 @@ Route::get('packages/deleteplanrowtem', [PackagesController::class, 'deleteplanr
     // endpoints above). `destroy` is excluded because the REST API above
     // owns `DELETE /packages/{id}`. `edit` + `update` stay for the
     // legacy admin edit form.
-    Route::resource('packages', PackagesController::class)->except(['index', 'store', 'show', 'create', 'destroy']);
+    Route::resource('packages', PackagesController::class)->except(['index', 'store', 'show', 'create', 'destroy', 'update']);
 
     // Non Plans Refunds API routes removed — functionality not in use
 
     // Custom User Form Feedbacks Routes
     Route::post('custom_form_feedbacks/datatable', [CustomFormFeedbacksController::class, 'datatable'])->name('custom_form_feedbacks.datatable');
-    Route::post('custom_form_feedbacks/status', [CustomFormFeedbacksController::class, 'status'])->name('custom_form_feedbacks.status');
 
     Route::get('custom_form_feedbacks/{id}/export_pdf', [CustomFormFeedbacksController::class, 'exportPdf'])->name('custom_form_feedbacks.export_pdf');
     Route::post('custom_form_feedbacks/{form_id}/submit_form', [CustomFormFeedbacksController::class, 'submit_form'])->name('custom_form_feedbacks.submit_form');
     Route::post('custom_form_feedbacks/{feedback_id}/update_field/{feedback_field_id}', [CustomFormFeedbacksController::class, 'update_field'])->name('custom_form_feedbacks.update_field');
-    Route::resource('custom_form_feedbacks', CustomFormFeedbacksController::class)->except('index');
+    Route::resource('custom_form_feedbacks', CustomFormFeedbacksController::class)->except(['index', 'show']);
 
     //Custom user form
     Route::post('custom_forms/datatable', [CustomFormsController::class, 'datatable'])->name('custom_forms.datatable');
     Route::post('custom_forms/status', [CustomFormsController::class, 'status'])->name('custom_forms.status');
-    Route::resource('custom_forms', CustomFormsController::class);
+    Route::resource('custom_forms', CustomFormsController::class)->except(['show']);
 
-    Route::post('custom_forms_mass_destroy', [CustomFormsController::class, 'massDestroy'])->name('custom_forms.mass_destroy');
+
     Route::post('custom_forms/form_update/{id}', [CustomFormsController::class, 'form_update'])->name('custom_forms.form_update');
     Route::post('custom_forms/{form_id}/update_field/{field_id}', [CustomFormsController::class, 'update_field'])->name('custom_forms.update_field');
     Route::post('custom_forms/{id}/create_field/', [CustomFormsController::class, 'create_field'])->name('custom_forms.create_field');

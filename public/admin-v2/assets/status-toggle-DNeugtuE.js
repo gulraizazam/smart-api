@@ -1,0 +1,6 @@
+import{c as l,d as t}from"./index-BCm6cQyY.js";import{j as s}from"./tiptap-C7rnvjMS.js";/**
+ * @license lucide-react v0.469.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */const d=l("Inbox",[["polyline",{points:"22 12 16 12 14 15 10 15 8 12 2 12",key:"o97t9d"}],["path",{d:"M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z",key:"oot6mr"}]]);function u({active:e,onToggle:i,pending:o=!1,disabled:a=!1,label:n}){return s.jsx("button",{type:"button",role:"switch","aria-checked":e,"aria-label":n??(e?"Deactivate":"Activate"),title:e?"Click to deactivate":"Click to activate",disabled:o||a,onClick:i,className:t("relative inline-flex h-[22px] w-[40px] shrink-0 items-center rounded-full p-0.5 transition-colors","focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-accent-cyan","disabled:cursor-not-allowed disabled:opacity-50",e?"bg-success":"bg-hairline-strong"),children:s.jsx("span",{className:t("inline-block size-[18px] rounded-full bg-white shadow-[0_1px_2px_rgb(15_23_42/0.15)] transition-transform",e?"translate-x-[18px]":"translate-x-0")})})}export{d as I,u as S};

@@ -10,16 +10,15 @@ use Tests\Concerns\UsesFinancialFixtures;
 use Tests\TestCase;
 
 /**
- * Integration tests for the middleware stack: AuthenticateApiWeb,
- * RedirectIfAuthenticated, VerifyCsrfToken, and middleware ordering.
+ * Integration tests for the middleware stack: AuthenticateApiDual,
+ * VerifyCsrfToken, and middleware ordering.
  *
  * Pins:
- *   1. AuthenticateApiWeb accepts session-authenticated requests.
- *   2. AuthenticateApiWeb accepts Sanctum token requests.
- *   3. AuthenticateApiWeb rejects unauthenticated requests with 401.
+ *   1. The API auth middleware accepts session-authenticated requests.
+ *   2. The API auth middleware accepts Sanctum token requests.
+ *   3. The API auth middleware rejects unauthenticated requests with 401.
  *   4. CSRF is not enforced on /api/* routes.
- *   5. Authenticated users hitting the login page are redirected.
- *   6. Middleware stack correctly chains auth -> account -> permission.
+ *   5. Middleware stack correctly chains auth -> account -> permission.
  */
 class MiddlewareIntegrationTest extends TestCase
 {
@@ -57,15 +56,6 @@ class MiddlewareIntegrationTest extends TestCase
 
         // If CSRF were enforced, this would be 419.
         $this->assertNotEquals(419, $response->status());
-    }
-
-    public function test_login_page_redirects_authenticated_users(): void
-    {
-        $this->actingAsAdmin();
-
-        // The login route should redirect already-authenticated users.
-        $response = $this->get('/login');
-        $this->assertContains($response->status(), [302, 200]);
     }
 
     public function test_permission_middleware_blocks_unauthorized_action(): void

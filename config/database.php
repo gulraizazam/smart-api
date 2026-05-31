@@ -74,6 +74,44 @@ return [
             ]) : [],
         ],
 
+        // Back-compat alias (go-live de-risking §5.1). The connection key was
+        // renamed mysql→mariadb, dropping the 'mysql' key. Production's .env was
+        // provisioned long ago with DB_CONNECTION=mysql, so WITHOUT this alias
+        // every request 500s with "Database connection [mysql] not configured"
+        // the moment the shared backend deploys (before the SPA is even live).
+        // Mirrors the mariadb connection verbatim (same MariaDB engine). Safe to
+        // remove only once prod .env is confirmed on DB_CONNECTION=mariadb.
+        'mysql' => [
+            'driver' => 'mariadb',
+            'url' => env('DATABASE_URL'),
+            'host' => env('DB_HOST', '127.0.0.1'),
+            'port' => env('DB_PORT', '3306'),
+            'database' => env('DB_DATABASE', 'forge'),
+            'username' => env('DB_USERNAME', 'forge'),
+            'password' => env('DB_PASSWORD', ''),
+            'unix_socket' => env('DB_SOCKET', ''),
+            'charset' => 'utf8mb4',
+            'collation' => 'utf8mb4_unicode_ci',
+            'prefix' => '',
+            'prefix_indexes' => true,
+            'strict' => false,
+            'modes' => [
+                'ONLY_FULL_GROUP_BY',
+                'STRICT_TRANS_TABLES',
+                'NO_ZERO_IN_DATE',
+                'NO_ZERO_DATE',
+                'ERROR_FOR_DIVISION_BY_ZERO',
+                'NO_ENGINE_SUBSTITUTION',
+            ],
+            'engine' => null,
+            'options' => extension_loaded('pdo_mysql') ? array_filter([
+                PDO::MYSQL_ATTR_SSL_CA => env('DB_SSL_CA'),
+                PDO::ATTR_PERSISTENT => false,
+                PDO::ATTR_TIMEOUT => 5,
+                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            ]) : [],
+        ],
+
         /*
         |--------------------------------------------------------------------------
         | mariadb_testing — dedicated PHPUnit / CI connection

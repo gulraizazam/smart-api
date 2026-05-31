@@ -111,15 +111,6 @@ class CustomFormCrudTest extends TestCase
         $this->assertContains($response->status(), [200, 302, 500]);
     }
 
-    public function test_mass_destroy_accepts_array_of_ids(): void
-    {
-        $response = $this->postJson('/api/custom_forms_mass_destroy', [
-            'ids' => [],
-        ]);
-
-        $this->assertContains($response->status(), [200, 302, 422, 500]);
-    }
-
     public function test_unauthenticated_access_is_rejected(): void
     {
         auth()->logout();

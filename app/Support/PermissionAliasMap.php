@@ -85,12 +85,59 @@ final class PermissionAliasMap
         'discounts.activate'           => ['discounts_active'],
         'discounts.deactivate'         => ['discounts_inactive'],
         'discounts.allocate'           => ['discounts_allocate'],
+
+        // ── Leads ─────────────────────────────────────────
+        // Bridges Api\LeadsController's legacy Gate::allows() slugs to the new
+        // dotted catalog. 2026_05_21_130000 deletes the legacy leads_* rows and
+        // re-grants the dotted equivalents (its own authoritative map, lines
+        // 58-68 of that migration). Without this bridge a role migrated to dotted
+        // slugs 403s on the still-legacy controller gates — and during the
+        // coexistence window a role still on legacy slugs passes the (few) dotted
+        // gates the controller already uses. leads_manage historically guarded
+        // BOTH the list and the detail view (needs the 1-to-many inverse below).
+        'leads.list.view'          => ['leads_manage'],
+        'leads.detail.view'        => ['leads_manage'],
+        'leads.create'             => ['leads_create'],
+        'leads.edit'               => ['leads_edit'],
+        'leads.delete'             => ['leads_destroy'],
+        'leads.import'             => ['leads_import'],
+        'leads.export'             => ['leads_export'],
+        'leads.update_status'      => ['leads_lead_status'],
+        'leads.update_city'        => ['leads_city'],
+        'leads.convert'            => ['leads_convert'],
+        'leads.list.view_junk'     => ['leads_junk'],
+        'leads.list.view_inactive' => ['view_inactive_leads'],
+
+        // ── Blade-route bridges (go-live §5.4) ────────────
+        // The legacy Blade admin routes (routes/web/admin-*.php) were re-pointed
+        // to dotted slugs by the permission rollout. A live Blade user whose role
+        // still holds only the legacy umbrella (X_manage) would 403 on those pages
+        // until the rollout's mirror grants the dotted slug — and during the
+        // coexistence window a dotted-only role would 403 on any still-legacy gate.
+        // These bridges keep both directions working. All legacy umbrellas below
+        // were verified present in the catalog.
+        // NOTE: `business_closures.list.view` has NO legacy umbrella
+        // (`business_closures_manage` does not exist — the Blade route was
+        // previously UNGATED), so it CANNOT be bridged. Non-admins who relied on
+        // the ungated page must be granted the dotted slug via the role editor /
+        // rollout mirror. Flagged for go-live, not fixable here.
+        'services.list.view'          => ['services_manage'],
+        'packages.list.view'          => ['packages_manage'],
+        'packages.sort'               => ['packages_edit'],
+        'bundles.list.view'           => ['packages_manage'],
+        'bundles.sort'                => ['packages_edit'],
+        'invoices.list.view'          => ['invoices_manage'],
+        'patients.list.view'          => ['patients_manage'],
+        'scheduling_shifts.list.view' => ['resourcerotas_manage'],
+        'voucher_types.list.view'     => ['voucher_types_manage'],
+        'vouchers.list.view'          => ['vouchers_manage'],
+        'cashflow.manage'             => ['cashflow_manage'],
     ];
 
     /**
-     * Lazy inverse: legacy slug → dotted slug. Built once per request.
+     * Lazy inverse: legacy slug → list of dotted slugs. Built once per request.
      *
-     * @var array<string, string>|null
+     * @var array<string, list<string>>|null
      */
     private static ?array $legacyToDotted = null;
 
@@ -118,14 +165,17 @@ final class PermissionAliasMap
             $legacyToDotted = [];
             foreach (self::DOTTED_TO_LEGACY as $dotted => $legacies) {
                 foreach ($legacies as $legacy) {
-                    $legacyToDotted[$legacy] = $dotted;
+                    // 1-to-many: a single legacy slug can alias to MORE than one
+                    // dotted slug (e.g. leads_manage → leads.list.view +
+                    // leads.detail.view). The docblock always promised this; the
+                    // earlier `= $dotted` kept only the last and silently dropped
+                    // the rest, so a role holding only the OTHER dotted slug 403'd.
+                    $legacyToDotted[$legacy][] = $dotted;
                 }
             }
             self::$legacyToDotted = $legacyToDotted;
         }
 
-        return isset(self::$legacyToDotted[$ability])
-            ? [self::$legacyToDotted[$ability]]
-            : [];
+        return self::$legacyToDotted[$ability] ?? [];
     }
 }

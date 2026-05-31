@@ -141,11 +141,6 @@ class AppointmentsController extends Controller
         }
     }
 
-    public function updateSchedule(Request $request): \Illuminate\Http\JsonResponse
-    {
-        return $this->schedule($request);
-    }
-
     public function schedule(Request $request): \Illuminate\Http\JsonResponse
     {
         try {

@@ -473,16 +473,17 @@ class PackageAdvancesController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function destroy(int $id): \Illuminate\Http\RedirectResponse
+    public function destroy(int $id): \Illuminate\Http\JsonResponse
     {
         if (! Gate::allows('finances_manage')) {
-            return abort(401);
+            return $this->errorResponse('You are not authorized to perform this action.', 403);
         }
 
-        PackageAdvances::deleteRecord($id);
+        if (! PackageAdvances::deleteRecord($id)) {
+            return $this->errorResponse('Unable to delete the record.', 422);
+        }
 
-        return redirect()->route('admin.packagesadvances.index');
-
+        return $this->successResponse('Record has been deleted successfully.');
     }
 
     /**
@@ -491,10 +492,10 @@ class PackageAdvancesController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function cancel(int $id): \Illuminate\Http\RedirectResponse
+    public function cancel(int $id): \Illuminate\Http\JsonResponse
     {
         if (! Gate::allows('finances_manage')) {
-            return abort(401);
+            return $this->errorResponse('You are not authorized to perform this action.', 403);
         }
 
         // Separation of duties — the operator who recorded a payment
@@ -504,24 +505,28 @@ class PackageAdvancesController extends Controller
         // X" — a normal-looking pair. A second pair of eyes is required.
         $accountId = (int) Auth::user()->account_id;
         $original = PackageAdvances::where(['id' => $id, 'account_id' => $accountId])->first();
-        if ($original && (int) $original->created_by === (int) Auth::user()->id) {
-            abort(403, 'You cannot cancel a payment you created. Another admin must cancel it.');
+
+        if (! $original) {
+            return $this->errorResponse('Resource not found.', 404);
         }
 
-        $packageadvances = PackageAdvances::CancelRecord($id, $accountId);
+        if ((int) $original->created_by === (int) Auth::user()->id) {
+            return $this->errorResponse('You cannot cancel a payment you created. Another admin must cancel it.', 403);
+        }
 
-        $package_advnaces = (PackageAdvances::find($id))->toArray();
+        PackageAdvances::CancelRecord($id, $accountId);
+
+        $package_advnaces = $original->toArray();
         if ($package_advnaces['cash_flow'] == 'in') {
-
             $package_advnaces['cash_flow'] = 'out';
             $package_advnaces['is_cancel'] = '1';
         } else {
             $package_advnaces['cash_flow'] = 'in';
             $package_advnaces['is_cancel'] = '1';
         }
-        $advance_cancel = PackageAdvances::createRecord_onlyadvances($package_advnaces);
+        PackageAdvances::createRecord_onlyadvances($package_advnaces);
 
-        return redirect()->route('admin.packagesadvances.index');
+        return $this->successResponse('Record has been cancelled successfully.');
     }
 
 }

@@ -553,14 +553,4 @@ class ServicesController extends Controller
         return $flattened;
     }
 
-    // Alternative method using flattened approach
-    public function exportPdfFlattened(): \Symfony\Component\HttpFoundation\BinaryFileResponse
-    {
-        $services = Services::getTreeStructure();
-        $flattenedServices = $this->flattenTree($services);
-        
-        $pdf = PDF::loadView('services.pdf-flattened', compact('flattenedServices'));
-        
-        return $pdf->download('services-tree.pdf');
-    }
 }

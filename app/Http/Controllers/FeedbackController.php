@@ -91,31 +91,6 @@ class FeedbackController extends Controller
         }
     }
 
-    public function getTreatment(GetTreatmentRequest $request): JsonResponse
-    {
-        try {
-            $patientId = $request->validated('patient_id');
-
-            if (empty($patientId)) {
-                return response()->json([
-                    'status' => 1,
-                    'message' => 'Treatment found',
-                    'treatments' => [],
-                ]);
-            }
-
-            $treatments = $this->feedbackService->getAvailableTreatments((int) $patientId);
-
-            return response()->json([
-                'status' => 1,
-                'message' => 'Treatment found',
-                'treatments' => $treatments,
-            ]);
-        } catch (\Exception $e) {
-            return $this->handleException($e, 'FeedbackController');
-        }
-    }
-
     public function getTreatmentInfo(GetTreatmentInfoRequest $request): JsonResponse
     {
         try {

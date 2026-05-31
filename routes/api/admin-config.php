@@ -190,10 +190,18 @@ Route::put('cities/{id}', [CitiesController::class, 'update'])->name('cities.upd
 Route::delete('cities/{id}', [CitiesController::class, 'destroy'])->name('cities.destroy');
 Route::post('cities/status', [CitiesController::class, 'status'])->name('cities.status');
 Route::post('cities_sort_save', [CitiesController::class, 'sortOrderSave'])->name('cities.sort_save');
-Route::post('services_save', [ServicesController::class, 'sortOrderSave'])->name('services.sort_save');
+// AUTH-5 dedup: these flat legacy endpoints (kept for the Blade admin UI — see
+// note below) shared their route NAMES with the SPA-canonical grouped routes in
+// catalogue.php (`services/sort/{get,save}`, names `services.sort_save` /
+// `services.get_sort`), which broke `route:cache` (duplicate-name LogicException).
+// The SPA uses ONLY the grouped routes (src/components/services/service-sort-dialog.tsx);
+// the names now belong to those. Paths here are unchanged, so the Blade UI is
+// unaffected. The flat routes themselves are swept (with SPA/Blade verification)
+// at the Blade cutover.
+Route::post('services_save', [ServicesController::class, 'sortOrderSave'])->name('services.sort_save_legacy');
 Route::post('services_category_sort_save', [ServicesController::class, 'categorySortOrderSave'])->name('services.category_sort_save');
 Route::get('cities_sort', [CitiesController::class, 'sortOrderGet'])->name('cities.sort_get');
-Route::get('services_sort', [ServicesController::class, 'sortOrderGet'])->name('services.get_sort');
+Route::get('services_sort', [ServicesController::class, 'sortOrderGet'])->name('services.get_sort_legacy');
 
 // Cities — REST API additions (non-conflicting methods/URIs only; legacy
 // endpoints above keep the admin UI working unchanged)
@@ -237,12 +245,11 @@ Route::prefix('lead_sources')->name('lead_sources.api.')->group(function () {
 Route::post('locations/verify', [LocationsController::class, 'verify'])->name('locations.verify');
 Route::put('locations/verify_edit', [LocationsController::class, 'verify_edit'])->name('locations.verify_edit');
 Route::post('locations/datatable', [LocationsController::class, 'datatable'])->name('locations.datatable');
-Route::patch('locations/active/{id}', [LocationsController::class, 'active'])->name('locations.active');
 Route::post('locations/status', [LocationsController::class, 'status'])->name('locations.status');
 Route::get('locations/sort', [LocationsController::class, 'sortorder'])->name('locations.sort');
 Route::put('locations/edit_update/{id}', [LocationsController::class, 'update'])->name('locations.updatelocation');
 Route::post('lcation_sort_save', [LocationsController::class, 'sortorder_save'])->name('locations.sort_save');
-Route::resource('locations', LocationsController::class)->except('index');
+Route::resource('locations', LocationsController::class)->except(['index', 'show']);
 
 // Centres — REST API (backed by the Locations model/service). Uses a
 // distinct `/centres` URL prefix so there is zero overlap with the legacy

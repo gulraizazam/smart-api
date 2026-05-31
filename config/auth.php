@@ -97,7 +97,13 @@ return [
     'passwords' => [
         'users' => [
             'provider' => 'users',
-            'table' => 'password_reset_tokens',
+            // Broker table. The app's only password-reset migration creates
+            // `password_resets` (2014; cols email/token/created_at), and BOTH
+            // the SPA /api/password/* flow and the legacy Blade
+            // ResetPasswordController::isExpired() read it. The Laravel-default
+            // `password_reset_tokens` is NEVER created here — pointing the
+            // broker at it 500s with SQLSTATE[42S02]. Keep this `password_resets`.
+            'table' => 'password_resets',
             'expire' => 60,
             'throttle' => 60,
         ],

@@ -228,25 +228,6 @@ final class MembershipsController extends Controller
         }
     }
 
-    // ── Upload / Import ─────────────────────────────────
-
-    public function uploadMemberships(UploadMembershipsRequest $request): JsonResponse
-    {
-        if (Gate::denies('memberships.import')) {
-            return $this->unauthorized();
-        }
-
-        try {
-            $this->membershipService->uploadMemberships($request->file('memberships_file'));
-
-            return $this->success('Memberships has been imported');
-        } catch (\Throwable $e) {
-            Log::error('Membership upload error', ['message' => $e->getMessage()]);
-
-            return $this->error('Something went wrong, please try again later.');
-        }
-    }
-
     // ── Sold By Users ───────────────────────────────────
 
     public function getSoldByUsers(Request $request): JsonResponse
@@ -331,20 +312,6 @@ final class MembershipsController extends Controller
         return Excel::download(
             new ExportMembership($request),
             'memberships.' . $request->input('ext', 'xlsx'),
-        );
-    }
-
-    // ── Download Student Membership Patients ────────────
-
-    public function downloadStudentMembershipPatients(): BinaryFileResponse
-    {
-        if (Gate::denies('memberships.export')) {
-            abort(403, 'You are not authorized to export memberships.');
-        }
-
-        return Excel::download(
-            new StudentMembershipPatientsExport(),
-            'student_membership_patients_' . date('Y-m-d') . '.xlsx',
         );
     }
 
