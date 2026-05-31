@@ -1,1 +1,0 @@
-<img src="{{asset('appointment_image/')}}/{{$appointmentimg->image_path}}" alt="{{$appointmentimg->image_name}}" width="60" hight="60">

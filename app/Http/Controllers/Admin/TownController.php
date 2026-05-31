@@ -126,22 +126,14 @@ class TownController extends Controller
     public function update(StoreUpdateTownRequest $request, int $id): \Illuminate\Http\JsonResponse
     {
         if (! Gate::allows('towns_edit')) {
-            return abort(401);
+            return $this->errorResponse('You are not authorized to perform this action.', 403);
         }
 
         if ($this->townService->update($id, $request, (int) Auth::user()->account_id)) {
-            flash('Record has been updated successfully.')->success()->important();
-
-            return response()->json([
-                'status'  => 1,
-                'message' => 'Record has been updated successfully.',
-            ]);
+            return $this->successResponse('Record has been updated successfully.');
         }
 
-        return response()->json([
-            'status'  => 0,
-            'message' => 'Something went wrong, please try again later.',
-        ]);
+        return $this->errorResponse('Something went wrong, please try again later.', 404);
     }
 
     public function destroy(int $id): JsonResponse
@@ -160,7 +152,7 @@ class TownController extends Controller
     public function status(Request $request): \Illuminate\Http\JsonResponse
     {
         if (! Gate::allows('towns_active')) {
-            return abort(401);
+            return $this->errorResponse('You are not authorized to perform this action.', 403);
         }
 
         $response = $this->townService->toggleStatus((int) $request->id, (int) $request->status);

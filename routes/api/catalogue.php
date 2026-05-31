@@ -154,7 +154,7 @@ Route::post('saveDervice', [VouchersController::class, 'saveDservices'])->name('
 Route::post('deleteDservice', [VouchersController::class, 'deleteDservice'])->name('voucherTypes.delete_service');
 Route::post('voucherTypes/assignToPatient', [VouchersController::class, 'assignToPatient'])->name('voucherTypes.assignToPatient');
 
-Route::resource('voucherTypes', VouchersController::class)->except('index');
+Route::resource('voucherTypes', VouchersController::class)->except(['index', 'show']);
 
 // Bundles Route start (API Controller)
 Route::prefix('bundles')->name('bundles.')->group(function () {
@@ -215,15 +215,13 @@ Route::put('centre_targets/{id}', [CentreTargetsController::class, 'update'])->n
 
 // Package Advance route start
 Route::post('packagesadvances/datatable', [PackageAdvancesController::class, 'datatable'])->name('packagesadvances.datatable');
-Route::post('packagesadvances/status', [PackageAdvancesController::class, 'status'])->name('packagesadvances.status');
 Route::post('packagesadvances/cancel/{id}', [PackageAdvancesController::class, 'cancel'])->name('packagesadvances.cancel');
 Route::get('packagesadvances/getpackages', [PackageAdvancesController::class, 'getpackages'])->name('packagesadvances.getpackages');
 Route::get('packagesadvances/getpackagesinfo', [PackageAdvancesController::class, 'getpackagesinfo'])->name('packagesadvances.getpackagesinfo');
 Route::get('packagesadvances/getpackagesinfo_update', [PackageAdvancesController::class, 'getpackagesinfo_update'])->name('packagesadvances.getpackagesinfo_update');
 Route::get('packagesadvances/savepackagesadvances', [PackageAdvancesController::class, 'savepackagesadvances'])->name('packagesadvances.savepackagesadvances');
 Route::get('packagesadvances/updatepackagesadvances', [PackageAdvancesController::class, 'updatepackagesadvances'])->name('packagesadvances.updatepackagesadvances');
-Route::get('packagesadvances/update_record_final', [PackageAdvancesController::class, 'update_record_final'])->name('packagesadvances.update_record_final');
-Route::resource('packagesadvances', PackageAdvancesController::class)->except('index');
+Route::resource('packagesadvances', PackageAdvancesController::class)->except(['index', 'store', 'show', 'update']);
 
 // Business Closures Management
 //

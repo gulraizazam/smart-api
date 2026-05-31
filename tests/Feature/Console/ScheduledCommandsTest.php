@@ -42,6 +42,9 @@ class ScheduledCommandsTest extends TestCase
         foreach ([
             'appointment:3rd-message-before-appointment',
             'memberships:expire',
+            // FIX H: the Management Dashboard daily-metrics rollup has no other
+            // dispatcher; without this schedule the SPA dashboard metrics go stale.
+            'management-dashboard:rebuild-metrics',
         ] as $signature) {
             $this->assertStringContainsString(
                 $signature,

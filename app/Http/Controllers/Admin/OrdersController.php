@@ -211,17 +211,6 @@ class OrdersController extends Controller
         }
     }
 
-    public function cancel(int $id): JsonResponse
-    {
-        try {
-            $result = $this->orderService->cancelOrder($id);
-
-            return $result['status'] ? $this->successResponse($result['message']) : $this->errorResponse($result['message'], 400);
-        } catch (\Exception $e) {
-            return $this->handleException($e, 'OrdersController');
-        }
-    }
-
     public function destroy(int $id): JsonResponse
     {
         try {

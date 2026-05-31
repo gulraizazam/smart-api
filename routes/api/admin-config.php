@@ -245,12 +245,11 @@ Route::prefix('lead_sources')->name('lead_sources.api.')->group(function () {
 Route::post('locations/verify', [LocationsController::class, 'verify'])->name('locations.verify');
 Route::put('locations/verify_edit', [LocationsController::class, 'verify_edit'])->name('locations.verify_edit');
 Route::post('locations/datatable', [LocationsController::class, 'datatable'])->name('locations.datatable');
-Route::patch('locations/active/{id}', [LocationsController::class, 'active'])->name('locations.active');
 Route::post('locations/status', [LocationsController::class, 'status'])->name('locations.status');
 Route::get('locations/sort', [LocationsController::class, 'sortorder'])->name('locations.sort');
 Route::put('locations/edit_update/{id}', [LocationsController::class, 'update'])->name('locations.updatelocation');
 Route::post('lcation_sort_save', [LocationsController::class, 'sortorder_save'])->name('locations.sort_save');
-Route::resource('locations', LocationsController::class)->except('index');
+Route::resource('locations', LocationsController::class)->except(['index', 'show']);
 
 // Centres — REST API (backed by the Locations model/service). Uses a
 // distinct `/centres` URL prefix so there is zero overlap with the legacy

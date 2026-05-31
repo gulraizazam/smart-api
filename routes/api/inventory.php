@@ -41,9 +41,7 @@ use Illuminate\Support\Facades\Route;
     Route::get('warehouse/{id}/edit', [WarehouseController::class, 'edit'])->name('warehouse.edit');
     Route::put('warehouse/{id}', [WarehouseController::class, 'update'])->name('warehouse.update');
     Route::delete('warehouse/{id}', [WarehouseController::class, 'destroy'])->name('warehouse.destroy');
-    Route::patch('warehouse/active/{id}', [WarehouseController::class, 'active'])->name('warehouse.active');
     Route::post('warehouse/status', [WarehouseController::class, 'status'])->name('warehouse.status');
-    Route::get('warehouse/sort', [WarehouseController::class, 'sortorder'])->name('warehouse.sort');
     Route::post('reports/inventory_reports/result', [InventoryReportController::class, 'reportResult'])->name('reports.inventory_report_result');
     Route::post('reports/inventory_reports/stock', [InventoryReportController::class, 'stockReport'])->name('reports.inventory_report_stock');
     // SPA inventory reports — stock / sales / doctor-sales / addition + exports
@@ -142,7 +140,7 @@ use Illuminate\Support\Facades\Route;
     Route::post('transfer-product/datatable', [TransferProductsController::class, 'datatable'])->name('transfer_products.datatable');
     Route::get('transfer-product/get-products', [TransferProductsController::class, 'getTransferProducts'])->name('transfer_products.get_products');
     Route::get('transfer-product/fetch-products', [TransferProductsController::class, 'getProducts'])->name('transfer_products.fetch_products');
-    Route::resource('transfer_product', TransferProductsController::class)->except('index');
+    Route::resource('transfer_product', TransferProductsController::class)->except(['index', 'show']);
     /* Transfer Product Route */
 
     /*Order routes*/

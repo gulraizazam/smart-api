@@ -9,11 +9,15 @@ use Tests\Concerns\UsesFinancialFixtures;
 use Tests\TestCase;
 
 /**
- * AppointmentExportController handles Excel exports.
+ * AppointmentExportController handles Excel exports and view-log output.
  *
- * Routes (all under admin/ web):
- *   GET admin/appointments/export/{limit}/{offset}
- *   GET admin/appointments/view/log/{id}/{type}
+ * The Blade admin/* wrappers were deleted with the legacy UI. The live
+ * API surface for the view-log flow is:
+ *   ANY api/appointments/viewlog/{id}/{type} -> AppointmentExportController@viewLog
+ *
+ * The Excel export action (export/{limit}/{offset}) has no /api twin yet,
+ * so its dedicated case was removed; the unauthenticated-access pin is
+ * repointed onto the live viewlog twin instead.
  */
 class AppointmentExportEndpointTest extends TestCase
 {
@@ -48,31 +52,23 @@ class AppointmentExportEndpointTest extends TestCase
         app(\Spatie\Permission\PermissionRegistrar::class)->forgetCachedPermissions();
     }
 
-    public function test_export_with_limit_offset(): void
-    {
-        // GET admin/appointments/export/{limit}/{offset}
-        // Returns BinaryFileResponse (Excel download) — use getStatusCode().
-        $response = $this->get('/admin/appointments/export/10/0');
-        $this->assertContains($response->getStatusCode(), [200, 302, 500]);
-    }
-
     public function test_view_log_web_type(): void
     {
-        // GET admin/appointments/view/log/{id}/{type}
-        $response = $this->get('/admin/appointments/view/log/999999/web');
+        // ANY api/appointments/viewlog/{id}/{type}
+        $response = $this->get('/api/appointments/viewlog/999999/web');
         $this->assertContains($response->status(), [200, 302, 404, 500]);
     }
 
     public function test_view_log_excel_type(): void
     {
-        $response = $this->get('/admin/appointments/view/log/999999/excel');
+        $response = $this->get('/api/appointments/viewlog/999999/excel');
         $this->assertContains($response->status(), [200, 302, 404, 500]);
     }
 
     public function test_unauthenticated_access_is_rejected(): void
     {
         auth()->logout();
-        $response = $this->get('/admin/appointments/export/10/0');
+        $response = $this->getJson('/api/appointments/viewlog/999999/web');
         $this->assertContains($response->status(), [401, 302, 403]);
     }
 }

@@ -12,6 +12,7 @@ use App\Models\Services;
 use App\Models\LeadSources;
 use App\Models\LeadStatuses;
 use App\Http\Controllers\Controller;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
@@ -49,9 +50,11 @@ class LeadsController extends Controller
         return view('admin.leads.import');
     }
 
-    public function make_pop(): View
+    public function make_pop(): JsonResponse
     {
-        abort_unless(Gate::allows('leads.create'), 401);
+        if (! Gate::allows('leads.create')) {
+            return $this->errorResponse('You are not authorized to perform this action.', 403);
+        }
 
         $cities = Cities::getActiveSortedFeatured(ACL::getUserCities());
         $cities->prepend('Select a City', '');
@@ -83,19 +86,17 @@ class LeadsController extends Controller
             $employees->prepend('Select a Referrer', '');
         }
 
-        return view('admin.leads.createTo', compact(
-            'Services', 'cities', 'lead_sources', 'lead_statuses',
-            'lead', 'employees', 'towns'
-        ))->with(['leadServices' => null, 'edit_status' => 0]);
+        return $this->successResponse('Record found.', [
+            'services' => $Services,
+            'cities' => $cities,
+            'lead_sources' => $lead_sources,
+            'lead_statuses' => $lead_statuses,
+            'lead' => $lead,
+            'employees' => $employees,
+            'towns' => $towns,
+            'leadServices' => null,
+            'edit_status' => 0,
+        ]);
     }
 
-    public function leadupdate(): RedirectResponse
-    {
-        return redirect()->route('admin.leads.index');
-    }
-
-    public function leadstatusupdate(): RedirectResponse
-    {
-        return redirect()->route('admin.leads.index');
-    }
 }

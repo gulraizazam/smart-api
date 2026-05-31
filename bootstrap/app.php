@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 use App\Http\Middleware\Authenticate;
 use App\Http\Middleware\AuthenticateApiDual;
-use App\Http\Middleware\AuthenticateApiWeb;
 use App\Http\Middleware\CheckAccountStatus;
 use App\Http\Middleware\CheckIpRestriction;
 use App\Http\Middleware\CheckPermission;
@@ -55,8 +54,9 @@ return Application::configure(basePath: dirname(__DIR__))
             Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class => VerifyCsrfToken::class,
         ]);
 
-        // API group includes session/cookies/CSRF for hybrid auth (session + Sanctum token)
-        // This is intentional — AuthenticateApiWeb checks session auth before Sanctum fallback
+        // API group includes session/cookies/CSRF so the SPA's same-origin
+        // Sanctum cookie (stateful) auth works; auth.api.dual reads the session
+        // before falling back to a bearer/Passport token.
         $middleware->api(prepend: [
             EncryptCookies::class,
             AddQueuedCookiesToResponse::class,
@@ -70,7 +70,6 @@ return Application::configure(basePath: dirname(__DIR__))
             'auth' => Authenticate::class,
             'guest' => RedirectIfAuthenticated::class,
             'checkAccount' => CheckAccountStatus::class,
-            'auth.common' => AuthenticateApiWeb::class,
             'auth.api.dual' => AuthenticateApiDual::class,
             'permission' => CheckPermission::class,
             'check.ip.restriction' => CheckIpRestriction::class,
@@ -139,6 +138,20 @@ return Application::configure(basePath: dirname(__DIR__))
         // password_resets because no cleanup ever ran.
         $schedule->command('auth:clear-resets')
             ->daily()->timezone($timeZone);
+
+        // Pre-aggregate Management Dashboard daily metrics (dashboard_daily_metrics).
+        // The SPA dashboard's daily rollup has no other dispatcher; without this
+        // schedule the metrics silently go stale. --days=1 = yesterday only
+        // (nightly catch-up after midnight Asia/Karachi).
+        $schedule->command('management-dashboard:rebuild-metrics --days=1')
+            ->dailyAt('00:30')->timezone($timeZone)
+            ->withoutOverlapping()
+            ->onOneServer();
+        // Morning catch-up to self-heal retroactive edits to the prior few days.
+        $schedule->command('management-dashboard:rebuild-metrics --days=3')
+            ->dailyAt('06:30')->timezone($timeZone)
+            ->withoutOverlapping()
+            ->onOneServer();
 
     })
     ->withExceptions(function (Exceptions $exceptions): void {

@@ -10,9 +10,9 @@ use Tests\Concerns\RefreshTestDatabase as RefreshDatabase;
 use Tests\TestCase;
 
 /**
- * Pins that the auth middlewares (Authenticate, AuthenticateApiWeb,
- * AuthenticateApiDual) emit JSON 401 instead of redirecting to the
- * legacy Blade `route('login')` when authentication fails.
+ * Pins that the auth middlewares (Authenticate, AuthenticateApiDual)
+ * emit JSON 401 instead of redirecting to the legacy Blade
+ * `route('login')` when authentication fails.
  *
  * The redirect path was a soft tie to the Blade frontend that retires
  * shortly: once the legacy /login route is deleted, a redirect-based
@@ -35,10 +35,6 @@ class AuthMiddlewareJsonResponseTest extends TestCase
 
         Route::middleware('auth.api.dual')->get(
             '/api/__test/auth-dual',
-            fn () => response()->json(['ok' => true]),
-        );
-        Route::middleware('auth.common')->get(
-            '/api/__test/auth-common',
             fn () => response()->json(['ok' => true]),
         );
         Route::middleware('auth')->get(
@@ -83,30 +79,6 @@ class AuthMiddlewareJsonResponseTest extends TestCase
 
         $response->assertOk();
         $response->assertJson(['ok' => true]);
-    }
-
-    public function test_apiweb_returns_json_401_when_session_and_token_missing(): void
-    {
-        $response = $this->getJson('/api/__test/auth-common');
-
-        $response->assertStatus(401);
-        $response->assertJson([
-            'success' => false,
-            'message' => 'Unauthenticated.',
-            'data' => null,
-            'errors' => [],
-        ]);
-    }
-
-    public function test_apiweb_does_not_redirect_to_route_login(): void
-    {
-        $response = $this->get('/api/__test/auth-common');
-
-        $this->assertNotEquals(
-            302,
-            $response->status(),
-            'AuthenticateApiWeb must not 302 to route(\'login\') — that route dies at Blade cutover.',
-        );
     }
 
     public function test_authenticate_returns_json_401_for_json_clients(): void

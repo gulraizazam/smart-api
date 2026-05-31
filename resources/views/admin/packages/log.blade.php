@@ -1,11 +1,9 @@
-@extends('admin.layouts.master')
+@extends('admin.layouts.master-pdf')
 
 @section('content')
 
     <!--begin::Content-->
     <div class="content d-flex flex-column flex-column-fluid" id="kt_content">
-
-    @include('admin.partials.breadcrumb', ['module' => 'Plans List', 'title' => 'Plans'])
 
     <!--begin::Entry-->
         <div class="d-flex flex-column-fluid">
@@ -35,12 +33,12 @@
                         </div>
 
                         <div class="card-toolbar">
-                            <a href="{{ route('admin.packages.index') }}" class="btn btn-sm dark btn-dark" >
+                            <a href="/admin-v2/plans" class="btn btn-sm dark btn-dark" >
                                 <i class="la la-arrow-alt-circle-left"></i>
                                 Back
                             </a> &nbsp;&nbsp;
                             @if (Gate::allows('plans.log.export'))
-                                <a href="{{ route('admin.packages.log', [ request('id'), 'excel']) }}" class="btn btn-sm btn-primary">
+                                <a href="/api/plans/log/{{ request('id') }}/excel" class="btn btn-sm btn-primary">
                                     <i class="la la-file-export"></i>
                                     Excel
                                 </a>
