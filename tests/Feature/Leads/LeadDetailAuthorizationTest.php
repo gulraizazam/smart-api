@@ -66,4 +66,31 @@ class LeadDetailAuthorizationTest extends TestCase
         $this->assertNotSame(401, $response->getStatusCode());
         $this->assertNotSame(403, $response->getStatusCode());
     }
+
+    public function test_detail_passes_via_alias_bridge_with_only_the_dotted_slug(): void
+    {
+        // §5.3 cutover bridge: 2026_05_21_130000 deletes the legacy leads_* rows
+        // and re-grants the dotted catalog, so a CSR/Consultant role ends up
+        // holding ONLY `leads.detail.view` — yet the controller still gates on
+        // legacy `leads_manage`. PermissionAliasMap + Gate::before must bridge it,
+        // or every such role 403s at cutover.
+        $perm = $this->createPermission('leads.detail.view');
+        $role = $this->createRole('DottedOnlyLeadViewer');
+        $role->givePermissionTo($perm);
+
+        $actor = User::factory()->create(['account_id' => 1]);
+        $this->assignRoleWithPivot($actor, $role);
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
+        $this->actingAs($actor);
+
+        $response = $this->getJson('/api/leads/detail/999999');
+
+        $this->assertNotSame(401, $response->getStatusCode());
+        $this->assertNotSame(
+            403,
+            $response->getStatusCode(),
+            'A role holding only the dotted leads.detail.view must pass the legacy '
+            . 'leads_manage gate via the alias bridge (§5.3) — else CSR/Consultant 403 at cutover.',
+        );
+    }
 }

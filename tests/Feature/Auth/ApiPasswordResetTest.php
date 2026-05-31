@@ -43,17 +43,17 @@ class ApiPasswordResetTest extends TestCase
         // cache-keyed; flush so each test starts at zero.
         Cache::flush();
 
-        // The test schema dump (RefreshTestDatabase) ships with the old
-        // `password_resets` table from the 2014 migration; config/auth.php
-        // is configured for the Laravel-11-default `password_reset_tokens`.
-        // Production has the new table (the legacy /password/email flow
-        // works there); the test schema dump just hasn't been regenerated.
-        // Create it on the fly so these tests don't depend on a separate
-        // schema-dump refresh PR. Idempotent — survives across tests in
-        // the same run because Schema::create commits implicitly.
-        if (! Schema::hasTable('password_reset_tokens')) {
-            Schema::create('password_reset_tokens', function (Blueprint $table) {
-                $table->string('email')->primary();
+        // The broker reads `password_resets` (config/auth.php) — the table the
+        // 2014 migration creates and the live DB actually has. An earlier
+        // version of this setUp created `password_reset_tokens` instead, which
+        // MASKED a production bug: config pointed the broker at a table that is
+        // never created, so /api/password/* and the nightly `auth:clear-resets`
+        // cron 500'd (SQLSTATE[42S02]) in prod. Fixed by repointing config to
+        // `password_resets`. We still ensure the table exists here in case a
+        // stale schema dump omitted it.
+        if (! Schema::hasTable('password_resets')) {
+            Schema::create('password_resets', function (Blueprint $table) {
+                $table->string('email')->index();
                 $table->string('token');
                 $table->timestamp('created_at')->nullable();
             });
@@ -251,5 +251,35 @@ class ApiPasswordResetTest extends TestCase
             'password' => 'AnotherPass2!',
             'password_confirmation' => 'AnotherPass2!',
         ])->assertStatus(422);
+    }
+
+    public function test_reset_url_override_is_gated_off_before_cutover(): void
+    {
+        // §5.2: pre-cutover (app.spa_cutover_done = false) AppServiceProvider must
+        // NOT register the SPA reset-URL override, so emails keep Laravel's default
+        // route('password.reset') Blade link — a working page for the still-live
+        // Blade users. Overriding too early would mail dead SPA links to every
+        // Blade user requesting a reset. (The post-cutover override is pinned by
+        // test_reset_password_email_url_targets_spa_not_blade above.)
+        $reflect = new \ReflectionMethod(\App\Providers\AppServiceProvider::class, 'configurePasswordResetUrl');
+        $reflect->setAccessible(true);
+        $provider = $this->app->getProvider(\App\Providers\AppServiceProvider::class);
+
+        try {
+            // Clear the boot-time override, flip the flag off, re-run the gate.
+            ResetPasswordNotification::createUrlUsing(null);
+            config(['app.spa_cutover_done' => false]);
+            $reflect->invoke($provider);
+
+            $this->assertNull(
+                ResetPasswordNotification::$createUrlCallback,
+                'Pre-cutover the SPA reset-URL override must NOT be registered.',
+            );
+        } finally {
+            // Restore the post-cutover override so sibling tests are unaffected.
+            ResetPasswordNotification::createUrlUsing(null);
+            config(['app.spa_cutover_done' => true]);
+            $reflect->invoke($provider);
+        }
     }
 }

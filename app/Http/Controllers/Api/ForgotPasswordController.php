@@ -76,7 +76,7 @@ class ForgotPasswordController extends Controller
      * Apply a new password using the token from the SPA reset screen.
      *
      * The broker validates `(email, token)` against the hashed token in
-     * `password_reset_tokens`; on success it invokes the closure to do the
+     * `password_resets` (see config/auth.php); on success it invokes the closure to do the
      * actual update. The token is consumed (single-use) by the broker.
      */
     public function reset(Request $request): JsonResponse

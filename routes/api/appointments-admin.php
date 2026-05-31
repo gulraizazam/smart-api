@@ -31,7 +31,11 @@ Route::post('appointments/load-consultant-doctors', [AppointmentLookupController
 Route::post('appointments/update/schedule', [AppointmentScheduleController::class, 'updateSchedule'])->name('appointments.updateSchedule');
 Route::get('appointments/schedule/get', [AppointmentScheduleController::class, 'getSchedule'])->name('appointments.get_schedule');
 Route::get('appointments/getpackageprice', [AppointmentInvoiceController::class, 'getpackageprice'])->name('appointments.getpackageprice');
-Route::resource('appointments', AppointmentsController::class);
+// `show`, `update`, `destroy` are served by the purpose-built SPA API
+// (Api\AppointmentsController, api-resources.php) on `{id}` paths. Excepting
+// them here defers to that controller and removes the duplicate route-name
+// collision that broke `php artisan route:cache` (AUTH-5).
+Route::resource('appointments', AppointmentsController::class)->except(['show', 'update', 'destroy']);
 Route::post('appointments/load/lead', [AppointmentLookupController::class, 'loadLeadData'])->name('appointments.load_lead');
 
 // Patients API Routes (Optimized)
@@ -136,8 +140,6 @@ Route::get('plans/{planId}/log/{patientId}/{type}', [ApiPlansController::class, 
     ->name('plans.log');
 
 /* Route start for patient pakcage - OLD ROUTES (TO BE DEPRECATED) */
-Route::post('plans/datatable/{id?}', [PackagesController::class, 'datatable'])->name('plans.datatable');
-
 Route::get('plans/getserviceinfo', [PackagesController::class, 'getserviceinfo'])->name('plans.getserviceinfo');
 
 Route::get('plans/getdiscountinfo', [PackagesController::class, 'getdiscountinfo'])->name('plans.getdiscountinfo');

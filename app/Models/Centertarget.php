@@ -253,9 +253,11 @@ class Centertarget extends BaseModel
         $center_target = self::find($id);
 
         if (! $center_target) {
-            flash('Resource not found.')->error()->important();
-
-            return redirect()->route('admin.centre_targets.index');
+            // Cutover: return false instead of redirect()->route('admin.centre_targets.index').
+            // The Blade route is deleted at cutover and redirect()->route() would throw
+            // RouteNotFoundException (500). Callers (CentreTargetService bulk-delete loop)
+            // ignore the return / treat it as falsy.
+            return false;
         }
         // Remove belonging records records
         $center_target->center_target_meta()->delete();

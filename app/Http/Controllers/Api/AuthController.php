@@ -3,6 +3,7 @@
 declare(strict_types=1);
 namespace App\Http\Controllers\Api;
 
+use App\Helpers\Filters;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Services\Auth\LoginAuditLogger;
@@ -10,6 +11,7 @@ use App\Services\Auth\LoginCaptchaGate;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
+use Laravel\Sanctum\PersonalAccessToken;
 
 class AuthController extends Controller
 {
@@ -137,6 +139,13 @@ class AuthController extends Controller
             $this->captcha->clear($clientIp);
             $apiToken = $user->createToken('login')->plainTextToken;
 
+            // Expose the PAT to the SPA. toAuthPayload() includes `api_token`
+            // only when it is set on the model (see User::toAuthPayload) — without
+            // this the bearer-mode SPA (VITE_AUTH_MODE=bearer) never receives the
+            // token and every subsequent request 401s. Transient: set for this
+            // response only, never persisted.
+            $user->api_token = $apiToken;
+
             $this->audit->record($request, 'api', LoginAuditLogger::OUTCOME_SUCCESS, $request->input('email'), $user);
 
             // toAuthPayload() returns the user attributes + role + alias-
@@ -148,5 +157,46 @@ class AuthController extends Controller
             \Illuminate\Support\Facades\Log::error($e->getMessage(), ['file' => $e->getFile(), 'line' => $e->getLine()]);
             return $this->errorResponse('An error occurred. Please try again.', 500);
         }
+    }
+
+    /**
+     * Cookie- and bearer-mode logout for the SPA. JSON-only by contract
+     * (the legacy Blade /logout 302s to '/').
+     *
+     *  - Cookie mode: tears down the web session and rotates the session
+     *    id + CSRF token.
+     *  - Bearer mode: revokes ONLY the personal access token used for this
+     *    request, so a multi-device user keeps their other sessions.
+     *  - Idempotent: a client whose session already expired locally still
+     *    gets a 200 (never a 401) so a stale tab can't wedge in a
+     *    can't-log-out loop.
+     */
+    public function logout(Request $request): \Illuminate\Http\JsonResponse
+    {
+        // Clear the user's on-disk filter store (kiosk Valuestore files) while
+        // still authenticated. Filters are a cookie/session feature: remove_filters()
+        // reads the per-user randId from the session via auth()->id(). Guard on a live
+        // web session so bearer-mode and already-logged-out (idempotent) calls skip it —
+        // there auth()->id() is null and remove_filters() would stringify the
+        // SessionManager and throw. Runs before the guard logout, mirroring the legacy
+        // web LoginController::logout (cookie-session only). AUTH-2.
+        if (Auth::guard('web')->check()) {
+            Filters::remove_filters();
+        }
+
+        // Bearer mode — revoke the current request's Sanctum token only.
+        $bearer = $request->bearerToken();
+        if ($bearer !== null) {
+            PersonalAccessToken::findToken($bearer)?->delete();
+        }
+
+        // Cookie mode — end the web session, rotate session id + CSRF token.
+        Auth::guard('web')->logout();
+        if ($request->hasSession()) {
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+        }
+
+        return $this->successResponse('Logged out.');
     }
 }

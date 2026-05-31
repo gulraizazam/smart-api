@@ -14,8 +14,12 @@ use Tests\TestCase;
  *
  * Routes: api/appointments/invoice/{id} (GET), api/appointments/displayInvoice/{id} (GET),
  *   api/appointments/getpackageprice (GET).
- *   admin/appointments/saveinvoice (GET), admin/appointments/getplansinformation (GET),
- *   admin/appointments/getinvoicecalculation (GET), admin/appointments/getcalculatedPriceExclusicecheck (GET).
+ *
+ * The legacy admin/* web wrappers (saveinvoice, getplansinformation,
+ * getinvoicecalculation, getcalculatedPriceExclusicecheck) were deleted
+ * with the Blade admin UI; their cases were removed here. The live API
+ * surface for these flows is covered by the /api/* cases below and by
+ * the treatment-invoice / consultancy-invoice API suites.
  */
 class AppointmentInvoiceEndpointTest extends TestCase
 {
@@ -64,38 +68,6 @@ class AppointmentInvoiceEndpointTest extends TestCase
     {
         // GET route under api/
         $response = $this->get('/api/appointments/getpackageprice');
-        $this->assertContains($response->status(), [200, 302, 422, 500]);
-    }
-
-    public function test_save_invoice_web_route(): void
-    {
-        // saveinvoice is a GET web route under admin/. 404 is also
-        // acceptable now: as of 2026-05-15 the controller scopes its
-        // Appointments::find to the caller's account_id and returns a
-        // 404 when no appointment_id is supplied / matched (prevents
-        // cross-tenant invoice fabrication via guessable ids).
-        $response = $this->get('/admin/appointments/saveinvoice');
-        $this->assertContains($response->status(), [200, 302, 404, 422, 500]);
-    }
-
-    public function test_get_plans_information_web_route(): void
-    {
-        // GET web route under admin/
-        $response = $this->get('/admin/appointments/getplansinformation');
-        $this->assertContains($response->status(), [200, 302, 422, 500]);
-    }
-
-    public function test_get_invoice_calculation_web_route(): void
-    {
-        // GET web route under admin/
-        $response = $this->get('/admin/appointments/getinvoicecalculation');
-        $this->assertContains($response->status(), [200, 302, 422, 500]);
-    }
-
-    public function test_get_calculated_price_exclusive_check_web_route(): void
-    {
-        // GET web route under admin/
-        $response = $this->get('/admin/appointments/getcalculatedPriceExclusicecheck');
         $this->assertContains($response->status(), [200, 302, 422, 500]);
     }
 

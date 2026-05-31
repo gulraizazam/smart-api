@@ -241,7 +241,14 @@ class LeadsController extends Controller
 
             return $this->successResponse('Status updated successfully!');
         } catch (LeadException $e) {
-            return $this->errorResponse($e->getMessage(), 500);
+            // A LeadException on this path is a status-guard / business-rule
+            // violation (statusChangeNotAllowed / targetStatusNotAllowed) — NOT a
+            // server error. Return 422 with the message keyed on the offending
+            // field so the SPA surfaces it inline via setError, instead of mapping
+            // it to 500 (which api.ts masks as a generic "something went wrong" toast).
+            return $this->errorResponse($e->getMessage(), 422, [
+                'lead_status_parent_id' => [$e->getMessage()],
+            ]);
         } catch (\Exception $e) {
             return $this->handleException($e, 'LeadsController');
         }

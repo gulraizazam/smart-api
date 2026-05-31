@@ -6,6 +6,7 @@ namespace Tests\Feature\Auth;
 
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\File;
 use Laravel\Sanctum\PersonalAccessToken;
 use Tests\Concerns\RefreshTestDatabase as RefreshDatabase;
 use Tests\Concerns\UsesFinancialFixtures;
@@ -39,6 +40,14 @@ class ApiLogoutTest extends TestCase
     {
         parent::setUp();
         $this->seedFinancialFixtures();
+    }
+
+    protected function tearDown(): void
+    {
+        // Clean up the fixed filter dir used by the AUTH-2 test in case the
+        // assertion failed and logout did NOT remove it.
+        File::deleteDirectory(storage_path('settings'.DIRECTORY_SEPARATOR.'cutover-filter-test'));
+        parent::tearDown();
     }
 
     public function test_api_logout_terminates_the_web_session(): void
@@ -106,6 +115,33 @@ class ApiLogoutTest extends TestCase
         $this->assertNotNull(
             PersonalAccessToken::find($otherDevice->accessToken->id),
             'Logout must NOT revoke the user\'s other device tokens.',
+        );
+    }
+
+    public function test_api_logout_clears_the_users_on_disk_filter_store(): void
+    {
+        // AUTH-2: the kiosk filter Valuestore lives in storage/settings/<randId>,
+        // where <randId> is a per-user token kept in the session. Logout must wipe
+        // that directory — the legacy web LoginController::logout did via
+        // Filters::remove_filters(); without it those files orphan on disk after
+        // sign-out. We seed the session pointer so getRandId() resolves to a known
+        // dir, pre-create it, then assert logout removed it.
+        $user = User::factory()->create();
+        $randId = 'cutover-filter-test';
+        $dir = storage_path('settings'.DIRECTORY_SEPARATOR.$randId);
+
+        File::ensureDirectoryExists($dir);
+        File::put($dir.DIRECTORY_SEPARATOR.'leads.json', '{"foo":"bar"}');
+        $this->assertDirectoryExists($dir);
+
+        $this->actingAs($user)
+            ->withSession([$user->id => $randId])
+            ->postJson('/api/logout')
+            ->assertOk();
+
+        $this->assertDirectoryDoesNotExist(
+            $dir,
+            'POST /api/logout must clear the user\'s on-disk filter store (AUTH-2).',
         );
     }
 }

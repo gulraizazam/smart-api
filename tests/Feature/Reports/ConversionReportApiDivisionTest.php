@@ -37,10 +37,6 @@ class ConversionReportApiDivisionTest extends TestCase
     {
         // A valid range (as the SPA always sends) so parseDateRange yields
         // real dates — the empty-result division-by-zero path the user hit.
-<<<<<<< HEAD
-        $response = $this->postJson('/api/reports/conversion', [
-            'date_range' => '2026-05-01 - 2026-05-18',
-=======
         // Mirror the SPA payload: the centres dropdown is never empty in
         // production, so location_id is always sent. Without it the
         // controller falls through to ACL::getUserCentres(), which for a
@@ -52,7 +48,6 @@ class ConversionReportApiDivisionTest extends TestCase
         $response = $this->postJson('/api/reports/conversion', [
             'date_range' => '2026-05-01 - 2026-05-18',
             'location_id' => [$this->seedDefaultLocation()->id],
->>>>>>> origin/shahid
         ]);
 
         $response->assertStatus(200);
