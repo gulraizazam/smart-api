@@ -303,10 +303,13 @@ class CashflowStaffEndpointTest extends TestCase
         // reach canVoidMovement, but NOT manage / staff_transfer_void.
         $registrar = app(\Spatie\Permission\PermissionRegistrar::class);
         $registrar->forgetCachedPermissions();
-        $this->createPermission('cashflow_staff_advance_view');
-        $this->createPermission('cashflow_staff_transfer_void');
+        // The movements route group is gated by DOTTED slugs
+        // (permission:cashflow.transfer.view|cashflow.staff_advance.view|cashflow.manage),
+        // so the group-view slug must be dotted to pass the route middleware
+        // and reach canVoidMovement.
+        $this->createPermission('cashflow.staff_advance.view');
         $role = $this->createRole('handover-voider-' . uniqid());
-        $role->givePermissionTo('cashflow_staff_advance_view');
+        $role->givePermissionTo('cashflow.staff_advance.view');
         $user = User::factory()->create(['account_id' => 1]);
         $user->assignRole($role);
         $registrar->forgetCachedPermissions();
@@ -321,8 +324,12 @@ class CashflowStaffEndpointTest extends TestCase
 
         // Grant only the dedicated slug (still NOT cashflow_manage) →
         // the gate now passes (no longer 403; any non-auth domain
-        // outcome is acceptable for this assertion).
-        $role->givePermissionTo('cashflow_staff_transfer_void');
+        // outcome is acceptable for this assertion). The void gate is the
+        // DOTTED `cashflow.staff_transfer.void` (CashFlowMovementsController:233),
+        // the canonical catalog held by Administrator on the prod clone — the
+        // old underscore `cashflow_staff_transfer_void` no longer satisfies it.
+        $this->createPermission('cashflow.staff_transfer.void');
+        $role->givePermissionTo('cashflow.staff_transfer.void');
         $registrar->forgetCachedPermissions();
         $allowed = $this->postJson("/api/cashflow/movements/staff_transfer/{$handover->id}/void", [
             'void_reason' => 'Reversing this handover',

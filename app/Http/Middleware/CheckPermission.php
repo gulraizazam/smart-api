@@ -12,8 +12,22 @@ class CheckPermission
 {
     public function handle(Request $request, Closure $next, string $permission): Response
     {
-        if (Gate::allows($permission)) {
-            return $next($request);
+        // `permission:a|b|c` is the conventional "any of these" form. Split on
+        // `|` and allow the request if the user is granted ANY listed ability.
+        //
+        // Previously the entire pipe-delimited string was passed to
+        // Gate::allows() as a single ability name — which never matches a real
+        // permission, so it only ever passed via the Super-Admin Gate::before
+        // bypass. Every NON-super-admin (Administrator, Finance, …) holding one
+        // of the listed permissions was wrongly 403'd on multi-permission
+        // routes (all of routes/cashflow.php's group middleware). Splitting
+        // restores the intended semantics; a user holding none still gets 403,
+        // and each ability still flows through the legacy↔dotted alias bridge.
+        foreach (explode('|', $permission) as $ability) {
+            $ability = trim($ability);
+            if ($ability !== '' && Gate::allows($ability)) {
+                return $next($request);
+            }
         }
 
         // API / JSON callers (the SPA) need a real 403 — a redirect to the
