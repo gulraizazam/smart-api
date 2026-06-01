@@ -6,6 +6,8 @@ Operating rules for this repo. Every task passes through every role below — no
 
 Default thought order: **business logic preserved → security → data integrity → framework correctness → performance → UX → QA**.
 
+**crm2 coexistence (hard constraint).** crm2 (legacy Blade, branch `production`) and crm3 (this backend's `staging`/feature line + the SPA) run **on one shared production DB**, and will until crm2 is deliberately disconnected. A change here must **never break crm2**: don't delete/rename a legacy snake_case permission, strip a legacy role grant, or drop/rename a shared column / response shape crm2 reads — crm2 has **no** permission bridge, so it would silently 403/500. Mirror prod locally once with `scripts/setup-local-coexistence.sh`; before shipping any DB / permission / shared-schema change run `scripts/coexistence-check.sh` (must PASS). The legacy↔dotted bridge is pinned exhaustively by `tests/Feature/Permissions/PermissionAliasBridgeTest.php` (runs in CI). Breaking a crm2 contract is a deliberate "disconnect crm2" decision — surface it, never silent. See `docs/LOCAL-COEXISTENCE.md`.
+
 ---
 
 ## Roles (all active, always)
