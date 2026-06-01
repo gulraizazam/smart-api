@@ -67,4 +67,43 @@ class PermissionAliasMapTest extends TestCase
         $this->assertContains('packages.detail.view', $packages);
         $this->assertContains('packages.list.view', $packages);
     }
+
+    public function test_granular_cashflow_bridges_dotted_to_snake_pairwise(): void
+    {
+        // Mechanical `.`->`_` pairs (representative sample).
+        $this->assertSame(['cashflow_expense_create'], PermissionAliasMap::aliasesFor('cashflow.expense.create'));
+        $this->assertSame(['cashflow_expense_void'], PermissionAliasMap::aliasesFor('cashflow.expense.void'));
+        $this->assertSame(['cashflow_transfer_void'], PermissionAliasMap::aliasesFor('cashflow.transfer.void'));
+        $this->assertSame(['cashflow_vendor_transaction_delete'], PermissionAliasMap::aliasesFor('cashflow.vendor.transaction.delete'));
+        $this->assertSame(['cashflow_staff_advance_void'], PermissionAliasMap::aliasesFor('cashflow.staff_advance.void'));
+        $this->assertSame(['cashflow_fdm_view'], PermissionAliasMap::aliasesFor('cashflow.fdm.view'));
+
+        // The FOUR structural mismatches — NOT a blind `.`->`_` transform; the
+        // snake catalog drops the trailing segment (no _view / _manage) or uses
+        // the bare slug. Pin them so a future "tidy-up" can't silently break them.
+        $this->assertSame(['cashflow_dashboard'], PermissionAliasMap::aliasesFor('cashflow.dashboard.view'));
+        $this->assertSame(['cashflow_reports'], PermissionAliasMap::aliasesFor('cashflow.reports.view'));
+        $this->assertSame(['cashflow_settings'], PermissionAliasMap::aliasesFor('cashflow.settings.manage'));
+        $this->assertSame(['cashflow_vendor_transaction'], PermissionAliasMap::aliasesFor('cashflow.vendor.transaction.create'));
+    }
+
+    public function test_granular_cashflow_inverse_resolves_snake_to_dotted(): void
+    {
+        // A crm2 (snake) grant must surface the matching crm3 (dotted) slug, so
+        // the Gate::before bridge + the SPA auth payload honour it. Cover the four
+        // structural pairs whose names don't line up mechanically.
+        $this->assertContains('cashflow.dashboard.view', PermissionAliasMap::aliasesFor('cashflow_dashboard'));
+        $this->assertContains('cashflow.reports.view', PermissionAliasMap::aliasesFor('cashflow_reports'));
+        $this->assertContains('cashflow.settings.manage', PermissionAliasMap::aliasesFor('cashflow_settings'));
+        $this->assertContains('cashflow.vendor.transaction.create', PermissionAliasMap::aliasesFor('cashflow_vendor_transaction'));
+        $this->assertContains('cashflow.expense.create', PermissionAliasMap::aliasesFor('cashflow_expense_create'));
+    }
+
+    public function test_cashflow_staff_transfer_is_intentionally_unmapped(): void
+    {
+        // staff<->staff handover is a crm3-only feature with NO snake_case
+        // counterpart on prod, so it must NOT be bridged (would be inert anyway).
+        $this->assertSame([], PermissionAliasMap::aliasesFor('cashflow.staff_transfer.create'));
+        $this->assertSame([], PermissionAliasMap::aliasesFor('cashflow.staff_transfer.void'));
+    }
 }

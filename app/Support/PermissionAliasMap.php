@@ -132,6 +132,59 @@ final class PermissionAliasMap
         'voucher_types.list.view'     => ['voucher_types_manage'],
         'vouchers.list.view'          => ['vouchers_manage'],
         'cashflow.manage'             => ['cashflow_manage'],
+
+        // ── Cashflow (granular) ───────────────────────────
+        // crm3 gates on the dotted slugs; crm2's full cashflow module gates on
+        // the snake_case ones from the legacy CashflowPermissionsSeeder. Mapped
+        // PAIR-BY-PAIR against both live catalogs (NOT a blind dot->underscore
+        // transform — four pairs differ structurally, flagged inline). This lets
+        // a crm2 (snake) grant satisfy the matching crm3 (dotted) gate + the SPA
+        // auth payload, so cashflow behaves like every other module during
+        // coexistence. NOTE: cashflow.staff_transfer.* (staff<->staff handovers)
+        // is a crm3-only feature with NO snake_case counterpart on prod, so it
+        // is intentionally left unmapped (a bridge to a non-existent slug would
+        // be inert anyway — Gate::before swallows PermissionDoesNotExist).
+        'cashflow.audit.view'                => ['cashflow_audit_view'],
+        'cashflow.category.manage'           => ['cashflow_category_manage'],
+        'cashflow.dashboard.view'            => ['cashflow_dashboard'],            // snake has no _view suffix
+        'cashflow.expense.approve'           => ['cashflow_expense_approve'],
+        'cashflow.expense.create'            => ['cashflow_expense_create'],
+        'cashflow.expense.duplicate'         => ['cashflow_expense_duplicate'],
+        'cashflow.expense.edit'              => ['cashflow_expense_edit'],
+        'cashflow.expense.export'            => ['cashflow_expense_export'],
+        'cashflow.expense.reject'            => ['cashflow_expense_reject'],
+        'cashflow.expense.resubmit'          => ['cashflow_expense_resubmit'],
+        'cashflow.expense.unflag'            => ['cashflow_expense_unflag'],
+        'cashflow.expense.view'              => ['cashflow_expense_view'],
+        'cashflow.expense.void'              => ['cashflow_expense_void'],
+        'cashflow.fdm.view'                  => ['cashflow_fdm_view'],
+        'cashflow.period.lock'               => ['cashflow_period_lock'],
+        'cashflow.pool.manage'               => ['cashflow_pool_manage'],
+        'cashflow.reports.export'            => ['cashflow_reports_export'],
+        'cashflow.reports.view'              => ['cashflow_reports'],              // snake has no _view suffix
+        'cashflow.settings.manage'           => ['cashflow_settings'],             // snake has no _manage suffix
+        'cashflow.staff_advance.create'      => ['cashflow_staff_advance_create'],
+        'cashflow.staff_advance.edit'        => ['cashflow_staff_advance_edit'],
+        'cashflow.staff_advance.view'        => ['cashflow_staff_advance_view'],
+        'cashflow.staff_advance.void'        => ['cashflow_staff_advance_void'],
+        'cashflow.staff_return.create'       => ['cashflow_staff_return_create'],
+        'cashflow.staff_return.void'         => ['cashflow_staff_return_void'],
+        'cashflow.transfer.create'           => ['cashflow_transfer_create'],
+        'cashflow.transfer.edit'             => ['cashflow_transfer_edit'],
+        'cashflow.transfer.view'             => ['cashflow_transfer_view'],
+        'cashflow.transfer.void'             => ['cashflow_transfer_void'],
+        'cashflow.vendor.create'             => ['cashflow_vendor_create'],
+        'cashflow.vendor.deliver'            => ['cashflow_vendor_deliver'],
+        'cashflow.vendor.edit'               => ['cashflow_vendor_edit'],
+        'cashflow.vendor.ledger.export'      => ['cashflow_vendor_ledger_export'],
+        'cashflow.vendor.ledger.view'        => ['cashflow_vendor_ledger_view'],
+        'cashflow.vendor.manage'             => ['cashflow_vendor_manage'],
+        'cashflow.vendor.request'            => ['cashflow_vendor_request'],
+        'cashflow.vendor.toggle'             => ['cashflow_vendor_toggle'],
+        'cashflow.vendor.transaction.create' => ['cashflow_vendor_transaction'],   // bare = "Record Vendor Purchases"
+        'cashflow.vendor.transaction.delete' => ['cashflow_vendor_transaction_delete'],
+        'cashflow.vendor.transaction.edit'   => ['cashflow_vendor_transaction_edit'],
+        'cashflow.vendor.view'               => ['cashflow_vendor_view'],
     ];
 
     /**
