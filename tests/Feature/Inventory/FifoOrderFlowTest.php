@@ -328,20 +328,23 @@ class FifoOrderFlowTest extends TestCase
     }
 
     /**
-     * The OrderService::writeOrderRevenueLedger path must always pin the
-     * resulting package_advances row to the originating order via
-     * `order_id`. Without this link the OrderObserver delete-cascade
-     * (next test) can't find which ledger row to reverse, and the
-     * General Sales / Revenue Detail reports lose the ability to
-     * distinguish plan revenue from inventory revenue.
+     * Inventory orders are OVERLAY-ONLY: createOrder must NOT write a
+     * package_advances ledger row. Such a row would (a) credit the cash pool
+     * via PackageAdvanceObserver AND be added again by the display overlay
+     * (applyInventoryOverlay) = double-count, and (b) require a
+     * package_advances.order_id column that is absent on prod, breaking order
+     * creation. Inventory revenue reaches pool balances solely at DISPLAY time
+     * via PoolService::applyInventoryOverlay, matching the legacy app (crm2).
      */
-    public function test_order_create_writes_linked_package_advance(): void
+    public function test_order_create_writes_no_package_advance(): void
     {
         $product = $this->makeProduct();
         $loc = (int) $this->defaultLocation->id;
         $this->makeBatch($product->id, $loc, 5, 800);
 
         $patient = User::factory()->create(['account_id' => 1, 'user_type_id' => 1, 'active' => 1]);
+
+        $beforePa = PackageAdvances::count();
 
         $order = app(OrderService::class)->createOrder([
             'sold_to' => 'patient',
@@ -352,24 +355,55 @@ class FifoOrderFlowTest extends TestCase
             'quantity' => [2],
         ]);
 
-        $ledger = PackageAdvances::where('order_id', $order->id)->first();
-        $this->assertNotNull($ledger, 'A package_advances row must be written for every order.');
-        $this->assertSame('in', $ledger->cash_flow);
-        $this->assertSame((float) $order->total_price, (float) $ledger->cash_amount);
-        $this->assertSame($order->id, (int) $ledger->order_id);
-        $this->assertSame(0, (int) $ledger->is_refund);
+        $this->assertNotNull($order, 'Order create must succeed (no failing ledger insert).');
+        $this->assertSame(
+            $beforePa,
+            PackageAdvances::count(),
+            'Inventory order create must NOT write a package_advances row (overlay-only).',
+        );
     }
 
     /**
-     * Hard-deleting an order must cascade through `OrderObserver::deleted`
-     * to soft-delete the linked package_advances row(s). That trips
-     * `PackageAdvanceObserver::deleted` which decrements the cash pool.
-     * Also asserts the consumption rows + order_details + stocks ledger
-     * rows tied to the order are cleaned up, and that the FIFO batch's
-     * `remaining_quantity` is restored (otherwise future sales would
-     * silently over-draw).
+     * ORDER-ONLY patient carve-out (2026-06-01): an order for a brand-new phone
+     * (no patient_id) registers a PROPER patient (user_type_id=3, account-scoped)
+     * and attaches the order to it — parity with legacy crm2 so the shared
+     * patient data stays consistent across both apps.
      */
-    public function test_order_delete_cascades_to_package_advances_and_restores_batch(): void
+    public function test_order_create_registers_patient_for_new_phone(): void
+    {
+        $product = $this->makeProduct();
+        $loc = (int) $this->defaultLocation->id;
+        $this->makeBatch($product->id, $loc, 5, 800);
+
+        $phone = '+92305' . random_int(1000000, 9999999);
+        $before = \App\Models\Patients::query()->count();
+
+        $order = app(OrderService::class)->createOrder([
+            'sold_to' => 'patient',
+            'patient_id' => null,
+            'name' => 'Walk-in Buyer',
+            'phone' => $phone,
+            'location_id' => $loc,
+            'payment_mode' => (int) $this->cashPaymentMode->id,
+            'product_id' => [$product->id],
+            'quantity' => [1],
+        ]);
+
+        $this->assertNotNull($order, 'order create must succeed.');
+        $created = \App\Models\Patients::where('phone', $phone)->first();
+        $this->assertNotNull($created, 'OrderService must register a patient for a new phone (order-only carve-out).');
+        $this->assertSame($before + 1, \App\Models\Patients::query()->count(), 'exactly one patient registered.');
+        $this->assertSame(3, (int) $created->user_type_id, 'a proper patient (user_type_id=3), not a NULL orphan like crm2.');
+        $this->assertSame((int) $created->id, (int) $order->patient_id, 'the order is attached to the newly-registered patient.');
+    }
+
+    /**
+     * Hard-deleting an order restores the FIFO batch's `remaining_quantity`
+     * and cleans up its children (order_details, stocks). There is NO
+     * package_advances cascade — inventory orders are overlay-only and never
+     * write a ledger row, so there is no stored pool credit to reverse.
+     */
+    public function test_order_delete_restores_batch_and_cleans_children(): void
     {
         $product = $this->makeProduct();
         $loc = (int) $this->defaultLocation->id;
@@ -389,22 +423,11 @@ class FifoOrderFlowTest extends TestCase
 
         // Sanity checks on the pre-delete state.
         $this->assertSame($batchBefore - 3, (int) $batch->fresh()->remaining_quantity);
-        $this->assertSame(1, PackageAdvances::where('order_id', $order->id)->count());
+        // Overlay-only: no package_advances row is ever written for an order.
+        $this->assertSame(0, PackageAdvances::where('account_id', 1)->count());
 
         $result = Order::DeleteRecord($order->id);
         $this->assertTrue($result->get('status'));
-
-        // OrderObserver fired → linked ledger row deleted (soft).
-        $this->assertSame(
-            0,
-            PackageAdvances::where('order_id', $order->id)->whereNull('deleted_at')->count(),
-            'Linked package_advances must be soft-deleted by OrderObserver.',
-        );
-        $this->assertSame(
-            1,
-            PackageAdvances::withTrashed()->where('order_id', $order->id)->count(),
-            'Soft-deleted row must still exist as an audit trail.',
-        );
 
         // FIFO batch fully restored — otherwise the next sale would
         // silently consume stock the deleted order had already eaten.

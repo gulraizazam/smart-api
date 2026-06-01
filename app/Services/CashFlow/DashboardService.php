@@ -13,6 +13,7 @@ use App\Models\CashFlow\StaffAdvance;
 use App\Models\CashFlow\StaffReturn;
 use App\Models\CashFlow\Vendor;
 use App\Models\CashFlow\VendorTransaction;
+use App\Models\Order;
 use App\Models\PackageAdvances;
 use App\Models\PaymentModes;
 use Carbon\Carbon;
@@ -79,12 +80,20 @@ class DashboardService
                 ->whereBetween('system_created_at', [$goLiveDate . ' 00:00:00', $lastDayPrev . ' 23:59:59'])
                 ->sum('cash_amount');
 
-            // Inventory sales used to be summed from `orders` here, but
-            // OrderService now writes its own `package_advances` rows
-            // on sale + refund (see writeOrderRevenueLedger), so the
-            // $prePayments / $preRefunds sums above already include
-            // inventory revenue. Adding an Order::sum on top of that
-            // would double-count.
+            // Inventory (Order) sales/refunds are overlay-only — never written
+            // to package_advances — so they must be summed from `orders` here,
+            // exactly as the legacy app does. (Mirrors
+            // PoolService::applyInventoryOverlay, windowed to the carry-forward
+            // period.)
+            $preInventorySales = (float) Order::where('account_id', $accountId)
+                ->where('order_type', 'sale')
+                ->whereBetween('created_at', [$goLiveDate . ' 00:00:00', $lastDayPrev . ' 23:59:59'])
+                ->sum('total_price');
+
+            $preInventoryRefunds = (float) Order::where('account_id', $accountId)
+                ->where('order_type', 'refund')
+                ->whereBetween('created_at', [$goLiveDate . ' 00:00:00', $lastDayPrev . ' 23:59:59'])
+                ->sum('total_price');
 
             // Expenses from go-live to end of last month
             $preExpenses = (float) Expense::forAccount($accountId)
@@ -104,6 +113,7 @@ class DashboardService
                 ->sum('amount');
 
             $openingBalance += ($prePayments - $preRefunds)
+                             + ($preInventorySales - $preInventoryRefunds)
                              - $preExpenses
                              - ($preAdvances - $preReturns);
         }
@@ -119,11 +129,17 @@ class DashboardService
             ->whereBetween('system_created_at', [$monthStart . ' 00:00:00', $today . ' 23:59:59'])
             ->sum('cash_amount');
 
-        // Current-month inventory sales/refunds used to be summed from
-        // `orders` here. OrderService now writes package_advances rows
-        // on sale + refund, so `$payments` and `$refunds` above already
-        // include order revenue — adding another Order::sum would
-        // double-count.
+        // Current-month inventory (Order) sales/refunds — overlay-only, summed
+        // from `orders` (not package_advances), matching the legacy app.
+        $inventorySales = (float) Order::where('account_id', $accountId)
+            ->where('order_type', 'sale')
+            ->whereBetween('created_at', [$monthStart . ' 00:00:00', $today . ' 23:59:59'])
+            ->sum('total_price');
+
+        $inventoryRefunds = (float) Order::where('account_id', $accountId)
+            ->where('order_type', 'refund')
+            ->whereBetween('created_at', [$monthStart . ' 00:00:00', $today . ' 23:59:59'])
+            ->sum('total_price');
 
         // Current month outflows: expenses + staff advances net
         $expenses = (float) Expense::forAccount($accountId)
@@ -141,7 +157,7 @@ class DashboardService
             ->whereBetween('system_created_at', [$monthStart . ' 00:00:00', $today . ' 23:59:59'])
             ->sum('amount');
 
-        $totalInflows = $payments - $refunds;
+        $totalInflows = ($payments - $refunds) + ($inventorySales - $inventoryRefunds);
         $totalOutflows = $expenses + ($advances - $returns);
         $netCashFlow = $totalInflows - $totalOutflows;
         $closingBalance = $openingBalance + $netCashFlow;
@@ -159,21 +175,25 @@ class DashboardService
     /**
      * Pool balance cards.
      *
-     * Sourced exclusively from `cached_balance` — maintained per-write
-     * by PackageAdvanceObserver. Inventory sales now write
-     * `package_advances` rows on order create/refund so the cached
-     * balance already includes them; the previous runtime augmentation
-     * (Order::sum stacked on top) double-counted and has been removed.
+     * Balances come from `cached_balance` (maintained per-write by the
+     * cash-flow observers) PLUS an inventory (Order) sales overlay applied at
+     * display time by PoolService::applyInventoryOverlay(). The overlay is NOT
+     * stored — it is layered on here exactly as the legacy app does, so both
+     * apps can share one prod DB off the same cached_balance column without
+     * double-counting. See applyInventoryOverlay() for the rationale.
      */
     public function getPoolBalances(int $accountId): array
     {
-        return CashPool::forAccount($accountId)
+        $pools = CashPool::forAccount($accountId)
             ->active()
             ->with('location:id,name')
             ->orderByRaw("CASE WHEN type = 'bank_account' THEN 1 ELSE 0 END")
             ->orderBy('name')
-            ->get(['id', 'name', 'type', 'cached_balance', 'location_id'])
-            ->toArray();
+            ->get(['id', 'name', 'type', 'cached_balance', 'location_id']);
+
+        app(\App\Services\CashFlow\PoolService::class)->applyInventoryOverlay($pools, $accountId);
+
+        return $pools->toArray();
     }
 
     /**
@@ -260,11 +280,13 @@ class DashboardService
             ->pluck('total', 'date')
             ->toArray();
 
-        // Per-day inventory sales used to be aggregated from `orders`
-        // here. OrderService now writes a `package_advances` row on
-        // every order create / refund, so the `$inflows` and `$refunds`
-        // day buckets above already include order revenue — adding an
-        // Order::sum on top would double-count today's inventory cash.
+        // NOTE: inventory (Order) sales are overlay-only and are NOT in
+        // package_advances, so these per-day `$inflows`/`$refunds` buckets
+        // currently EXCLUDE inventory. PARITY TODO: mirror crm2's
+        // getDailyTrend — aggregate Order by DATE(created_at) and merge into
+        // the day buckets — so the trend matches the inventory-inclusive
+        // pool/summary figures. (Not a prod regression: prod has no order
+        // package_advances rows today either.)
 
         // Build day-by-day array
         $days = [];

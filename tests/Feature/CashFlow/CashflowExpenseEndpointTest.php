@@ -421,12 +421,11 @@ class CashflowExpenseEndpointTest extends TestCase
             ->assertJsonPath('data.has_period_locks', true);
     }
 
-    public function test_reject_flips_status_and_stores_reason_without_touching_pool(): void
+    public function test_reject_flips_status_and_reverses_the_pool(): void
     {
-        // 2026-05-14 Model B (substance-over-form): reject is a
-        // record-correction workflow. Status + reason update but
-        // the pool balance stays untouched because the cash event
-        // already happened. Use Void to actually reverse the cash.
+        // Model A: reject flips status + stores the reason AND reverses the
+        // pool deduction (the cash is given back). Matches the legacy app so
+        // both stay consistent on the shared cached_balance column.
         $this->grantPermissions(['cashflow_expense_reject']);
         $pool = CashPool::factory()->withOpeningBalance(50000)->create();
         $expense = Expense::factory()->create([
@@ -434,7 +433,7 @@ class CashflowExpenseEndpointTest extends TestCase
             'amount' => 2000,
             'status' => ExpenseStatus::Approved,
         ]);
-        $poolBefore = (float) $pool->fresh()->cached_balance;
+        $poolBefore = (float) $pool->fresh()->cached_balance; // 48000 (debited at create)
 
         $response = $this->postJson("/api/cashflow/expenses/{$expense->id}/reject", [
             'rejection_reason' => 'Wrong category — please correct.',
@@ -444,24 +443,27 @@ class CashflowExpenseEndpointTest extends TestCase
         $expense->refresh();
         $this->assertSame(ExpenseStatus::Rejected, $expense->status);
         $this->assertSame('Wrong category — please correct.', $expense->rejection_reason);
-        // Pool unchanged — reject is record-status only.
-        $this->assertSame($poolBefore, (float) $pool->fresh()->cached_balance);
+        // Pool reversed — the 2000 debit is given back.
+        $this->assertSame($poolBefore + 2000.0, (float) $pool->fresh()->cached_balance);
     }
 
     public function test_editing_a_rejected_expense_moves_it_to_pending_for_admin_approval(): void
     {
-        // Accountant's fix moves the row to Pending so the admin gets
-        // a re-review step. Pool stays put throughout the cycle.
+        // Accountant's fix moves a rejected row back to Pending for admin
+        // re-review. Under Model A the row was reversed at reject (no standing
+        // debit), and resubmitting (Rejected -> Pending) re-applies it.
         $this->grantPermissions(['cashflow_expense_edit']);
         $pool = CashPool::factory()->withOpeningBalance(50000)->create();
         $expense = Expense::factory()->create([
             'paid_from_pool_id' => $pool->id,
             'amount' => 1500,
             'description' => 'pen refills',
-            'status' => ExpenseStatus::Rejected,
-            'rejection_reason' => 'category was wrong',
+            'status' => ExpenseStatus::Approved,
         ]);
-        $poolBefore = (float) $pool->fresh()->cached_balance;
+        // Reach Rejected the realistic way (the transition reverses the pool),
+        // NOT as a born-rejected row whose create-debit was never reversed.
+        $expense->update(['status' => ExpenseStatus::Rejected, 'rejection_reason' => 'category was wrong']);
+        $poolAfterReject = (float) $pool->fresh()->cached_balance; // 50000 — debit reversed
 
         $response = $this->postJson("/api/cashflow/expenses/{$expense->id}/edit", [
             'expense_date' => $expense->expense_date->toDateString(),
@@ -478,8 +480,8 @@ class CashflowExpenseEndpointTest extends TestCase
         $expense->refresh();
         $this->assertSame(ExpenseStatus::Pending, $expense->status);
         $this->assertNull($expense->rejection_reason);
-        // Pool unchanged throughout the cycle (Model B).
-        $this->assertSame($poolBefore, (float) $pool->fresh()->cached_balance);
+        // Resubmit re-applies the 1500 deduction.
+        $this->assertSame($poolAfterReject - 1500.0, (float) $pool->fresh()->cached_balance);
     }
 
     public function test_approve_on_pending_flips_status_without_touching_pool(): void
@@ -533,8 +535,8 @@ class CashflowExpenseEndpointTest extends TestCase
     public function test_reject_from_pending_marks_status_rejected_with_new_reason(): void
     {
         // Admin reviewed the accountant's fix and rejected it again
-        // (Pending → Rejected). Status flips, new reason persists,
-        // pool stays put (Model B).
+        // (Pending → Rejected). Status flips, new reason persists, and the
+        // pool deduction is reversed (Model A).
         $this->grantPermissions(['cashflow_expense_reject']);
         $pool = CashPool::factory()->withOpeningBalance(50000)->create();
         $expense = Expense::factory()->create([
@@ -542,7 +544,7 @@ class CashflowExpenseEndpointTest extends TestCase
             'amount' => 1200,
             'status' => ExpenseStatus::Pending,
         ]);
-        $poolBefore = (float) $pool->fresh()->cached_balance;
+        $poolBefore = (float) $pool->fresh()->cached_balance; // 48800 (debited at create)
 
         $response = $this->postJson("/api/cashflow/expenses/{$expense->id}/reject", [
             'rejection_reason' => 'fix still wrong — vendor needs to be set.',
@@ -552,24 +554,25 @@ class CashflowExpenseEndpointTest extends TestCase
         $expense->refresh();
         $this->assertSame(ExpenseStatus::Rejected, $expense->status);
         $this->assertSame('fix still wrong — vendor needs to be set.', $expense->rejection_reason);
-        $this->assertSame($poolBefore, (float) $pool->fresh()->cached_balance);
+        // Reject reverses the 1200 deduction.
+        $this->assertSame($poolBefore + 1200.0, (float) $pool->fresh()->cached_balance);
     }
 
-    public function test_voiding_a_rejected_row_refunds_the_pool(): void
+    public function test_voiding_a_rejected_row_does_not_double_refund_the_pool(): void
     {
-        // Regression for the Model A → Model B bug: void path used
-        // to skip the pool refund when status was Rejected (because
-        // Model A had already refunded on reject). Under Model B
-        // reject doesn't touch the pool, so void MUST always refund.
+        // Model A: reject already reversed the pool, so voiding an
+        // already-rejected row must NOT refund again (that would create
+        // money). The pool stays at its post-reject value.
         $this->grantPermissions(['cashflow_expense_void']);
         $pool = CashPool::factory()->withOpeningBalance(50000)->create();
         $expense = Expense::factory()->create([
             'paid_from_pool_id' => $pool->id,
             'amount' => 900,
-            'status' => ExpenseStatus::Rejected,
-            'rejection_reason' => 'duplicate, voiding',
+            'status' => ExpenseStatus::Approved,
         ]);
-        $poolBefore = (float) $pool->fresh()->cached_balance;
+        // Reach Rejected the realistic way — the debit is reversed here.
+        $expense->update(['status' => ExpenseStatus::Rejected, 'rejection_reason' => 'duplicate, voiding']);
+        $poolAfterReject = (float) $pool->fresh()->cached_balance; // 50000 — already reversed
 
         $response = $this->postJson("/api/cashflow/expenses/{$expense->id}/void", [
             'void_reason' => 'confirmed duplicate of #999',
@@ -578,9 +581,8 @@ class CashflowExpenseEndpointTest extends TestCase
         $response->assertStatus(200);
         $expense->refresh();
         $this->assertNotNull($expense->voided_at);
-        // Pool refunded by the full amount, even though the source
-        // status was Rejected.
-        $this->assertSame($poolBefore + 900.0, (float) $pool->fresh()->cached_balance);
+        // No second refund — reject already gave the money back.
+        $this->assertSame($poolAfterReject, (float) $pool->fresh()->cached_balance);
     }
 
     public function test_creator_can_edit_own_rejected_row_without_global_edit_slug(): void

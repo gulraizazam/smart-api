@@ -421,10 +421,11 @@ class AppServiceProvider extends ServiceProvider
         StaffAdvance::observe(StaffAdvanceObserver::class);
         StaffReturn::observe(StaffReturnObserver::class);
         PackageAdvances::observe(PackageAdvanceObserver::class);
-        // Reverses the cash-pool credit when an order is hard-deleted.
-        // Order create + refund already write package_advances rows via
-        // OrderService, so the observer only needs the `deleted` hook.
-        \App\Models\Order::observe(\App\Observers\OrderObserver::class);
+        // NOTE: Order has NO cash-flow observer. Inventory (Order) sales are
+        // overlay-only on pool balances (PoolService::applyInventoryOverlay)
+        // and never write package_advances / cached_balance, so there is no
+        // stored order credit to reverse on delete. This matches the legacy
+        // app (crm2), keeping both consistent on the shared prod column.
         // Mirrors a parent membership's end_date edits onto its
         // referrals so the data model stays internally consistent
         // without requiring every read site to look up the parent.

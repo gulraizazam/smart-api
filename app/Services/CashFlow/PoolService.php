@@ -21,26 +21,96 @@ class PoolService
     /**
      * Get all pools for account with location info.
      *
-     * Pool balances are now sourced exclusively from `cached_balance` —
-     * the cash-pool aggregate that `PackageAdvanceObserver` maintains
-     * via per-row credit/debit events. Since the 2026-05 inventory
-     * revamp, order create + refund also write `package_advances` rows
-     * so order revenue flows through the same observer chain.
+     * Base balances come from `cached_balance` — the cash-pool aggregate that
+     * the cash-flow observers maintain via per-row credit/debit events. On top
+     * of that, inventory (Order) sales are layered at DISPLAY time by
+     * applyInventoryOverlay() (never persisted to cached_balance).
      *
-     * The previous behaviour layered an `Order::sum()` aggregate on top
-     * of `cached_balance` at display time. That was a workaround from
-     * before orders had their own ledger writes — now it double-counts
-     * inventory sales (once in cached_balance via the observer, once in
-     * the runtime sum on top). Removed; the observer is the single
-     * source of truth.
+     * Inventory is overlaid rather than baked in because the legacy Blade app
+     * (crm2) and this SPA (crm3) share ONE prod database and the SAME
+     * cached_balance column. The legacy app reads cached_balance and adds the
+     * identical inventory overlay at its own display. Baking inventory into
+     * cached_balance here would make the legacy app double-count it. See
+     * applyInventoryOverlay() for the full rationale and the deferred
+     * package_advances.order_id guard.
      */
     public function getAllPools(int $accountId): \Illuminate\Database\Eloquent\Collection
     {
-        return CashPool::forAccount($accountId)
+        $pools = CashPool::forAccount($accountId)
             ->with('location:id,name')
             ->orderByRaw("FIELD(type, 'branch_cash', 'head_office_cash', 'bank_account')")
             ->orderBy('name')
             ->get();
+
+        $this->applyInventoryOverlay($pools, $accountId);
+
+        return $pools;
+    }
+
+    /**
+     * Add inventory (Order) sales to pool balances FOR DISPLAY ONLY — never
+     * persisted to cached_balance.
+     *
+     * Cash sales (payment_mode = 1) credit the branch pool for that location;
+     * non-cash (card/bank) sales credit the bank pool; refunds debit. This
+     * mirrors the legacy app's PoolService::getPoolBalances overlay.
+     *
+     * Why an overlay and not baked into cached_balance: the legacy Blade app
+     * and this SPA run against the SAME prod database. The legacy app reads
+     * cached_balance and adds this same inventory overlay at its own display.
+     * If we instead stored inventory inside cached_balance, the legacy app
+     * would add it a second time and double-count. So inventory stays OUT of
+     * cached_balance and is layered on at display in BOTH apps.
+     *
+     * NOTE: if/when inventory orders start writing package_advances ledger rows
+     * (the deferred package_advances.order_id link), so they DO land in
+     * cached_balance, this overlay must be guarded to skip already-ledgered
+     * orders or it will double-count.
+     */
+    public function applyInventoryOverlay(\Illuminate\Database\Eloquent\Collection $pools, int $accountId): void
+    {
+        $goLiveDate = app(CashflowSettingService::class)->getGoLiveDate($accountId);
+        if (! $goLiveDate) {
+            return;
+        }
+        $since = $goLiveDate.' 00:00:00';
+
+        $branchPools = $pools->where('type', CashPool::TYPE_BRANCH_CASH)
+            ->filter(fn ($p) => $p->location_id !== null);
+
+        if ($branchPools->isNotEmpty()) {
+            $locationIds = $branchPools->pluck('location_id')->all();
+
+            $cashSales = \App\Models\Order::where('account_id', $accountId)
+                ->where('order_type', 'sale')->where('payment_mode', 1)
+                ->whereIn('location_id', $locationIds)
+                ->where('created_at', '>=', $since)
+                ->selectRaw('location_id, SUM(total_price) AS total')
+                ->groupBy('location_id')->pluck('total', 'location_id');
+
+            $cashRefunds = \App\Models\Order::where('account_id', $accountId)
+                ->where('order_type', 'refund')->where('payment_mode', 1)
+                ->whereIn('location_id', $locationIds)
+                ->where('created_at', '>=', $since)
+                ->selectRaw('location_id, SUM(total_price) AS total')
+                ->groupBy('location_id')->pluck('total', 'location_id');
+
+            foreach ($branchPools as $pool) {
+                $net = (float) ($cashSales[$pool->location_id] ?? 0) - (float) ($cashRefunds[$pool->location_id] ?? 0);
+                $pool->cached_balance = (float) $pool->cached_balance + $net;
+            }
+        }
+
+        $bankPool = $pools->firstWhere('type', CashPool::TYPE_BANK_ACCOUNT);
+        if ($bankPool) {
+            $nonCashSales = (float) \App\Models\Order::where('account_id', $accountId)
+                ->where('order_type', 'sale')->where('payment_mode', '!=', 1)
+                ->where('created_at', '>=', $since)->sum('total_price');
+            $nonCashRefunds = (float) \App\Models\Order::where('account_id', $accountId)
+                ->where('order_type', 'refund')->where('payment_mode', '!=', 1)
+                ->where('created_at', '>=', $since)->sum('total_price');
+            $bankPool->cached_balance = (float) $bankPool->cached_balance + ($nonCashSales - $nonCashRefunds);
+        }
     }
 
     /**
@@ -283,13 +353,14 @@ class PoolService
             }
         }
 
-        // Step 4: Expenses — debit pools for every non-voided row
-        // regardless of approval status (Model B, 2026-05-14): the
-        // cash event happened at creation; reject/approve are workflow
-        // metadata that don't move money. Only `void` reverses the
-        // debit (filtered out here via `voided_at IS NULL`).
+        // Step 4: Expenses — debit pools for every non-voided, non-rejected
+        // row (Model A). Reject reverses the deduction (ExpenseObserver) and
+        // void removes it, so neither should be replayed here. Excluding
+        // rejected keeps this recompute consistent with the incremental
+        // observer AND with the legacy app (crm2), which uses the same filter.
         $expenses = \App\Models\CashFlow\Expense::forAccount($accountId)
             ->whereNull('voided_at')
+            ->where('status', '!=', 'rejected')
             ->where('system_created_at', '>=', $goLiveDate)
             ->get(['amount', 'paid_from_pool_id']);
 
@@ -342,6 +413,12 @@ class PoolService
         }
 
         // Step 8: Apply calculated balances
+        // NOTE: inventory (Order) sales are intentionally NOT folded into the
+        // stored cached_balance here. They are added at DISPLAY time by
+        // applyInventoryOverlay() (mirroring the legacy app). Keeping inventory
+        // OUT of cached_balance lets the legacy Blade app and this SPA share one
+        // prod DB off the same column without double-counting (both overlay it
+        // at display; neither stores it).
         foreach ($pools as $pool) {
             $oldBalance = (float) $pool->cached_balance;
             $newBalance = round($balances[$pool->id] ?? (float) $pool->opening_balance, 2);
@@ -455,12 +532,13 @@ class PoolService
             }
         }
 
-        // Step 4: Expenses (non-voided, with pool). Model B: reject
-        // doesn't move money — every non-voided row debits its pool
-        // regardless of approval status.
+        // Step 4: Expenses (non-voided, non-rejected, with pool). Model A:
+        // reject reverses the deduction and void removes it, so neither is
+        // replayed here. Matches the incremental observer and crm2.
         $totalExpenses = 0.0;
         $expenses = \App\Models\CashFlow\Expense::forAccount($accountId)
             ->whereNull('voided_at')
+            ->where('status', '!=', 'rejected')
             ->where('system_created_at', '>=', $goLiveDate)
             ->get(['amount', 'paid_from_pool_id']);
 
