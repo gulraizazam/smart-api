@@ -385,16 +385,20 @@ class CashflowExpenseEndpointTest extends TestCase
         $blocked = $this->postJson('/api/cashflow/expenses/store', $payload);
         $blocked->assertStatus(403);
 
-        // Positive case — add the create slug (still no duplicate-specific
-        // privilege required by the endpoint). The same payload now clears
-        // the gate; it may still 422 on partial fields or 200/201 on a full
-        // submission, but it must NOT be 403 anymore. This pins that
-        // `cashflow_expense_create` is the actual gating slug on /store.
-        $dupOnlyRole->givePermissionTo(['cashflow_expense_create']);
+        // Positive case — add the actual gating slug. StoreExpenseRequest::authorize()
+        // gates on the DOTTED `cashflow.expense.create` (the canonical post-rollout
+        // catalog the role editor grants — verified on the prod clone as held by
+        // Administrator/Finance). The old underscore `cashflow_expense_create` is the
+        // superseded pre-rollout seeder name and no longer satisfies the gate (there is
+        // no cashflow alias bridge). Granting the dotted slug clears the gate; the
+        // request may still 422 on partial fields or 200/201 on a full submission, but
+        // it must NOT be 403 anymore.
+        $this->createPermission('cashflow.expense.create');
+        $dupOnlyRole->givePermissionTo(['cashflow.expense.create']);
         app(\Spatie\Permission\PermissionRegistrar::class)->forgetCachedPermissions();
 
         $allowedThroughGate = $this->postJson('/api/cashflow/expenses/store', $payload);
-        $this->assertNotSame(403, $allowedThroughGate->status(), 'Adding cashflow_expense_create must clear the auth gate.');
+        $this->assertNotSame(403, $allowedThroughGate->status(), 'Adding cashflow.expense.create must clear the auth gate.');
     }
 
     /**
