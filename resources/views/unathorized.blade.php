@@ -98,7 +98,7 @@ h1 {
 <div class="message">
   <h1>Access to this page is restricted</h1>
   <p>Please check with the site admin if you believe this is a mistake.</p>
-  <p><a href="/admin-v2/" style="color: inherit;">Return to the app</a></p>
+  <p><a href="{{ config('app.spa_url') }}" style="color: inherit;">Return to the app</a></p>
 </div>
 <!-- partial -->
   

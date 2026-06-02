@@ -121,7 +121,7 @@ class ApiPasswordResetTest extends TestCase
         $mail = $notification->toMail($user);
 
         $this->assertStringContainsString(
-            '/admin-v2/reset-password/'.$token,
+            rtrim((string) config('app.spa_url'), '/').'/reset-password/'.$token,
             (string) $mail->actionUrl,
             'Reset email action URL must target the SPA reset screen, '
             . 'not the legacy Blade route(\'password.reset\').',

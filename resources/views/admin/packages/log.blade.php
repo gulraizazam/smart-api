@@ -33,7 +33,7 @@
                         </div>
 
                         <div class="card-toolbar">
-                            <a href="/admin-v2/plans" class="btn btn-sm dark btn-dark" >
+                            <a href="{{ rtrim(config('app.spa_url'), '/') }}/plans" class="btn btn-sm dark btn-dark" >
                                 <i class="la la-arrow-alt-circle-left"></i>
                                 Back
                             </a> &nbsp;&nbsp;
