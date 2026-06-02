@@ -15,6 +15,7 @@ use App\Services\Dashboard\ValueObjects\DateRange;
 use App\Services\Dashboard\ValueObjects\MetricScope;
 use Carbon\Carbon;
 use Illuminate\Database\Query\Builder;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -32,6 +33,9 @@ use Illuminate\Support\Facades\DB;
  */
 final class AppointmentsMetric implements Metric
 {
+    /** Cache TTL (seconds) for ratios() — matches the sibling Dashboard metrics. */
+    private const CACHE_TTL = 300;
+
     /**
      * Patients seen (consultations + treatments with arrived/qualifying statuses).
      *
@@ -91,6 +95,30 @@ final class AppointmentsMetric implements Metric
             ];
         }
 
+        // The Overview Stats card calls this TWICE per request (current +
+        // prior period for the MoM deltas), and it's the page's heaviest
+        // computation (appointment counts + sales ledger + invoice revenue).
+        // Cache per scope+range for 5 min — same pattern as the sibling
+        // metrics (GenderRevenue/ATV/ACV) — so both passes hit the cache.
+        $cacheKey = 'mgmt_dash:appointment_ratios:'
+            .$scope->cacheKey()
+            .'|'.$range->startString().'..'.$range->endString();
+
+        return Cache::remember($cacheKey, self::CACHE_TTL, fn (): array => $this->buildRatios($scope, $range));
+    }
+
+    /**
+     * Uncached computation behind ratios() — see ratios() for the shape.
+     *
+     * @return array{
+     *   consultations: array{arrived: int, total: int},
+     *   treatments: array{arrived: int, total: int},
+     *   sales: float,
+     *   revenue_consumed: float
+     * }
+     */
+    private function buildRatios(MetricScope $scope, DateRange $range): array
+    {
         // One round-trip for both consult + treatment counts. The Stats
         // card always shows both, so splitting them into separate queries
         // (as before) was pure overhead on the dashboard's slowest path.
