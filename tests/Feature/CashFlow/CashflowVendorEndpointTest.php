@@ -245,9 +245,17 @@ class CashflowVendorEndpointTest extends TestCase
         auth()->user()->roles()->detach();
         app(\Spatie\Permission\PermissionRegistrar::class)->forgetCachedPermissions();
 
-        $this->createPermission('cashflow_vendor_transaction_delete');
+        // The endpoint gates on the DOTTED slug (CashFlowVendorsController:407 —
+        // can('cashflow.vendor.transaction.delete')), the canonical post-rollout
+        // catalog held by Administrator on the prod clone. The old underscore
+        // `cashflow_vendor_transaction_delete` no longer satisfies the gate.
+        // `cashflow.vendor.view` is also needed to clear the vendors route-group
+        // middleware (permission:cashflow.vendor.view|cashflow.vendor.manage|cashflow.manage)
+        // before the controller's delete check is even reached.
+        $this->createPermission('cashflow.vendor.view');
+        $this->createPermission('cashflow.vendor.transaction.delete');
         $role = $this->createRole('vendor-delete-only-' . uniqid());
-        $role->givePermissionTo(['cashflow_vendor_transaction_delete']);
+        $role->givePermissionTo(['cashflow.vendor.view', 'cashflow.vendor.transaction.delete']);
         auth()->user()->assignRole($role);
         app(\Spatie\Permission\PermissionRegistrar::class)->forgetCachedPermissions();
 

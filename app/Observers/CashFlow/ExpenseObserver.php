@@ -18,11 +18,14 @@ use Illuminate\Support\Facades\Log;
  * `DB::transaction` rolls back the expense write too — better a 500 and
  * a clean state than a silent ledger drift.
  *
- * The reject/approve cycle is intentionally not a pool-impact event
- * (Model B / GAAP substance-over-form, 2026-05-14). Cash already left
- * the till at creation; status reflects record-validity, not whether
- * the spend occurred. Use `void` (separate flow) when the entry
- * shouldn't exist and the cash should be reversed.
+ * Reject REVERSES the pool deduction; resubmit (rejected -> pending)
+ * re-applies it with the current amount/pool (Model A). A rejected expense
+ * therefore nets to zero pool impact, and recalculatePoolBalances likewise
+ * EXCLUDES rejected rows. This matches the legacy app (crm2): crm2 and crm3
+ * share one prod DB and the same cached_balance column during coexistence,
+ * so both MUST treat a rejected expense identically or the shared balance
+ * diverges. (This reverts the 2026-05-14 "Model B" choice, which was
+ * incompatible with the Model-A history crm2 built and still maintains.)
  */
 class ExpenseObserver
 {
@@ -45,6 +48,41 @@ class ExpenseObserver
 
         // Already-voided rows are immutable from a pool-balance standpoint.
         if ($expense->isVoided()) {
+            return;
+        }
+
+        // Status -> Rejected: reverse the pool deduction (Model A). The cash
+        // is "given back" on reject; the recompute also excludes rejected
+        // rows, so a rejected expense nets to zero pool impact.
+        if ($expense->isDirty('status') && $expense->status === ExpenseStatus::Rejected) {
+            if ($expense->paid_from_pool_id) {
+                $this->incrementPoolBalance($expense->paid_from_pool_id, $expense->amount);
+            }
+            $this->bustPoolCache((int) $expense->account_id);
+            Log::info('CashFlow: Expense rejected, pool reversed', ['expense_id' => $expense->id]);
+            return;
+        }
+
+        // Rejected -> Pending (resubmit / edit-save of a rejected row):
+        // re-apply the deduction with the current (possibly edited)
+        // amount + pool. Returns before the delta logic below so the full
+        // amount is re-debited, not a diff.
+        if ($expense->isDirty('status')
+            && $expense->status === ExpenseStatus::Pending
+            && $expense->getOriginal('status') === ExpenseStatus::Rejected
+        ) {
+            if ($expense->paid_from_pool_id) {
+                $this->decrementPoolBalance($expense->paid_from_pool_id, $expense->amount);
+            }
+            $this->bustPoolCache((int) $expense->account_id);
+            Log::info('CashFlow: Expense resubmitted, pool re-debited', ['expense_id' => $expense->id]);
+            return;
+        }
+
+        // A row that is still Rejected has no standing pool deduction (it was
+        // reversed at reject), so amount/pool edits on it must not adjust the
+        // pool.
+        if ($expense->status === ExpenseStatus::Rejected) {
             return;
         }
 
@@ -102,11 +140,16 @@ class ExpenseObserver
      */
     public function deleted(Expense $expense): void
     {
+        // Voided rows: void() already refunded the pool AND deleted the
+        // vendor tx — nothing to do.
         if ($expense->voided_at !== null) {
             return;
         }
 
-        if ($expense->paid_from_pool_id) {
+        // Rejected rows already had their pool deduction reversed at reject
+        // time (Model A), so do NOT refund the pool again. The vendor tx
+        // (untouched by reject) is still reversed below.
+        if ($expense->status !== ExpenseStatus::Rejected && $expense->paid_from_pool_id) {
             $this->incrementPoolBalance(
                 (int) $expense->paid_from_pool_id,
                 (float) $expense->amount,
@@ -140,7 +183,9 @@ class ExpenseObserver
             return;
         }
 
-        if ($expense->paid_from_pool_id) {
+        // A rejected row carries no pool deduction (reversed at reject), so
+        // restoring it must not re-debit the pool.
+        if ($expense->status !== ExpenseStatus::Rejected && $expense->paid_from_pool_id) {
             $this->decrementPoolBalance(
                 (int) $expense->paid_from_pool_id,
                 (float) $expense->amount,

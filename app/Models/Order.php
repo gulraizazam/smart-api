@@ -163,18 +163,28 @@ class Order extends BaseModel
     public static function createRecord($request, $account_id, $products)
     {
         $data = $request->all();
-        // Policy: orders cannot create patients. If a phone is provided
-        // it must already match an existing patient — otherwise the
-        // caller must book a consultation first to register them.
-        // Patient creation is owned exclusively by the consultation
-        // booking flow (AppointmentService::createAppointment).
+        // ORDER-TIME patient creation (parity with legacy crm2, ORDER-ONLY) —
+        // intentional exception to project_patient_creation_rule (2026-06-01):
+        // an order for a new phone registers a patient. Other entry points still
+        // reject; consultation remains the canonical creator. We register a
+        // PROPER, account-scoped patient (crm2 left user_type_id/account_id NULL).
         if (isset($data['name']) && isset($data['phone']) && $data['phone'] != '') {
             $patient = Patients::where(['phone' => $data['phone']])->first();
             if (! $patient) {
-                throw new \Symfony\Component\HttpKernel\Exception\HttpException(
-                    422,
-                    'No registered patient with this phone. Book a consultation first to register the patient.',
-                );
+                // Mirror the consultation flow's patient registration so all
+                // created patients are identical valid rows (password is NOT
+                // NULL on prod).
+                $patient = Patients::create([
+                    'name' => $data['name'],
+                    'phone' => $data['phone'],
+                    'email' => $data['email'] ?? null,
+                    'gender' => $data['gender'] ?? 0,
+                    'account_id' => $account_id,
+                    'user_type_id' => (int) config('constants.patient_id'),
+                    'password' => \Illuminate\Support\Facades\Hash::make(\Illuminate\Support\Str::random(16)),
+                    'active' => 1,
+                    'created_by' => Auth::id(),
+                ]);
             }
             $data['patient_id'] = $patient->id;
         }
@@ -321,10 +331,11 @@ class Order extends BaseModel
             // rows from refunds tied to this order.
             Stock::where('order_id', $id)->delete();
 
-            // The order delete fires OrderObserver::deleted() which
-            // cascades to the linked package_advances rows — that's how
-            // the cash-pool credit is reversed (see
-            // app/Observers/OrderObserver.php).
+            // Inventory orders are overlay-only — they never write a
+            // package_advances row and never credit cash_pools.cached_balance,
+            // so deleting one has no stored pool credit to reverse (the display
+            // overlay simply stops counting the removed order). No observer
+            // cascade is involved.
             $order->delete();
 
             return collect(['status' => true, 'message' => 'Record has been deleted successfully.']);

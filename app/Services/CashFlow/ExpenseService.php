@@ -551,12 +551,12 @@ class ExpenseService
             }
 
             $oldValues = $expense->only(['voided_at', 'voided_by', 'void_reason', 'is_flagged', 'flag_reason']);
-            // Reverse pool balance: increment pool (give money back).
-            // Under Model B (2026-05-14) the pool is debited at creation
-            // and stays debited through every non-void status — so void
-            // is the only path that refunds, regardless of the source
-            // status (Approved, Pending, or Rejected).
-            if ($expense->paid_from_pool_id) {
+            // Reverse pool balance: increment pool (give money back) — UNLESS
+            // the row is already Rejected. Under Model A, reject() already
+            // reversed the deduction, so refunding again on void would
+            // double-credit the pool. Approved/Pending rows still carry the
+            // debit and ARE refunded here.
+            if ($expense->paid_from_pool_id && $expense->status !== ExpenseStatus::Rejected) {
                 DB::table('cash_pools')
                     ->where('id', $expense->paid_from_pool_id)
                     ->increment('cached_balance', $expense->amount);
@@ -693,10 +693,11 @@ class ExpenseService
         // Without this, a single admin could create → reject → edit →
         // re-approve a row entirely on their own, with the audit trail
         // showing two normal-looking state changes by the same user.
-        // Reject itself doesn't change the pool (Model B), but it kicks
-        // the row back to the creator for re-edit, and if that creator
-        // is the SAME person who rejected, the SoD bypass on approve
-        // (which we DO block) becomes reachable via this loop.
+        // Reject reverses the pool deduction (Model A, applied by
+        // ExpenseObserver::updated when status flips to Rejected) and kicks
+        // the row back to the creator for re-edit; if that creator is the
+        // SAME person who rejected, the SoD bypass on approve (which we DO
+        // block) becomes reachable via this loop.
         if ((int) $expense->created_by === (int) Auth::id()) {
             throw new CashflowException(
                 'You cannot reject an expense you created. Another admin must review it.',

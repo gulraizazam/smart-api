@@ -324,24 +324,45 @@ class OrderService
         $patientId = $buyerType === 'patient' ? ($data['patient_id'] ?? null) : null;
         $employeeId = $buyerType === 'employee' ? ($data['employee_id'] ?? null) : null;
 
-        // Patient creation is owned by consultation booking — refuse to
-        // accept a phone for an unknown patient on this endpoint. Memory
-        // rule: project_patient_creation_rule.
+        // ORDER-TIME patient creation — an intentional, ORDER-ONLY exception to
+        // project_patient_creation_rule (2026-06-01): a product order for a new
+        // phone registers a patient, matching legacy crm2 so the shared patient
+        // data stays consistent across both apps during coexistence. Other entry
+        // points (treatment / appointment / drag-drop) STILL reject; consultation
+        // remains the canonical creator.
+        // NB: crm2's bare create(['name','phone']) left user_type_id/account_id
+        // NULL (orphan rows invisible to the patients_only scope). We instead
+        // register a PROPER, account-scoped patient.
         if ($buyerType === 'patient' && empty($patientId) && !empty($data['phone'])) {
             $existing = Patients::where('phone', $data['phone'])->first();
-            if (!$existing) {
-                throw new \Symfony\Component\HttpKernel\Exception\HttpException(
-                    422,
-                    'No registered patient with this phone. Book a consultation first to register the patient.',
-                );
+            if ($existing) {
+                $patientId = $existing->id;
+            } else {
+                // Register the patient the SAME way the consultation flow does
+                // (AppointmentService::createAppointment) so order- and
+                // consultation-created patients are identical, valid rows
+                // (user_type_id=patient, account-scoped, hashed random password
+                // — `users.password` is NOT NULL on prod).
+                $newPatient = Patients::create([
+                    'name' => $data['name'] ?? null,
+                    'phone' => $data['phone'],
+                    'email' => $data['email'] ?? null,
+                    'gender' => $data['gender'] ?? 0,
+                    'account_id' => $accountId,
+                    'user_type_id' => (int) config('constants.patient_id'),
+                    'password' => \Illuminate\Support\Facades\Hash::make(\Illuminate\Support\Str::random(16)),
+                    'active' => 1,
+                    'created_by' => Auth::id(),
+                ]);
+                $patientId = $newPatient->id;
             }
-            $patientId = $existing->id;
         }
 
         if ($buyerType === 'patient' && empty($patientId)) {
+            // No existing patient and no phone to register one.
             throw new \Symfony\Component\HttpKernel\Exception\HttpException(
                 422,
-                'Please select a patient for this order.',
+                'Please select a patient (or provide a name + phone) for this order.',
             );
         }
         if ($buyerType === 'employee' && empty($employeeId)) {
@@ -471,81 +492,22 @@ class OrderService
             $order->quantity = $totalUnits;
             $order->save();
 
-            // Revenue ledger row — every consultation / treatment payment
-            // writes to `package_advances` and the existing General Sales /
-            // Revenue Detail / Revenue Summary / Gender-Wise reports all
-            // read from there. Writing a parallel row on order create is
-            // how product sales surface in those reports without UNION-ing
-            // through every report query. Same DB::transaction wrap so the
-            // ledger row commits or rolls back together with the order.
-            $this->writeOrderRevenueLedger(
-                order: $order,
-                accountId: $accountId,
-                cashFlow: 'in',
-                isRefund: 0,
-            );
+            // Inventory (Order) sales are deliberately NOT written to
+            // package_advances and NOT folded into cash_pools.cached_balance.
+            // They are layered onto pool balances at DISPLAY time by
+            // PoolService::applyInventoryOverlay(), mirroring the legacy app.
+            //
+            // Why overlay-only: crm2 (Blade) and crm3 (SPA) share one prod DB
+            // and the same cached_balance column. If crm3 stored an order's
+            // revenue here (package_advances row -> PackageAdvanceObserver ->
+            // pool credit), crm2's own display overlay would double-count it,
+            // and so would crm3's. The previous writeOrderRevenueLedger() write
+            // also required a package_advances.order_id column that is absent on
+            // prod, making order creation fail there outright. Overlay-only
+            // keeps both apps consistent on the shared column.
 
             return $order;
         });
-    }
-
-    /**
-     * Write a `package_advances` row representing the cash event for an
-     * order (sale or refund). The legacy revenue reports read from this
-     * table, so this is what makes inventory sales appear in the General
-     * Sales / Revenue Summary / Revenue Detail reports.
-     *
-     * Column choices:
-     *   - `patient_id` is NOT NULL on the table — for employee buyers
-     *     (where `orders.patient_id` is null) we use `employee_id`. Both
-     *     are valid `users.id` values, so `$advance->user` resolves and
-     *     the reports' name/gender lookups don't crash.
-     *   - `appointment_type_id` is left null — there's no existing
-     *     enum value for "product order" and the report's
-     *     `isRevenueTransaction()` only checks the flag columns, not
-     *     this discriminator. Resolved as "Product Sale" / "Product
-     *     Refund" via the transtype label tweak in the report service.
-     *   - `package_id`, `invoice_id`, `appointment_id` are all null —
-     *     orders aren't tied to any of those entities.
-     */
-    private function writeOrderRevenueLedger(Order $order, int $accountId, string $cashFlow, int $isRefund): void
-    {
-        $buyerUserId = $order->patient_id ?: $order->employee_id;
-        if (!$buyerUserId) {
-            // No user to anchor the ledger row to — skip rather than
-            // throw, since the order itself is already committed and we
-            // don't want to roll the whole sale back over a reporting
-            // miss. Should not happen in practice (createOrder above
-            // hard-validates buyer presence) but guarded defensively.
-            return;
-        }
-
-        \App\Models\PackageAdvances::create([
-            'cash_flow' => $cashFlow,
-            'cash_amount' => $order->total_price,
-            'active' => 1,
-            'patient_id' => $buyerUserId,
-            'payment_mode_id' => $order->payment_mode,
-            'account_id' => $accountId,
-            'appointment_type_id' => null,
-            'appointment_id' => null,
-            'location_id' => $order->location_id,
-            'created_by' => $order->created_by ?? Auth::id(),
-            'package_id' => null,
-            'invoice_id' => null,
-            // Pin the ledger row to the originating order so
-            // OrderObserver::deleted() can cascade the reversal cleanly
-            // (delete this row → PackageAdvanceObserver::deleted() →
-            // pool decremented). Without this link the delete-cascade
-            // would have to guess by (location, amount, timestamp).
-            'order_id' => $order->id,
-            'is_cancel' => 0,
-            'is_tax' => 0,
-            'is_setteled' => 0,
-            'is_refund' => $isRefund,
-            'is_adjustment' => 0,
-            'refund_note' => null,
-        ]);
     }
 
     /**
@@ -816,21 +778,13 @@ class OrderService
                 $order->total_price = max(0, (float) $order->total_price - $refundedTotal);
                 $order->save();
 
-                // Revenue ledger — write a refund row to package_advances
-                // so the existing revenue reports net out correctly.
-                // `cash_amount` carries the absolute refund value (positive
-                // number); the report's `categorizeByPaymentMode()`
-                // already places `cash_flow='out'` rows into the refund_out
-                // bucket. Symmetric with the createOrder ledger row above.
-                $refundLedger = clone $order;
-                $refundLedger->total_price = $refundedTotal;
-                $refundLedger->created_by = Auth::id();
-                $this->writeOrderRevenueLedger(
-                    order: $refundLedger,
-                    accountId: $accountId,
-                    cashFlow: 'out',
-                    isRefund: 1,
-                );
+                // Inventory refunds are NOT written to package_advances and do
+                // NOT touch cash_pools.cached_balance — symmetric with the
+                // createOrder path. The refund is reflected at DISPLAY time by
+                // PoolService::applyInventoryOverlay() (which subtracts
+                // order_type='refund' rows), so both crm2 and crm3 stay
+                // consistent on the shared column. See createOrder for the
+                // full overlay-only rationale.
 
                 return ['success' => true, 'message' => 'Order has been refunded.'];
             });

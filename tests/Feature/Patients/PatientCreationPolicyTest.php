@@ -22,13 +22,17 @@ use Tests\Concerns\UsesFinancialFixtures;
 use Tests\TestCase;
 
 /**
- * Policy: a patient row (`users` with `user_type_id = 3`) may be
- * created **only** as a side-effect of a consultation booking.
- * Treatment booking, generic appointment booking, drag-drop, and
- * order/inventory sales must all reject brand-new phone numbers.
+ * Policy (revised 2026-06-01): a patient row (`users` with `user_type_id = 3`)
+ * is created by a consultation booking AND by a product ORDER (the order-only
+ * carve-out, for parity with legacy crm2 during coexistence). Treatment
+ * booking, generic appointment booking, and drag-drop STILL reject brand-new
+ * phone numbers.
  *
- * This test pins all four gates so a future refactor that re-opens
- * any of them — even accidentally — fails CI.
+ * This file pins the gates it exercises directly: treatment booking and generic
+ * (non-consultancy) appointment booking reject an unknown phone; consultation AND
+ * order register one — so a future refactor that flips any of them fails CI.
+ * (Drag-drop rejects through the same non-consultancy AppointmentService gate as
+ * the appointment test, so it is covered transitively, not by a separate case.)
  */
 class PatientCreationPolicyTest extends TestCase
 {
@@ -183,33 +187,42 @@ class PatientCreationPolicyTest extends TestCase
         }
     }
 
-    public function test_order_create_record_rejects_unknown_phone(): void
+    public function test_order_create_record_creates_patient_for_unknown_phone(): void
     {
+        // ORDER-ONLY carve-out (2026-06-01): an order for a NEW phone registers
+        // a patient (parity with legacy crm2). Other entry points still reject;
+        // consultation remains the canonical creator.
         $patientCountBefore = Patients::query()->count();
+        $phone = '+92303' . random_int(1000000, 9999999);
 
         $request = new Request([
             'name'           => 'Walk-in Customer',
-            'phone'          => '+92303' . random_int(1000000, 9999999),
+            'phone'          => $phone,
             'product_id'     => [],
             'quantity'       => [],
             'product_price'  => [],
             'sold_to'        => 'patient',
             'payment_mode'   => 'cash',
+            'location_id'    => $this->defaultLocation->id ?? 1,
+            'location_type'  => 'location_id',
+            'doctor_id'      => null,
+            'grand_total'    => 0,
         ]);
 
         try {
             Order::createRecord($request, 1, []);
-            $this->fail('Order::createRecord with an unknown phone must throw — patient creation is consultancy-only.');
-        } catch (HttpException $e) {
-            $this->assertSame(422, $e->getStatusCode());
-            $this->assertStringContainsString('Book a consultation first', $e->getMessage());
+        } catch (\Throwable) {
+            // Downstream order assembly may fail (no products/FKs) — out of
+            // scope; the patient is registered at the gate before that.
         }
 
-        $this->assertSame(
-            $patientCountBefore,
-            Patients::query()->count(),
-            'Order creation must NOT spawn a patient row.',
+        $created = Patients::where('phone', $phone)->first();
+        $this->assertNotNull(
+            $created,
+            'Order for an unknown phone must REGISTER a proper, visible patient (order-only carve-out).',
         );
+        $this->assertSame(1, (int) $created->account_id, 'order-created patient must be account-scoped (not an orphan).');
+        $this->assertSame($patientCountBefore + 1, Patients::query()->count(), 'exactly one patient registered.');
     }
 
     public function test_order_create_record_resolves_existing_patient_by_phone(): void
@@ -231,17 +244,18 @@ class PatientCreationPolicyTest extends TestCase
         ]);
 
         // Order::createRecord may still fail later (missing FKs, etc.)
-        // — we only care that the patient-creation gate did NOT trip.
+        // — we only care that the EXISTING patient was resolved by phone,
+        // not duplicated.
         try {
             Order::createRecord($request, 1, []);
         } catch (HttpException $e) {
-            // If we get here at all, it must NOT be 422 with the
-            // policy message — that would mean an existing patient
-            // was rejected.
+            // A known phone must RESOLVE to the existing patient; it must
+            // never 422 (the order-only carve-out creates only for an
+            // *unknown* phone, and an existing one is reused).
             $this->assertNotSame(
                 422,
                 $e->getStatusCode(),
-                'Order with an existing patient phone should not hit the patient-not-registered gate.',
+                'Order with an existing patient phone should resolve it, not reject.',
             );
         } catch (\Throwable) {
             // Other exceptions (missing FKs etc.) are fine — out of scope here.
@@ -250,7 +264,7 @@ class PatientCreationPolicyTest extends TestCase
         $this->assertSame(
             $patientCountBefore,
             Patients::query()->count(),
-            'Order::createRecord must never spawn a new patient, even for known phones.',
+            'Order::createRecord must resolve a known phone, never spawn a duplicate patient.',
         );
     }
 

@@ -273,10 +273,10 @@ class NotificationService
      */
     private function getUsersWithPermission(string $permission, int $accountId)
     {
-        return User::where('account_id', $accountId)
-            ->where('active', 1)
-            ->permission($permission)
-            ->get(['id', 'name']);
+        return $this->resolveRecipients(
+            $permission,
+            fn () => User::where('account_id', $accountId)->where('active', 1),
+        );
     }
 
     /**
@@ -284,12 +284,37 @@ class NotificationService
      */
     private function getBranchManagers(int $branchId, int $accountId)
     {
-        return User::where('account_id', $accountId)
-            ->where('active', 1)
-            ->permission('cashflow.dashboard.view')
-            ->whereHas('user_has_locations', function ($q) use ($branchId) {
-                $q->where('location_id', $branchId);
-            })
-            ->get(['id', 'name']);
+        return $this->resolveRecipients(
+            'cashflow.dashboard.view',
+            fn () => User::where('account_id', $accountId)
+                ->where('active', 1)
+                ->whereHas('user_has_locations', function ($q) use ($branchId) {
+                    $q->where('location_id', $branchId);
+                }),
+        );
+    }
+
+    /**
+     * Resolve notification recipients by permission WITHOUT ever letting a
+     * missing permission row 500 the originating action (transfer, advance,
+     * expense, …). Spatie's `permission()` scope throws PermissionDoesNotExist
+     * when the slug isn't in the catalog; during the crm2→crm3 coexistence
+     * rollout the dotted catalog can be partially seeded, so a missing slug
+     * must degrade to "no recipients" (skip the notification) rather than
+     * abort the user's actual operation. Logged so the gap is visible.
+     *
+     * @param  \Closure():\Illuminate\Database\Eloquent\Builder  $build
+     */
+    private function resolveRecipients(string $permission, \Closure $build)
+    {
+        try {
+            return $build()->permission($permission)->get(['id', 'name']);
+        } catch (\Spatie\Permission\Exceptions\PermissionDoesNotExist) {
+            \Illuminate\Support\Facades\Log::warning(
+                "Cashflow notification: permission '{$permission}' not found in the catalog; resolved 0 recipients.",
+            );
+
+            return new \Illuminate\Database\Eloquent\Collection();
+        }
     }
 }
