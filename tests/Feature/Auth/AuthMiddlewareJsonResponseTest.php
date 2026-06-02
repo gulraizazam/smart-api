@@ -97,6 +97,6 @@ class AuthMiddlewareJsonResponseTest extends TestCase
         // and we want it to survive Blade retirement.
         $response = $this->get('/api/__test/auth');
 
-        $response->assertRedirect('/admin-v2/login');
+        $response->assertRedirect(rtrim((string) config('app.spa_url'), '/').'/login');
     }
 }

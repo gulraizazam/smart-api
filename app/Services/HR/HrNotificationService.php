@@ -14,15 +14,24 @@ use Spatie\Permission\Models\Permission;
 class HrNotificationService
 {
     /**
-     * Where to send the notification's recipient when they click — points
-     * at the SPA's HR Leaves page (mounted under `/admin-v2/`). Was
+     * Path (relative to the SPA host, config app.spa_url) the notification
+     * recipient lands on when they click — the SPA's HR Leaves page. Was
      * `route('admin.hr.leave-applications.index')` and `route('admin.hr.
      * my.leaves')` — both legacy Blade routes that die at cutover. Kept
      * as a single SPA path for both HR-side and self-service flows since
      * the SPA hasn't shipped a dedicated "my leaves" view yet; the HR
      * Leaves page covers both surfaces in the meantime.
      */
-    private const SPA_HR_LEAVE_APPLICATIONS_URL = '/admin-v2/hr/leave-applications';
+    private const SPA_HR_LEAVE_APPLICATIONS_PATH = '/hr/leave-applications';
+
+    /**
+     * Absolute SPA deep-link to the HR Leaves page, built from the
+     * configured SPA host (config app.spa_url, e.g. crm3.cutera.pk).
+     */
+    private function leaveApplicationsUrl(): string
+    {
+        return rtrim((string) config('app.spa_url'), '/').self::SPA_HR_LEAVE_APPLICATIONS_PATH;
+    }
 
     /**
      * Create a notification for a specific user.
@@ -107,7 +116,7 @@ class HrNotificationService
             "{$empName} applied for {$leaveType} ({$application->total_days} days).",
             $application->id,
             LeaveApplication::class,
-            self::SPA_HR_LEAVE_APPLICATIONS_URL,
+            $this->leaveApplicationsUrl(),
         );
     }
 
@@ -126,7 +135,7 @@ class HrNotificationService
             $application->account_id,
             $application->id,
             LeaveApplication::class,
-            self::SPA_HR_LEAVE_APPLICATIONS_URL,
+            $this->leaveApplicationsUrl(),
         );
     }
 
@@ -145,7 +154,7 @@ class HrNotificationService
             $application->account_id,
             $application->id,
             LeaveApplication::class,
-            self::SPA_HR_LEAVE_APPLICATIONS_URL,
+            $this->leaveApplicationsUrl(),
         );
     }
 
@@ -165,7 +174,7 @@ class HrNotificationService
             "{$empName} cancelled their {$application->leaveType->name} leave request.",
             $application->id,
             LeaveApplication::class,
-            self::SPA_HR_LEAVE_APPLICATIONS_URL,
+            $this->leaveApplicationsUrl(),
         );
     }
 

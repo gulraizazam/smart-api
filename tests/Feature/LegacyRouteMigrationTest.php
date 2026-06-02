@@ -168,45 +168,34 @@ class LegacyRouteMigrationTest extends TestCase
         // must point at the SPA path, not at a `route('admin.hr.*')`
         // call (which dies at cutover).
         $reflection = new \ReflectionClass(HrNotificationService::class);
-        $url = $reflection->getConstant('SPA_HR_LEAVE_APPLICATIONS_URL');
+        $path = $reflection->getConstant('SPA_HR_LEAVE_APPLICATIONS_PATH');
 
-        $this->assertIsString($url);
-        $this->assertStringStartsWith('/admin-v2/', $url);
-        $this->assertStringNotContainsString('/admin/hr', $url);
-    }
-
-    /**
-     * Round 4 (Phase 0 cutover hardening): pin the redirect targets that
-     * used to point at Blade routes which disappear at cutover.
-     */
-    public function test_app_service_provider_home_constant_targets_spa(): void
-    {
-        // Consumed by RedirectIfAuthenticated::handle and by laravel/ui's
-        // Auth controllers ($redirectTo). Was '/admin/home' (legacy
-        // Blade); must point at the SPA mount so the redirect target
-        // outlives the legacy frontend.
-        $this->assertSame('/admin-v2/', \App\Providers\AppServiceProvider::HOME);
+        $this->assertIsString($path);
+        $this->assertSame('/hr/leave-applications', $path);
+        $this->assertStringNotContainsString('/admin-v2', $path);
+        $this->assertStringNotContainsString('/admin/hr', $path);
     }
 
     public function test_root_redirects_to_spa_not_blade_login(): void
     {
         // GET / used to redirect to route('login') — a legacy Blade
-        // route that dies at cutover. Now sends users straight to the
-        // SPA mount.
-        $this->get('/')->assertRedirect('/admin-v2/');
+        // route that dies at cutover. Now sends users to the standalone
+        // SPA host (config app.spa_url).
+        $this->get('/')->assertRedirect(config('app.spa_url'));
     }
 
-    public function test_config_spa_url_is_registered_and_resolves_to_spa_mount(): void
+    public function test_config_spa_url_is_registered_and_points_at_spa_host(): void
     {
-        // Future emails / notifications / deep-links read this config
-        // instead of hardcoding '/admin-v2/...'. Pinning the resolution
-        // catches an env tweak that would silently emit the wrong URL
-        // into a production password-reset email.
+        // Emails / notifications / deep-links read this config instead of
+        // hardcoding a path. Pinning the resolution catches an env tweak
+        // that would silently emit the wrong URL into a production
+        // password-reset email.
         $url = config('app.spa_url');
 
         $this->assertIsString($url);
         $this->assertNotSame('', $url);
-        $this->assertStringContainsString('/admin-v2', $url);
+        $this->assertStringStartsWith('http', $url);
+        $this->assertStringNotContainsString('/admin-v2', $url);
     }
 
     /**

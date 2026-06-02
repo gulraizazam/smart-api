@@ -78,16 +78,6 @@ use Spatie\Permission\PermissionRegistrar;
 
 class AppServiceProvider extends ServiceProvider
 {
-    /**
-     * Where authenticated users land when they hit a "guest only" route
-     * (login, register, password reset). Was the legacy Blade home page;
-     * now points at the SPA mount inside `public/admin-v2/`. Consumed by
-     * `RedirectIfAuthenticated` and by laravel/ui's auth scaffolding
-     * (`$redirectTo` on the Auth\* controllers — those die with the
-     * legacy frontend in Phase 3, but read the constant until then).
-     */
-    public const HOME = '/admin-v2/';
-
     public function register(): void
     {
         // Bind R2DocumentService against the private `r2_invoices` disk for

@@ -8,6 +8,8 @@ Default thought order: **business logic preserved → security → data integrit
 
 **crm2 coexistence (hard constraint).** crm2 (legacy Blade, branch `production`) and crm3 (this backend's `staging`/feature line + the SPA) run **on one shared production DB**, and will until crm2 is deliberately disconnected. A change here must **never break crm2**: don't delete/rename a legacy snake_case permission, strip a legacy role grant, or drop/rename a shared column / response shape crm2 reads — crm2 has **no** permission bridge, so it would silently 403/500. Mirror prod locally once with `scripts/setup-local-coexistence.sh`; before shipping any DB / permission / shared-schema change run `scripts/coexistence-check.sh` (must PASS). The legacy↔dotted bridge is pinned exhaustively by `tests/Feature/Permissions/PermissionAliasBridgeTest.php` (runs in CI). Breaking a crm2 contract is a deliberate "disconnect crm2" decision — surface it, never silent. See `docs/LOCAL-COEXISTENCE.md`.
 
+**Server access (SSH) — explicit per-action approval, always.** ANY action on the live server via SSH — **READ or WRITE** (diagnostics, log tails, `grep`/`cat`, `php artisan`, `.env`/config edits, deploys — anything) — must be **explicitly approved by the user for that specific action, every time.** No blanket/standing approval; never assume from a prior "yes", a general "go ahead", a task instruction, or because it's "only read-only". Propose the exact command + what it does, then wait for an explicit yes for *that* action. All development is done **locally**; code deploys via the git pipeline, **never** SSH-pushed. (An assumed-approval `config:clear` already broke crm3 login once — this gate is strict.)
+
 ---
 
 ## Roles (all active, always)
