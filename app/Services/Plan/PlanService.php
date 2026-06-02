@@ -1141,31 +1141,13 @@ final class PlanService
             // already imply (their `location_id` IS the centre).
             $selectedUserId = null;
             if (! empty($appointmentArray)) {
-                $firstAppointment = reset($appointmentArray);
-                $selectedUserId = $firstAppointment['doctor_id'];
+                $selectedUserId = reset($appointmentArray)['doctor_id'];
             }
 
-            $recentTreatmentDoctorIds = DB::table('appointments')
-                ->where('patient_id', $patientId)
-                ->where('location_id', $locationId)
-                ->where('appointment_status_id', 2)
-                ->where('appointment_type_id', 2)
-                ->where('scheduled_date', '>=', now()->subDays(30)->format('Y-m-d'))
-                ->pluck('doctor_id')
-                ->unique()
-                ->toArray();
-
-            $userIdsToShow = array_unique(array_merge(
-                $selectedUserId ? [$selectedUserId] : [],
-                $recentTreatmentDoctorIds,
-            ));
-
-            $usersToShow = empty($userIdsToShow)
-                ? []
-                : DB::table('users')
-                    ->whereIn('id', $userIdsToShow)
-                    ->pluck('name', 'id')
-                    ->toArray();
+            // Shared with the Reassign-pencil path (getSoldByData) via
+            // patientContextSoldByUsers() so the Add and Reassign dropdowns
+            // stay identical and can't drift apart again.
+            $usersToShow = $this->patientContextSoldByUsers((int) $patientId, (int) $locationId);
 
             return [
                 'appointments' => $appointmentArray,
@@ -1184,6 +1166,62 @@ final class PlanService
                 'selected_doctor_id' => null,
             ];
         }
+    }
+
+    /**
+     * Patient-context sold-by eligibility — the SINGLE source of truth for who
+     * may be credited with a sale on a plan, shared by the Add-row dropdown
+     * (getAppointmentInfo) and the Reassign-pencil dropdown (getSoldByData) so
+     * they can never diverge. (They did: the Reassign copy was reverted to a
+     * broad "all centre doctors + FDM" pool on 2026-05-22, silently breaking
+     * SoldByEligibilityTest. Restored + unified 2026-06-03.)
+     *
+     * Rule (2026-05-02 product clarification): ELIGIBLE = the doctor on the
+     * patient's most-recent arrived/converted consultancy at this centre, plus
+     * any doctors who treated this patient at this centre in the last 30 days.
+     * No allocation filter, no centre-membership filter, no FDM bypass — the
+     * appointments' own location_id already scopes to the centre.
+     *
+     * @return array<int, string> [user_id => name]
+     */
+    private function patientContextSoldByUsers(int $patientId, int $locationId): array
+    {
+        $arrivedStatusId = DB::table('appointment_statuses')->where('is_arrived', 1)->value('id');
+        $convertedStatusId = DB::table('appointment_statuses')->where('is_converted', 1)->value('id');
+        $validStatusIds = array_values(array_filter([$arrivedStatusId, $convertedStatusId]));
+        $consultancyTypeId = DB::table('appointment_types')->where('slug', 'consultancy')->value('id');
+
+        // Doctor on the patient's most-recent arrived/converted consultancy at
+        // this centre (the same doctor the auto-pick selects).
+        $consultingDoctorId = DB::table('appointments')
+            ->where('patient_id', $patientId)
+            ->where('location_id', $locationId)
+            ->where('appointment_type_id', $consultancyTypeId)
+            ->whereIn('appointment_status_id', $validStatusIds)
+            ->whereNull('deleted_at')
+            ->orderByDesc('scheduled_date')
+            ->orderByDesc('scheduled_time')
+            ->value('doctor_id');
+
+        // Doctors who treated this patient at this centre in the last 30 days.
+        $recentTreatmentDoctorIds = DB::table('appointments')
+            ->where('patient_id', $patientId)
+            ->where('location_id', $locationId)
+            ->where('appointment_status_id', 2)
+            ->where('appointment_type_id', 2)
+            ->where('scheduled_date', '>=', now()->subDays(30)->format('Y-m-d'))
+            ->pluck('doctor_id')
+            ->unique()
+            ->toArray();
+
+        $userIds = array_values(array_unique(array_merge(
+            $consultingDoctorId ? [$consultingDoctorId] : [],
+            $recentTreatmentDoctorIds,
+        )));
+
+        return empty($userIds)
+            ? []
+            : DB::table('users')->whereIn('id', $userIds)->pluck('name', 'id')->toArray();
     }
 
     // ──────────────────────────────────────────────────
@@ -5105,28 +5143,16 @@ final class PlanService
             return ['success' => false, 'message' => 'Package service or bundle ID required'];
         }
 
-        // Sold-by eligibility — broad pool. Matches the reassign-time
-        // expectation (operators correct attribution after the fact and
-        // need to be able to pick any doctor/FDM working at the centre,
-        // not just the one auto-picked at create time).
-        //
-        //   ELIGIBLE = all active doctors allocated to this centre
-        //            ∪ all active FDM users assigned to this centre
-        //            ∪ current sold_by (always — for audit continuity
-        //              when the prior user has since moved or gone
-        //              inactive)
-        //
-        // Mirrors `OrderService::getDoctorsWithFDM` — the same union
-        // already used by the order surface to populate sold-by-style
-        // doctor pickers. The narrower patient-context-only policy that
-        // briefly lived here (2026-05-02 → 2026-05-22) returned empty
-        // dropdowns for any plan whose patient had no consultancy /
-        // recent-treatment history at the centre, blocking corrections.
+        // Sold-by eligibility — patient-context ONLY (2026-05-02 rule),
+        // SHARED with the Add-row path (getAppointmentInfo) via
+        // patientContextSoldByUsers() so the two dropdowns stay in lockstep.
+        // A broad "all centre doctors + FDM" pool was reverted in here on
+        // 2026-05-22 and silently broke that lockstep (SoldByEligibilityTest);
+        // restored 2026-06-03. NO allocation pool, NO FDM bypass. The current
+        // sold_by is always kept for audit continuity on legacy/transferred
+        // plans whose patient has no recent context at the centre.
         $usersToShow = [];
 
-        // Always include the current sold_by — preserves attribution
-        // on legacy/transferred plans even if the user has since
-        // changed roles, left the centre, or gone inactive.
         if ($currentSoldBy) {
             $currentSoldByUser = User::find($currentSoldBy);
             if ($currentSoldByUser) {
@@ -5134,47 +5160,9 @@ final class PlanService
             }
         }
 
-        // Active doctors allocated to this centre via doctor_has_locations.
-        $doctorIds = DoctorHasLocations::where('is_allocated', 1)
-            ->where('location_id', $locationId)
-            ->pluck('user_id')
-            ->toArray();
-
-        if (! empty($doctorIds)) {
-            $doctors = User::whereIn('id', $doctorIds)
-                ->where('active', 1)
-                ->pluck('name', 'id')
-                ->toArray();
-            foreach ($doctors as $uId => $uName) {
-                if (! array_key_exists($uId, $usersToShow)) {
-                    $usersToShow[$uId] = $uName;
-                }
-            }
-        }
-
-        // Active FDM users assigned to this centre: intersection of
-        // user_has_locations (centre assignment) × role_has_users for the
-        // FDM role. Same pattern as OrderService::getDoctorsWithFDM.
-        $fdmRoleId = DB::table('roles')->where('name', 'FDM')->value('id');
-        if ($fdmRoleId) {
-            $centreUserIds = UserHasLocations::where('location_id', $locationId)
-                ->pluck('user_id')
-                ->toArray();
-            $fdmRoleUserIds = RoleHasUsers::where('role_id', $fdmRoleId)
-                ->pluck('user_id')
-                ->toArray();
-            $fdmUserIds = array_intersect($centreUserIds, $fdmRoleUserIds);
-
-            if (! empty($fdmUserIds)) {
-                $fdmUsers = User::whereIn('id', $fdmUserIds)
-                    ->where('active', 1)
-                    ->pluck('name', 'id')
-                    ->toArray();
-                foreach ($fdmUsers as $uId => $uName) {
-                    if (! array_key_exists($uId, $usersToShow)) {
-                        $usersToShow[$uId] = $uName;
-                    }
-                }
+        foreach ($this->patientContextSoldByUsers((int) ($package?->patient_id ?? 0), (int) $locationId) as $uId => $uName) {
+            if (! array_key_exists($uId, $usersToShow)) {
+                $usersToShow[$uId] = $uName;
             }
         }
 
