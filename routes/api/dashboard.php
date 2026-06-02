@@ -44,7 +44,7 @@ Route::prefix('doctor-dashboard')->name('doctor_dashboard.')->group(function () 
 // so the ceiling is sized above a cold-load burst but below abuse levels.
 Route::prefix('management-dashboard')
     ->name('management_dashboard_api.')
-    ->middleware(['can:management_dashboard.view', 'throttle:120,1'])
+    ->middleware(['can:access-management-dashboard-api', 'throttle:120,1'])
     ->group(function () {
         Route::get('filter-branches', [ManagementDashboardApiController::class, 'filterBranches'])->name('filter_branches');
         Route::get('overview', [ManagementDashboardApiController::class, 'overview'])->name('overview');
