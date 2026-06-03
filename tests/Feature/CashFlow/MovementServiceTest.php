@@ -127,6 +127,32 @@ class MovementServiceTest extends TestCase
         ]);
     }
 
+    public function test_pool_to_pool_defaults_method_to_cash_when_omitted(): void
+    {
+        // The unified cash-movement form doesn't ask for a method — these
+        // are cash movements, so an omitted method must persist as
+        // physical_cash. Regression guard for the prod 500 where a null
+        // method hit `cash_transfers.method`'s NOT NULL constraint
+        // (branch→branch "Something went wrong on our end").
+        $movement = $this->movementService->create(1, [
+            'source_type' => 'pool',
+            'source_id' => $this->poolA->id,
+            'dest_type' => 'pool',
+            'dest_id' => $this->poolB->id,
+            'amount' => 35000,
+            'transfer_date' => now()->toDateString(),
+            'description' => 'cash move to I8 for EXP',
+            // NOTE: no 'method' key — mirrors the SPA payload exactly.
+        ]);
+
+        $this->assertSame('transfer', $movement['kind']);
+        $this->assertSame(CashTransfer::METHOD_PHYSICAL_CASH, $movement['method']);
+        $this->assertDatabaseHas('cash_transfers', [
+            'id' => $movement['id'],
+            'method' => CashTransfer::METHOD_PHYSICAL_CASH,
+        ]);
+    }
+
     public function test_pool_to_staff_dispatches_to_create_advance(): void
     {
         $movement = $this->movementService->create(1, [

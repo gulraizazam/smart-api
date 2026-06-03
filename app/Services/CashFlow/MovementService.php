@@ -117,16 +117,21 @@ class MovementService
         $destType = $data['dest_type'] ?? null;
 
         if ($sourceType === self::SOURCE_POOL && $destType === self::SOURCE_POOL) {
-            // method + reference_no + attachment_url are nullable since
-            // 2026-05-15 (SPA dropped them; backend may still receive
-            // them from legacy callers). New SPA uploads come through
-            // `attachment_ids` and bind below.
+            // The unified "cash movement" form doesn't collect a transfer
+            // method — by product definition these are CASH movements, so
+            // method defaults to physical_cash when the caller omits it (a
+            // legacy caller that still sends `method` is respected). This
+            // also keeps production happy where `cash_transfers.method` is
+            // still NOT NULL, without depending on the make-nullable
+            // migration landing. reference_no + attachment_url stay
+            // nullable; new SPA uploads come through `attachment_ids` and
+            // bind below.
             $transfer = $this->transferService->create([
                 'transfer_date' => $data['transfer_date'],
                 'amount' => $data['amount'],
                 'from_pool_id' => (int) $data['source_id'],
                 'to_pool_id' => (int) $data['dest_id'],
-                'method' => $data['method'] ?? null,
+                'method' => $data['method'] ?? CashTransfer::METHOD_PHYSICAL_CASH,
                 'reference_no' => $data['reference_no'] ?? null,
                 'attachment_url' => $data['attachment_url'] ?? null,
                 'description' => $data['description'] ?? null,
