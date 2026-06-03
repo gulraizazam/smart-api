@@ -3844,11 +3844,22 @@ final class PlanService
 
     private function getPatientMembershipDisplay(int|string $patientId): string
     {
+        // Membership assignments live in `memberships` keyed by `patient_id`.
+        // There is no `user_memberships` table — this previously joined a
+        // phantom table and threw "Table 'user_memberships' doesn't exist" on
+        // the patient-create form. Mirror the sibling getMembershipForLocation():
+        // skip soft-deleted rows and surface the active, non-expired membership
+        // first, then the most recently assigned.
         $patient = DB::table('users')
-            ->leftJoin('user_memberships', 'users.id', '=', 'user_memberships.user_id')
-            ->leftJoin('membership_types', 'user_memberships.membership_type_id', '=', 'membership_types.id')
+            ->leftJoin('memberships', function ($join): void {
+                $join->on('users.id', '=', 'memberships.patient_id')
+                    ->whereNull('memberships.deleted_at');
+            })
+            ->leftJoin('membership_types', 'memberships.membership_type_id', '=', 'membership_types.id')
             ->where('users.id', $patientId)
-            ->select('user_memberships.id as membership_id', 'membership_types.name as membership_name', 'user_memberships.end_date', 'user_memberships.active')
+            ->select('memberships.id as membership_id', 'membership_types.name as membership_name', 'memberships.end_date', 'memberships.active')
+            ->orderByRaw('CASE WHEN memberships.end_date >= ? AND memberships.active = 1 THEN 0 ELSE 1 END', [now()->format('Y-m-d')])
+            ->orderByDesc('memberships.assigned_at')
             ->first();
 
         if (! $patient?->membership_id) {
