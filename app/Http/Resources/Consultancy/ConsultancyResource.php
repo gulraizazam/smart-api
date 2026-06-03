@@ -5,27 +5,18 @@ declare(strict_types=1);
 namespace App\Http\Resources\Consultancy;
 
 use App\Enums\ConsultancyType;
-use App\Helpers\AppointmentHelper;
-use App\Models\InvoiceStatuses;
-use App\Models\Invoices;
+use App\Http\Resources\Concerns\ResolvesAppointmentRowFlags;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 
 class ConsultancyResource extends JsonResource
 {
-    /**
-     * Memoised paid-invoice status id, keyed by account_id. The
-     * `invoice_statuses` table is account-scoped so the slug='paid' row
-     * has a different id per tenant; a single static would leak between
-     * accounts when the same FPM worker handles requests for multiple
-     * tenants. The map keeps each account's lookup isolated.
-     *
-     * @var array<int, int|null>
-     */
-    private static array $paidInvoiceStatusIdByAccount = [];
+    // Shared `has_paid_invoice` / `has_children` resolution + the
+    // batch `preload()` the list endpoint calls to avoid the per-row
+    // N+1. See the trait for the full rationale.
+    use ResolvesAppointmentRowFlags;
 
     public function toArray(Request $request): array
     {
@@ -89,10 +80,7 @@ class ConsultancyResource extends JsonResource
             // delete when invoices/advances/measurements/images exist
             // (AppointmentHelper::isChildExists). Surfacing the flag lets
             // the SPA grey the icon out before the click.
-            'has_children' => AppointmentHelper::isChildExists(
-                (int) $this->id,
-                (int) (Auth::user()?->account_id ?? 0),
-            ),
+            'has_children' => $this->resolveHasChildren(),
             'patient' => $this->whenLoaded('patient', function () use ($canViewContact): array {
                 $patient = [
                     'id' => $this->patient->id,
@@ -128,33 +116,5 @@ class ConsultancyResource extends JsonResource
             'created_at' => $this->created_at?->format('Y-m-d H:i:s'),
             'updated_at' => $this->updated_at?->format('Y-m-d H:i:s'),
         ];
-    }
-
-    private function resolveHasPaidInvoice(): bool
-    {
-        $accountId = (int) ($this->account_id ?? 0);
-        if ($accountId <= 0) {
-            return false;
-        }
-        $paidId = $this->paidInvoiceStatusIdFor($accountId);
-        if (! $paidId) {
-            return false;
-        }
-
-        return Invoices::where('appointment_id', $this->id)
-            ->where('invoice_status_id', $paidId)
-            ->exists();
-    }
-
-    private function paidInvoiceStatusIdFor(int $accountId): ?int
-    {
-        if (! array_key_exists($accountId, self::$paidInvoiceStatusIdByAccount)) {
-            $id = (int) InvoiceStatuses::where('slug', '=', 'paid')
-                ->where('account_id', $accountId)
-                ->value('id');
-            self::$paidInvoiceStatusIdByAccount[$accountId] = $id > 0 ? $id : null;
-        }
-
-        return self::$paidInvoiceStatusIdByAccount[$accountId];
     }
 }

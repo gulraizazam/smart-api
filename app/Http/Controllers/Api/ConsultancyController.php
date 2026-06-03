@@ -61,14 +61,24 @@ class ConsultancyController extends Controller
             $query = $this->consultancyService->getConsultancyList($filters);
 
             if ($request->get('paginate') === 'false') {
+                $rows = $query->get();
+                // Batch-resolve the per-row `has_paid_invoice` /
+                // `has_children` flags so the resource doesn't fire
+                // EXISTS queries per row (was the list's N+1 hot spot).
+                ConsultancyResource::preload($rows);
+
                 return $this->successResponse(
                     'Consultancies retrieved successfully.',
-                    ConsultancyResource::collection($query->get()),
+                    ConsultancyResource::collection($rows),
                 );
             }
 
             $perPage = max(1, min((int) $request->get('per_page', 15), 100));
             $paginator = $query->paginate($perPage)->appends($request->query());
+
+            // Same batch preload for the paginated path — collapses the
+            // page's per-row EXISTS queries into a fixed handful.
+            ConsultancyResource::preload($paginator->getCollection());
 
             return $this->paginatedResponse(
                 'Consultancies retrieved successfully.',

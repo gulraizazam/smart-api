@@ -904,6 +904,15 @@ class AppointmentService
                     : null;
                 if ($currentScheduledDate !== $newScheduledDate) {
                     $appointmentData['rescheduled_count'] = ((int) $appointment->rescheduled_count) + 1;
+
+                    // Date moved → re-notify the patient with the booking
+                    // SMS, following the same cron + active-template rules
+                    // as creation. Guarded to Booked/pending so an
+                    // Arrived/Converted row never re-fires. A time-only
+                    // edit doesn't enter this block, so it never re-sends.
+                    if ((int) $appointment->base_appointment_status_id === (int) Config::get('constants.appointment_status_pending', 1)) {
+                        $appointmentData['send_message'] = 1;
+                    }
                 }
             }
 
@@ -1325,6 +1334,23 @@ class AppointmentService
             $oldDoctorId = $appointment->doctor_id;
             $oldDateNorm = $oldScheduledDateRaw ? Carbon::parse($oldScheduledDateRaw)->format('Y-m-d') : null;
             $oldTimeNorm = $oldScheduledTimeRaw ? Carbon::parse($oldScheduledTimeRaw)->format('H:i:s') : null;
+
+            // Reschedule SMS: a DATE change (not a time-only move) on a
+            // still-Booked appointment re-arms the booking-confirmation
+            // SMS so the patient is re-notified. The same cron
+            // (appointment:deliver-on-appointment-book) + active-template
+            // pipeline then delivers it exactly as it did for the original
+            // booking. A time-only move and any change on an
+            // Arrived/Converted row never re-notify.
+            $rescheduleNewDate = isset($updateData['scheduled_date'])
+                ? Carbon::parse($updateData['scheduled_date'])->format('Y-m-d')
+                : $oldDateNorm;
+            if (
+                $oldDateNorm !== $rescheduleNewDate
+                && (int) $appointment->base_appointment_status_id === (int) Config::get('constants.appointment_status_pending', 1)
+            ) {
+                $updateData['send_message'] = 1;
+            }
 
             $appointment->update($updateData);
 

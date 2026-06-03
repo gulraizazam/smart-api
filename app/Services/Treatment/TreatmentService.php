@@ -306,7 +306,17 @@ final class TreatmentService
             ? $validated['resourceId']
             : $appointment->resource_id;
 
-        return DB::transaction(function () use ($data, $appointment, $accountId): array {
+        // A drag can be a same-day time move or a cross-day move. Only a
+        // DATE change counts as a reschedule for SMS purposes.
+        $oldDragDate = $appointment->scheduled_date
+            ? Carbon::parse($appointment->scheduled_date)->format('Y-m-d')
+            : null;
+        $newDragDate = ! empty($validated['start'])
+            ? Carbon::parse($validated['start'])->format('Y-m-d')
+            : $oldDragDate;
+        $dragDateChanged = $oldDragDate !== $newDragDate;
+
+        return DB::transaction(function () use ($data, $appointment, $accountId, $dragDateChanged): array {
             $record = Appointments::updateServiceRecord($data['id'], $data, $accountId);
             if (! $record) {
                 throw TreatmentException::operationFailed('Failed to update appointment.');
@@ -314,12 +324,19 @@ final class TreatmentService
 
             $defaultStatus = AppointmentStatuses::getADefaultStatusOnly($accountId);
             if ($defaultStatus) {
-                $record->update([
+                $statusUpdate = [
                     'appointment_status_id' => $defaultStatus->id,
                     'base_appointment_status_id' => $defaultStatus->id,
                     'appointment_status_allow_message' => $defaultStatus->allow_message,
-                    'send_message' => 1,
-                ]);
+                ];
+                // Re-notify only when the DATE moved — a same-day
+                // time-only drag doesn't re-send. Don't clear an already-
+                // pending flag on a time-only move either; the original
+                // booking SMS must still go out.
+                if ($dragDateChanged) {
+                    $statusUpdate['send_message'] = 1;
+                }
+                $record->update($statusUpdate);
             }
 
             ActivityLogger::saveAppointmentLogs('rescheduled', 'Treatment', $record);
