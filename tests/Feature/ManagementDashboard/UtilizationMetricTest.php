@@ -409,6 +409,108 @@ class UtilizationMetricTest extends TestCase
         $this->assertSame(30, $row['cancelled_minutes']);
     }
 
+    /* Rule 11: util % = busy ÷ available. 9h shift = 480 net available;
+       240 busy → exactly 50%. */
+    public function test_util_pct_is_busy_over_available(): void
+    {
+        $this->seedRotaDay(self::BRANCH_ALLOCATED, '2026-03-02', '12:00', '21:00'); // 480 net
+        $this->seedAppointment('2026-03-02', '13:00', $this->seedServiceWithDuration('04:00'), $this->arrivedStatusId); // 240
+
+        $row = $this->row($this->compute('2026-03-02', '2026-03-02'));
+
+        $this->assertSame(480, $row['available_minutes']);
+        $this->assertSame(240, $row['busy_minutes']);
+        $this->assertSame(50.0, $row['util_pct']);
+    }
+
+    /* Rule 12: band thresholds. green > 60, amber 40–60 (inclusive of
+       both ends), red < 40. Available fixed at 480 so busy sets the %. */
+    public function test_band_above_60_is_green(): void
+    {
+        $this->seedRotaDay(self::BRANCH_ALLOCATED, '2026-03-02', '12:00', '21:00'); // 480
+        $this->seedAppointment('2026-03-02', '13:00', $this->seedServiceWithDuration('04:50'), $this->arrivedStatusId); // 290 → 60.4%
+
+        $row = $this->row($this->compute('2026-03-02', '2026-03-02'));
+
+        $this->assertEqualsWithDelta(60.4, $row['util_pct'], 0.05);
+        $this->assertSame('green', $row['health']);
+    }
+
+    public function test_band_exactly_60_is_amber(): void
+    {
+        $this->seedRotaDay(self::BRANCH_ALLOCATED, '2026-03-02', '12:00', '21:00'); // 480
+        $this->seedAppointment('2026-03-02', '13:00', $this->seedServiceWithDuration('04:48'), $this->arrivedStatusId); // 288 → 60.0%
+
+        $row = $this->row($this->compute('2026-03-02', '2026-03-02'));
+
+        $this->assertSame(60.0, $row['util_pct']);
+        $this->assertSame('amber', $row['health'], 'exactly 60% is amber — green is strictly above 60');
+    }
+
+    public function test_band_exactly_40_is_amber(): void
+    {
+        $this->seedRotaDay(self::BRANCH_ALLOCATED, '2026-03-02', '12:00', '21:00'); // 480
+        $this->seedAppointment('2026-03-02', '13:00', $this->seedServiceWithDuration('03:12'), $this->arrivedStatusId); // 192 → 40.0%
+
+        $row = $this->row($this->compute('2026-03-02', '2026-03-02'));
+
+        $this->assertSame(40.0, $row['util_pct']);
+        $this->assertSame('amber', $row['health'], '40% is the amber floor');
+    }
+
+    public function test_band_below_40_is_red(): void
+    {
+        $this->seedRotaDay(self::BRANCH_ALLOCATED, '2026-03-02', '12:00', '21:00'); // 480
+        $this->seedAppointment('2026-03-02', '13:00', $this->seedServiceWithDuration('03:08'), $this->arrivedStatusId); // 188 → 39.2%
+
+        $row = $this->row($this->compute('2026-03-02', '2026-03-02'));
+
+        $this->assertEqualsWithDelta(39.2, $row['util_pct'], 0.05);
+        $this->assertSame('red', $row['health']);
+    }
+
+    /* Rule 13: off-rota — a doctor with no roster has zero available, so
+       util is NULL (not 0/red), even if they have arrived activity. */
+    public function test_off_rota_yields_null_util_not_red(): void
+    {
+        // No rota seeded for the doctor. Give them an arrived appointment to
+        // prove busy>0 still can't divide by zero-available.
+        $this->seedAppointment('2026-03-02', '13:00', $this->seedServiceWithDuration('00:30'), $this->arrivedStatusId);
+
+        $row = $this->row($this->compute('2026-03-02', '2026-03-02'));
+
+        $this->assertSame(0, $row['available_minutes']);
+        $this->assertSame(30, $row['busy_minutes']);
+        $this->assertNull($row['util_pct'], 'no roster → util is null');
+        $this->assertNull($row['health'], 'off-rota is null, never red');
+    }
+
+    /* Rule 14: pool average is total-busy ÷ total-available (weighted),
+       NOT the mean of per-doctor percentages. Doctor A 600/600 (100%),
+       doctor B 0/200 (0%): weighted = 600/800 = 75%, mean-of-% = 50%. */
+    public function test_pool_average_is_weighted_not_mean_of_percentages(): void
+    {
+        $doctorB = 99003;
+        $this->registerSecondDoctor($doctorB, 'Dr Pool B');
+
+        // Doctor A (DOCTOR_ID): 11h shift = 600 net, 600 busy → 100%.
+        $this->seedRotaDay(self::BRANCH_ALLOCATED, '2026-03-02', '11:00', '22:00');
+        $this->seedAppointment('2026-03-02', '12:00', $this->seedServiceWithDuration('10:00'), $this->arrivedStatusId);
+
+        // Doctor B: 3h20m shift = 200 net (no break under 6h), 0 busy → 0%.
+        $this->seedRotaDay(self::BRANCH_ALLOCATED, '2026-03-02', '12:00', '15:20', $doctorB);
+
+        $out = $this->compute('2026-03-02', '2026-03-02');
+
+        $this->assertSame(100.0, $this->rowFor($out, self::DOCTOR_ID)['util_pct']);
+        $this->assertSame(0.0, $this->rowFor($out, $doctorB)['util_pct']);
+
+        // Weighted pool: 600 busy / 800 available = 75%, not the 50% mean.
+        $this->assertSame(800, $out['totals']['available_minutes']);
+        $this->assertSame(600, $out['totals']['busy_minutes']);
+        $this->assertSame(75.0, $out['totals']['util_pct']);
+    }
+
     /* ----------------------------------------------------------------
      * Helpers
      * --------------------------------------------------------------- */
@@ -491,10 +593,10 @@ class UtilizationMetricTest extends TestCase
         }
     }
 
-    private function seedRotaDay(int $branchId, string $date, string $start, string $end): void
+    private function seedRotaDay(int $branchId, string $date, string $start, string $end, int $doctorId = self::DOCTOR_ID): void
     {
         $resourceId = (int) DB::table('resources')
-            ->where('external_id', self::DOCTOR_ID)
+            ->where('external_id', $doctorId)
             ->where('location_id', $branchId)
             ->value('id');
 
@@ -599,12 +701,12 @@ class UtilizationMetricTest extends TestCase
         ]);
     }
 
-    private function seedAppointment(string $date, string $time, int $serviceId, int $statusId): void
+    private function seedAppointment(string $date, string $time, int $serviceId, int $statusId, int $doctorId = self::DOCTOR_ID): void
     {
-        $this->seedAppointmentAtBranch($date, $time, $serviceId, $statusId, self::BRANCH_ALLOCATED);
+        $this->seedAppointmentAtBranch($date, $time, $serviceId, $statusId, self::BRANCH_ALLOCATED, $doctorId);
     }
 
-    private function seedAppointmentAtBranch(string $date, string $time, int $serviceId, int $statusId, int $branchId): void
+    private function seedAppointmentAtBranch(string $date, string $time, int $serviceId, int $statusId, int $branchId, int $doctorId = self::DOCTOR_ID): void
     {
         // appointments.lead_id is NOT NULL with an FK to leads. Seed a
         // minimal lead once — reused across appointments in the same
@@ -625,8 +727,8 @@ class UtilizationMetricTest extends TestCase
         DB::table('appointments')->insert([
             'account_id' => self::ACCOUNT_ID,
             'lead_id' => $leadId,
-            'patient_id' => self::DOCTOR_ID,
-            'doctor_id' => self::DOCTOR_ID,
+            'patient_id' => $doctorId,
+            'doctor_id' => $doctorId,
             'region_id' => 1,
             'city_id' => 1,
             'location_id' => $branchId,
@@ -639,5 +741,69 @@ class UtilizationMetricTest extends TestCase
             'created_at' => now(),
             'updated_at' => now(),
         ]);
+    }
+
+    /**
+     * Register a second doctor (user + allocation + resource at the
+     * allocated branch) and re-mock the active-doctor pool to include both,
+     * so pool-level totals can be exercised across more than one row.
+     */
+    private function registerSecondDoctor(int $doctorId, string $name): void
+    {
+        DB::table('users')->insertOrIgnore([
+            'id' => $doctorId,
+            'account_id' => self::ACCOUNT_ID,
+            'name' => $name,
+            'email' => "user{$doctorId}@example.test",
+            'password' => bcrypt('x'),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        DB::table('doctor_has_locations')->insert([
+            'user_id' => $doctorId,
+            'location_id' => self::BRANCH_ALLOCATED,
+            'service_id' => $this->defaultServiceId,
+            'end_node' => 1,
+            'is_allocated' => 1,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        DB::table('resources')->insert([
+            'account_id' => self::ACCOUNT_ID,
+            'name' => "Res {$doctorId}",
+            'active' => 1,
+            'resource_type_id' => self::RESOURCE_TYPE_DOCTOR,
+            'external_id' => $doctorId,
+            'location_id' => self::BRANCH_ALLOCATED,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $this->instance(
+            DoctorIdentifier::class,
+            Mockery::mock(DoctorIdentifier::class, function ($m) use ($doctorId): void {
+                $m->shouldReceive('getAllActiveDoctorIds')->andReturn([self::DOCTOR_ID, $doctorId]);
+            }),
+        );
+        $this->app->forgetInstance(DoctorResolver::class);
+        $this->metric = $this->app->make(UtilizationMetric::class);
+    }
+
+    /**
+     * Find the row for a specific resource id (rows are sorted by util, so
+     * positional access isn't reliable once there's more than one doctor).
+     *
+     * @param  array<string, mixed>  $out
+     * @return array<string, mixed>
+     */
+    private function rowFor(array $out, int $resourceId): array
+    {
+        foreach ($out['rows'] as $row) {
+            if ((int) $row['resource_id'] === $resourceId) {
+                return $row;
+            }
+        }
+
+        $this->fail("no utilization row for resource {$resourceId}");
     }
 }
