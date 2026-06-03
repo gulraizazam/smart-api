@@ -41,6 +41,23 @@ use Illuminate\Support\Facades\DB;
 class ConversionService
 {
     /**
+     * Columns `GeneralFunctions::genericfunctionforstaffwiserevenue()` reads
+     * off each advance when computing conversion spend. The select() in
+     * getValidatedConversions() is pinned to this list so the heavy branch
+     * leaderboard no longer hydrates every PackageAdvances column (the full
+     * model load spiked to ~221MB on a busy month and 500'd at the 128MB
+     * limit). `patient_id` is the FK behind the `user` relation the helper
+     * dereferences (`$advance->user->name`/`->phone`); dropping any key here
+     * silently corrupts revenue/refund math — pinned by
+     * tests/Feature/Conversion/ConversionServiceSpendColumnsTest.php.
+     */
+    public const SPEND_ADVANCE_COLUMNS = [
+        'id', 'package_id', 'patient_id', 'invoice_id', 'payment_mode_id',
+        'created_at', 'deleted_at', 'cash_flow', 'cash_amount',
+        'is_adjustment', 'is_tax', 'is_cancel', 'is_refund',
+    ];
+
+    /**
      * Get validated conversions for given appointments.
      *
      * This is the CORE method that all endpoints must use.
@@ -94,7 +111,13 @@ class ConversionService
 
         // Bulk fetch all payments per package (cash_flow='in', cash_amount>0, not deleted)
         // ordered by created_at so we can find the first payment on/after invoice date per appointment
-        $allPaymentsByPackage = PackageAdvances::whereIn('package_id', $allPackageIds)
+        // Only created_at is read off these (to find the first payment on/after
+        // the invoice date); package_id drives the groupBy. This set is never
+        // passed to the spend helper, so it needs neither the flag columns nor
+        // the user relation — keep the projection tight.
+        $allPaymentsByPackage = PackageAdvances::query()
+            ->select(['id', 'package_id', 'created_at', 'deleted_at'])
+            ->whereIn('package_id', $allPackageIds)
             ->where('cash_flow', 'in')
             ->where('cash_amount', '>', 0)
             ->whereNull('deleted_at')
@@ -103,7 +126,14 @@ class ConversionService
             ->groupBy('package_id');
 
         // Bulk fetch all package advances for conversion spend (within date range, cash_amount > 0)
-        $allPackageAdvances = PackageAdvances::whereIn('package_id', $allPackageIds)
+        // These rows feed the spend helper, so the projection is pinned to the
+        // columns it reads (SPEND_ADVANCE_COLUMNS) instead of the full model.
+        // Eager-load `user` here too: the helper dereferences $advance->user
+        // per qualifying advance, which was a per-row N+1 on the leaderboard.
+        $allPackageAdvances = PackageAdvances::query()
+            ->select(self::SPEND_ADVANCE_COLUMNS)
+            ->with('user')
+            ->whereIn('package_id', $allPackageIds)
             ->where('cash_amount', '>', 0)
             ->whereNull('deleted_at')
             ->where('created_at', '>=', $startDate.' 00:00:00')

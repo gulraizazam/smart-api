@@ -25,6 +25,8 @@
         <!-- Tests exercise the POST-cutover state, so the reset-URL override
              (AppServiceProvider, gated by go-live §5.2) is active here. -->
         <server name="APP_SPA_CUTOVER_DONE" value="true"/>
+        <!-- Standalone SPA host the backend deep-links into (prod: crm3.cutera.pk). -->
+        <server name="APP_SPA_URL" value="https://crm3.cutera.pk"/>
         <server name="BCRYPT_ROUNDS" value="4"/>
         <server name="CACHE_STORE" value="array"/>
         <!--

@@ -128,6 +128,11 @@ final class PermissionAliasMap
         'bundles.sort'                => ['packages_edit'],
         'invoices.list.view'          => ['invoices_manage'],
         'patients.list.view'          => ['patients_manage'],
+        // Legacy crm2 grants the broad `contact` perm for phone/PII visibility;
+        // crm3 gates patient-list phone on the granular `patients.list.view_contact`.
+        // Bridge them so a crm2 `contact` grant still reveals patient phone in
+        // crm3 (PatientContactPermissionTest pins this). Added 2026-06-03.
+        'patients.list.view_contact'  => ['contact'],
         'scheduling_shifts.list.view' => ['resourcerotas_manage'],
         'voucher_types.list.view'     => ['voucher_types_manage'],
         'vouchers.list.view'          => ['vouchers_manage'],

@@ -1,1 +1,0 @@
-import{j as n}from"./tiptap-C7rnvjMS.js";import{L as t,d as o}from"./index-BCm6cQyY.js";function c({className:a,decorative:r,label:s="Loading",...e}){const i=r?{"aria-hidden":!0}:{role:"status","aria-label":s};return n.jsx(t,{className:o("size-4 animate-spin",a),...i,...e})}export{c as S};

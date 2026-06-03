@@ -20,7 +20,7 @@ class Authenticate extends Middleware
     protected function redirectTo(Request $request): ?string
     {
         if (! $request->expectsJson()) {
-            return '/admin-v2/login';
+            return rtrim((string) config('app.spa_url'), '/').'/login';
         }
 
         return null;
