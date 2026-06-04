@@ -361,9 +361,10 @@ final class ServiceBundleService
             return false;
         }
 
-        DB::transaction(function () use ($categoryIds): void {
+        DB::transaction(function () use ($categoryIds, $accountId): void {
             foreach ($categoryIds as $position => $parentId) {
                 Services::where('id', (int) $parentId)
+                    ->where('account_id', $accountId)
                     ->whereNull('parent_id')
                     ->update(['sort_no' => $position]);
             }

@@ -17,24 +17,22 @@ class VerifyCsrfToken extends Middleware
      *
      * @var array<int, string>
      */
-    protected $except = [
-        '/api/*',
-    ];
+    // CSRF is enforced for cookie/session auth (the SPA). There is no
+    // blanket /api/* bypass anymore (audit 2026-06) — stateless token
+    // clients are handled by the no-session-cookie skip in handle().
+    protected $except = [];
 
     public function handle($request, Closure $next): Response
     {
-        // Round 4 Auth-C3 — the previous version unconditionally bypassed
-        // CSRF whenever an `Authorization` header was present. That made
-        // every cookie-authed POST CSRF-able from any origin: a victim's
-        // browser running attacker JS could attach `Authorization: Bearer
-        // anything` and the request would go through with the victim's
-        // session cookie. We now only bypass CSRF for bearer-only API
-        // calls (no session cookie present), and only when Sanctum
-        // actually validates the token.
-        if ($request->hasHeader('Authorization')
-            && ! $request->hasCookie(config('session.cookie'))
-            && auth()->guard('sanctum')->check()
-        ) {
+        // CSRF only matters for cookie/session auth, where the browser
+        // auto-attaches the session cookie. A request with NO session
+        // cookie is a stateless token client (Sanctum bearer / Passport /
+        // mobile) or unauthenticated — neither can be CSRF'd — so skip the
+        // token check. Cookie-authed requests (the SPA) still flow through
+        // tokensMatch(); the SPA already sends the X-XSRF-TOKEN header.
+        // (audit 2026-06: replaced the sanctum-only bypass and removed the
+        // blanket /api/* exception that disabled CSRF for the whole API.)
+        if (! $request->hasCookie(config('session.cookie'))) {
             return $next($request);
         }
 

@@ -116,7 +116,7 @@ final class MembershipService
 
     public function getEditFormData(int $id): array
     {
-        $membership = Membership::findOrFail($id);
+        $membership = $this->scopedMembershipQuery()->findOrFail($id);
         $membershipTypes = MembershipType::parentsOnly()->active()->pluck('name', 'id');
 
         return [
@@ -168,7 +168,7 @@ final class MembershipService
     {
         DB::beginTransaction();
         try {
-            $membership = Membership::findOrFail($id);
+            $membership = $this->scopedMembershipQuery()->findOrFail($id);
 
             $data['updated_by'] = Auth::id();
             $membership->update($data);
@@ -197,7 +197,7 @@ final class MembershipService
 
     public function deleteMembership(int $id): bool
     {
-        $membership = Membership::findOrFail($id);
+        $membership = $this->scopedMembershipQuery()->findOrFail($id);
         $membership->delete();
 
         Log::info('Membership deleted', [
@@ -212,7 +212,7 @@ final class MembershipService
 
     public function toggleStatus(int $id, int $status): bool
     {
-        $membership = Membership::findOrFail($id);
+        $membership = $this->scopedMembershipQuery()->findOrFail($id);
 
         if ($status === 1) {
             $membershipType = MembershipType::find($membership->membership_type_id);
@@ -370,8 +370,8 @@ final class MembershipService
 
     public function getStudentVerificationDetails(int $membershipId): array
     {
-        $membership = Membership::with('membershipType')->findOrFail($membershipId);
-        $patient = User::findOrFail($membership->patient_id);
+        $membership = $this->scopedMembershipQuery()->with('membershipType')->findOrFail($membershipId);
+        $patient = User::where('account_id', Auth::user()->account_id)->findOrFail($membership->patient_id);
 
         $studentVerification = StudentVerification::where('membership_id', $membershipId)
             ->orWhere(function ($query) use ($membership) {
@@ -552,6 +552,21 @@ final class MembershipService
     }
 
     // ── Private Helpers ─────────────────────────────────
+
+    private function scopedMembershipQuery(): \Illuminate\Database\Eloquent\Builder
+    {
+        // `memberships` has no `account_id` column, so tenant ownership is
+        // derived from the membership's patient OR its creator being in the
+        // caller's account. Closes the cross-tenant IDOR on the by-id
+        // mutators without a schema change (coexistence-safe: additive,
+        // no shared column touched, crm2 untouched).
+        $accountId = Auth::user()->account_id;
+
+        return Membership::query()->where(function ($q) use ($accountId) {
+            $q->whereHas('patient', fn ($p) => $p->where('account_id', $accountId))
+                ->orWhereHas('createdBy', fn ($c) => $c->where('account_id', $accountId));
+        });
+    }
 
     private function ensureNoRestrictedServices(int $patientId): void
     {

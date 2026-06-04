@@ -247,6 +247,13 @@ final class MembershipsController extends Controller
 
     public function getStudentVerificationDetails(int $id): JsonResponse
     {
+        // PII endpoint (patient name/email/phone + student docs). Gate on
+        // the same perm that guards the membership detail view; the service
+        // also scopes the lookup to the caller's account.
+        if (Gate::denies('memberships.detail.view')) {
+            return $this->unauthorized();
+        }
+
         try {
             $data = $this->membershipService->getStudentVerificationDetails($id);
 

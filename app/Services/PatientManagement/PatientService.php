@@ -1385,7 +1385,9 @@ class PatientService
 
     private function updatePatientRecord(int $id, array $data): ?Patients
     {
-        $patient = Patients::find($id);
+        // Scope to the caller's account (mirrors findPatient) so update()
+        // can't overwrite another clinic's patient via this re-fetch.
+        $patient = $this->findPatient($id);
         if (! $patient) {
             return null;
         }

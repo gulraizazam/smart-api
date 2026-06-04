@@ -56,14 +56,25 @@ final class UserVoucherService
         });
     }
 
+    /**
+     * Base query scoped to the caller's account. user_vouchers has no
+     * account_id column, so ownership is derived from the assigned
+     * patient's account (the `user` relation) — closes cross-tenant
+     * read/update/delete on assigned vouchers (audit 2026-06).
+     */
+    private function scopedQuery(): \Illuminate\Database\Eloquent\Builder
+    {
+        return UserVouchers::whereHas('user', fn ($q) => $q->where('account_id', Auth::user()->account_id));
+    }
+
     public function find(int $id): ?UserVouchers
     {
-        return UserVouchers::with(['user', 'voucher'])->find($id);
+        return $this->scopedQuery()->with(['user', 'voucher'])->find($id);
     }
 
     public function update(int $id, array $data): array
     {
-        $voucher = UserVouchers::findOrFail($id);
+        $voucher = $this->scopedQuery()->findOrFail($id);
 
         if ($this->isUsedInPackages($voucher)) {
             return [
@@ -100,7 +111,7 @@ final class UserVoucherService
 
     public function delete(int $id): array
     {
-        $voucher = UserVouchers::findOrFail($id);
+        $voucher = $this->scopedQuery()->findOrFail($id);
 
         if ($this->isUsedInPackages($voucher)) {
             return [

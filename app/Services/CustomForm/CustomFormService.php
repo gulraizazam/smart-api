@@ -126,7 +126,7 @@ class CustomFormService
         $itemIndex = Input::get('itemIndex');
         if ($itemID) {
             foreach ($custom_forms as $custom_form) {
-                $sort = DB::table('custom_forms')->where('id', '=', $itemID)->update(['sort_number' => $itemIndex]);
+                $sort = DB::table('custom_forms')->where('id', '=', $itemID)->where('account_id', Auth::user()->account_id)->update(['sort_number' => $itemIndex]);
 
                 return ['status' => 'Data Sort Successfully'];
             }

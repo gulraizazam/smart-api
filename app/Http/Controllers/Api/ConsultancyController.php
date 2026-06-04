@@ -425,7 +425,7 @@ class ConsultancyController extends Controller
 
             $appointment = Appointments::with([
                 'patient', 'doctor', 'location', 'service', 'appointment_status',
-            ])->find($id);
+            ])->where('account_id', Auth::user()->account_id)->find($id);
 
             if (!$appointment) {
                 return $this->errorResponse('Consultancy not found.', 404);

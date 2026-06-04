@@ -671,7 +671,9 @@ class ScheduleController extends Controller
             return $this->errorResponse('Shift ID is required', 400);
         }
 
-        $shift = ResourceHasRotaDays::find($shiftId);
+        $shift = ResourceHasRotaDays::whereHas('resource_rota', function ($q) {
+            $q->where('account_id', Auth::user()->account_id);
+        })->find($shiftId);
 
         if (!$shift) {
             return $this->errorResponse('Shift not found', 404);
@@ -830,7 +832,7 @@ class ScheduleController extends Controller
             return $this->errorResponse('Time off ID is required', 400);
         }
 
-        $timeOff = ResourceTimeOff::find($timeOffId);
+        $timeOff = ResourceTimeOff::where('account_id', Auth::user()->account_id)->find($timeOffId);
 
         if (!$timeOff) {
             return $this->errorResponse('Time off not found', 404);
@@ -869,7 +871,7 @@ class ScheduleController extends Controller
             return $this->errorResponse('Time off ID is required', 400);
         }
 
-        $timeOff = ResourceTimeOff::find($timeOffId);
+        $timeOff = ResourceTimeOff::where('account_id', Auth::user()->account_id)->find($timeOffId);
 
         if (!$timeOff) {
             return $this->errorResponse('Time off not found', 404);
@@ -937,7 +939,7 @@ class ScheduleController extends Controller
             return $this->errorResponse('Time off ID is required', 400);
         }
 
-        $timeOff = ResourceTimeOff::find($timeOffId);
+        $timeOff = ResourceTimeOff::where('account_id', Auth::user()->account_id)->find($timeOffId);
 
         if (!$timeOff) {
             return $this->errorResponse('Time off not found', 404);

@@ -210,12 +210,12 @@ class Warehouse extends Model
         if ($request->file('file')) {
             $file = $request->file('file');
             $ext = strtolower($file->getClientOriginalExtension());
-            if (in_array($ext, ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'], true)) {
+            if (in_array($ext, ['jpg', 'jpeg', 'png', 'gif', 'webp'], true)) {
                 // Filename hardening — sanitise the browser-supplied
                 // basename before joining it to a public storage path.
                 $fileName = time().'-'.SafeFilename::sanitize(
                     $file->getClientOriginalName(),
-                    ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'],
+                    ['jpg', 'jpeg', 'png', 'gif', 'webp'],
                 );
                 $file->storeAs('public/warehouse_logo', $fileName);
                 $data['image_src'] = $fileName;
@@ -253,12 +253,12 @@ class Warehouse extends Model
         if ($request->file('file')) {
             $file = $request->file('file');
             $ext = strtolower($file->getClientOriginalExtension());
-            if (in_array($ext, ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'], true)) {
+            if (in_array($ext, ['jpg', 'jpeg', 'png', 'gif', 'webp'], true)) {
                 // Filename hardening — sanitise the browser-supplied
                 // basename before joining it to a public storage path.
                 $fileName = time().'-'.SafeFilename::sanitize(
                     $file->getClientOriginalName(),
-                    ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'],
+                    ['jpg', 'jpeg', 'png', 'gif', 'webp'],
                 );
                 $file->storeAs('public/warehouse_logo', $fileName);
                 $data['image_src'] = $fileName;

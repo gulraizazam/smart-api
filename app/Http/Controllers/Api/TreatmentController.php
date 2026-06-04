@@ -401,7 +401,7 @@ final class TreatmentController extends Controller
 
             $appointment = Appointments::with([
                 'patient', 'doctor', 'location', 'service', 'appointment_status',
-            ])->find($id);
+            ])->where('account_id', Auth::user()->account_id)->find($id);
 
             if (!$appointment || $appointment->appointment_type_id !== AppointmentType::Treatment->value) {
                 return $this->errorResponse('Treatment not found.', 404);

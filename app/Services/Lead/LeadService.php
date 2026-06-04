@@ -266,7 +266,7 @@ class LeadService
     public function updateLead(int $id, array $data): Leads
     {
         return DB::transaction(function () use ($id, $data): Leads {
-            $lead = Leads::findOrFail($id);
+            $lead = Leads::where('account_id', Auth::user()->account_id)->findOrFail($id);
 
             if (isset($data['lead_status_id']) && $data['lead_status_id'] != $lead->lead_status_id) {
                 $this->validateStatusChange($lead, (int) $data['lead_status_id']);
@@ -297,7 +297,11 @@ class LeadService
 
     public function bulkDelete(array $ids): int
     {
-        return Leads::whereIn('id', $ids)->delete();
+        // Scope to the caller's account so the list-endpoint `delete=`
+        // shortcut can never reach another clinic's leads (audit 2026-06).
+        return Leads::where('account_id', Auth::user()->account_id)
+            ->whereIn('id', $ids)
+            ->delete();
     }
 
     // =========================================================================
@@ -1800,8 +1804,17 @@ class LeadService
     protected function getOrderParams(array $filters, string $filename, int $userId): array
     {
         if (isset($filters['sort'])) {
-            $orderBy = $filters['sort']['field'] ?? 'leads.created_at';
-            $order = $filters['sort']['sort'] ?? 'DESC';
+            // sort.field lands directly in ORDER BY — reject anything that
+            // isn't a bare column / prefix.column (mirrors getSortBy()), so
+            // injection chars can never reach the query.
+            $candidate = $filters['sort']['field'] ?? null;
+            $orderBy = (is_string($candidate)
+                && preg_match('/^[A-Za-z_][A-Za-z0-9_]*(\.[A-Za-z_][A-Za-z0-9_]*)?$/', $candidate) === 1)
+                ? $candidate
+                : 'leads.created_at';
+
+            $candidateOrder = strtolower((string) ($filters['sort']['sort'] ?? 'desc'));
+            $order = in_array($candidateOrder, ['asc', 'desc'], true) ? $candidateOrder : 'desc';
         } else {
             $orderBy = Filters::get($userId, $filename, 'order_by') ?: 'leads.created_at';
             $order = Filters::get($userId, $filename, 'order') ?: 'desc';

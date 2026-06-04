@@ -363,7 +363,7 @@ class DoctorService
         $accountId = Auth::user()->account_id;
         $deleted = 0;
 
-        User::whereIn('id', $ids)->each(function (User $user) use ($accountId, &$deleted): void {
+        User::where('account_id', $accountId)->whereIn('id', $ids)->each(function (User $user) use ($accountId, &$deleted): void {
             if (! User::isExists($user->id, $accountId)) {
                 $user->delete();
                 $deleted++;
