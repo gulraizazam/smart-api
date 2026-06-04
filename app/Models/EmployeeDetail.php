@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Casts\DecryptLegacyOnRead;
 use App\Enums\EmploymentType;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -40,7 +41,11 @@ class EmployeeDetail extends BaseModel
             'employment_type' => EmploymentType::class,
             'salary' => 'decimal:2',
             'shift_hours' => 'decimal:2',
-            'bank_account_number' => 'encrypted',
+            // Plaintext (encryption removed 2026-06-04 per product decision).
+            // DecryptLegacyOnRead reads any leftover legacy ciphertext during
+            // the rollout (degrading to raw instead of throwing like the
+            // built-in `encrypted` cast) and writes plaintext.
+            'bank_account_number' => DecryptLegacyOnRead::class,
         ];
     }
 

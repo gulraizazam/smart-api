@@ -26,10 +26,10 @@ class AuditTrails extends BaseModel
         'secret',
         'cvv',
         'card_number',
-        // cnic is encrypted at rest via App\Casts\EncryptedLegacy on User.
-        // Without this entry, AuditTrails::addEventLogger captures the
-        // pre-mutation plaintext from the request, leaking PII into the
-        // audit_trail_changes table.
+        // cnic is PII (national ID) — keep it masked in audit logs even
+        // though it is no longer encrypted at rest (2026-06-04). Without
+        // this entry, AuditTrails::addEventLogger captures the pre-mutation
+        // value from the request, leaking PII into audit_trail_changes.
         'cnic',
     ];
 

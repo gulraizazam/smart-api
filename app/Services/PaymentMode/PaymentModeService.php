@@ -66,7 +66,7 @@ class PaymentModeService
     {
         if (count($itemIDs)) {
             foreach ($itemIDs as $key => $itemID) {
-                PaymentModes::where('id', '=', $itemID)->update(['sort_number' => $key]);
+                PaymentModes::where('id', '=', $itemID)->where('account_id', auth()->user()->account_id)->update(['sort_number' => $key]);
             }
 
             return true;

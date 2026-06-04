@@ -8,6 +8,7 @@ use App\Http\Middleware\CheckAccountStatus;
 use App\Http\Middleware\CheckIpRestriction;
 use App\Http\Middleware\CheckPermission;
 use App\Http\Middleware\RedirectIfAuthenticated;
+use App\Http\Middleware\SecurityHeaders;
 use App\Http\Middleware\VerifyCsrfToken;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
@@ -36,6 +37,11 @@ return Application::configure(basePath: dirname(__DIR__))
             Request::HEADER_X_FORWARDED_AWS_ELB
         );
 
+        // Baseline security response headers (audit 2026-06). Appended
+        // globally so every web + api response carries nosniff / DENY /
+        // Referrer-Policy / Permissions-Policy (+ HSTS over HTTPS).
+        $middleware->append(SecurityHeaders::class);
+
         // Preserve password fields from trimming. `search` is also exempt:
         // the cash-flow Payments list uses a trailing space as the user's
         // "I'm done with this token" signal to switch from substring to
@@ -63,6 +69,10 @@ return Application::configure(basePath: dirname(__DIR__))
             StartSession::class,
             ShareErrorsFromSession::class,
             VerifyCsrfToken::class,
+        ], append: [
+            // Rate-limit the API (the `api` limiter was defined but never
+            // attached): generous per-user default + tighter on heavy paths.
+            'throttle:api',
         ]);
 
         // Custom middleware aliases

@@ -850,12 +850,12 @@ class Locations extends BaseModel
         if ($request->file('file')) {
             $file = $request->file('file');
             $ext = strtolower($file->getClientOriginalExtension());
-            if (in_array($ext, ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'], true)) {
+            if (in_array($ext, ['jpg', 'jpeg', 'png', 'gif', 'webp'], true)) {
                 // Filename hardening — sanitise the browser-supplied
                 // basename before joining it to the R2 object key.
                 $fileName = time().'-'.SafeFilename::sanitize(
                     $file->getClientOriginalName(),
-                    ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'],
+                    ['jpg', 'jpeg', 'png', 'gif', 'webp'],
                 );
                 $file->storeAs('centre_logo', $fileName, 'r2');
                 $data['image_src'] = $fileName;
@@ -982,12 +982,12 @@ class Locations extends BaseModel
         if ($request->file('file')) {
             $file = $request->file('file');
             $ext = strtolower($file->getClientOriginalExtension());
-            if (in_array($ext, ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'], true)) {
+            if (in_array($ext, ['jpg', 'jpeg', 'png', 'gif', 'webp'], true)) {
                 // Filename hardening — sanitise the browser-supplied
                 // basename before joining it to the R2 object key.
                 $fileName = time().'-'.SafeFilename::sanitize(
                     $file->getClientOriginalName(),
-                    ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'],
+                    ['jpg', 'jpeg', 'png', 'gif', 'webp'],
                 );
                 $file->storeAs('centre_logo', $fileName, 'r2');
                 $data['image_src'] = $fileName;

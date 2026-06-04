@@ -339,7 +339,18 @@ class AppServiceProvider extends ServiceProvider
 
     private function configureRateLimiting(): void
     {
-        RateLimiter::for('api', fn (Request $request): Limit => Limit::perMinute(60)->by($request->user()?->id ?: $request->ip()));
+        RateLimiter::for('api', function (Request $request): Limit {
+            $key = $request->user()?->id ?: $request->ip();
+
+            // Heavy read/scrape + bulk surfaces get a tight ceiling; the rest
+            // get a generous limit that normal SPA use never reaches (audit
+            // 2026-06 — the limiter existed but was never attached).
+            $isHeavy = $request->is('api/*datatable*', 'api/*export*', 'api/*search*');
+
+            return $isHeavy
+                ? Limit::perMinute(30)->by('heavy:'.$key)
+                : Limit::perMinute(300)->by($key);
+        });
     }
 
     private function configureAuthorization(): void
