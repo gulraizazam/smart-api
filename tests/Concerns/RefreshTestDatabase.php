@@ -123,6 +123,8 @@ trait RefreshTestDatabase
 
         $this->ensureStaffTransfersTable($pdo);
 
+        $this->ensurePackageBundlesAccountId($pdo);
+
         $this->installCashflowAuditLogTriggers($pdo);
 
         RefreshDatabaseState::$migrated = true;
@@ -279,6 +281,32 @@ trait RefreshTestDatabase
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
             SQL);
         // FKs intentionally omitted — matches the pattern for expense_attachments.
+    }
+
+    /**
+     * Mirror 2026_06_04_130200_add_account_id_to_package_bundles on the
+     * test schema (the dump predates it). The PackageBundles model now
+     * stamps `account_id` on create, so without the column any
+     * authenticated insert in the suite would fail "unknown column".
+     * Keep in lockstep with that migration. Drop this helper once the
+     * dump is regenerated to carry the column.
+     */
+    protected function ensurePackageBundlesAccountId(\PDO $pdo): void
+    {
+        $statements = [
+            'ALTER TABLE `package_bundles` ADD COLUMN `account_id` INT UNSIGNED NULL AFTER `package_id`',
+            'ALTER TABLE `package_bundles` ADD INDEX `idx_package_bundles_account` (`account_id`)',
+        ];
+
+        foreach ($statements as $sql) {
+            try {
+                $pdo->exec($sql);
+            } catch (\PDOException $e) {
+                if (! preg_match('/(Duplicate|exists|already|check that column)/i', $e->getMessage())) {
+                    throw $e;
+                }
+            }
+        }
     }
 
     /**
