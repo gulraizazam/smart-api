@@ -154,6 +154,90 @@ class AppointmentHelper
             || \App\Models\Appointmentimage::where(['appointment_id' => $appointment_id])->exists();
     }
 
+    /**
+     * Batched mirror of {@see isChildExists()} for a whole page of
+     * appointments. Returns a set keyed by appointment_id whose presence
+     * means "has at least one child" — same four tables + filters as the
+     * per-row check, but four `whereIn` queries for the page instead of
+     * four EXISTS queries per row.
+     *
+     * Used by the list resources' preload step to kill the N+1 that
+     * made the consultations / treatments list pages slow. The per-row
+     * helper stays the canonical single-row contract.
+     *
+     * @param  array<int>  $appointment_ids
+     * @return array<int, true>
+     */
+    public static function childExistenceSet(array $appointment_ids, int $account_id): array
+    {
+        $ids = array_values(array_unique(array_map('intval', $appointment_ids)));
+        if (empty($ids)) {
+            return [];
+        }
+
+        $set = [];
+        $mark = static function ($pluck) use (&$set): void {
+            foreach ($pluck as $id) {
+                $set[(int) $id] = true;
+            }
+        };
+
+        $mark(\App\Models\PackageAdvances::whereIn('appointment_id', $ids)
+            ->where('account_id', $account_id)
+            ->distinct()
+            ->pluck('appointment_id'));
+        $mark(\App\Models\Invoices::whereIn('appointment_id', $ids)
+            ->where('account_id', $account_id)
+            ->whereNull('deleted_at')
+            ->where('invoice_status_id', '!=', 4)
+            ->distinct()
+            ->pluck('appointment_id'));
+        $mark(\App\Models\Measurement::whereIn('appointment_id', $ids)
+            ->distinct()
+            ->pluck('appointment_id'));
+        $mark(\App\Models\Appointmentimage::whereIn('appointment_id', $ids)
+            ->distinct()
+            ->pluck('appointment_id'));
+
+        return $set;
+    }
+
+    /**
+     * Batched paid-invoice lookup for a page of appointments. Returns a
+     * set keyed by appointment_id that has at least one invoice in the
+     * account's `paid` status. One query for the page (plus one cached
+     * status-id lookup) instead of one EXISTS per row.
+     *
+     * @param  array<int>  $appointment_ids
+     * @return array<int, true>
+     */
+    public static function paidInvoiceSet(array $appointment_ids, int $account_id): array
+    {
+        $ids = array_values(array_unique(array_map('intval', $appointment_ids)));
+        if (empty($ids) || $account_id <= 0) {
+            return [];
+        }
+
+        $paidId = (int) \App\Models\InvoiceStatuses::where('slug', '=', 'paid')
+            ->where('account_id', $account_id)
+            ->value('id');
+        if ($paidId <= 0) {
+            return [];
+        }
+
+        $set = [];
+        foreach (
+            \App\Models\Invoices::whereIn('appointment_id', $ids)
+                ->where('invoice_status_id', $paidId)
+                ->distinct()
+                ->pluck('appointment_id') as $id
+        ) {
+            $set[(int) $id] = true;
+        }
+
+        return $set;
+    }
+
     public static function clearAppointmentCache(int $account_id): void
     {
         Cache::forget("appointment_cancelled_status_{$account_id}");

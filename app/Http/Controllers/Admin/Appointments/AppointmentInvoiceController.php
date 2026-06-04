@@ -203,18 +203,23 @@ class AppointmentInvoiceController extends AppointmentBaseController
         // into a pool DRAIN — a direct money-stealing primitive that
         // bypassed every other defence on the create / edit paths.
         //
-        // `integer` rejects scientific notation, fractional values,
-        // strings, and negatives that bypass the eventual cast. `min:0`
-        // (not min:1) allows legitimate zero-cash invoicing (the rest
-        // of the method handles the zero case explicitly at line 431
-        // and elsewhere). Outstanding-related fields validated for the
-        // same reason.
+        // `numeric` (not `integer`) because treatment/consultation
+        // invoice amounts are legitimately fractional — tax-inclusive
+        // prices land on values like 6996.67, and `settle` = price − cash
+        // inherits those decimals. `integer` rejected every such invoice
+        // ("The settle must be an integer."). The money-safety that
+        // matters here is preserved: `min:0` blocks the negative-amount
+        // money-drain primitive (a `cash: -999999` that would have
+        // written a pool-draining package_advances row), and `max`
+        // guards overflow. Mirrors the consultancy invoice request, which
+        // has always used `numeric`. Stored downstream into the decimal
+        // `package_advances.cash_amount`, so no precision is lost.
         $request->validate([
-            'cash' => 'sometimes|integer|min:0|max:99999999',
-            'settle' => 'sometimes|integer|min:0|max:99999999',
-            'cash_create' => 'sometimes|integer|min:0|max:99999999',
-            'outstanding_for_zero' => 'sometimes|integer|min:0|max:99999999',
-            'price_create' => 'sometimes|integer|min:0|max:99999999',
+            'cash' => 'sometimes|numeric|min:0|max:99999999',
+            'settle' => 'sometimes|numeric|min:0|max:99999999',
+            'cash_create' => 'sometimes|numeric|min:0|max:99999999',
+            'outstanding_for_zero' => 'sometimes|numeric|min:0|max:99999999',
+            'price_create' => 'sometimes|numeric|min:0|max:99999999',
         ]);
 
         $check_is_setteled = PackageAdvances::where([

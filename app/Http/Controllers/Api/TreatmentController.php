@@ -256,15 +256,25 @@ final class TreatmentController extends Controller
             $query = $this->treatmentService->getTreatmentList($filters);
 
             if ($request->input('paginate') === 'false') {
+                $rows = $query->get();
+                // Batch-resolve the per-row `has_paid_invoice` /
+                // `has_children` flags so the resource doesn't fire
+                // EXISTS queries per row (the list's N+1 hot spot).
+                TreatmentResource::preload($rows);
+
                 return response()->json([
                     'success' => true,
                     'message' => 'Treatments retrieved successfully.',
-                    'data'    => TreatmentResource::collection($query->get()),
+                    'data'    => TreatmentResource::collection($rows),
                 ]);
             }
 
             $perPage = max(1, min((int) $request->get('per_page', 15), 100));
             $paginator = $query->paginate($perPage)->appends($request->query());
+
+            // Same batch preload for the paginated path — collapses the
+            // page's per-row EXISTS queries into a fixed handful.
+            TreatmentResource::preload($paginator->getCollection());
 
             // Hand-rolled pagination envelope so the SPA's Paginated<T>
             // shape (data + meta + links siblings) lines up with what
