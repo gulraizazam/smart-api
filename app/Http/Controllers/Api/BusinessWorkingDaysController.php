@@ -12,16 +12,22 @@ use App\Http\Requests\Schedule\UpdateWorkingDayExceptionRequest;
 use App\Http\Resources\Schedule\WorkingDayExceptionResource;
 use App\Models\Settings;
 use App\Models\WorkingDayException;
+use App\Services\Schedule\ExceptionDayRotaCloner;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 
 class BusinessWorkingDaysController extends Controller
 {
+    public function __construct(
+        private readonly ExceptionDayRotaCloner $rotaCloner,
+    ) {}
+
     private const SETTING_SLUG = 'business_working_days';
 
     private const DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
@@ -279,6 +285,15 @@ class BusinessWorkingDaysController extends Controller
                 ],
             );
 
+            // Auto-build the day's doctor/resource rota by cloning the
+            // previous working day — saves operators rebuilding every
+            // centre's rota by hand when they open a normally-off day.
+            $this->syncRotaForWorkingException(
+                $accountId,
+                $exception->exception_date->toDateString(),
+                (bool) $exception->is_working,
+            );
+
             $exception->load('creator:id,name');
 
             return $this->successResponse(
@@ -331,6 +346,14 @@ class BusinessWorkingDaysController extends Controller
             }
 
             $exception->update($request->validated());
+
+            // A toggle to working re-arms the same auto-rota clone as the
+            // create path.
+            $this->syncRotaForWorkingException(
+                (int) $exception->account_id,
+                $exception->exception_date->toDateString(),
+                (bool) $exception->fresh()->is_working,
+            );
 
             return $this->successResponse(
                 'Working-day exception updated successfully.',
@@ -397,6 +420,15 @@ class BusinessWorkingDaysController extends Controller
                 return $count;
             });
 
+            // Build rota for every newly-working exception in the batch.
+            foreach ($validated['exceptions'] as $row) {
+                $this->syncRotaForWorkingException(
+                    $accountId,
+                    Carbon::parse($row['exception_date'])->toDateString(),
+                    (bool) $row['is_working'],
+                );
+            }
+
             return $this->successResponse("Replaced working-day exceptions ({$inserted} rows).", [
                 'replaced_count' => $inserted,
             ]);
@@ -408,6 +440,45 @@ class BusinessWorkingDaysController extends Controller
     }
 
     // ── internal helpers ──
+
+    /**
+     * Clone the previous working day's rota onto an exception date — but
+     * only when the exception genuinely opens a normally-OFF weekday.
+     *
+     * Guards:
+     *   - `is_working` must be true (an off-exception builds nothing).
+     *   - The weekday must be off in the weekly pattern. On a normally-
+     *     working day the per-doctor off-rows are intentional, so we must
+     *     not back-fill them from the previous day.
+     *
+     * Runs AFTER the exception is persisted and never throws — a clone
+     * failure must not fail the save (operators can still build rotas by
+     * hand). Errors are logged for follow-up.
+     */
+    private function syncRotaForWorkingException(int $accountId, string $exceptionDate, bool $isWorking): void
+    {
+        if (! $isWorking) {
+            return;
+        }
+
+        $weekly = $this->loadWorkingDays($accountId);
+        $weekday = strtolower(Carbon::parse($exceptionDate)->format('l'));
+        if ($weekly[$weekday] ?? false) {
+            return;
+        }
+
+        try {
+            $this->rotaCloner->cloneFromMostRecentWorkingDay($accountId, Carbon::parse($exceptionDate));
+        } catch (\Throwable $e) {
+            Log::error('Exception-day rota clone failed', [
+                'account_id' => $accountId,
+                'exception_date' => $exceptionDate,
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+            ]);
+        }
+    }
 
     /**
      * @return array<string, bool>

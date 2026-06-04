@@ -417,15 +417,20 @@ final class TreatmentUpdateService
             }
         }
 
-        // Track date/time changes
+        // Track a date change — drives both the converted_by stamp and
+        // the reschedule SMS below. (A time-only change no longer
+        // re-notifies, so it's not tracked here.)
         $dateChanged = $this->hasFieldChanged($appointment, $requestData, $data, 'scheduled_date', 'Y-m-d');
-        $timeChanged = $this->hasFieldChanged($appointment, $requestData, $data, 'scheduled_time', 'H:i:s');
 
         if ($dateChanged) {
             $data['converted_by'] = Auth::id();
         }
 
-        if (($dateChanged || $timeChanged) && $appointment->base_appointment_status_id == config('constants.appointment_status_pending', 1)) {
+        // Reschedule SMS fires on a DATE change only — a time-only edit
+        // doesn't re-notify the patient. Guarded to Booked/pending so an
+        // Arrived/Converted treatment never re-fires. The same cron +
+        // active-template pipeline as creation then delivers it.
+        if ($dateChanged && $appointment->base_appointment_status_id == config('constants.appointment_status_pending', 1)) {
             $data['send_message'] = 1;
         }
 
