@@ -127,7 +127,31 @@ trait RefreshTestDatabase
 
         $this->installCashflowAuditLogTriggers($pdo);
 
+        $this->installUsersPhoneNormalizedTrigger($pdo);
+
         RefreshDatabaseState::$migrated = true;
+    }
+
+    /**
+     * Install the users.phone_normalized auto-fill triggers.
+     *
+     * Production source of truth:
+     * `database/migrations/2026_06_05_180000_add_users_phone_normalized_autofill_trigger.php`.
+     * The test DB is hydrated from the schema dump (which carries no triggers),
+     * so they're re-applied here — same pattern as installCashflowAuditLogTriggers.
+     * Single-statement `SET NEW.x = ...` bodies, one PDO::exec() each.
+     *
+     * Keep in lockstep with that migration.
+     */
+    protected function installUsersPhoneNormalizedTrigger(\PDO $pdo): void
+    {
+        $expr = "NULLIF(REGEXP_REPLACE(COALESCE(NEW.phone, ''), '[^0-9]', ''), '')";
+
+        $pdo->exec('DROP TRIGGER IF EXISTS users_phone_normalized_bi');
+        $pdo->exec("CREATE TRIGGER users_phone_normalized_bi BEFORE INSERT ON users FOR EACH ROW SET NEW.phone_normalized = {$expr}");
+
+        $pdo->exec('DROP TRIGGER IF EXISTS users_phone_normalized_bu');
+        $pdo->exec("CREATE TRIGGER users_phone_normalized_bu BEFORE UPDATE ON users FOR EACH ROW SET NEW.phone_normalized = {$expr}");
     }
 
     /**
