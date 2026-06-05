@@ -6,22 +6,26 @@ namespace Tests\Feature\Patients;
 
 use App\Models\Patients;
 use App\Services\PatientManagement\PatientSearchService;
-use Illuminate\Support\Facades\DB;
 use Tests\Concerns\RefreshTestDatabase as RefreshDatabase;
 use Tests\Concerns\UsesFinancialFixtures;
 use Tests\TestCase;
 
 /**
  * Consultations-list phone search (PatientSearchService::resolvePatientIdsByPhone)
- * must find a registered patient regardless of how their `phone` was stored —
- * INCLUDING rows whose `phone_normalized` was never populated.
+ * must find a registered patient regardless of how their `phone` was stored.
  *
- * Regression (2026-06-05): `phone_normalized` is only filled by the crm3 model
- * hook, so legacy imports and (ongoing) crm2-created patients on the shared DB
- * land with a NULL `phone_normalized`. The indexed prefix/substring paths only
- * see that column, so those real patients returned "No consultations match"
- * when searched by number. A raw-`phone` fallback (via matchVariants, mirroring
- * Patients::getByPhone) closes the gap.
+ * History: `phone_normalized` was originally only filled by the crm3 model
+ * hook, so crm2-created / legacy-imported patients on the shared DB landed with
+ * a NULL `phone_normalized` and were invisible to the indexed phone search.
+ *
+ * As of the 2026_06_05 DB-level auto-fill trigger
+ * (add_users_phone_normalized_autofill_trigger), `phone_normalized` is now
+ * populated for EVERY write — including crm2's — so the null case no longer
+ * occurs. The residual case the search still has to handle is the *leading
+ * zero*: the column is digits-only, so a patient whose phone is `03077168463`
+ * stores `phone_normalized = 03077168463`, and an operator typing the cleaned
+ * `3077168463` must still resolve them (the substring tier, with the raw-phone
+ * fallback kept as defence-in-depth). These tests pin that.
  */
 class PatientPhoneSearchTest extends TestCase
 {
@@ -35,48 +39,47 @@ class PatientPhoneSearchTest extends TestCase
         $this->actingAsAdmin();
     }
 
-    /** Reproduce a crm2/legacy row: phone set, phone_normalized never filled. */
-    private function patientWithNullNormalizedPhone(string $storedPhone): Patients
+    public function test_finds_leading_zero_patient_by_every_typed_form(): void
     {
-        $p = Patients::factory()->create(['phone' => $storedPhone, 'account_id' => 1]);
-        // The crm3 model hook populates phone_normalized on save; null it to
-        // reproduce a row inserted outside that path (crm2 / raw import).
-        DB::table('users')->where('id', $p->id)->update(['phone_normalized' => null]);
+        // Front desk saved the number as typed, with the trunk 0. The hook +
+        // the DB trigger store phone_normalized digits-only, so it keeps the
+        // leading zero — the column is populated, not blank.
+        $patient = Patients::factory()->create(['phone' => '03077168463', 'account_id' => 1]);
+        $this->assertSame(
+            '03077168463',
+            $patient->phone_normalized,
+            'precondition: normalized is populated (digits-only) and keeps the leading zero',
+        );
 
-        return $p->refresh();
-    }
-
-    public function test_finds_patient_with_null_phone_normalized_stored_with_leading_zero(): void
-    {
-        $patient = $this->patientWithNullNormalizedPhone('03077168463');
-        $this->assertNull($patient->phone_normalized, 'precondition: phone_normalized is blank');
-
-        // Every way an operator might type the number resolves the patient.
+        // Every way an operator might type the number resolves the patient,
+        // including the cleaned form that doesn't prefix-match the stored
+        // leading-zero value.
         foreach (['03077168463', '3077168463', '923077168463', '+923077168463'] as $typed) {
             $ids = PatientSearchService::resolvePatientIdsByPhone($typed, 1);
             $this->assertContains(
                 $patient->id,
                 $ids,
-                "Search for \"{$typed}\" must find the patient even with a blank phone_normalized.",
+                "Search for \"{$typed}\" must resolve the leading-zero patient.",
             );
         }
     }
 
-    public function test_still_finds_patient_with_populated_phone_normalized(): void
+    public function test_still_finds_patient_with_canonical_phone_normalized(): void
     {
-        // Control: the fast indexed path keeps working for normalised rows.
+        // Control: the fast indexed prefix path keeps working for a number
+        // stored without a leading zero (the canonical majority).
         $patient = Patients::factory()->create(['phone' => '3009998877', 'account_id' => 1]);
-        $this->assertNotNull($patient->phone_normalized);
+        $this->assertSame('3009998877', $patient->phone_normalized);
 
         $ids = PatientSearchService::resolvePatientIdsByPhone('3009998877', 1);
         $this->assertContains($patient->id, $ids);
     }
 
-    public function test_blank_phone_normalized_does_not_over_match_a_different_number(): void
+    public function test_does_not_over_match_a_different_number(): void
     {
-        // The fallback must not turn into a catch-all: an unrelated number
-        // must not surface this patient.
-        $patient = $this->patientWithNullNormalizedPhone('03077168463');
+        // The leading-zero handling must not turn into a catch-all: an
+        // unrelated number must not surface this patient.
+        $patient = Patients::factory()->create(['phone' => '03077168463', 'account_id' => 1]);
 
         $ids = PatientSearchService::resolvePatientIdsByPhone('03211234567', 1);
         $this->assertNotContains($patient->id, $ids);
