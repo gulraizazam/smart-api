@@ -169,7 +169,7 @@ class TownService
             ['xls', 'xlsx', 'csv'],
         );
         $newName = pathinfo($safe, PATHINFO_FILENAME)
-            . '-' . rand(11111111, 99999999)
+            . '-' . random_int(11111111, 99999999)
             . '.' . pathinfo($safe, PATHINFO_EXTENSION);
 
         $file->move($dir, $newName);

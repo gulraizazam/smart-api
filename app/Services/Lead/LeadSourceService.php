@@ -51,7 +51,7 @@ class LeadSourceService
     public function saveSortOrder(array $itemIds): void
     {
         foreach ($itemIds as $position => $id) {
-            LeadSources::where('id', $id)->update(['sort_no' => $position]);
+            LeadSources::where('id', $id)->where('account_id', auth()->user()->account_id)->update(['sort_no' => $position]);
         }
     }
 

@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::post('login', [\App\Http\Controllers\Api\AuthController::class, 'login'])->middleware('throttle:60,1');
+Route::post('login', [\App\Http\Controllers\Api\AuthController::class, 'login'])->middleware('throttle:10,1');
 
 // SPA cookie/bearer-mode logout + password reset. These were always part of
 // the SPA contract (src/lib/auth.tsx, src/routes/forgot-password.tsx,

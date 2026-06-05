@@ -34,7 +34,7 @@ class EmployeeDocumentController extends Controller
             ]);
 
             $file = $request->file('document');
-            $fileName = $file->getClientOriginalName();
+            $fileName = $this->sanitizeFileName($file->getClientOriginalName());
             $accountId = Auth::user()->account_id;
             $path = $file->store("accounts/{$accountId}/hr/documents/{$user->id}", self::DISK);
 
@@ -69,7 +69,7 @@ class EmployeeDocumentController extends Controller
 
         return response($disk->get($document->file_path), 200, [
             'Content-Type' => $disk->mimeType($document->file_path),
-            'Content-Disposition' => 'inline; filename="' . $document->file_name . '"',
+            'Content-Disposition' => 'inline; filename="' . $this->sanitizeFileName($document->file_name) . '"',
         ]);
     }
 
@@ -85,7 +85,7 @@ class EmployeeDocumentController extends Controller
 
         return response($disk->get($document->file_path), 200, [
             'Content-Type' => $disk->mimeType($document->file_path),
-            'Content-Disposition' => 'attachment; filename="' . $document->file_name . '"',
+            'Content-Disposition' => 'attachment; filename="' . $this->sanitizeFileName($document->file_name) . '"',
         ]);
     }
 
@@ -98,8 +98,28 @@ class EmployeeDocumentController extends Controller
         abort_unless($isOwner || $hasPermission, 403, 'Unauthorized.');
     }
 
+    /**
+     * Strip path components and characters unsafe for a Content-Disposition
+     * header (CR/LF/quotes/backslash/control chars) so a crafted upload
+     * filename can't inject response headers or break the attachment name.
+     */
+    private function sanitizeFileName(string $name): string
+    {
+        $name = basename($name);
+        $name = preg_replace('/[\r\n"\\\\]+/', '_', $name);
+        $name = preg_replace('/[\x00-\x1F\x7F]/', '', (string) $name);
+        $name = trim((string) $name);
+
+        return $name !== '' ? $name : 'document';
+    }
+
     public function destroy(EmployeeDocument $document): JsonResponse
     {
+        // Route binding already scopes by account (BaseModel). This adds
+        // the same owner-or-manage check the preview/download endpoints
+        // enforce, closing the "any authenticated user can delete" gap.
+        $this->authorizeDocumentAccess($document);
+
         try {
             Storage::disk(self::DISK)->delete($document->file_path);
             $document->delete();

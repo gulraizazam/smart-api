@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 
 class PackageBundles extends Model
@@ -43,6 +44,7 @@ class PackageBundles extends Model
         'membership_code_id',
         'is_allocate',
         'package_id',
+        'account_id',
         'active',
         'created_at',
         'updated_at',
@@ -82,7 +84,63 @@ class PackageBundles extends Model
             'is_exclusive'            => 'boolean',
             'is_allocate'             => 'boolean',
             'active'                  => 'boolean',
+            'account_id'              => 'integer',
         ];
+    }
+
+    /**
+     * Stamp the tenant `account_id` on every new row. The column is
+     * nullable + additive (crm2 never writes it), so a row created by a
+     * path this hook can't resolve simply stays NULL and is picked up by
+     * the backfill. Web plan flows always run as the acting user within
+     * their own account (== the parent package's account), so Auth is
+     * the cheap, correct source; CLI / queue / seeder contexts with no
+     * auth fall back to deriving from the linked package. Covers all
+     * ~9 PackageBundles::create() call sites without touching each one.
+     * Mirrors the static::booted persistence-seam pattern in App\Models\Services.
+     */
+    protected static function booted(): void
+    {
+        static::creating(function (self $bundle): void {
+            if ($bundle->getAttribute('account_id') !== null) {
+                return;
+            }
+
+            $accountId = Auth::check() ? (int) (Auth::user()->account_id ?? 0) : 0;
+
+            if ($accountId <= 0) {
+                $accountId = self::deriveAccountIdFromPackage($bundle) ?? 0;
+            }
+
+            if ($accountId > 0) {
+                $bundle->setAttribute('account_id', $accountId);
+            }
+        });
+    }
+
+    /**
+     * Resolve the owning package's account_id from package_id, then
+     * random_id — the same two keys the backfill migration uses.
+     */
+    private static function deriveAccountIdFromPackage(self $bundle): ?int
+    {
+        $packageId = $bundle->getAttribute('package_id');
+        if ($packageId !== null) {
+            $accountId = Packages::whereKey($packageId)->value('account_id');
+            if ($accountId !== null) {
+                return (int) $accountId;
+            }
+        }
+
+        $randomId = $bundle->getAttribute('random_id');
+        if (! empty($randomId)) {
+            $accountId = Packages::where('random_id', $randomId)->value('account_id');
+            if ($accountId !== null) {
+                return (int) $accountId;
+            }
+        }
+
+        return null;
     }
 
     // ── Relationships ───────────────────────────────────

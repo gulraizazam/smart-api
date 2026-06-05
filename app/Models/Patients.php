@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
-use App\Casts\EncryptedLegacy;
+use App\Casts\DecryptLegacyOnRead;
 use App\Helpers\GeneralFunctions;
 use App\Helpers\PatientAccessScope;
 use App\Services\PatientManagement\PatientSearchService;
@@ -72,8 +72,8 @@ class Patients extends BaseModel
             'dob' => 'date',
             'created_at' => 'datetime',
             'updated_at' => 'datetime',
-            // Encrypted at rest. See User::casts() for the equality-search caveat.
-            'cnic' => EncryptedLegacy::class,
+            // Plaintext (encryption removed 2026-06-04). See User::casts().
+            'cnic' => DecryptLegacyOnRead::class,
         ];
     }
 
@@ -334,11 +334,11 @@ class Patients extends BaseModel
     /**
      * Decrypt the `cnic` field on raw DB::select rows.
      *
-     * Raw queries bypass the Eloquent EncryptedLegacy cast on this model, so
-     * any path that selects `cnic` via DB::select must run results through
-     * this helper to avoid leaking the base64 envelope to API consumers.
-     * Mirrors the cast's tolerance for legacy plaintext rows: if Crypt
-     * fails, the raw value is returned unchanged.
+     * Raw queries bypass the Eloquent DecryptLegacyOnRead cast on this model,
+     * so any path that selects `cnic` via DB::select must run results through
+     * this helper to decrypt any leftover legacy ciphertext during the
+     * rollout. Mirrors the cast's tolerance: if Crypt fails (plaintext row),
+     * the raw value is returned unchanged.
      *
      * @param  array<int, \stdClass>  $rows
      * @return array<int, \stdClass>

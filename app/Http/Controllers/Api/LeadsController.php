@@ -50,6 +50,12 @@ class LeadsController extends Controller
             $filename = $leadType ? 'junk_leads' : 'leads';
 
             if (hasFilter($filters, 'delete')) {
+                // The list endpoint must not be a gate bypass: bulk delete
+                // requires the same permission as single delete.
+                if (! Gate::allows('leads_destroy')) {
+                    return $this->errorResponse('You are not authorized to access this resource.', 403);
+                }
+
                 $ids = explode(',', $filters['delete']);
                 $this->leadService->bulkDelete($ids);
 

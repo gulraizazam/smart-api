@@ -48,7 +48,9 @@ class DoctorDatatableRequest extends FormRequest
             'query.search.created_at' => 'nullable|string',
             'query.search.delete' => 'nullable|string',
             'query.search.filter' => 'nullable|string',
-            'sort.field' => 'nullable|string',
+            // sort.field lands in ORDER BY — restrict to a bare column or
+            // prefix.column so injection chars (spaces/parens/;/,) can't pass.
+            'sort.field' => ['nullable', 'string', 'regex:/^[A-Za-z_][A-Za-z0-9_]*(\.[A-Za-z_][A-Za-z0-9_]*)?$/'],
             'sort.sort' => 'nullable|string|in:asc,desc',
             'pagination.page' => 'nullable|integer|min:1',
             'pagination.perpage' => 'nullable|integer|min:-1|max:500',

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
-use App\Casts\EncryptedLegacy;
+use App\Casts\DecryptLegacyOnRead;
 use App\Models\Concerns\GuardsTenantBoundary;
 use App\Services\Dashboard\Support\ResourceScopeResolver;
 use Illuminate\Database\Eloquent\Builder;
@@ -105,12 +105,13 @@ class User extends Authenticatable
             'active' => 'integer',
             'commission' => 'decimal:2',
             'can_perform_consultation' => 'boolean',
-            // CNIC is encrypted at rest. Equality search on this column is
-            // currently used in LeadService::applyReportFilters and will
-            // return false negatives once any matching row has been
-            // re-saved through the cast. Add a blind-index column
-            // (cnic_hash) when exact-match search is needed.
-            'cnic' => EncryptedLegacy::class,
+            // CNIC is stored as PLAINTEXT (encryption removed 2026-06-04 per
+            // product decision — it does not require app-level encryption).
+            // DecryptLegacyOnRead still transparently decrypts any leftover
+            // legacy ciphertext on read during the crm2/crm3 rollout and
+            // writes plaintext, so equality search on plaintext now works
+            // directly (no blind-index needed).
+            'cnic' => DecryptLegacyOnRead::class,
             // H2 — lockout
             'failed_login_attempts' => 'integer',
             'locked_until' => 'datetime',

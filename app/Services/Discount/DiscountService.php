@@ -96,7 +96,7 @@ final class DiscountService
 
     public function updateSimpleDiscount(array $data, int $id): Discount
     {
-        $discount = Discount::findOrFail($id);
+        $discount = Discount::where('account_id', Auth::user()->account_id)->findOrFail($id);
         $oldData  = $discount->toArray();
 
         $discount->update($data);
@@ -120,6 +120,10 @@ final class DiscountService
     public function updateConfigurableDiscount(array $data, int $id): Discount
     {
         return DB::transaction(function () use ($data, $id): Discount {
+            // Tenant guard: 404 a cross-account id before any mutation or
+            // the cascade-delete of base/get services below.
+            Discount::where('account_id', Auth::user()->account_id)->findOrFail($id);
+
             Discount::where('id', $id)->update([
                 'name'             => $data['name'],
                 'discount_type'    => $data['discount_type'] ?? 'Treatment',

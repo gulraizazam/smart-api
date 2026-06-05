@@ -89,7 +89,7 @@ class RegionService
     {
         if (count($itemIDs)) {
             foreach ($itemIDs as $key => $itemID) {
-                Regions::where('id', '=', $itemID)->update(['sort_number' => $key]);
+                Regions::where('id', '=', $itemID)->where('account_id', auth()->user()->account_id)->update(['sort_number' => $key]);
             }
 
             return true;

@@ -622,7 +622,7 @@ class OrderService
      */
     public function processRefund(int $orderId, array $data): array
     {
-        $order = Order::find($orderId);
+        $order = Order::where('account_id', Auth::user()->account_id)->find($orderId);
 
         if (!$order) {
             return ['success' => false, 'message' => 'Order not found.'];

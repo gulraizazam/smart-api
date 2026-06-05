@@ -109,7 +109,7 @@ class CityService
     {
         if (count($itemIDs)) {
             foreach ($itemIDs as $key => $itemID) {
-                Cities::where('id', '=', $itemID)->update(['sort_number' => $key]);
+                Cities::where('id', '=', $itemID)->where('account_id', auth()->user()->account_id)->update(['sort_number' => $key]);
             }
 
             return true;

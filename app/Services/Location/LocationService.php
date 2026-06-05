@@ -371,7 +371,7 @@ class LocationService
     {
         if (count($itemIDs)) {
             foreach ($itemIDs as $key => $itemID) {
-                Locations::where('id', '=', $itemID)->update(['sort_no' => $key]);
+                Locations::where('id', '=', $itemID)->where('account_id', auth()->user()->account_id)->update(['sort_no' => $key]);
             }
 
             return true;

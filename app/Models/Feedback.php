@@ -42,6 +42,19 @@ class Feedback extends Model
         ];
     }
 
+    /**
+     * Feedback has no account_id; isolate route-bound access by the
+     * caller's accessible centres (mirrors the datatable's location
+     * scoping) so edit/update/destroy can't reach another clinic's
+     * feedback by guessing an id (audit 2026-06).
+     */
+    public function resolveRouteBinding($value, $field = null): ?Feedback
+    {
+        return $this->where($field ?? $this->getRouteKeyName(), $value)
+            ->whereIn('location_id', \App\Helpers\ACL::getUserCentres())
+            ->first();
+    }
+
     public function location(): BelongsTo
     {
         return $this->belongsTo(Locations::class, 'location_id');
