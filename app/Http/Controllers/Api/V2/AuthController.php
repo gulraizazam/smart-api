@@ -36,19 +36,27 @@ class AuthController extends Controller
         /** @var User|null $user */
         $user = User::where('email', $email)->first();
 
+        // Enumeration-safe failures: wrong-password, unknown-account and
+        // deactivated all return the SAME generic 401, and the lockout uses the
+        // shared "Too many attempts" wording — so the response never confirms
+        // whether an email exists. Mirrors the Sanctum AuthController
+        // (Round 4 Auth-E1). Security audit 2026-06.
+        $genericFail = 'Sign-in failed. Please check your credentials and try again.';
+
         if ($user && $user->isLocked()) {
-            $minutes = max(1, (int) ceil(now()->diffInMinutes($user->locked_until, false)));
+            $seconds = max(1, (int) ceil(now()->diffInSeconds($user->locked_until, false)));
+            $minutes = max(1, (int) ceil($seconds / 60));
 
             return $this->errorResponse(
-                "Account is temporarily locked. Try again in {$minutes} minute(s).",
+                "Too many attempts. Try again in {$minutes} minute(s).",
                 423
-            );
+            )->header('Retry-After', (string) $seconds);
         }
 
         if (! Auth::guard('web')->validate(['email' => $email, 'password' => $password])) {
             $user?->recordFailedLogin();
 
-            return $this->errorResponse(__('auth.failed'), 401);
+            return $this->errorResponse($genericFail, 401);
         }
 
         $user = User::where('email', $email)->first();
@@ -56,10 +64,7 @@ class AuthController extends Controller
         if (! $user || ! $user->active) {
             $user?->recordFailedLogin();
 
-            return $this->errorResponse(
-                'Your account has been deactivated, please contact administrator.',
-                403
-            );
+            return $this->errorResponse($genericFail, 401);
         }
 
         $tokens = $this->issuePasswordGrantTokens($email, $password);

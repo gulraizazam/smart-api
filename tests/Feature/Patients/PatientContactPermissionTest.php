@@ -129,6 +129,29 @@ class PatientContactPermissionTest extends TestCase
         $this->assertSame('3112223333', $rows[0]->phone);
     }
 
+    public function test_get_patient_search_optimized_never_returns_cnic_email_or_dob(): void
+    {
+        // Security audit 2026-06: the picker SELECT used to return cnic/email/dob
+        // to anyone who could search. The SPA only consumes id/name/phone.
+        $this->actingAsUserWithContact();
+        Patients::factory()->create([
+            'name' => 'Cnicprobe Patient',
+            'phone' => '3009998888',
+            'cnic' => '11111-2222222-3',
+            'email' => 'cnicprobe@example.test',
+            'dob' => '1990-01-01',
+        ]);
+
+        $rows = Patients::getPatientSearchOptimized('Cnicprobe', 1);
+
+        $this->assertNotEmpty($rows);
+        foreach ($rows as $row) {
+            $this->assertFalse(property_exists($row, 'cnic'), 'search must not return cnic');
+            $this->assertFalse(property_exists($row, 'email'), 'search must not return email');
+            $this->assertFalse(property_exists($row, 'dob'), 'search must not return dob');
+        }
+    }
+
     private function actingAsUserWithContact(): User
     {
         return $this->actingAsUserWithPermission(contactGranted: true);
