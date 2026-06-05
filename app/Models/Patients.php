@@ -8,6 +8,7 @@ use App\Casts\DecryptLegacyOnRead;
 use App\Helpers\GeneralFunctions;
 use App\Helpers\PatientAccessScope;
 use App\Services\PatientManagement\PatientSearchService;
+use App\Services\Phone\PhoneFormattingService;
 use Illuminate\Contracts\Encryption\DecryptException;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
@@ -374,8 +375,19 @@ class Patients extends BaseModel
 
     public static function getByPhone(string $phone, int|false $accountId = false, int|false $patientId = false): ?self
     {
-        $query = self::where('phone', $phone)
-            ->where('user_type_id', self::$USER_TYPE);
+        // Match every equivalent stored form (canonical, raw leading zero,
+        // 92/+92 country code) — the `phone` column is not normalised
+        // consistently across the shared DB, so an exact match on the
+        // cleaned number alone misses ~1k consultation-created rows that
+        // kept the leading zero. See PhoneFormattingService::matchVariants.
+        $variants = PhoneFormattingService::matchVariants($phone);
+
+        $query = self::where('user_type_id', self::$USER_TYPE);
+        if (empty($variants)) {
+            $query->where('phone', $phone);
+        } else {
+            $query->whereIn('phone', $variants);
+        }
 
         if ($patientId) {
             $query->where('id', $patientId);

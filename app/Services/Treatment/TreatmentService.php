@@ -247,9 +247,15 @@ final class TreatmentService
             throw TreatmentException::invalidData('Phone is required to resolve the patient.');
         }
 
+        // Match every equivalent stored form (canonical, raw leading zero,
+        // 92/+92 country code). An exact match on the cleaned number alone
+        // misses consultation-created rows that kept the leading zero,
+        // surfacing as patient-not-registered for a phone the SPA's
+        // load/lead search already proved exists. Must stay in lockstep
+        // with Patients::getByPhone (the SPA-side lookup).
         $patient = User::where('account_id', $accountId)
             ->where('user_type_id', config('constants.patient_id'))
-            ->where('phone', $cleaned)
+            ->whereIn('phone', PhoneFormattingService::matchVariants($cleaned))
             ->first();
 
         if (! $patient) {

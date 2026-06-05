@@ -114,6 +114,50 @@ class PatientCreationPolicyTest extends TestCase
         );
     }
 
+    public function test_treatment_lookup_finds_patient_stored_with_a_leading_zero(): void
+    {
+        // Regression (2026-06-05): ~1k consultation-created patients were
+        // saved with the raw leading zero (`0307...`) instead of the
+        // canonical cleaned form (`307...`). The lookup ran cleanNumber
+        // (which peels the zero) and exact-matched, so those patients
+        // surfaced as "No registered patient with this phone" and could
+        // never be booked for a treatment. Pin both lookup seams here.
+        $storedPhone = '0307' . random_int(1000000, 9999999); // leading zero, as stored
+        $existing = Patients::factory()->create(['phone' => $storedPhone]);
+
+        // 1) Direct model lookup (the SPA's load/lead phone search) must
+        //    resolve the leading-zero row from the cleaned key.
+        $found = Patients::getByPhone(
+            \App\Services\Phone\PhoneFormattingService::cleanNumber($storedPhone),
+        );
+        $this->assertNotNull($found, 'getByPhone must find a patient stored with a leading zero.');
+        $this->assertSame($existing->id, $found->id);
+
+        // 2) Treatment-submit resolver must NOT fire patient-not-registered
+        //    for the same number, and must never spawn a patient.
+        $payload = $this->validTreatmentPayload([
+            'phone' => $storedPhone,
+            'name'  => $existing->name,
+        ]);
+        $patientCountBefore = Patients::query()->count();
+
+        try {
+            app(TreatmentService::class)->store($payload);
+        } catch (TreatmentException $e) {
+            $this->assertNotSame(
+                'PATIENT_NOT_REGISTERED',
+                $e->getErrorData()['code'] ?? null,
+                'A patient stored with a leading zero must resolve, not be reported unregistered.',
+            );
+        }
+
+        $this->assertSame(
+            $patientCountBefore,
+            Patients::query()->count(),
+            'Treatment booking must never create a patient, even when resolving a leading-zero phone.',
+        );
+    }
+
     public function test_consultancy_service_creates_patient_when_phone_unknown(): void
     {
         // The single sanctioned create path. Without this positive
