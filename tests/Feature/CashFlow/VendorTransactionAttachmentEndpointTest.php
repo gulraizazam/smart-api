@@ -7,6 +7,7 @@ namespace Tests\Feature\CashFlow;
 use App\Models\CashFlow\Vendor;
 use App\Models\CashFlow\VendorTransaction;
 use App\Models\CashFlow\VendorTransactionAttachment;
+use App\Models\User;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Tests\Concerns\RefreshTestDatabase as RefreshDatabase;
@@ -217,5 +218,92 @@ class VendorTransactionAttachmentEndpointTest extends TestCase
 
         $response = $this->postJson("/api/cashflow/vendors/{$vendor->id}/transactions/{$tx->id}/deliver", []);
         $response->assertStatus(422);
+    }
+
+    /** Upload an invoice (as the admin) and bind it to a fresh purchase. */
+    private function attachInvoiceToPurchase(): int
+    {
+        $vendor = $this->vendor();
+        $attId = (int) $this->postJson('/api/cashflow/vendors/attachments', [
+            'file' => $this->fakePdf(),
+        ])->assertStatus(201)->json('data.id');   // uploaded_by = the setUp admin
+        $this->postJson("/api/cashflow/vendors/{$vendor->id}/purchase", [
+            'amount' => 1000,
+            'description' => 'Medical consumables',
+            'transaction_date' => now()->format('Y-m-d'),
+            'is_for_general' => true,
+            'status' => 'ordered',
+            'attachment_ids' => [$attId],
+        ])->assertStatus(200);
+
+        return $attId;
+    }
+
+    /**
+     * Build a non-admin user on the admin's account holding exactly the
+     * given legacy permission slugs, and act as them.
+     */
+    private function actingAsUserWith(array $legacySlugs, string $label): User
+    {
+        $admin = auth()->user();
+        foreach ($legacySlugs as $slug) {
+            $this->createPermission($slug);
+        }
+        $role = $this->createRole($label.'-'.uniqid());
+        $role->givePermissionTo($legacySlugs);
+
+        $user = User::factory()->create(['account_id' => $admin->account_id]);
+        app(\Spatie\Permission\PermissionRegistrar::class)->forgetCachedPermissions();
+        $user->assignRole($role);
+        app(\Spatie\Permission\PermissionRegistrar::class)->forgetCachedPermissions();
+        $this->actingAs($user);
+
+        return $user;
+    }
+
+    public function test_destroy_soft_deletes_an_invoice_for_a_creator(): void
+    {
+        // Baseline detach path — the setUp admin holds the (bridged)
+        // create grant. The destroy endpoint had no test before; pin it.
+        $attId = $this->attachInvoiceToPurchase();
+
+        $this->deleteJson("/api/cashflow/vendors/attachments/{$attId}")
+            ->assertStatus(200)
+            ->assertJson(['success' => true]);
+        $this->assertSoftDeleted('vendor_transaction_attachments', ['id' => $attId]);
+    }
+
+    public function test_edit_permission_holder_can_remove_an_invoice_mid_edit(): void
+    {
+        // Regression (reported 2026-06-05): an invoice is removed while
+        // EDITING an order, so the edit grant must permit it. A user who
+        // can edit a purchase but not create one — and isn't the uploader
+        // — was 403'd here, even though the SPA let them open the edit form.
+        $attId = $this->attachInvoiceToPurchase();
+
+        $this->actingAsUserWith(
+            ['cashflow_vendor_view', 'cashflow_vendor_transaction_edit'],
+            'vendor-editor',
+        );
+
+        $this->deleteJson("/api/cashflow/vendors/attachments/{$attId}")
+            ->assertStatus(200);
+        $this->assertSoftDeleted('vendor_transaction_attachments', ['id' => $attId]);
+    }
+
+    public function test_view_only_user_cannot_remove_someone_elses_invoice(): void
+    {
+        // The widening stops at edit — plain view permission still can't
+        // detach an invoice it doesn't own.
+        $attId = $this->attachInvoiceToPurchase();
+
+        $this->actingAsUserWith(['cashflow_vendor_view'], 'vendor-viewer');
+
+        $this->deleteJson("/api/cashflow/vendors/attachments/{$attId}")
+            ->assertStatus(403);
+        $this->assertDatabaseHas('vendor_transaction_attachments', [
+            'id' => $attId,
+            'deleted_at' => null,
+        ]);
     }
 }

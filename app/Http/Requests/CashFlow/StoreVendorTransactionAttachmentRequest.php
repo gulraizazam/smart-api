@@ -26,7 +26,13 @@ class StoreVendorTransactionAttachmentRequest extends FormRequest
             return false;
         }
 
+        // Attachments are added both while *recording* a purchase (create)
+        // and while *editing* an existing one — so honour the edit grant
+        // too. Without it a user who can edit an order but not create one
+        // would be 403'd trying to attach an invoice mid-edit. Mirrors the
+        // expense attachment gate (which accepts `cashflow.expense.edit`).
         return $user->can('cashflow.vendor.transaction.create')
+            || $user->can('cashflow.vendor.transaction.edit')
             || $user->can('cashflow.vendor.manage')
             || $user->can('cashflow.manage');
     }
