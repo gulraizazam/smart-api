@@ -8,6 +8,7 @@ use App\Models\Brand;
 use App\Models\Inventory;
 use App\Models\Order;
 use App\Models\OrderDetail;
+use App\Models\Patients;
 use App\Models\Product;
 use App\Models\Stock;
 use App\Services\Order\OrderService;
@@ -107,6 +108,57 @@ class LegacyOrderFlowTest extends TestCase
             'location_id' => $locationId,
             'discount' => 0,
         ];
+    }
+
+    private function patientSalePayload(int $productId, int $invId, int $locationId, int $qty, string $phone, string $name = 'Walk-in Patient'): array
+    {
+        return [
+            'product_id' => [$productId],
+            'quantity' => [$qty],
+            'product_price' => [0],
+            'inventory_id' => [$invId],
+            'payment_mode' => 1,
+            'sold_to' => 'patient',
+            'name' => $name,
+            'phone' => $phone,
+            'location_id' => $locationId,
+            'discount' => 0,
+        ];
+    }
+
+    /**
+     * Order-only patient carve-out (project_patient_creation_rule, 2026-06-01):
+     * a product sale to a BRAND-NEW phone registers a proper, account-scoped
+     * patient on the LIVE OrderService::createOrder path. Re-pins the coverage
+     * lost when this file was renamed from FifoOrderFlowTest (the policy test
+     * only covers the legacy Order::createRecord path).
+     */
+    public function test_order_create_registers_patient_for_new_phone(): void
+    {
+        $loc = (int) ($this->defaultLocation->id ?? 1);
+        $product = $this->makeProduct(1000);
+        $invId = $this->stockAt($product->id, $loc, 5, 1000);
+
+        $phone = '+92307'.random_int(1000000, 9999999);
+        $before = Patients::query()->count();
+
+        $order = app(OrderService::class)->createOrder(
+            $this->patientSalePayload($product->id, $invId, $loc, 1, $phone)
+        );
+
+        $this->assertNotNull($order, 'patient sale should create an order.');
+        $patient = Patients::where('phone', $phone)->first();
+        $this->assertNotNull(
+            $patient,
+            'a new-phone product sale MUST register a patient (order-only carve-out, live OrderService path).',
+        );
+        $this->assertSame(1, (int) $patient->account_id, 'order-created patient must be account-scoped.');
+        $this->assertSame(
+            (int) config('constants.patient_id'),
+            (int) $patient->user_type_id,
+            'order-created patient must be a proper patient row (user_type_id=patient), not an orphan.',
+        );
+        $this->assertSame($before + 1, Patients::query()->count(), 'exactly one patient registered.');
     }
 
     public function test_sale_decrements_inventory_and_writes_out_ledger(): void
