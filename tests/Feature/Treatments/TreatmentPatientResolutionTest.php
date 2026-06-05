@@ -57,6 +57,20 @@ class TreatmentPatientResolutionTest extends TestCase
         }
     }
 
+    public function test_resolves_patient_stored_with_country_code_prefix(): void
+    {
+        // Mirrors PatientGetByPhone: the stored row kept the 92 country code.
+        // resolveExistingPatientOrFail relies on matchVariants to generate the
+        // "92"+clean form — a plain cleaned / leading-0 match would miss it and
+        // wrongly reject the treatment as "patient not registered". Pins the
+        // merge resolution that kept matchVariants over the narrower variant.
+        $patient = Patients::factory()->create(['phone' => '923110088221', 'account_id' => 1]);
+
+        foreach (['3110088221', '03110088221', '923110088221', '+92 311 0088221'] as $input) {
+            $this->assertSame($patient->id, $this->resolve(['phone' => $input]), "Input '{$input}' must resolve.");
+        }
+    }
+
     public function test_still_rejects_a_truly_unregistered_phone(): void
     {
         Patients::factory()->create(['phone' => '3215044424', 'account_id' => 1]);

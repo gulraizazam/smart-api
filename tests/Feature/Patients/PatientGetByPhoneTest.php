@@ -53,6 +53,25 @@ class PatientGetByPhoneTest extends TestCase
         }
     }
 
+    public function test_finds_patient_stored_with_country_code_prefix(): void
+    {
+        // The case that distinguishes matchVariants() from a plain cleaned /
+        // leading-0 match: the patient ROW kept the 92 country code
+        // ("923110088221"). getByPhone must still resolve it from a bare local
+        // number — matchVariants generates the "92"+clean stored form, which a
+        // (phone = clean OR '0'.clean) lookup would miss. Pins the merge
+        // resolution that kept matchVariants over the narrower variant.
+        $patient = Patients::factory()->create(['phone' => '923110088221']);
+
+        foreach (['3110088221', '03110088221', '923110088221', '+92 311 0088221'] as $input) {
+            $this->assertSame(
+                $patient->id,
+                Patients::getByPhone($input)?->id,
+                "Input '{$input}' must resolve to the patient stored as 923110088221.",
+            );
+        }
+    }
+
     public function test_returns_null_for_unknown_phone(): void
     {
         Patients::factory()->create(['phone' => '3215044424']);
