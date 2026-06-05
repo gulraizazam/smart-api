@@ -32,7 +32,7 @@ API_REMOTE_DIR="${API_REMOTE_DIR:-/home/u572390775/domains/api.cutera.pk/crm}"
 PHP84="${PHP84:-/opt/alt/php84/usr/bin/php}"
 API_URL="${API_URL:-https://api.cutera.pk}"
 CRM2_URL="${CRM2_URL:-https://crm2.cutera.pk}"
-LOCAL_PHP="$(command -v php || echo php)"
+LOCAL_PHP="${LOCAL_PHP:-$(command -v php || echo php)}"  # may contain spaces (Herd) - always quote
 
 CHECK_ONLY=0; [ "${1:-}" = "--check" ] && CHECK_ONLY=1
 
@@ -62,7 +62,7 @@ git fetch origin "$DEPLOY_BRANCH" --quiet
 
 # ---- Gate 3: full backend test suite ----------------------------------------
 say "Gate 3/5: full backend test suite (pest)"
-$LOCAL_PHP -d memory_limit=-1 vendor/bin/pest \
+"$LOCAL_PHP" -d memory_limit=-1 vendor/bin/pest \
   || die "backend test suite FAILED - fix before deploying."
 
 # ---- Gate 4: crm2 coexistence (local shared-DB mirror) ----------------------
