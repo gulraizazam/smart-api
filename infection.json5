@@ -1,0 +1,26 @@
+{
+    // Mutation testing = the teeth check (TESTING.md sec.5). Scoped via --filter in
+    // `composer test:mutation` to the critical modules from the invariant map -- a
+    // bare `infection` run would mutate ALL of app/ (slow), so ALWAYS use the
+    // composer script. Needs a coverage driver (pcov/xdebug): CI installs pcov;
+    // locally run `pecl install pcov` first.
+    //
+    // thresholds are a RATCHET: calibrate minCoveredMsi on the FIRST run (no driver
+    // locally here, so this is wired as a manual CI step until calibrated), then
+    // raise it. NEVER lower a threshold to go green -- harden the tests instead.
+    "$schema": "vendor/infection/infection/resources/schema.json",
+    "source": {
+        "directories": ["app"]
+    },
+    "mutators": {
+        "@default": true
+    },
+    "minMsi": 40,
+    "minCoveredMsi": 60,
+    "tmpDir": "build/infection",
+    "logs": {
+        "text": "build/infection/infection.log",
+        "html": "build/infection/infection.html"
+    },
+    "testFramework": "phpunit"
+}
