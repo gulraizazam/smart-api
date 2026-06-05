@@ -311,7 +311,9 @@ class LeadService
     public function updateLeadStatus(int $leadId, array $data): Leads
     {
         return DB::transaction(function () use ($leadId, $data): Leads {
-            $lead = Leads::findOrFail($leadId);
+            // Account-scoped: a user must not change another tenant's lead by
+            // id (IDOR). Security audit 2026-06.
+            $lead = Leads::where('account_id', Auth::user()->account_id)->findOrFail($leadId);
 
             $statusId = $data['lead_status_chalid_id'] ?? $data['lead_status_parent_id'];
 
@@ -460,7 +462,7 @@ class LeadService
             'lead_service.childservice:id,name',
             'lead_service.leadStatus:id,name',
             'user:id,name',
-        ])->find($id);
+        ])->where('account_id', Auth::user()->account_id)->find($id);
     }
 
     public function getLeadForEdit(int $id): ?Leads
@@ -476,7 +478,8 @@ class LeadService
 
     public function findLead(int $id): ?Leads
     {
-        return Leads::find($id);
+        // Account-scoped (IDOR fix, security audit 2026-06).
+        return Leads::where('account_id', Auth::user()->account_id)->find($id);
     }
 
     public function getCreateFormData(): array
@@ -567,7 +570,8 @@ class LeadService
 
     public function getLeadStatusesWithChildren(int $leadId): array
     {
-        $lead = Leads::find($leadId);
+        // Account-scoped (IDOR fix, security audit 2026-06).
+        $lead = Leads::where('account_id', Auth::user()->account_id)->find($leadId);
 
         if (! $lead) {
             throw LeadException::notFound($leadId);
@@ -1189,7 +1193,8 @@ class LeadService
 
     public function sendSmsToLead(int $id): array
     {
-        $lead = Leads::findOrFail($id);
+        // Account-scoped (IDOR fix, security audit 2026-06).
+        $lead = Leads::where('account_id', Auth::user()->account_id)->findOrFail($id);
 
         return $this->sendSMS($lead->id, $lead->phone);
     }
@@ -1278,7 +1283,8 @@ class LeadService
     public function updateLeadCity(int $leadId, int $cityId): ?array
     {
         $city = Cities::find($cityId);
-        $lead = Leads::find($leadId);
+        // Account-scoped (IDOR fix, security audit 2026-06).
+        $lead = Leads::where('account_id', Auth::user()->account_id)->find($leadId);
 
         if (! $lead || ! $city) {
             return null;

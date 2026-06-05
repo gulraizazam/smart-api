@@ -1490,7 +1490,7 @@ class ActivityLogger
             return null;
         }
 
-        $throttleMinutes = (int) env('ACTIVITY_AUDIT_LOG_READ_THROTTLE_MINUTES', 60);
+        $throttleMinutes = (int) config('activity_log.audit_log_read_throttle_minutes', 60);
         $since = now()->subMinutes($throttleMinutes);
 
         $recent = Activity::where('activity_type', 'audit_log_viewed')

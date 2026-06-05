@@ -292,7 +292,9 @@ class DoctorService
 
     public function update(int $id, array $data): ?User
     {
-        $user = User::findOrFail($id);
+        // Account-scoped: a user may only edit doctors within their own account
+        // (security audit 2026-06 — was a bare findOrFail = cross-tenant edit).
+        $user = User::where('account_id', Auth::user()->account_id)->findOrFail($id);
 
         // Handle masked phone
         if (($data['phone'] ?? null) === '***********' && isset($data['old_phone'])) {
@@ -303,9 +305,18 @@ class DoctorService
         $data['phone'] = PhoneFormattingService::cleanNumber($data['phone']);
         $data['can_perform_consultation'] = isset($data['can_perform_consultation']) ? 1 : 0;
 
+        // Allowlist the columns a doctor-edit may change. The controller passes
+        // $request->all(), so without this a crafted request could mass-assign
+        // privileged columns the form never exposes — commission,
+        // is_advance_eligible, select_all, hr_managed, account_id, … Only the
+        // fields the SPA doctor form submits are honoured. Security audit 2026-06.
+        $userData = array_intersect_key($data, array_flip([
+            'name', 'email', 'phone', 'gender', 'can_perform_consultation',
+        ]));
+
         $oldData = $user->makeVisible(['password'])->toArray();
 
-        $user->update($data);
+        $user->update($userData);
         AuditTrails::addEventLogger('users', 'update', $oldData, ['name', 'email', 'phone', 'gender', 'user_type_id', 'resource_type_id', 'account_id', 'active'], $user);
 
         // Sync roles

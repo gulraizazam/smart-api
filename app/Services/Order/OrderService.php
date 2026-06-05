@@ -585,13 +585,17 @@ class OrderService
 
     public function getRefundDetail(int $orderId): ?Order
     {
-        $order = Order::whereId($orderId)->first();
+        // Account-scoped: refund detail must not cross the tenant boundary
+        // (IDOR). Security audit 2026-06.
+        $accountId = (int) Auth::user()->account_id;
+
+        $order = Order::where('account_id', $accountId)->whereId($orderId)->first();
 
         if ($order && $order->is_refunded == 1) {
             return null;
         }
 
-        return Order::with('patients', 'orderDetail')->find($orderId);
+        return Order::with('patients', 'orderDetail')->where('account_id', $accountId)->find($orderId);
     }
 
     /**
@@ -792,7 +796,13 @@ class OrderService
      */
     public function getInvoiceData(int $orderId): array
     {
-        $invoiceInfo = Order::with('orderDetail')->where(['id' => $orderId])->first();
+        // Account-scoped: invoice data must not cross the tenant boundary
+        // (IDOR). findOrFail → clean 404 for cross-account / missing ids (the
+        // un-try-wrapped Blade callers render Laravel's 404 page rather than
+        // the previous null-deref 500). Security audit 2026-06.
+        $invoiceInfo = Order::with('orderDetail')
+            ->where('account_id', (int) Auth::user()->account_id)
+            ->findOrFail($orderId);
         $productId = $invoiceInfo->orderDetail->pluck('product_id');
 
         $locationInfo = $invoiceInfo->location_id !== null
@@ -846,7 +856,10 @@ class OrderService
      */
     public function getInvoiceJson(int $orderId): array
     {
-        $order = Order::with(['orderDetail.product'])->findOrFail($orderId);
+        // Account-scoped (IDOR fix, security audit 2026-06).
+        $order = Order::with(['orderDetail.product'])
+            ->where('account_id', (int) Auth::user()->account_id)
+            ->findOrFail($orderId);
 
         $lines = $order->orderDetail->map(function ($detail) {
             $qty = (int) $detail->quantity;

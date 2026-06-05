@@ -32,6 +32,7 @@
     "require-dev": {
         "barryvdh/laravel-debugbar": "^3.14",
         "fakerphp/faker": "^1.9.1",
+        "infection/infection": "*",
         "larastan/larastan": "*",
         "laravel/pint": "^1.10",
         "laravel/sail": "^1.26",
@@ -70,7 +71,16 @@
         ],
         "post-create-project-cmd": [
             "@php artisan key:generate --ansi"
-        ]
+        ],
+        "test": "@php artisan test",
+        "test:stale": "bash scripts/test-stale-sweep.sh",
+        "test:sync": "bash scripts/test-sync-check.sh",
+        "test:coverage": "@php artisan test --coverage-clover=build/coverage.xml",
+        "test:diff-cover": [
+            "@php artisan test --coverage-clover=build/coverage.xml",
+            "diff-cover build/coverage.xml --compare-branch origin/backend --fail-under 90"
+        ],
+        "test:mutation": "vendor/bin/infection --filter=app/Services/CashFlow/MovementService.php,app/Support/OperatingDays.php,app/Helpers/BundleHelper.php,app/Models/Bundles.php,app/Services/Plan/PlanDiscountService.php --threads=4 --no-progress"
     },
     "extra": {
         "laravel": {
@@ -86,7 +96,8 @@
         "allow-plugins": {
             "composer/package-versions-deprecated": true,
             "pestphp/pest-plugin": true,
-            "php-http/discovery": true
+            "php-http/discovery": true,
+            "infection/extension-installer": true
         }
     },
     "minimum-stability": "dev",

@@ -43,6 +43,22 @@ Route::prefix('v2/auth')->name('api.v2.auth.')->group(function (): void {
         ->name('logout');
 });
 
+// Build provenance. Public + deliberately minimal (just the short commit SHA
+// and build time — no env, versions, or secrets) so "what's deployed on api?"
+// is a one-second check and scripts/deploy-api.sh can verify the upload. The
+// file is stamped on the server by the deploy script; absent (e.g. locally or
+// pre-first-deploy) it reports 'unknown' rather than erroring. Additive — crm2
+// does not use it.
+Route::get('version', function () {
+    $file = storage_path('app/deploy-version.json');
+    $data = is_file($file) ? (json_decode((string) file_get_contents($file), true) ?: []) : [];
+
+    return response()->json([
+        'commit' => $data['commit'] ?? 'unknown',
+        'builtAt' => $data['builtAt'] ?? null,
+    ]);
+});
+
 // Staged Sanctum → Passport migration: auth.api.dual accepts session,
 // Passport, and Sanctum tokens. Strict superset of auth.common — every
 // existing caller keeps working; new Passport tokens from /api/v2/auth/login

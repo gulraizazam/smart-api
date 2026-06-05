@@ -294,10 +294,28 @@ class ApplicationUserController extends Controller
     {
         try {
             $patientId = (int) $request->input('patient_id');
-            $patient = Patients::find($patientId);
+
+            // Scope to the caller's account — patients are account-owned, so a
+            // lookup by id must never cross the tenant boundary. (Security audit
+            // 2026-06: this previously returned the raw Patients model for ANY
+            // id to ANY authenticated user, leaking the bcrypt password hash,
+            // remember_token, cnic, email and dob. Patients::$hidden now strips
+            // the credentials; this scopes + minimises the rest.)
+            $patient = Patients::where('account_id', Auth::user()->account_id)->find($patientId);
+
+            if (! $patient) {
+                return $this->errorResponse('Record not found.', 404);
+            }
 
             return $this->successResponse('Record found.', [
-                'patient' => $patient,
+                'patient' => [
+                    'id' => $patient->id,
+                    'patient_code' => "C-{$patient->id}",
+                    'name' => $patient->name,
+                    // Phone gated on the same `contact` permission used across
+                    // the patient surfaces (PatientDetailResource, search).
+                    'phone' => Gate::allows('patients.list.view_contact') ? $patient->phone : null,
+                ],
             ]);
         } catch (\Exception $e) {
             return $this->handleException($e, 'ApplicationUserController');

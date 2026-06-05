@@ -24,7 +24,11 @@ class PatientDetailResource extends JsonResource
             'phone' => $this->when($canViewContact, fn () => $this->phone),
             'gender' => $this->resource->getAttributes()['gender'] ?? null,
             'gender_label' => Gender::tryFrom((int) ($this->resource->getAttributes()['gender'] ?? 0))?->label() ?? 'N/A',
-            'cnic' => $this->cnic,
+            // CNIC (national ID) gated on the same `contact` permission as phone
+            // — was previously returned to any authenticated caller. Key is
+            // omitted entirely when denied (SPA types cnic as optional/nullable).
+            // Security audit 2026-06.
+            'cnic' => $this->when($canViewContact, fn () => $this->cnic),
             'dob' => $this->dob?->format('Y-m-d'),
             'referred_by' => $this->referred_by,
             'active' => $this->active,
