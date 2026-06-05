@@ -15,6 +15,14 @@ class GeneralSalesReportRequest extends FormRequest
 {
     use ParsesDateRange;
 
+    /**
+     * Roles restricted to same-day figures on the General Sales Report.
+     * The date range is forced to today for these roles regardless of what
+     * the client sends — enforced here (server side) so it can't be bypassed
+     * via a crafted API request; the SPA also locks the date picker for them.
+     */
+    private const TODAY_ONLY_ROLES = ['FDM'];
+
     public function authorize(): bool
     {
         return true;
@@ -57,12 +65,31 @@ class GeneralSalesReportRequest extends FormRequest
 
     public function startDate(): ?string
     {
+        if ($this->isRestrictedToToday()) {
+            return now()->toDateString();
+        }
+
         return self::parseDateRange($this->date_range)[0];
     }
 
     public function endDate(): ?string
     {
+        if ($this->isRestrictedToToday()) {
+            return now()->toDateString();
+        }
+
         return self::parseDateRange($this->date_range)[1];
+    }
+
+    /**
+     * True when the current user's role is locked to today's figures only
+     * (see self::TODAY_ONLY_ROLES). Drives the server-side date clamp above.
+     */
+    public function isRestrictedToToday(): bool
+    {
+        $user = $this->user();
+
+        return $user !== null && $user->hasAnyRole(self::TODAY_ONLY_ROLES);
     }
 
     /**

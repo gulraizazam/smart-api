@@ -173,6 +173,13 @@ class OrdersController extends Controller
         return $this->successResponse('Record found.', $data);
     }
 
+    public function getPaymentModes(): JsonResponse
+    {
+        $data = $this->orderService->getPaymentModes();
+
+        return $this->successResponse('Record found.', $data);
+    }
+
     public function store(Request $request): JsonResponse
     {
         try {
