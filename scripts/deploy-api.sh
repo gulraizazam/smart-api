@@ -84,8 +84,14 @@ if [ "$CHECK_ONLY" = 1 ]; then
 fi
 
 # ---- Deploy -----------------------------------------------------------------
-printf '\nAll gates passed. Deploy %s to %s:%s ? [y/N] ' "$HEAD_SHORT" "$SSH_HOST" "$API_REMOTE_DIR"
-read -r ans; [ "$ans" = y ] || [ "$ans" = Y ] || die "aborted by operator."
+if [ "${DEPLOY_YES:-}" = 1 ]; then
+  say "All gates passed. DEPLOY_YES=1 -> deploying $HEAD_SHORT non-interactively."
+else
+  printf '\nAll gates passed. Deploy %s to %s:%s ? [y/N] ' "$HEAD_SHORT" "$SSH_HOST" "$API_REMOTE_DIR"
+  # Read from the TTY, not stdin: an earlier ssh (parity-check) drains piped stdin.
+  read -r ans </dev/tty 2>/dev/null || ans=""
+  [ "$ans" = y ] || [ "$ans" = Y ] || die "aborted by operator."
+fi
 
 # Capture the live SHA BEFORE pushing, for rollback.
 PREV_SHA="$(ssh_prod "cd '$API_REMOTE_DIR' && git rev-parse HEAD" 2>/dev/null || echo unknown)"
