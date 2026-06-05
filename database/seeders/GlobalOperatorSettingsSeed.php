@@ -15,8 +15,8 @@ class GlobalOperatorSettingsSeed extends Seeder
             1 => [
                 'id' => 1,
                 'operator_name' => 'Telenor Corporate SMS',
-                'username' => env('SMS_TELENOR_USERNAME', ''),
-                'password' => env('SMS_TELENOR_PASSWORD', ''),
+                'username' => config('services.sms.telenor.username', ''),
+                'password' => config('services.sms.telenor.password', ''),
                 'mask' => '',
                 'test_mode' => '',
                 'url' => 'https://telenorcsms.com.pk:27677',
@@ -28,8 +28,8 @@ class GlobalOperatorSettingsSeed extends Seeder
             2 => [
                 'id' => 2,
                 'operator_name' => 'Jazz Corporate SMS',
-                'username' => env('SMS_JAZZ_USERNAME', ''),
-                'password' => env('SMS_JAZZ_PASSWORD', ''),
+                'username' => config('services.sms.jazz.username', ''),
+                'password' => config('services.sms.jazz.password', ''),
                 'mask' => '',
                 'test_mode' => '',
                 'url' => 'https://enterprise.jazzcmt.com',

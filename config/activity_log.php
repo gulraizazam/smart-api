@@ -103,6 +103,13 @@ return [
     'access_throttle_minutes' => (int) env('ACTIVITY_ACCESS_THROTTLE_MINUTES', 1440),
 
     /*
+     * Throttle window for audit-log READ logging (logAuditLogAccessed): one row
+     * per user per window keeps "who viewed the audit log" from flooding the
+     * feed. Read via config() (not env() directly) so config:cache stays safe.
+     */
+    'audit_log_read_throttle_minutes' => (int) env('ACTIVITY_AUDIT_LOG_READ_THROTTLE_MINUTES', 60),
+
+    /*
      * Per-model tier overrides. FQCN => ActivityLogTier enum value.
      */
     'tiers' => [

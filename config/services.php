@@ -45,4 +45,18 @@ return [
         'secret_key' => env('TURNSTILE_SECRET_KEY'),
     ],
 
+    // SMS gateway credentials, seeded into global_operator_settings by
+    // GlobalOperatorSettingsSeed. Held here (not read via env() in the seeder)
+    // so config:cache stays safe — the seeder reads config('services.sms.*').
+    'sms' => [
+        'telenor' => [
+            'username' => env('SMS_TELENOR_USERNAME', ''),
+            'password' => env('SMS_TELENOR_PASSWORD', ''),
+        ],
+        'jazz' => [
+            'username' => env('SMS_JAZZ_USERNAME', ''),
+            'password' => env('SMS_JAZZ_PASSWORD', ''),
+        ],
+    ],
+
 ];
