@@ -247,9 +247,19 @@ final class TreatmentService
             throw TreatmentException::invalidData('Phone is required to resolve the patient.');
         }
 
+        // Match BOTH the normalized phone and its leading-0 form. Stored
+        // phones are inconsistent — most are normalized ("3110088221") but a
+        // large legacy/walk-in set kept the leading 0 ("03110088221"). Matching
+        // only the cleaned value made the treatment SUBMIT report
+        // "no registered patient" for a patient the consultation had already
+        // registered (and the load/lead lookup now finds). Mirrors
+        // Patients::getByPhone.
         $patient = User::where('account_id', $accountId)
             ->where('user_type_id', config('constants.patient_id'))
-            ->where('phone', $cleaned)
+            ->where(function ($q) use ($cleaned) {
+                $q->where('phone', $cleaned)
+                    ->orWhere('phone', '0'.$cleaned);
+            })
             ->first();
 
         if (! $patient) {

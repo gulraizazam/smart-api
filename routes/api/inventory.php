@@ -147,6 +147,7 @@ use Illuminate\Support\Facades\Route;
     Route::post('orders/refund/datatable', [OrdersController::class, 'refunddatatable'])->name('orders.refund.datatable');
     Route::get('orders/getproducts', [OrdersController::class, 'getProducts'])->name('orders.getproducts');
     Route::get('orders/getdiscounts', [OrdersController::class, 'getDiscounts'])->name('orders.getdiscounts');
+    Route::get('orders/getpaymentmodes', [OrdersController::class, 'getPaymentModes'])->name('orders.getpaymentmodes');
     Route::get('orders/displayInvoice/{id}', [OrdersController::class, 'displayInvoiceAppointment'])->name('orders.invoiceDisplay');
     Route::get('orders/{id}/invoice/json', [OrdersController::class, 'invoiceJson'])->name('orders.invoiceJson');
     Route::get('invoices/pdf/{id}/{download?}', [OrdersController::class, 'invoicePdf'])->name('orders.invoice_pdf');

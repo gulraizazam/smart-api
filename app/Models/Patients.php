@@ -374,8 +374,19 @@ class Patients extends BaseModel
 
     public static function getByPhone(string $phone, int|false $accountId = false, int|false $patientId = false): ?self
     {
-        $query = self::where('phone', $phone)
-            ->where('user_type_id', self::$USER_TYPE);
+        // Phone lookups must match regardless of a leading 0 / country code.
+        // Stored phones are inconsistent — most are normalized (e.g.
+        // "3110088221") but a large legacy/walk-in set kept the leading 0
+        // ("03110088221"). Normalize the input the same way phones are cleaned
+        // elsewhere, then match BOTH the normalized value and its leading-0
+        // form, so consultation/treatment phone lookups find the patient
+        // whether or not the caller typed the 0 (and whichever way it's stored).
+        $clean = GeneralFunctions::cleanNumber($phone);
+
+        $query = self::where(function ($q) use ($clean) {
+            $q->where('phone', $clean)
+                ->orWhere('phone', '0'.$clean);
+        })->where('user_type_id', self::$USER_TYPE);
 
         if ($patientId) {
             $query->where('id', $patientId);

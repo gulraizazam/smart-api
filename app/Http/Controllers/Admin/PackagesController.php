@@ -370,9 +370,26 @@ class PackagesController extends Controller
                     'updated_at' => Filters::getCurrentTimeStamp(),
                 ];
 
-                PackageAdvances::createRecord($packageAdvanceData, $package);
+                $advance = PackageAdvances::createRecord($packageAdvanceData, $package);
                 $paymentAdded = true;
                 $messages[] = 'Payment recorded';
+
+                // Record the payment on the patient's Activity feed. The
+                // regular-plan edit path logs this via PlanService; the
+                // membership edit path runs here, so it was the one flow that
+                // recorded a payment with no activity trail. Non-fatal.
+                try {
+                    $payer = \App\Models\Patients::find($patientId);
+                    $payLocation = Locations::with('city')->find($locationId);
+                    if ($payer) {
+                        ActivityLogger::logPaymentReceived($advance, $package, $payer, $payLocation);
+                    }
+                } catch (\Throwable $e) {
+                    \Log::warning('Membership payment activity log failed', [
+                        'package_id' => $packageId,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
 
                 \Log::info('Payment added in edit', [
                     'package_id' => $packageId,

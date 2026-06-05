@@ -212,6 +212,30 @@ class AppointmentLookupController extends AppointmentBaseController
         }
     }
 
+    /**
+     * Doctors eligible to perform TREATMENTS at a location — Consultants,
+     * Lifestyle Consultants and all Aesthetic Doctors (no
+     * can_perform_consultation gate, which only applies to consultations).
+     */
+    public function loadTreatmentDoctorsByLocation(Request $request): \Illuminate\Http\JsonResponse
+    {
+        try {
+            if ($request->location_id) {
+                $doctors = LocationsWidget::loadTreatmentDoctorByLocation($request->location_id, Auth::user()->account_id);
+
+                return $this->successResponse('Record found', [
+                    'dropdown' => $doctors->toArray(),
+                ]);
+            }
+
+            return $this->errorResponse('Record found', 404, [
+                'dropdown' => null,
+            ]);
+        } catch (\Exception $e) {
+            return $this->handleException($e, 'AppointmentLookupController');
+        }
+    }
+
     public function loadServiceByLocation(Request $request): \Illuminate\Http\JsonResponse
     {
         if ($request->location_id) {

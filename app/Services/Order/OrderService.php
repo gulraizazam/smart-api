@@ -14,6 +14,7 @@ use App\Models\Discounts;
 use App\Models\DoctorHasLocations;
 use App\Models\Inventory;
 use App\Models\Locations;
+use App\Models\PaymentModes;
 use App\Models\Order;
 use App\Models\OrderDetail;
 use App\Models\OrderRefund;
@@ -239,6 +240,28 @@ class OrderService
             ->get(['id', 'name', 'amount']);
 
         return ['discounts' => $discounts];
+    }
+
+    /**
+     * Active payment modes for the current account — the order form's
+     * payment-mode dropdown.
+     *
+     * The SPA previously reused the admin `/payment_modes/datatable`
+     * endpoint, which is gated on `payment_modes.list.view` (a settings
+     * permission). Operators who can create orders but don't administer
+     * payment modes (e.g. FDM) got a 403 and saw an empty dropdown. This
+     * lookup mirrors getProducts/getDiscounts — login-only, scoped to the
+     * account — so payment modes ride along with the order form like every
+     * other order lookup.
+     */
+    public function getPaymentModes(): array
+    {
+        $paymentModes = PaymentModes::where('account_id', Auth::user()->account_id)
+            ->where('active', 1)
+            ->orderBy('sort_number', 'ASC')
+            ->get(['id', 'name']);
+
+        return ['payment_modes' => $paymentModes];
     }
 
     // ---------------------------------------------------------------
