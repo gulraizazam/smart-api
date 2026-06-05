@@ -118,6 +118,9 @@ Route::get('refunds/refund_create/{id}', [ApiRefundsController::class, 'calculat
 Route::get('refunds/detail/{id}', [ApiRefundsController::class, 'detail'])->name('refunds.detail');
 Route::post('refunds', [ApiRefundsController::class, 'store'])->name('refunds.store');
 
+// Treatment picker for the "Add feedback" dialog — declared before the
+// resource so it isn't shadowed by a {feedback} param route.
+Route::get('feedbacks/available-treatments', [FeedbackController::class, 'availableTreatments'])->name('feedbacks.available-treatments');
 Route::resource('feedbacks', FeedbackController::class)->only(['store', 'edit', 'update', 'destroy']);
 // Discount Routes (Refactored — using API controller)
 Route::post('discounts/datatable', [ApiDiscountsController::class, 'datatable'])->name('discounts.datatable');
