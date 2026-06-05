@@ -214,6 +214,13 @@ class OrdersController extends Controller
     public function destroy(int $id): JsonResponse
     {
         try {
+            // Permission gate (security audit 2026-06): was the only verb in
+            // this controller with no authorization check. 403 (not 401) so the
+            // SPA surfaces "forbidden" instead of force-logging the user out.
+            if (! Gate::allows('order_manage')) {
+                return $this->errorResponse('You are not authorized to perform this action.', 403);
+            }
+
             $result = $this->orderService->deleteOrder($id);
 
             return $result['status'] ? $this->successResponse($result['message']) : $this->errorResponse($result['message'], 400);

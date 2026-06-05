@@ -65,6 +65,19 @@ class Patients extends BaseModel
         'account_id', 'created_by', 'image_src',
     ];
 
+    /**
+     * Hidden from array/JSON serialization. The Patients model shares the
+     * `users` table, so without this any path that returns a Patients
+     * instance raw (e.g. the legacy users/get_patient_number lookup)
+     * serializes the bcrypt password hash + remember_token to the client.
+     * Mirrors User::$hidden. Security audit 2026-06.
+     *
+     * @var array<int, string>
+     */
+    protected $hidden = [
+        'password', 'remember_token',
+    ];
+
     protected function casts(): array
     {
         return [
@@ -267,7 +280,7 @@ class Patients extends BaseModel
 
             if ($shape['type'] === 'patient_code' || $shape['type'] === 'short_id') {
                 $rows = DB::select(
-                    "SELECT name, id, phone, gender, cnic, email, dob
+                    "SELECT name, id, phone, gender
                      FROM users
                      WHERE id = ? AND user_type_id = 3 AND active = 1 AND account_id = ?
                        {$scopeSql}
@@ -298,7 +311,7 @@ class Patients extends BaseModel
             $placeholders = implode(',', array_fill(0, count($candidateIds), '?'));
 
             $rows = DB::select(
-                "SELECT name, id, phone, gender, cnic, email, dob
+                "SELECT name, id, phone, gender
                  FROM users
                  WHERE id IN ($placeholders)
                    AND user_type_id = 3 AND active = 1 AND account_id = ?

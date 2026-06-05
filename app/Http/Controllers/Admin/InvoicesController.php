@@ -770,6 +770,21 @@ class InvoicesController extends Controller
      */
     public function showSMSLogs(int $id): \Illuminate\Http\JsonResponse
     {
+        // Permission + account scope (security audit 2026-06): was ungated and
+        // unscoped — any authenticated user could read any tenant's invoice SMS
+        // history. Mirrors the modern Api\InvoicesController::smsLogs contract.
+        if (! Gate::allows('invoices.sms_log.view')) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
+        }
+
+        $invoice = Invoices::where('id', $id)
+            ->where('account_id', Auth::user()->account_id)
+            ->first();
+
+        if (! $invoice) {
+            return $this->errorResponse('Invoice not found.', 404);
+        }
+
         $SMSLogs = SMSLogs::where('invoice_id', '=', $id)->orderBy('created_at', 'desc')->get();
 
         return $this->successResponse('Record found', [

@@ -63,6 +63,74 @@ definitions:
           - php artisan migrate --database=mariadb_testing --force
           - php artisan test --colors=always
 
+    # ---------- Test-sync gates: missing-test + stale sweep (no coverage driver) ----------
+    # Lightweight (git + bash only). Wired to dev/integration branches + PRs, NOT to
+    # the live api/crm2 deploy branches (those must never be blocked by a sync check).
+    - step: &gates
+        name: 'Test-sync gates (missing-test + stale sweep)'
+        script:
+          - apt-get update && apt-get install -y --no-install-recommends git > /dev/null
+          - bash scripts/test-stale-sweep.sh
+          - git fetch --no-tags --depth=200 origin backend production || git fetch --no-tags origin backend production || true
+          - |
+            BASE=$(git merge-base HEAD origin/backend 2>/dev/null || git merge-base HEAD origin/production 2>/dev/null || git rev-parse HEAD~1 2>/dev/null || echo HEAD)
+            echo "test-sync base = $BASE"
+            bash scripts/test-sync-check.sh "$BASE"
+
+    # ---------- Quality: diff-coverage + mutation (Infection) ----------
+    # MANUAL + tolerant (|| true) while we CALIBRATE: the first run reports the real
+    # mutation score / diff-coverage so we can set infection.json5 thresholds. Once
+    # calibrated: remove the `|| true`, drop `trigger: manual`, and add `*quality`
+    # to the branch pipelines to make it GATING. Needs a coverage driver -> pcov.
+    - step: &quality
+        name: 'Quality: diff-cover + mutation (manual; calibrate then gate)'
+        trigger: manual
+        caches: [composer]
+        services: [mariadb]
+        script:
+          - apt-get update && apt-get install -y --no-install-recommends git unzip libzip-dev libpng-dev libonig-dev default-mysql-client python3-pip > /dev/null
+          - docker-php-ext-install pdo_mysql zip gd bcmath > /dev/null
+          - pecl install pcov > /dev/null && docker-php-ext-enable pcov
+          - pip3 install --quiet --break-system-packages diff-cover || pip3 install --quiet diff-cover || true
+          - curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+          - composer install --no-interaction --prefer-dist --no-progress
+          - |
+            cat > .env <<'ENV'
+            APP_NAME=Cutera
+            APP_ENV=testing
+            APP_KEY=
+            APP_DEBUG=true
+            APP_URL=http://localhost
+            LOG_CHANNEL=stderr
+            DB_CONNECTION=mariadb
+            DB_HOST=127.0.0.1
+            DB_PORT=3306
+            DB_DATABASE=cutera_test
+            DB_USERNAME=root
+            DB_PASSWORD=password
+            DB_TEST_HOST=127.0.0.1
+            DB_TEST_PORT=3306
+            DB_TEST_DATABASE=cutera_test
+            DB_TEST_USERNAME=root
+            DB_TEST_PASSWORD=password
+            CACHE_STORE=file
+            QUEUE_CONNECTION=sync
+            SESSION_DRIVER=array
+            MAIL_MAILER=array
+            ENV
+          - php artisan key:generate
+          - for i in $(seq 1 30); do mysqladmin ping -h 127.0.0.1 -uroot -ppassword --silent && break; echo "waiting for mariadb ($i/30)"; sleep 2; done
+          - |
+            if [ -f database/schema/mariadb_testing-schema.sql ]; then
+              mysql -h 127.0.0.1 -uroot -ppassword cutera_test < database/schema/mariadb_testing-schema.sql
+            else
+              echo "WARNING: schema dump missing; building test DB from migrations only"
+            fi
+          - php artisan migrate --database=mariadb_testing --force
+          - git fetch --no-tags --depth=200 origin backend || true
+          - composer test:diff-cover || true   # changed lines covered (calibrate, then make strict)
+          - composer test:mutation  || true   # Infection on critical modules (calibrate minCoveredMsi, then strict)
+
     # ---------- Deploy over SSH (assets are committed -> no npm build) ----------
     - step: &deploy
         name: Deploy (SSH)
@@ -114,29 +182,25 @@ pipelines:
       - step: { <<: *deploy, deployment: crm2 }
       - step: { <<: *migrate-live, deployment: crm2 }
 
-    # === STAGING: staging.cutera.pk — own DB -> auto-migrate.
-    #     To make staging migrations MANUAL, add `trigger: manual` to the migrate step below. ===
+    # === Integration / release branch: VERIFY ONLY (no pipeline deploy). ===
+    #   staging.cutera.pk was retired, so the old `deployment: staging` deploy +
+    #   auto-migrate steps targeted a dead environment (they'd only redden the
+    #   pipeline). The real backend deploy is the MANUAL `git push local backend
+    #   -> server` over SSH (the server can't pull from Bitbucket) — never via
+    #   this pipeline. So `backend` runs ci + gates, plus the manual quality gate.
     backend:
       - step: *ci
-      - step: { <<: *deploy, deployment: staging }
-      - step:
-          name: Migrate staging (auto)
-          deployment: staging
-          clone: { enabled: false }
-          script:
-            - pipe: atlassian/ssh-run:0.8.1
-              variables:
-                SSH_USER: $DEPLOY_SSH_USER
-                SERVER: $DEPLOY_SSH_HOST
-                MODE: 'command'
-                COMMAND: >
-                  set -e; cd "$DEPLOY_PATH"; php artisan migrate --force
+      - step: *gates
+      # Manual quality gate (diff-cover + mutation). Trigger to calibrate, then
+      # promote to a gating step (see &quality note).
+      - step: *quality
 
     # === Integration / dev branches: test only, never deploy ===
-    production: [ { step: *ci } ]
-    gulraiz:    [ { step: *ci } ]
-    shahid:     [ { step: *ci } ]
+    production: [ { step: *ci }, { step: *gates } ]
+    gulraiz:    [ { step: *ci }, { step: *gates } ]
+    shahid:     [ { step: *ci }, { step: *gates } ]
 
   pull-requests:
     '**':
       - step: *ci
+      - step: *gates
