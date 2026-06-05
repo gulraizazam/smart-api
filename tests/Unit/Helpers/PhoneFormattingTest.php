@@ -152,6 +152,43 @@ class PhoneFormattingTest extends TestCase
     }
 
     // =========================================================================
+    // matchVariants — every equivalent stored form, for a patient lookup
+    // =========================================================================
+
+    public function test_match_variants_covers_canonical_leading_zero_and_country_code(): void
+    {
+        // The `phone` column isn't normalised consistently across the
+        // shared DB. A lookup must match whichever form was stored — the
+        // canonical 10-digit number, the raw leading-zero form, and the
+        // 92 / +92 country-code forms — all from one cleaned key.
+        $this->assertSame(
+            ['3077168463', '03077168463', '923077168463', '+923077168463'],
+            PhoneFormattingService::matchVariants('03077168463'),
+        );
+    }
+
+    public function test_match_variants_is_input_format_agnostic(): void
+    {
+        // Same patient, four different ways an operator might type the
+        // number → the SAME variant set every time. This is what lets the
+        // SPA's load/lead search and the treatment-submit resolver agree.
+        $expected = ['3077168463', '03077168463', '923077168463', '+923077168463'];
+
+        $this->assertSame($expected, PhoneFormattingService::matchVariants('3077168463'));
+        $this->assertSame($expected, PhoneFormattingService::matchVariants('0307-716-8463'));
+        $this->assertSame($expected, PhoneFormattingService::matchVariants('+92 307 7168463'));
+        $this->assertSame($expected, PhoneFormattingService::matchVariants('923077168463'));
+    }
+
+    public function test_match_variants_returns_empty_for_a_blank_number(): void
+    {
+        // An empty phone has no meaningful variants — the caller decides
+        // what "no phone" means rather than matching an empty column.
+        $this->assertSame([], PhoneFormattingService::matchVariants(''));
+        $this->assertSame([], PhoneFormattingService::matchVariants(null));
+    }
+
+    // =========================================================================
     // clearnString — loose variant used in click-to-call paths
     // =========================================================================
 
