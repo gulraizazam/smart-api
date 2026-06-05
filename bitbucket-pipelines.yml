@@ -182,26 +182,17 @@ pipelines:
       - step: { <<: *deploy, deployment: crm2 }
       - step: { <<: *migrate-live, deployment: crm2 }
 
-    # === STAGING: staging.cutera.pk — own DB -> auto-migrate.
-    #     To make staging migrations MANUAL, add `trigger: manual` to the migrate step below. ===
+    # === Integration / release branch: VERIFY ONLY (no pipeline deploy). ===
+    #   staging.cutera.pk was retired, so the old `deployment: staging` deploy +
+    #   auto-migrate steps targeted a dead environment (they'd only redden the
+    #   pipeline). The real backend deploy is the MANUAL `git push local backend
+    #   -> server` over SSH (the server can't pull from Bitbucket) — never via
+    #   this pipeline. So `backend` runs ci + gates, plus the manual quality gate.
     backend:
       - step: *ci
       - step: *gates
-      - step: { <<: *deploy, deployment: staging }
-      - step:
-          name: Migrate staging (auto)
-          deployment: staging
-          clone: { enabled: false }
-          script:
-            - pipe: atlassian/ssh-run:0.8.1
-              variables:
-                SSH_USER: $DEPLOY_SSH_USER
-                SERVER: $DEPLOY_SSH_HOST
-                MODE: 'command'
-                COMMAND: >
-                  set -e; cd "$DEPLOY_PATH"; php artisan migrate --force
-      # Manual quality gate (diff-cover + mutation). Last so it never blocks deploy;
-      # trigger it to calibrate, then promote to a gating step (see &quality note).
+      # Manual quality gate (diff-cover + mutation). Trigger to calibrate, then
+      # promote to a gating step (see &quality note).
       - step: *quality
 
     # === Integration / dev branches: test only, never deploy ===
