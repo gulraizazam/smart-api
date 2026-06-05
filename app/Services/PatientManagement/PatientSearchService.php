@@ -8,6 +8,7 @@ use App\Helpers\GeneralFunctions;
 use App\Models\Appointments;
 use App\Models\Leads;
 use App\Models\Patients;
+use App\Services\Phone\PhoneFormattingService;
 use Config;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -223,7 +224,37 @@ class PatientSearchService
             $fallback->where('account_id', $accountId);
         }
 
-        return $fallback->limit(200)
+        $substringIds = $fallback->limit(200)
+            ->pluck('id')
+            ->map(fn ($v): int => (int) $v)
+            ->all();
+
+        if ($substringIds !== []) {
+            return $substringIds;
+        }
+
+        // Last resort — match the raw `phone` column directly. The two
+        // paths above only see `phone_normalized`, which is NULL for rows
+        // that never went through the crm3 model hook: legacy imports and
+        // (ongoing) crm2-created patients on the shared DB. Those are
+        // otherwise invisible to phone search. matchVariants yields the
+        // equivalent stored forms (canonical + leading-0 + 92/+92),
+        // mirroring Patients::getByPhone so both lookup seams behave the
+        // same. Runs only when the indexed paths find nothing.
+        $variants = PhoneFormattingService::matchVariants($rawDigits);
+        if ($variants === []) {
+            return [];
+        }
+
+        $raw = DB::table('users')
+            ->where('user_type_id', 3)
+            ->whereIn('phone', $variants);
+
+        if ($accountId !== null) {
+            $raw->where('account_id', $accountId);
+        }
+
+        return $raw->limit(200)
             ->pluck('id')
             ->map(fn ($v): int => (int) $v)
             ->all();
