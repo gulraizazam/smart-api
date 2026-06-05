@@ -173,9 +173,16 @@ class VendorTransactionAttachmentsController extends Controller
         $accountId = (int) $user->account_id;
         $row = VendorTransactionAttachment::forAccount($accountId)->findOrFail($id);
 
+        // An invoice is removed while *editing* an order, so the edit
+        // grant must let you detach — not just create/manage. Without it a
+        // user who can edit a purchase but not create one is 403'd trying
+        // to remove an invoice (mirrors the expense attachment gate, which
+        // accepts `cashflow.expense.edit`). The owner can always detach
+        // their own upload.
         $isOwner = (int) $row->uploaded_by === (int) $user->id;
         if (! $isOwner
             && ! $user->can('cashflow.vendor.transaction.create')
+            && ! $user->can('cashflow.vendor.transaction.edit')
             && ! $user->can('cashflow.vendor.manage')
             && ! $user->can('cashflow.manage')) {
             abort(403);
