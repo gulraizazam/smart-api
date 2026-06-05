@@ -382,4 +382,37 @@ class MembershipReferralExpiryTest extends TestCase
             $referral->fresh()->updated_at?->toDateTimeString(),
         );
     }
+
+    // =========================================================================
+    // Invariant 5 — referralInfo() powers the SPA "X of 2 used" hint
+    // =========================================================================
+
+    public function test_referral_info_reports_count_and_flips_limit_reached_at_two(): void
+    {
+        // Backs GET /api/patients/membership/referral-count. The dialog
+        // disables submit when limit_reached, so the threshold must match
+        // the MAX_REFERRALS_PER_CODE used by addReferral (2). If the two
+        // drift apart, the UI would either block a legal referral or invite
+        // a doomed POST.
+        $this->makeParentMembership('CA-RC-1', Carbon::now()->addMonths(8));
+
+        // No referrals yet — count 0, under the limit.
+        $info = $this->patientService->referralInfo('CA-RC-1');
+        $this->assertSame(0, $info['count']);
+        $this->assertSame(2, $info['max']);
+        $this->assertFalse($info['limit_reached']);
+
+        // First referral — count 1, still under the limit.
+        $this->patientService->addReferral($this->referralPatientId, 'CA-RC-1');
+        $info = $this->patientService->referralInfo('CA-RC-1');
+        $this->assertSame(1, $info['count']);
+        $this->assertFalse($info['limit_reached']);
+
+        // Second referral — count 2, limit now reached.
+        $secondReferral = $this->makePatient('Second Referral', '+923003330000');
+        $this->patientService->addReferral($secondReferral, 'CA-RC-1');
+        $info = $this->patientService->referralInfo('CA-RC-1');
+        $this->assertSame(2, $info['count']);
+        $this->assertTrue($info['limit_reached']);
+    }
 }

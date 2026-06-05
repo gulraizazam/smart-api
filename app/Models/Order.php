@@ -287,30 +287,15 @@ class Order extends BaseModel
             $detail_records = OrderDetail::where('order_id', $id)->get();
 
             foreach ($detail_records as $detail_record) {
-                // Restore FIFO batch remaining_quantity from the
-                // consumption ledger. Without this, deleting an order
-                // would leave the batches showing those units as
-                // consumed even though the order is gone, so future
-                // FIFO sales would silently over-draw.
-                $consumptions = \Illuminate\Support\Facades\DB::table('order_detail_consumption')
-                    ->where('order_detail_id', $detail_record->id)
-                    ->get();
-
-                foreach ($consumptions as $cons) {
-                    Stock::where('id', $cons->stock_id)
-                        ->update([
-                            'remaining_quantity' => \Illuminate\Support\Facades\DB::raw(
-                                'remaining_quantity + '.(int) $cons->quantity,
-                            ),
-                        ]);
+                // Legacy model — stock is restored on the inventory cache
+                // below, not via FIFO batches. Clean up any stray consumption
+                // rows from pre-revamp orders (guarded: the table isn't present
+                // on the shared/legacy DB) so an FK can't block the delete.
+                if (\Illuminate\Support\Facades\Schema::hasTable('order_detail_consumption')) {
+                    \Illuminate\Support\Facades\DB::table('order_detail_consumption')
+                        ->where('order_detail_id', $detail_record->id)
+                        ->delete();
                 }
-
-                // Drop the consumption rows now that their batches are
-                // restored — otherwise the FK constraint blocks the
-                // detail delete below.
-                \Illuminate\Support\Facades\DB::table('order_detail_consumption')
-                    ->where('order_detail_id', $detail_record->id)
-                    ->delete();
 
                 // Mirror the inventory cache so list pages stay accurate.
                 // Match the legacy behaviour: restore by the detail's

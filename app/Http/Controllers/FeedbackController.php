@@ -43,13 +43,17 @@ class FeedbackController extends Controller
     {
         abort_unless(Gate::allows('feedbacks_edit'), 401);
 
-        return response()->json($feedback->only(['id', 'rating']));
+        return response()->json($feedback->only(['id', 'rating', 'comment']));
     }
 
     public function update(UpdateFeedbackRequest $request, Feedback $feedback): JsonResponse
     {
         try {
-            $this->feedbackService->update($feedback, (int) $request->validated('rating'));
+            $this->feedbackService->update(
+                $feedback,
+                (int) $request->validated('rating'),
+                $request->validated('comment'),
+            );
 
             return $this->successResponse('Record has been updated successfully.', );
         } catch (\Exception $e) {
@@ -89,6 +93,31 @@ class FeedbackController extends Controller
         } catch (\Exception $e) {
             return $this->handleException($e, 'FeedbackController');
         }
+    }
+
+    /**
+     * Completed treatments for a patient that don't yet have feedback —
+     * powers the treatment picker in the Doctor Ratings "Add feedback" dialog.
+     * 403 (not 401) on denial so api.ts doesn't force a logout.
+     */
+    public function availableTreatments(\Illuminate\Http\Request $request): JsonResponse
+    {
+        abort_unless(Gate::allows('feedbacks_create'), 403);
+
+        $patientId = (int) $request->query('patient_id', 0);
+        if ($patientId <= 0) {
+            return response()->json(['treatments' => []]);
+        }
+
+        $treatments = $this->feedbackService->getAvailableTreatments($patientId)
+            ->map(fn ($t) => [
+                'id' => $t->id,
+                'service_name' => $t->service->name ?? 'Treatment',
+                'scheduled_date' => optional($t->scheduled_date)->format('M d, Y'),
+            ])
+            ->values();
+
+        return response()->json(['treatments' => $treatments]);
     }
 
     public function getTreatmentInfo(GetTreatmentInfoRequest $request): JsonResponse

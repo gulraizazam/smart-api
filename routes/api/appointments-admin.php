@@ -48,6 +48,10 @@ Route::prefix('patients')->name('patients.')->group(function () {
     Route::post('image', [PatientController::class, 'storeImage'])->name('storeimage');
     Route::post('assignmembership', [PatientController::class, 'assignMembership'])->name('assignmembership');
     Route::post('assignvoucher', [PatientController::class, 'assignVoucher'])->name('assignvoucher');
+    // Live referral-count lookup powering the "X of 2 used" hint in the SPA's
+    // Add-referral dialog. Two-segment path, so it does not collide with the
+    // single-segment {id} GET below.
+    Route::get('membership/referral-count', [PatientController::class, 'referralCount'])->name('referral-count');
     Route::get('getPatient/{id}', [PatientController::class, 'getPatient'])->name('getPatient');
     Route::get('{id}', [PatientController::class, 'show'])->name('show');
     Route::get('{id}/edit', [PatientController::class, 'edit'])->name('edit');

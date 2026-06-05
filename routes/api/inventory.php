@@ -127,7 +127,6 @@ use Illuminate\Support\Facades\Route;
     Route::get('products/{id}/saleprice', [ProductsController::class, 'editSalePrice'])->name('products.edit-sale-price');
     Route::post('products/stock-detail/{id}', [ProductsController::class, 'productStockDetail'])->name('products.stock-detail');
     Route::post('products/inventory-detail/{id}', [ProductsController::class, 'productInventoryDetail'])->name('products.inventories');
-    Route::get('products/{id}/batches', [ProductsController::class, 'productBatches'])->name('products.batches');
     Route::put('products/{id}/{detail}', [ProductsController::class, 'update'])->name('products.update');
     Route::post('products/{id}/updatesaleprice', [ProductsController::class, 'updateSalePrice'])->name('products.update-sale-price');
     Route::post('products/{id}/addstock', [ProductsController::class, 'addStock'])->name('products.add-stock');

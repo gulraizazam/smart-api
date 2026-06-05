@@ -766,6 +766,24 @@ class PatientService
             : ['status' => false, 'message' => 'Failed to add referral. Please try again.'];
     }
 
+    /**
+     * Read-only referral usage for a parent membership code — powers the
+     * SPA's live "X of 2 used" hint in the Add-referral dialog so the user
+     * is warned (and submit disabled) before a guaranteed-to-fail POST.
+     * Uses the SAME count + limit as addReferral() to stay consistent.
+     */
+    public function referralInfo(string $membershipCode): array
+    {
+        $count = Membership::where('code', $membershipCode)->where('is_referral', 1)->count();
+
+        return [
+            'code' => $membershipCode,
+            'count' => $count,
+            'max' => self::MAX_REFERRALS_PER_CODE,
+            'limit_reached' => $count >= self::MAX_REFERRALS_PER_CODE,
+        ];
+    }
+
     /*
     |--------------------------------------------------------------------------
     | Image & Search

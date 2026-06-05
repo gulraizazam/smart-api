@@ -272,28 +272,24 @@ class TransferProductService
 
                 // Source OUT ledger row — keeps Stock-based reports
                 // (Stock::sumProductQuantity) net consistent with the
-                // inventories cache.
+                // inventories cache. crm2 shape: no FIFO/warehouse columns
+                // on stocks.
                 Stock::create([
                     'account_id' => $accountId,
                     'product_id' => $productId,
                     'quantity' => $quantity,
                     'stock_type' => 'out',
                     'location_id' => $data['from_location_id'] ?? null,
-                    'warehouse_id' => $data['from_warehouse_id'] ?? null,
                 ]);
 
-                // Destination IN ledger row — also seeds a FIFO batch at
-                // the destination so subsequent sales can draw from it.
-                // See the TODO above re: bridging source-batch prices.
+                // Destination IN ledger row. The inventory cache (above) is
+                // the source of truth for the destination's on-hand quantity.
                 Stock::create([
                     'account_id' => $accountId,
                     'product_id' => $productId,
                     'quantity' => $quantity,
                     'stock_type' => 'in',
-                    'sale_price' => $product->sale_price,
-                    'remaining_quantity' => $quantity,
                     'location_id' => $data['to_location_id'] ?? null,
-                    'warehouse_id' => $data['to_warehouse_id'] ?? null,
                 ]);
 
                 return ['success' => true, 'message' => 'Record has been created successfully.'];

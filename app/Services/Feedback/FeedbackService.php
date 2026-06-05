@@ -33,8 +33,6 @@ class FeedbackService
 
     private const COMPLETED_STATUS = 2;
 
-    private const TREATMENT_LOOKBACK_DAYS = 7;
-
     private const DOCTOR_USER_TYPE_ID = 5;
 
     private const ROOT_PARENT_ID = 0;
@@ -53,14 +51,18 @@ class FeedbackService
 
         $whereConditions = $this->buildFilterConditions($filters, $applyFilter, $userId);
 
-        $totalRecords = Feedback::whereIn('location_id', ACL::getUserCentres())->count();
+        // Count WITH the active filters so the total + pagination reflect the
+        // filtered set (previously this counted every feedback, breaking the
+        // page count whenever a patient/doctor/date filter was applied).
+        $baseQuery = $this->buildDatatableQuery($whereConditions);
+        $totalRecords = (clone $baseQuery)->count();
 
         [$displayLength, $displayStart, $pages, $page] = getPaginationElement(
             request(),
             $totalRecords
         );
 
-        $feedbacks = $this->buildDatatableQuery($whereConditions)
+        $feedbacks = $baseQuery
             ->limit($displayLength)
             ->offset($displayStart)
             ->orderByDesc('id')
@@ -123,9 +125,12 @@ class FeedbackService
         return $feedback;
     }
 
-    public function update(Feedback $feedback, int $rating): Feedback
+    public function update(Feedback $feedback, int $rating, ?string $comment = null): Feedback
     {
-        $feedback->update(['rating' => $rating]);
+        $feedback->update([
+            'rating' => $rating,
+            'comment' => $comment,
+        ]);
 
         return $feedback;
     }
@@ -146,7 +151,7 @@ class FeedbackService
             ->where('appointment_type_id', self::TREATMENT_APPOINTMENT_TYPE)
             ->where('appointment_status_id', self::COMPLETED_STATUS)
             ->doesntHave('feedback')
-            ->whereDate('scheduled_date', '>=', now()->subDays(self::TREATMENT_LOOKBACK_DAYS))
+            ->orderByDesc('scheduled_date')
             ->get();
     }
 
@@ -263,6 +268,28 @@ class FeedbackService
                 if ($savedValue) {
                     $where[] = [$field, '=', $savedValue];
                 }
+            }
+        }
+
+        // `created_at` is a date RANGE ("YYYY-MM-DD - YYYY-MM-DD"), handled
+        // separately from the equality fields above.
+        $createdRange = null;
+        if (hasFilter($filters, 'created_at')) {
+            $createdRange = (string) $filters['created_at'];
+            Filters::put($userId, self::FILTER_KEY, 'created_at', $createdRange);
+        } elseif ($applyFilter) {
+            Filters::forget($userId, self::FILTER_KEY, 'created_at');
+        } else {
+            $createdRange = Filters::get($userId, self::FILTER_KEY, 'created_at') ?: null;
+        }
+
+        if ($createdRange) {
+            $parts = array_map('trim', explode(' - ', $createdRange));
+            $start = $parts[0] ?? '';
+            $end = ($parts[1] ?? '') !== '' ? $parts[1] : $start;
+            if ($start !== '') {
+                $where[] = ['created_at', '>=', $start.' 00:00:00'];
+                $where[] = ['created_at', '<=', $end.' 23:59:59'];
             }
         }
 
