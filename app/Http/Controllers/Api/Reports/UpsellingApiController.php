@@ -11,9 +11,11 @@ use App\Models\Locations;
 use App\Services\Reports\Concerns\ParsesDateRange;
 use App\Services\Upselling\UpsellingService;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
 use Maatwebsite\Excel\Facades\Excel;
@@ -142,6 +144,95 @@ class UpsellingApiController extends Controller
             ]);
         } catch (\Throwable $e) {
             return $this->handleException($e, 'DoctorUpsellingDetail');
+        }
+    }
+
+    // ---------------------------------------------------------------------
+    // Doctor COLLECTED (cash basis for monthly incentives) — reads the
+    // precomputed upsell_collected_monthly rollup. Booked is by sale date over
+    // an arbitrary range (above); Collected is by RECEIPT MONTH. They sit on
+    // different time axes — see memory `project_upsell_collected_incentive`.
+    // ---------------------------------------------------------------------
+
+    public function doctorCollected(Request $request): JsonResponse
+    {
+        if (! Gate::allows('upselling_report')) {
+            return $this->errorResponse('Unauthorized.', 403);
+        }
+
+        try {
+            [$locationIds, $monthDate, $monthStart, $monthEnd] = $this->normaliseMonth($request);
+
+            $started = microtime(true);
+            // Booked scoped to the same calendar month, so the gap is apples-to-apples.
+            $booked = collect($this->service->getDoctorUpsellingData($locationIds, $monthStart, $monthEnd))
+                ->map(fn ($r) => (object) $r)
+                ->keyBy('doctor_id');
+            $collected = collect($this->service->getDoctorCollectedData($locationIds, $monthDate))
+                ->keyBy('doctor_id');
+            $elapsed = round((microtime(true) - $started) * 1000, 1);
+
+            $rows = $booked->keys()->merge($collected->keys())->unique()
+                ->map(function ($id) use ($booked, $collected): array {
+                    $b = $booked->get($id);
+                    $c = $collected->get($id);
+                    $bookedAmt = (float) ($b->total_upselling_amount ?? 0);
+                    $collectedAmt = (float) ($c['collected_amount'] ?? 0);
+
+                    return [
+                        'doctor_id' => (int) $id,
+                        'doctor_name' => (string) ($b->doctor_name ?? ($c['doctor_name'] ?? '')),
+                        'booked_in_month' => $bookedAmt,
+                        'collected_amount' => $collectedAmt,
+                        'gap' => round($bookedAmt - $collectedAmt, 2),
+                    ];
+                })
+                ->sortByDesc('collected_amount')
+                ->values()
+                ->all();
+
+            return $this->successResponse('Doctor collected report generated successfully', [
+                'rows' => $rows,
+                'meta' => [
+                    'month' => substr($monthDate, 0, 7),
+                    'count' => count($rows),
+                    'elapsed_ms' => $elapsed,
+                ],
+            ]);
+        } catch (\Throwable $e) {
+            return $this->handleException($e, 'DoctorCollectedReport');
+        }
+    }
+
+    public function doctorCollectedLedger(Request $request, int $doctor): JsonResponse
+    {
+        if (! Gate::allows('upselling_report')) {
+            return $this->errorResponse('Unauthorized.', 403);
+        }
+
+        try {
+            [$locationIds, $monthDate] = $this->normaliseMonth($request);
+
+            $started = microtime(true);
+            $ledger = $this->service->getDoctorCollectedLedger($doctor, $locationIds, $monthDate);
+            $elapsed = round((microtime(true) - $started) * 1000, 1);
+
+            $doctorName = (string) (DB::table('users')->where('id', $doctor)->value('name') ?? '');
+
+            return $this->successResponse('Doctor collected ledger generated successfully', [
+                'doctor_id' => $doctor,
+                'doctor_name' => $doctorName,
+                'month' => substr($monthDate, 0, 7),
+                'total_collected' => (float) $ledger['total'],
+                'rows' => $ledger['rows'],
+                'meta' => [
+                    'month' => substr($monthDate, 0, 7),
+                    'count' => count($ledger['rows']),
+                    'elapsed_ms' => $elapsed,
+                ],
+            ]);
+        } catch (\Throwable $e) {
+            return $this->handleException($e, 'DoctorCollectedLedger');
         }
     }
 
@@ -285,5 +376,41 @@ class UpsellingApiController extends Controller
         }
 
         return [$locationIds, $start, $end];
+    }
+
+    /**
+     * Validate + normalise a monthly request (the Collected/incentive view).
+     * `month` is "YYYY-MM" (defaults to the current month).
+     *
+     * @return array{0: int[], 1: string, 2: string, 3: string}
+     *         [centreIds, monthDate(Y-m-01), monthStart(Y-m-d H:i:s), monthEnd(Y-m-d H:i:s)]
+     */
+    private function normaliseMonth(Request $request): array
+    {
+        $request->validate([
+            'location_id' => 'nullable|array',
+            'location_id.*' => 'integer|exists:locations,id',
+            'month' => 'nullable|string',
+        ]);
+
+        $locationIds = $request->input('location_id') ?? [];
+        $locationIds = array_values(array_filter(array_map('intval', (array) $locationIds), fn ($id) => $id > 0));
+        if (empty($locationIds)) {
+            $locationIds = array_map('intval', (array) ACL::getUserCentres());
+        }
+
+        $monthInput = $request->input('month');
+        try {
+            $base = $monthInput ? Carbon::parse($monthInput.'-01') : Carbon::now();
+        } catch (\Throwable) {
+            $base = Carbon::now();
+        }
+
+        return [
+            $locationIds,
+            $base->copy()->startOfMonth()->toDateString(),
+            $base->copy()->startOfMonth()->format('Y-m-d 00:00:00'),
+            $base->copy()->endOfMonth()->format('Y-m-d 23:59:59'),
+        ];
     }
 }
