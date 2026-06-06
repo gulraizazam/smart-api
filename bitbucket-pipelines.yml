@@ -67,15 +67,16 @@ definitions:
     # Lightweight (git + bash only). Wired to dev/integration branches + PRs, NOT to
     # the live api/crm2 deploy branches (those must never be blocked by a sync check).
     - step: &gates
-        name: 'Test-sync gates (missing-test + stale sweep)'
+        name: 'Test-sync + guidelines gates'
         script:
           - apt-get update && apt-get install -y --no-install-recommends git > /dev/null
           - bash scripts/test-stale-sweep.sh
           - git fetch --no-tags --depth=200 origin backend production || git fetch --no-tags origin backend production || true
           - |
             BASE=$(git merge-base HEAD origin/backend 2>/dev/null || git merge-base HEAD origin/production 2>/dev/null || git rev-parse HEAD~1 2>/dev/null || echo HEAD)
-            echo "test-sync base = $BASE"
+            echo "gate base = $BASE"
             bash scripts/test-sync-check.sh "$BASE"
+            bash scripts/guidelines-check.sh "$BASE"     # GUIDELINES.md machine-checkable PHP rules
 
     # ---------- Quality: diff-coverage + mutation (Infection) ----------
     # MANUAL + tolerant (|| true) while we CALIBRATE: the first run reports the real
