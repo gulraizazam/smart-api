@@ -37,6 +37,7 @@ class FeedbackDatatableResource extends JsonResource
             'location' => $this->location?->name ?? '',
             'doctor' => $this->doctor?->name ?? '',
             'rating' => $this->rating ?? '',
+            'comment' => $this->comment ?? '',
         ];
     }
 

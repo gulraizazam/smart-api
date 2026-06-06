@@ -387,10 +387,41 @@ class AppointmentService
                 }
             }
 
-            // If creating new patient (either explicitly via checkbox OR when no lead_id exists but phone is provided)
-            // This handles the case where user enters a new phone number without selecting an existing lead
-            $shouldCreateNewPatient = (isset($data['new_patient']) && $data['new_patient'] == 1 && ! isset($data['lead_id']))
-                || (! isset($data['lead_id']) && isset($data['phone']) && ! empty($data['phone']));
+            // Same guard for an explicitly-provided patient_id: if the
+            // submitted phone doesn't match that patient's phone, the caller
+            // resolved a stale identity — drop it so we don't link the
+            // appointment to the wrong patient.
+            if (isset($data['patient_id']) && isset($data['phone'])) {
+                $existingPatient = User::find($data['patient_id']);
+                if ($existingPatient) {
+                    $submittedPhone = GeneralFunctions::cleanNumber($data['phone']);
+                    $patientPhone = GeneralFunctions::cleanNumber($existingPatient->phone ?? '');
+                    if ($patientPhone !== '' && $submittedPhone !== $patientPhone) {
+                        \Log::info('Phone mismatch vs patient_id - treating as new patient', [
+                            'submitted_phone' => $submittedPhone,
+                            'patient_phone' => $patientPhone,
+                            'patient_id' => $data['patient_id'],
+                        ]);
+                        unset($data['patient_id']);
+                    }
+                }
+            }
+
+            // Decide whether to spawn a new patient. A new patient is created
+            // ONLY when the caller supplied NO identity (neither lead_id NOR
+            // patient_id) — either via the explicit "new patient" toggle or
+            // by entering a phone with nothing resolved. Previously this
+            // looked at lead_id alone, so a create that carried a real
+            // patient_id (existing patient, but no matching lead row) still
+            // fell through and minted a DUPLICATE patient — the new
+            // consultation then landed on the duplicate while the patient's
+            // earlier (e.g. arrived) consultations stayed on the original.
+            $hasResolvedIdentity = isset($data['lead_id']) || isset($data['patient_id']);
+            $shouldCreateNewPatient = ! $hasResolvedIdentity
+                && (
+                    (isset($data['new_patient']) && $data['new_patient'] == 1)
+                    || (isset($data['phone']) && ! empty($data['phone']))
+                );
 
             // Policy: patient creation is allowed ONLY for consultation
             // bookings. Any other appointment type that reaches this
@@ -493,6 +524,64 @@ class AppointmentService
                 // Step 3: Set lead_id and patient_id for appointment
                 $data['lead_id'] = $lead->id;
                 $data['patient_id'] = $patient->id;
+            }
+
+            // Existing patient resolved by patient_id but with no lead_id —
+            // the phone lookup only returns a lead when one matches the chosen
+            // service, so this is the common case for a repeat patient. The
+            // appointments table requires a lead_id, so resolve the patient's
+            // most recent lead (or mint one for a consultation) instead of
+            // letting the row fail or, worse, duplicating the patient.
+            if (! $shouldCreateNewPatient && isset($data['patient_id']) && ! isset($data['lead_id'])) {
+                $existingLead = Leads::where('patient_id', $data['patient_id'])
+                    ->where('account_id', $this->getAccountId())
+                    ->orderByDesc('id')
+                    ->first();
+
+                if ($existingLead) {
+                    $data['lead_id'] = $existingLead->id;
+                } elseif ($this->isConsultancyType((int) ($data['appointment_type_id'] ?? 0))) {
+                    $patientRow = User::find($data['patient_id']);
+                    if ($patientRow) {
+                        $accountId = $this->getAccountId();
+                        $leadData = [
+                            'patient_id'  => $patientRow->id,
+                            'name'        => $patientRow->name ?? ($data['name'] ?? null),
+                            'phone'       => $patientRow->phone ?? ($data['phone'] ?? null),
+                            'email'       => $patientRow->email ?? ($data['email'] ?? null),
+                            'gender'      => $patientRow->gender ?? ($data['gender'] ?? null),
+                            'account_id'  => $accountId,
+                            'created_by'  => $this->getUserId(),
+                            'location_id' => $data['location_id'] ?? null,
+                        ];
+
+                        if (isset($data['location_id'])) {
+                            $loc = Locations::find($data['location_id']);
+                            if ($loc) {
+                                $leadData['region_id'] = $loc->region_id;
+                                $leadData['city_id'] = $loc->city_id;
+                            }
+                        }
+
+                        $bookedStatus = LeadStatuses::where(['account_id' => $accountId, 'is_booked' => 1])->first()
+                            ?? LeadStatuses::where(['account_id' => $accountId, 'is_default' => 1])->first();
+                        if ($bookedStatus) {
+                            $leadData['lead_status_id'] = $bookedStatus->id;
+                        }
+
+                        $newLead = Leads::create($leadData);
+                        if ($newLead) {
+                            if (isset($data['service_id'])) {
+                                LeadsServices::create([
+                                    'lead_id'    => $newLead->id,
+                                    'service_id' => $data['service_id'],
+                                    'status'     => 1,
+                                ]);
+                            }
+                            $data['lead_id'] = $newLead->id;
+                        }
+                    }
+                }
             }
 
             $appointmentData = AppointmentHelper::prepareAppointmentData($data, $this->getAccountId(), $this->getUserId(), false);
@@ -895,6 +984,22 @@ class AppointmentService
                 }
             }
 
+            // Time-of-day validation for BOTH consultancy and treatment. The
+            // edit form used to skip this, so a date/time edit could land the
+            // appointment outside the doctor's shift (e.g. after 9 PM for an
+            // 11 AM–9 PM shift). Reuse the same check create + reschedule run.
+            // Permissive when the doctor has no rota that day (the widget
+            // returns OK), so treatments keep their off-rota flexibility.
+            if ($rotaDoctorId && $rotaDate) {
+                $this->validateRotaAvailability([
+                    'scheduled_date' => $rotaDate,
+                    'scheduled_time' => $appointmentData['scheduled_time'] ?? $appointment->scheduled_time,
+                    'doctor_id' => $rotaDoctorId,
+                    'location_id' => $rotaLocationId,
+                    'city_id' => $appointment->city_id ?? '',
+                ]);
+            }
+
             $oldData = $appointment->toArray();
 
             if (isset($appointmentData['scheduled_date'])) {
@@ -1219,30 +1324,37 @@ class AppointmentService
                 $scheduleData['scheduled_date'] ?? null,
             );
 
-            // Validate doctor has service allocated at location
-            $doctorId = $data['doctor_id'] ?? $appointment->doctor_id;
-            $locationId = $data['location_id'] ?? $appointment->location_id;
+            // Validate doctor has service allocated at location. Consultancy
+            // only — treatments routinely run services the doctor isn't
+            // explicitly allocated, and the edit path (updateAppointment) never
+            // enforced this either. Without the guard, treatment reschedule
+            // threw "service not assigned" and MASKED the real rota/time error
+            // that treatment edit (correctly) surfaces.
+            if ($appointment->appointment_type_id == AppointmentType::Consultancy->value) {
+                $doctorId = $data['doctor_id'] ?? $appointment->doctor_id;
+                $locationId = $data['location_id'] ?? $appointment->location_id;
 
-            // Check if doctor has "all services" assigned at this location
-            $hasAllServices = \DB::table('doctor_has_locations')
-                ->join('services', 'services.id', '=', 'doctor_has_locations.service_id')
-                ->where('doctor_has_locations.user_id', $doctorId)
-                ->where('doctor_has_locations.location_id', $locationId)
-                ->where('services.slug', 'all')
-                ->where('doctor_has_locations.is_allocated', 1)
-                ->exists();
-
-            if (! $hasAllServices) {
-                // If not all services, check for specific service
-                $hasService = \DB::table('doctor_has_locations')
-                    ->where('user_id', $doctorId)
-                    ->where('location_id', $locationId)
-                    ->where('service_id', $appointment->service_id)
-                    ->where('is_allocated', 1)
+                // Check if doctor has "all services" assigned at this location
+                $hasAllServices = \DB::table('doctor_has_locations')
+                    ->join('services', 'services.id', '=', 'doctor_has_locations.service_id')
+                    ->where('doctor_has_locations.user_id', $doctorId)
+                    ->where('doctor_has_locations.location_id', $locationId)
+                    ->where('services.slug', 'all')
+                    ->where('doctor_has_locations.is_allocated', 1)
                     ->exists();
 
-                if (! $hasService) {
-                    throw AppointmentException::invalidData('This doctor does not have the required service allocated for this location.');
+                if (! $hasAllServices) {
+                    // If not all services, check for specific service
+                    $hasService = \DB::table('doctor_has_locations')
+                        ->where('user_id', $doctorId)
+                        ->where('location_id', $locationId)
+                        ->where('service_id', $appointment->service_id)
+                        ->where('is_allocated', 1)
+                        ->exists();
+
+                    if (! $hasService) {
+                        throw AppointmentException::invalidData('This doctor does not have the required service allocated for this location.');
+                    }
                 }
             }
 
@@ -1316,6 +1428,26 @@ class AppointmentService
                         $updateData['resource_has_rota_day_id'] = $rotaDay['id'];
                     }
                 }
+
+                // Time-of-day validation. A rota existing for the date is NOT
+                // enough — the chosen TIME must fall within the doctor's shift
+                // (and outside breaks / time-off). The reschedule path used to
+                // skip this, so an appointment could be moved past the doctor's
+                // end time (e.g. after 9 PM for an 11 AM–9 PM shift). Reuse the
+                // exact check the create path runs.
+                //
+                // Applies to BOTH consultancy and treatment. The check is
+                // permissive when the doctor has no rota that day (the widget
+                // returns OK), so treatments keep their off-rota flexibility —
+                // but when a shift IS defined, the time must fall within it.
+                $this->validateRotaAvailability([
+                    'scheduled_date' => $scheduleData['scheduled_date'] ?? null,
+                    'scheduled_time' => $scheduleData['scheduled_time'] ?? null,
+                    'start' => $data['start'] ?? null,
+                    'doctor_id' => $resolvedDoctorId,
+                    'location_id' => $resolvedLocationId,
+                    'city_id' => $appointment->city_id ?? '',
+                ]);
             }
 
             if (isset($data['reschedule']) && $data['reschedule']) {

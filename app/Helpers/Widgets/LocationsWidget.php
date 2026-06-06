@@ -403,7 +403,7 @@ class LocationsWidget
         ->pluck('user_id')
         ->toArray();
 
-    // Include doctors who have Consultant/Lifestyle Consultant role 
+    // Include doctors who have Consultant/Lifestyle Consultant role
     // OR Aesthetic Doctor role with can_perform_consultation=true
     $filteredDoctors = User::whereIn('id', $doctorIds)
         ->where('active', 1)
@@ -424,6 +424,31 @@ class LocationsWidget
 
     return $filteredDoctors;
 }
+
+    /**
+     * Treatment doctor list for a location. Broader than the consultant list:
+     * Consultants, Lifestyle Consultants AND **all** Aesthetic Doctors are
+     * eligible to perform treatments (the `can_perform_consultation` flag only
+     * gates CONSULTATIONS, not treatments). Pre-fix, the treatment form reused
+     * the consultant list and silently dropped Aesthetic Doctors who weren't
+     * flagged for consultations (e.g. Dr Mehak Fatima).
+     *
+     * @return \Illuminate\Support\Collection<int, string> [user_id => name]
+     */
+    public static function loadTreatmentDoctorByLocation($location_id, $account_id)
+    {
+        $doctorIds = DoctorHasLocations::where('is_allocated', 1)
+            ->where('location_id', $location_id)
+            ->pluck('user_id')
+            ->toArray();
+
+        return User::whereIn('id', $doctorIds)
+            ->where('active', 1)
+            ->whereHas('user_roles', function ($q) {
+                $q->whereIn('name', ['Consultant', 'Lifestyle Consultant', 'Aesthetic Doctor']);
+            })
+            ->pluck('name', 'id');
+    }
     /*
     * Array of centers with option group of regions
     *

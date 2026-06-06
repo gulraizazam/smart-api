@@ -353,25 +353,11 @@ class Product extends BaseModel
                     ->orderBy('created_at', 'desc')
                     ->first();
 
-                // Sale price comes from the OLDEST OPEN FIFO batch — that's
-                // the price the server will actually charge on the next
-                // sale of this product, so the dialog preview matches the
-                // real invoice. Previously this read `inventories.sale_price`
-                // which the legacy `addStock` flow overwrites on every
-                // receipt, so the preview drifted to the latest batch price
-                // instead of the next-to-be-consumed one.
-                $fifoBatch = DB::table('stocks')
-                    ->where('product_id', $product->id)
-                    ->where('location_id', $location_id)
-                    ->where('stock_type', 'in')
-                    ->whereNotNull('remaining_quantity')
-                    ->where('remaining_quantity', '>', 0)
-                    ->orderBy('created_at')
-                    ->orderBy('id')
-                    ->first();
-
-                $salePrice = $fifoBatch->sale_price
-                    ?? ($inventory->sale_price ?? $product->sale_price);
+                // Price from the inventory row at this location (latest),
+                // falling back to the product's global sale price. Mirrors
+                // crm2 (Product::getProductsAjax) so both apps read the same
+                // price off the shared DB — no FIFO batch column needed.
+                $salePrice = $inventory ? ($inventory->sale_price ?? $product->sale_price) : $product->sale_price;
 
                 $result->push((object) [
                     'inventory_id' => $inventory?->id,

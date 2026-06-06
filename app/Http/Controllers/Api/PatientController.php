@@ -388,6 +388,30 @@ class PatientController extends Controller
         }
     }
 
+    /**
+     * Live referral-count lookup for the SPA Add-referral dialog. Returns
+     * { code, count, max, limit_reached } so the UI can show "X of 2 used"
+     * and disable submit when the parent code already has its max referrals.
+     * Gated on the same permission as adding a referral.
+     */
+    public function referralCount(Request $request): JsonResponse
+    {
+        try {
+            if (!Gate::allows('patients.referral.add')) {
+                return $this->unauthorized();
+            }
+
+            $code = trim((string) $request->query('code', ''));
+            if ($code === '') {
+                return $this->fail('Membership code is required.');
+            }
+
+            return $this->success('Referral count retrieved.', $this->patientService->referralInfo($code));
+        } catch (Exception $e) {
+            return $this->exceptionToResponse($e);
+        }
+    }
+
     /*
     |--------------------------------------------------------------------------
     | Appointments / Consultations / Treatments Datatables

@@ -18,6 +18,7 @@ class UpdateFeedbackRequest extends FormRequest
     {
         return [
             'rating' => ['required', 'integer', 'min:1', 'max:10'],
+            'comment' => ['nullable', 'string', 'max:1000'],
         ];
     }
 

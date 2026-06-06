@@ -14,6 +14,7 @@ use App\Models\Discounts;
 use App\Models\DoctorHasLocations;
 use App\Models\Inventory;
 use App\Models\Locations;
+use App\Models\PaymentModes;
 use App\Models\Order;
 use App\Models\OrderDetail;
 use App\Models\OrderRefund;
@@ -29,8 +30,6 @@ use App\Models\User;
 use App\Models\UserHasLocations;
 use App\Models\UserOperatorSettings;
 use App\Models\Warehouse;
-use App\Services\Inventory\FifoConsumptionService;
-use App\Services\Inventory\InsufficientStockException;
 use App\Services\Reports\Concerns\ParsesDateRange;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
@@ -58,10 +57,8 @@ class OrderService
      */
     public const MEMBERSHIP_DISCOUNT_PERCENT = 10.0;
 
-    public function __construct(
-        private readonly FifoConsumptionService $fifo = new FifoConsumptionService(),
-    ) {
-    }
+    // No FIFO consumer — the legacy (crm2) model deducts inventories.quantity
+    // directly. See createOrder().
 
     // ---------------------------------------------------------------
     // Order Datatable
@@ -245,6 +242,28 @@ class OrderService
         return ['discounts' => $discounts];
     }
 
+    /**
+     * Active payment modes for the current account — the order form's
+     * payment-mode dropdown.
+     *
+     * The SPA previously reused the admin `/payment_modes/datatable`
+     * endpoint, which is gated on `payment_modes.list.view` (a settings
+     * permission). Operators who can create orders but don't administer
+     * payment modes (e.g. FDM) got a 403 and saw an empty dropdown. This
+     * lookup mirrors getProducts/getDiscounts — login-only, scoped to the
+     * account — so payment modes ride along with the order form like every
+     * other order lookup.
+     */
+    public function getPaymentModes(): array
+    {
+        $paymentModes = PaymentModes::where('account_id', Auth::user()->account_id)
+            ->where('active', 1)
+            ->orderBy('sort_number', 'ASC')
+            ->get(['id', 'name']);
+
+        return ['payment_modes' => $paymentModes];
+    }
+
     // ---------------------------------------------------------------
     // Order CRUD
     // ---------------------------------------------------------------
@@ -278,7 +297,7 @@ class OrderService
                 return 'Quantity must be greater than 0';
             }
 
-            $available = $this->fifo->availableQuantity((int) $productId, $locationId);
+            $available = $this->legacyAvailableQuantity((int) $productId, $locationId);
 
             if ($available < $quantity) {
                 $name = Product::where('id', $productId)->value('name') ?? 'Product';
@@ -290,7 +309,30 @@ class OrderService
     }
 
     /**
-     * Create an order with FIFO batch consumption.
+     * Legacy (crm2) available-quantity at a centre: stock received in minus
+     * units sold — the same formula Product::getProductsAjax uses for the
+     * order form, so the pre-flight check and the dropdown agree. No FIFO
+     * `remaining_quantity` column needed.
+     */
+    private function legacyAvailableQuantity(int $productId, int $locationId): int
+    {
+        $additions = (int) DB::table('stocks')
+            ->where('product_id', $productId)
+            ->where('location_id', $locationId)
+            ->where('stock_type', 'in')
+            ->sum('quantity');
+
+        $sales = (int) DB::table('order_details')
+            ->join('orders', 'orders.id', '=', 'order_details.order_id')
+            ->where('order_details.product_id', $productId)
+            ->where('orders.location_id', $locationId)
+            ->sum('order_details.quantity');
+
+        return $additions - $sales;
+    }
+
+    /**
+     * Create an order with crm2's legacy inventory deduction (no FIFO).
      *
      * The full write — order header, order_detail split lines, FIFO
      * batch decrements, ledger OUT rows, consumption tracking rows — is
@@ -405,8 +447,10 @@ class OrderService
             // updated at the end once we know the server-derived total.
             $order = new Order();
             $order->account_id = $accountId;
-            $order->buyer_type = $buyerType;
-            $order->patient_id = $patientId;
+            // crm2 stores an employee sale by putting the employee's user id in
+            // patient_id (NOT NULL on the shared/legacy DB) while also keeping
+            // employee_id. There is no buyer_type / auto_discount_* column there.
+            $order->patient_id = $patientId ?: $employeeId;
             $order->employee_id = $employeeId;
             $order->location_id = $locationId;
             $order->payment_mode = $paymentMode;
@@ -414,12 +458,11 @@ class OrderService
             $order->order_type = 'sale';
             $order->status = 1;
             $order->created_by = Auth::id();
-            $order->auto_discount_type = $autoDiscount['type'];
-            $order->auto_discount_percent = $autoDiscount['percent'];
+            // Persist the auto-discount percent in the legacy `discount` column.
+            $order->discount = $autoDiscount['percent'];
             // total_price + quantity are stamped once we walk the lines.
             $order->total_price = 0;
             $order->quantity = 0;
-            $order->discount = 0;
             $order->save();
 
             $grossTotal = 0.0;
@@ -434,58 +477,61 @@ class OrderService
                     continue;
                 }
 
-                // FIFO draw — may return multiple batches if the line
-                // spans more than one. Each returned batch becomes its
-                // own order_detail row (split-line invoicing) so the
-                // sale_price recorded is the actual batch price, not a
-                // weighted average.
-                $consumed = $this->fifo->consume($productId, $locationId, $qty, $accountId);
+                // Legacy (crm2) stock model — no FIFO batches. Deduct from the
+                // inventory row the client picked (`inventory_id`), else the
+                // oldest inventory row with stock at this centre. One
+                // order_detail per line. Mirrors crm2 OrderDetail::createRecord
+                // so both apps stay consistent on the shared DB.
+                $inventoryId = ((array) ($data['inventory_id'] ?? []))[$index] ?? null;
+                $inventory = $inventoryId
+                    ? Inventory::where('id', $inventoryId)->lockForUpdate()->first()
+                    : Inventory::where('product_id', $productId)
+                        ->where('location_id', $locationId)
+                        ->where('quantity', '>', 0)
+                        ->orderBy('created_at', 'asc')
+                        ->lockForUpdate()
+                        ->first();
 
-                foreach ($consumed as $batch) {
-                    $unitPrice = (float) $batch->salePrice;
-                    $discountUnit = round($unitPrice * ($autoDiscount['percent'] / 100), 2);
-                    $netUnit = round($unitPrice - $discountUnit, 2);
+                // Price from the same source the product list showed
+                // (inventory row → product), NOT a client-supplied value.
+                $unitPrice = (float) ($inventory->sale_price
+                    ?? Product::where('id', $productId)->value('sale_price')
+                    ?? 0);
+                $discountUnit = round($unitPrice * ($autoDiscount['percent'] / 100), 2);
+                $netUnit = round($unitPrice - $discountUnit, 2);
 
-                    $detail = OrderDetail::create([
-                        'order_id' => $order->id,
-                        'product_id' => $productId,
-                        'inventory_id' => $batch->stockId,
-                        'quantity' => $batch->quantity,
-                        'sale_price' => $unitPrice,
-                        'discount_price' => $discountUnit,
-                        'sale_price_after_discount' => $netUnit,
-                        'order_type' => 'sale',
-                        'account_id' => $accountId,
-                    ]);
-
-                    // Pin the draw to the originating batch so refunds
-                    // restore qty back to the same row (FIFO-symmetric).
-                    DB::table('order_detail_consumption')->insert([
-                        'order_detail_id' => $detail->id,
-                        'stock_id' => $batch->stockId,
-                        'quantity' => $batch->quantity,
-                        'sale_price' => $unitPrice,
-                        'account_id' => $accountId,
-                        'created_at' => now(),
-                        'updated_at' => now(),
-                    ]);
-
-                    // Ledger OUT row — one per batch consumed so the
-                    // existing stocks-based reports (sumProductQuantity)
-                    // continue to net out correctly.
-                    Stock::create([
-                        'account_id' => $accountId,
-                        'product_id' => $productId,
-                        'order_id' => $order->id,
-                        'quantity' => $batch->quantity,
-                        'stock_type' => 'out',
-                        'location_id' => $locationId,
-                    ]);
-
-                    $grossTotal += $unitPrice * $batch->quantity;
-                    $netTotal += $netUnit * $batch->quantity;
-                    $totalUnits += $batch->quantity;
+                // Inventory cache is the source of truth for "how much do we
+                // have" (crm2 reads inventories.quantity).
+                if ($inventory) {
+                    $inventory->update(['quantity' => (int) $inventory->quantity - $qty]);
                 }
+
+                OrderDetail::create([
+                    'order_id' => $order->id,
+                    'product_id' => $productId,
+                    'inventory_id' => $inventory?->id,
+                    'quantity' => $qty,
+                    'sale_price' => $unitPrice,
+                    'discount_price' => $discountUnit,
+                    'sale_price_after_discount' => $netUnit,
+                    'order_type' => 'sale',
+                    'account_id' => $accountId,
+                ]);
+
+                // Audit OUT row — feeds Stock::sumProductQuantity and the
+                // product list's available calc (stocks IN − order_details sales).
+                Stock::create([
+                    'account_id' => $accountId,
+                    'product_id' => $productId,
+                    'order_id' => $order->id,
+                    'quantity' => $qty,
+                    'stock_type' => 'out',
+                    'location_id' => $locationId,
+                ]);
+
+                $grossTotal += $unitPrice * $qty;
+                $netTotal += $netUnit * $qty;
+                $totalUnits += $qty;
             }
 
             $order->total_price = round($netTotal, 2);
@@ -637,9 +683,11 @@ class OrderService
                 $refund = new OrderRefund();
                 $refund->account_id = $accountId;
                 $refund->order_id = $order->id;
+                // patient_id carries the buyer (for employee sales the order's
+                // patient_id already holds the employee id — crm2 shape). No
+                // buyer_type / employee_id columns on order_refunds in the
+                // shared DB.
                 $refund->patient_id = $order->patient_id;
-                $refund->buyer_type = $order->buyer_type ?? 'patient';
-                $refund->employee_id = $order->employee_id;
                 $refund->location_id = $order->location_id;
                 $refund->payment_mode = $order->payment_mode;
                 $refund->created_by = Auth::id();
@@ -680,51 +728,10 @@ class OrderService
                         $line->quantity = (int) $line->quantity - $take;
                         $line->save();
 
-                        // Restore stock back to the originating batch via
-                        // the consumption row. There may be one
-                        // consumption row per detail (new flow) or none
-                        // (legacy orders pre-revamp) — handle both.
-                        $consumptions = DB::table('order_detail_consumption')
-                            ->where('order_detail_id', $line->id)
-                            ->orderBy('id', 'desc')
-                            ->get();
-
-                        if ($consumptions->isNotEmpty()) {
-                            $restoreLeft = $take;
-                            foreach ($consumptions as $cons) {
-                                if ($restoreLeft <= 0) {
-                                    break;
-                                }
-                                $restoreTake = min($restoreLeft, (int) $cons->quantity);
-
-                                Stock::where('id', $cons->stock_id)
-                                    ->lockForUpdate()
-                                    ->update([
-                                        'remaining_quantity' => DB::raw('remaining_quantity + '.(int) $restoreTake),
-                                    ]);
-
-                                $restoreLeft -= $restoreTake;
-                            }
-                        } else {
-                            // Legacy order without consumption tracking —
-                            // restore to the oldest batch at the
-                            // location. Best-effort; this branch only
-                            // runs for orders placed before the revamp.
-                            $batch = Stock::where('product_id', $productId)
-                                ->where('location_id', $order->location_id)
-                                ->where('stock_type', 'in')
-                                ->whereNotNull('remaining_quantity')
-                                ->orderBy('created_at')
-                                ->lockForUpdate()
-                                ->first();
-                            if ($batch) {
-                                $batch->remaining_quantity = (int) $batch->remaining_quantity + $take;
-                                $batch->save();
-                            }
-                        }
-
-                        // Mirror the restoration to the inventories
-                        // cache so list pages match.
+                        // Restore stock by putting the units back on the
+                        // inventory cache (crm2's source of truth). No FIFO
+                        // batch / consumption-ledger restore — those columns
+                        // don't exist on the shared DB.
                         $inv = Inventory::where('product_id', $productId)
                             ->where('location_id', $order->location_id)
                             ->orderBy('id')

@@ -17,6 +17,7 @@ use App\Models\InvoiceStatuses;
 use App\Models\Leads;
 use App\Models\Membership;
 use App\Models\MembershipType;
+use App\Models\StudentVerification;
 use App\Models\PackageBundles;
 use App\Models\Packages;
 use App\Models\PackageVouchers;
@@ -110,7 +111,10 @@ class PatientService
         [$iDisplayLength, $iDisplayStart, $pages, $page] = getPaginationElement($request, $iTotalRecords);
 
         $patients = (clone $baseQuery)
-            ->with(['membership:id,patient_id,code,membership_type_id,end_date,active,is_referral'])
+            ->with([
+                'membership:id,patient_id,code,membership_type_id,end_date,active,is_referral',
+                'membership.membershipType:id,name',
+            ])
             ->select(['id', 'name', 'email', 'phone', 'gender', 'active', 'created_at', 'id as patient_id'])
             ->orderByDesc('created_at')
             ->offset($iDisplayStart)
@@ -126,6 +130,16 @@ class PatientService
             $pageIds = $patients->pluck('id')->all();
             $metrics = $this->lifecycleMetric->batch($pageIds);
             foreach ($patients as $p) {
+                // Surface the membership type name as `type` (e.g.
+                // "Gold Membership" / "Student Membership") so the patients
+                // list can label + colour each tier. Mirrors the patient
+                // detail endpoint's `membership.type` contract. Additive —
+                // crm2 reads its own controllers, not this endpoint.
+                if ($p->membership) {
+                    $p->membership->setAttribute('type', $p->membership->membershipType?->name);
+                    $p->membership->makeHidden('membershipType');
+                }
+
                 $m = $metrics[(int) $p->id] ?? null;
                 if (! $m) {
                     continue;
@@ -475,7 +489,63 @@ class PatientService
                 'end_date' => $membership->end_date,
                 'is_active' => $membership->end_date >= now()->format('Y-m-d'),
             ] : null,
+            // Student members carry mandatory ID/verification documents that
+            // management must be able to review on the patient card. Surfaced
+            // whenever the active membership is a student tier (even with zero
+            // docs, so a missing upload is visible rather than hidden).
+            'student_verification' => $this->buildStudentVerification($patient->id, $membership),
             'permissions' => $this->getPermissions(),
+        ];
+    }
+
+    /**
+     * Build the student-verification payload for the patient card. Returns
+     * null for non-student memberships. The documents were uploaded when
+     * the student membership was sold via Plans and are streamed through
+     * the authenticated, account-scoped admin.files.student_verification
+     * route (relative URL so the SPA proxy / same-origin deploy both work).
+     *
+     * @return array<string, mixed>|null
+     */
+    private function buildStudentVerification(int $patientId, ?Membership $membership): ?array
+    {
+        if (! $membership) {
+            return null;
+        }
+
+        $typeName = strtolower($membership->membershipType?->name ?? '');
+        if (! str_contains($typeName, 'student')) {
+            return null;
+        }
+
+        // Match the verification by its membership_id first, falling back to
+        // the (patient + membership type) pair for records created before
+        // membership_id was stamped. Mirrors getStudentVerificationDetails().
+        $verification = StudentVerification::where(function ($query) use ($membership, $patientId): void {
+            $query->where('membership_id', $membership->id)
+                ->orWhere(function ($sub) use ($patientId, $membership): void {
+                    $sub->where('patient_id', $patientId)
+                        ->where('membership_type_id', $membership->membership_type_id);
+                });
+        })->latest('submitted_at')->first();
+
+        $documents = [];
+        foreach ((array) ($verification->document_paths ?? []) as $path) {
+            $filename = basename($path);
+            $documents[] = [
+                'filename' => $filename,
+                'url' => route('admin.files.student_verification', ['filename' => $filename], false),
+                'is_pdf' => strtolower(pathinfo($filename, PATHINFO_EXTENSION)) === 'pdf',
+            ];
+        }
+
+        return [
+            'is_student' => true,
+            'status' => $verification?->status,
+            'submitted_at' => $verification?->submitted_at?->format('M d, Y h:i A'),
+            'reviewed_at' => $verification?->reviewed_at?->format('M d, Y h:i A'),
+            'rejection_reason' => $verification?->rejection_reason,
+            'documents' => $documents,
         ];
     }
 
@@ -764,6 +834,24 @@ class PatientService
         return $referral
             ? ['status' => true, 'message' => 'Referral added successfully.', 'referral' => $referral, 'patient' => $patient]
             : ['status' => false, 'message' => 'Failed to add referral. Please try again.'];
+    }
+
+    /**
+     * Read-only referral usage for a parent membership code — powers the
+     * SPA's live "X of 2 used" hint in the Add-referral dialog so the user
+     * is warned (and submit disabled) before a guaranteed-to-fail POST.
+     * Uses the SAME count + limit as addReferral() to stay consistent.
+     */
+    public function referralInfo(string $membershipCode): array
+    {
+        $count = Membership::where('code', $membershipCode)->where('is_referral', 1)->count();
+
+        return [
+            'code' => $membershipCode,
+            'count' => $count,
+            'max' => self::MAX_REFERRALS_PER_CODE,
+            'limit_reached' => $count >= self::MAX_REFERRALS_PER_CODE,
+        ];
     }
 
     /*

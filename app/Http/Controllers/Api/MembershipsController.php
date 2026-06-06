@@ -42,8 +42,17 @@ final class MembershipsController extends Controller
         }
 
         try {
-            $filters     = $request->filters();
-            $applyFilter = checkFilters($filters, 'memberships');
+            // The SPA sends its COMPLETE filter state on every request and never
+            // uses the legacy KTDatatable `filter` / `filter_cancel` protocol.
+            // checkFilters() therefore always returned false, which told the
+            // service to treat the request as "no apply" and back-fill any
+            // *unsent* filter from the stale per-user file cache (App\Helpers\
+            // Filters). A previously-applied "Assignment: Unassigned"
+            // (patient_id IS NULL) then survived into a fresh "Status: Active"
+            // (patient_id IS NOT NULL) request — a contradiction that returned
+            // zero rows. Treat every SPA request as authoritative: apply exactly
+            // what was sent and forget the rest, so stale filters can't leak.
+            $applyFilter = true;
 
             $datatableData = $this->membershipService->getDatatableData($request->all(), $applyFilter);
             $pagination    = $request->paginationParams($datatableData['total']);

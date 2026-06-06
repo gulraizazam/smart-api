@@ -1426,6 +1426,12 @@ final class PlanService
 
             DB::commit();
 
+            // Record the plan/package creation on the patient's Activity feed.
+            // Covers every plan type (plan, bundle, membership). Runs AFTER
+            // commit and swallows its own errors so an activity-log hiccup can
+            // never roll back a plan that already saved.
+            $this->logPackageCreatedActivity($package, $data);
+
             return ['status' => true, 'package_id' => $package->id];
         } catch (PlanException $e) {
             DB::rollBack();
@@ -1439,6 +1445,29 @@ final class PlanService
                 'line' => $e->getLine(),
             ]);
             throw PlanException::invalidOperation('Failed to save package: '.$e->getMessage());
+        }
+    }
+
+    /**
+     * Log a "plan created" Activity against the patient. Non-fatal: any
+     * failure is logged and swallowed so it never affects the committed
+     * save. Shared by every plan type so creating a membership, bundle, or
+     * plan all leave the same audit trail on the patient's Activity tab.
+     */
+    private function logPackageCreatedActivity(Packages $package, array $data): void
+    {
+        try {
+            $patient = Patients::find($data['patient_id'] ?? $package->patient_id);
+            if (! $patient) {
+                return;
+            }
+            $location = Locations::with('city')->find($data['location_id'] ?? $package->location_id);
+            ActivityLogger::logPackageCreated($package, $patient, $location);
+        } catch (\Throwable $e) {
+            Log::warning('Plan created activity log failed', [
+                'package_id' => $package->id,
+                'error' => $e->getMessage(),
+            ]);
         }
     }
 
@@ -2334,6 +2363,12 @@ final class PlanService
         }
 
         $this->addFilterCondition($where, $filters, 'location_id', 'packages.location_id', $userId, $filename, $applyFilter);
+        // Type pill (plan | bundle | membership). The SPA forwards the raw
+        // value as `plan_type`; it maps 1:1 onto the `packages.plan_type`
+        // column. Without this the filter was silently dropped — it reached
+        // `filters()` but no `where` was ever built, so every type showed
+        // the full list.
+        $this->addFilterCondition($where, $filters, 'plan_type', 'packages.plan_type', $userId, $filename, $applyFilter);
         $this->addStatusFilter($where, $filters, $userId, $filename, $applyFilter);
         $this->addDateRangeFilter($where, $filters, $userId, $filename, $applyFilter);
 
@@ -3337,23 +3372,39 @@ final class PlanService
             return;
         }
 
-        if ($isFullyPaid) {
-            $membershipType = MembershipType::find($membership['membershipId'] ?? $membershipRecord->membership_type_id);
-            $durationDays = (int) ($membershipType->period ?? 365);
-
-            $membershipRecord->update([
-                'patient_id' => $data['patient_id'],
-                'start_date' => now()->toDateString(),
-                'end_date' => now()->addDays($durationDays)->toDateString(),
-                'assigned_at' => now()->toDateString(),
-                'updated_by' => Auth::id(),
-            ]);
-        } else {
-            $membershipRecord->update([
-                'patient_id' => $data['patient_id'],
-                'updated_by' => Auth::id(),
-            ]);
+        // Only ASSIGN + ACTIVATE the membership once the plan is consumed —
+        // i.e. fully paid (and, for student tiers, with verification docs;
+        // the caller folds the docs check into $isFullyPaid). On consume the
+        // card's clock starts: start_date = today, end_date = today + the
+        // membership type's duration in days.
+        //
+        // Until then we leave the code as UNASSIGNED stock (patient_id NULL,
+        // no dates). Two reasons:
+        //   1. Membership::booted() rejects an assigned card (patient_id set)
+        //      with a NULL end_date — stamping patient_id here without an
+        //      end_date is exactly what threw "A membership assigned to a
+        //      patient must have an end_date" on save.
+        //   2. A half-paid card must not read as an active member (which the
+        //      patient card derives from patient_id + active), or the patient
+        //      would get member pricing before paying.
+        // The consume-on-edit flow (PackagesController::updateMembershipPlan)
+        // later stamps patient_id + start/end via package_bundles
+        // .membership_code_id when the balance is settled, so nothing is lost
+        // by not reserving patient_id up front.
+        if (! $isFullyPaid) {
+            return;
         }
+
+        $membershipType = MembershipType::find($membership['membershipId'] ?? $membershipRecord->membership_type_id);
+        $durationDays = (int) ($membershipType->period ?? 365);
+
+        $membershipRecord->update([
+            'patient_id' => $data['patient_id'],
+            'start_date' => now()->toDateString(),
+            'end_date' => now()->addDays($durationDays)->toDateString(),
+            'assigned_at' => now()->toDateString(),
+            'updated_by' => Auth::id(),
+        ]);
     }
 
     // ── Appointment Handling ────────────────────────────

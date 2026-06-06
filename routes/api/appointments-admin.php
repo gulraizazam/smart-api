@@ -28,6 +28,7 @@ use Illuminate\Support\Facades\Route;
 Route::post('appointments/load-locations', [AppointmentLookupController::class, 'loadLocationsByCity'])->name('appointments.load_locations');
 Route::post('appointments/load-doctors', [AppointmentLookupController::class, 'loadDoctorsByLocation'])->name('appointments.load_doctors');
 Route::post('appointments/load-consultant-doctors', [AppointmentLookupController::class, 'loadConsultantDoctorsByLocation'])->name('appointments.load_consultant_doctors');
+Route::post('appointments/load-treatment-doctors', [AppointmentLookupController::class, 'loadTreatmentDoctorsByLocation'])->name('appointments.load_treatment_doctors');
 Route::post('appointments/update/schedule', [AppointmentScheduleController::class, 'updateSchedule'])->name('appointments.updateSchedule');
 Route::get('appointments/schedule/get', [AppointmentScheduleController::class, 'getSchedule'])->name('appointments.get_schedule');
 Route::get('appointments/getpackageprice', [AppointmentInvoiceController::class, 'getpackageprice'])->name('appointments.getpackageprice');
@@ -48,6 +49,10 @@ Route::prefix('patients')->name('patients.')->group(function () {
     Route::post('image', [PatientController::class, 'storeImage'])->name('storeimage');
     Route::post('assignmembership', [PatientController::class, 'assignMembership'])->name('assignmembership');
     Route::post('assignvoucher', [PatientController::class, 'assignVoucher'])->name('assignvoucher');
+    // Live referral-count lookup powering the "X of 2 used" hint in the SPA's
+    // Add-referral dialog. Two-segment path, so it does not collide with the
+    // single-segment {id} GET below.
+    Route::get('membership/referral-count', [PatientController::class, 'referralCount'])->name('referral-count');
     Route::get('getPatient/{id}', [PatientController::class, 'getPatient'])->name('getPatient');
     Route::get('{id}', [PatientController::class, 'show'])->name('show');
     Route::get('{id}/edit', [PatientController::class, 'edit'])->name('edit');
