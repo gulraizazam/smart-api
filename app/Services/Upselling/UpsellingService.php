@@ -9,8 +9,10 @@ use App\Models\PackageService;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use App\Services\Upselling\Rollup\UpsellCollectedBuilder;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use PhpOffice\PhpSpreadsheet\Style\Border;
@@ -1371,6 +1373,99 @@ class UpsellingService
             'totalPayments' => $totalPayments,
             'totalRefunds' => $totalRefunds,
             'uniquePackages' => $uniquePackages,
+        ];
+    }
+
+    // ──────────────────────────────────────────────────
+    //  Upsell COLLECTED (cash basis for monthly incentives)
+    //  Reads the precomputed `upsell_collected_monthly` rollup — NOT the heavy
+    //  live allocation (that runs nightly via UpsellCollectedBuilder). Full
+    //  model: memory `project_upsell_collected_incentive`.
+    // ──────────────────────────────────────────────────
+
+    /**
+     * Per-doctor "collected" for a month, summed across the given centres.
+     * `$month` is any date in the target month (normalised to the 1st).
+     *
+     * @param  int[]  $locationIds
+     * @return array<int, array{doctor_id:int, doctor_name:string, collected_amount:float}>
+     */
+    public function getDoctorCollectedData(array $locationIds, string $month): array
+    {
+        $accountId = (int) (Auth::user()->account_id ?? 1);
+        $monthDate = Carbon::parse($month)->startOfMonth()->toDateString();
+
+        $query = DB::table('upsell_collected_monthly as u')
+            ->join('users as us', 'u.doctor_id', '=', 'us.id')
+            ->where('u.account_id', $accountId)
+            ->where('u.month', $monthDate);
+
+        if ($locationIds !== []) {
+            $query->whereIn('u.location_id', $locationIds);
+        }
+
+        return $query
+            ->groupBy('u.doctor_id', 'us.name')
+            ->selectRaw('u.doctor_id, us.name as doctor_name, ROUND(SUM(u.collected_amount), 2) as collected_amount')
+            ->get()
+            ->map(fn ($r): array => [
+                'doctor_id' => (int) $r->doctor_id,
+                'doctor_name' => (string) $r->doctor_name,
+                'collected_amount' => (float) $r->collected_amount,
+            ])
+            ->all();
+    }
+
+    /**
+     * Per-line drill-down of one doctor's collected for a month — recomputed on
+     * demand (one doctor × one month is cheap) via the shared builder engine.
+     *
+     * @param  int[]  $locationIds
+     * @return array{rows: array<int, array<string, mixed>>, total: float}
+     */
+    public function getDoctorCollectedLedger(int $doctorId, array $locationIds, string $month): array
+    {
+        $accountId = (int) (Auth::user()->account_id ?? 1);
+
+        $records = (new UpsellCollectedBuilder())->monthLineCredits($accountId, $month, $doctorId);
+
+        if ($locationIds !== []) {
+            $records = array_values(array_filter(
+                $records,
+                fn ($r): bool => $r['location_id'] !== null && in_array($r['location_id'], $locationIds, true),
+            ));
+        }
+
+        if ($records === []) {
+            return ['rows' => [], 'total' => 0.0];
+        }
+
+        $serviceNames = DB::table('services')
+            ->whereIn('id', array_values(array_unique(array_column($records, 'service_id'))))
+            ->pluck('name', 'id');
+        $patientNames = DB::table('packages as p')
+            ->join('users as u', 'p.patient_id', '=', 'u.id')
+            ->whereIn('p.id', array_values(array_unique(array_column($records, 'package_id'))))
+            ->pluck('u.name', 'p.id');
+
+        $rows = array_map(fn ($r): array => [
+            'package_id' => $r['package_id'],
+            'line_id' => $r['line_id'],
+            'service_id' => $r['service_id'],
+            'service_name' => (string) ($serviceNames[$r['service_id']] ?? ''),
+            'patient_name' => (string) ($patientNames[$r['package_id']] ?? ''),
+            'sold_at' => $r['sale_date'],
+            'line_value' => $r['value'],
+            'collected_in_month' => $r['collected'],
+            'is_consumed' => $r['is_consumed'],
+            'consumed_at' => $r['consumed_at'],
+        ], $records);
+
+        usort($rows, fn ($a, $b): int => $b['collected_in_month'] <=> $a['collected_in_month']);
+
+        return [
+            'rows' => $rows,
+            'total' => round(array_sum(array_column($records, 'collected')), 2),
         ];
     }
 }

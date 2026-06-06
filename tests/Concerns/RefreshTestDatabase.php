@@ -129,7 +129,47 @@ trait RefreshTestDatabase
 
         $this->installUsersPhoneNormalizedTrigger($pdo);
 
+        $this->ensureUpsellCollectedTables($pdo);
+
         RefreshDatabaseState::$migrated = true;
+    }
+
+    /**
+     * Mirror the upsell-collected rollup tables on the test schema (the dump
+     * pre-dates the 2026_06_06 migration). CREATE IF NOT EXISTS keeps it a
+     * no-op once the dump is regenerated. Keep in lockstep with
+     * database/migrations/2026_06_06_120000_create_upsell_collected_monthly_table.php.
+     */
+    protected function ensureUpsellCollectedTables(\PDO $pdo): void
+    {
+        $pdo->exec(<<<'SQL'
+            CREATE TABLE IF NOT EXISTS `upsell_collected_monthly` (
+                `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+                `account_id` BIGINT UNSIGNED NOT NULL,
+                `month` DATE NOT NULL,
+                `doctor_id` BIGINT UNSIGNED NOT NULL,
+                `location_id` BIGINT UNSIGNED NULL,
+                `collected_amount` DECIMAL(14,2) NOT NULL DEFAULT 0,
+                `is_closed` TINYINT(1) NOT NULL DEFAULT 0,
+                `closed_at` TIMESTAMP NULL DEFAULT NULL,
+                `created_at` TIMESTAMP NULL DEFAULT NULL,
+                `updated_at` TIMESTAMP NULL DEFAULT NULL,
+                PRIMARY KEY (`id`),
+                KEY `ucm_acc_month_loc_doc` (`account_id`, `month`, `location_id`, `doctor_id`),
+                KEY `ucm_acc_doc_month` (`account_id`, `doctor_id`, `month`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+            SQL);
+
+        $pdo->exec(<<<'SQL'
+            CREATE TABLE IF NOT EXISTS `upsell_clawback_carry` (
+                `account_id` BIGINT UNSIGNED NOT NULL,
+                `doctor_id` BIGINT UNSIGNED NOT NULL,
+                `carry_amount` DECIMAL(14,2) NOT NULL DEFAULT 0,
+                `created_at` TIMESTAMP NULL DEFAULT NULL,
+                `updated_at` TIMESTAMP NULL DEFAULT NULL,
+                PRIMARY KEY (`account_id`, `doctor_id`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+            SQL);
     }
 
     /**

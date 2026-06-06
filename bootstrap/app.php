@@ -163,6 +163,20 @@ return Application::configure(basePath: dirname(__DIR__))
             ->withoutOverlapping()
             ->onOneServer();
 
+        // Pre-aggregate the upsell "collected" rollup (upsell_collected_monthly),
+        // the cash basis for monthly upsell incentives. Recent months are re-run
+        // because in-window cash keeps arriving and refunds reverse forever.
+        $schedule->command('upsell:rebuild-collected --months=2')
+            ->dailyAt('01:00')->timezone($timeZone)
+            ->withoutOverlapping()
+            ->onOneServer();
+        // Deeper morning catch-up (~last 4 months) so late in-window payments /
+        // refunds up to the 90-day horizon self-heal.
+        $schedule->command('upsell:rebuild-collected --months=4')
+            ->dailyAt('07:00')->timezone($timeZone)
+            ->withoutOverlapping()
+            ->onOneServer();
+
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->dontFlash([
