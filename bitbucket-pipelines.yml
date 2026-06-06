@@ -61,7 +61,7 @@ definitions:
               echo "WARNING: schema dump missing on this branch; building test DB from migrations only"
             fi
           - php artisan migrate --database=mariadb_testing --force
-          - php artisan test --colors=always
+          - composer test -- --colors=always
 
     # ---------- Test-sync gates: missing-test + stale sweep (no coverage driver) ----------
     # Lightweight (git + bash only). Wired to dev/integration branches + PRs, NOT to

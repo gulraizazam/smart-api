@@ -13,23 +13,24 @@ test. Everything here keeps that true over time.
 
 ## 1. Definition of Done — what "finalised / approved" means
 
-A change is **not** done until *all* hold:
+<!-- TESTING-SYNC:BEGIN -- shared cross-repo test contract: byte-identical in ../frontend/TESTING.md, enforced by scripts/check-guidelines-sync.sh. Edit BOTH. -->
+A change is **not** done — not mergeable, not deployable — until *all* of these hold:
 
-1. **Pinned by a test that can fail** — asserts the new/changed behaviour.
-2. **Red-first for bug fixes** — reproduce with a failing test, *see it fail*, then fix.
-3. **Suite green** — `php artisan test` passes.
-4. **Critical modules carry their test in the same change** — the invariant map
-   (pricing, permissions, money, lifecycle) has **no waiver**.
-5. **Coexistence holds** — any DB / permission / shared-endpoint change →
-   `bash scripts/coexistence-check.sh` **PASS** (never break crm2). This is a
-   first-class contract test, not an afterthought. A CI-runnable slice,
-   `tests/Feature/Coexistence/Crm2ContractTest.php`, pins the destructive-break
-   subset (shared columns still exist + legacy umbrellas still declared) so the
-   contract is gated on **every push**; the full HTTP/multi-app check stays local.
-6. **Changed lines covered** — diff-coverage gate passes; critical modules clear
-   the mutation bar (Infection).
-7. **No focus/rot left behind** — no Pest `->only()`; every `skip`/`incomplete`
-   has a reason; deleted code took its tests with it.
+1. **Pinned by a test that can fail.** At least one test asserts the new/changed behaviour and would go red if it regressed.
+2. **Red-first for bug fixes.** The reproducing test is written first and *observed to fail*, then the fix makes it pass.
+3. **Suite green.** The repo's full test suite passes (commands listed under Commands below).
+4. **Critical modules carry their test in the same change.** Touching the invariant map (pricing, permissions, money, lifecycle) has **no waiver**.
+5. **Coexistence holds.** Any DB / permission / shared-endpoint change → the coexistence check **PASSES** (never break crm2).
+6. **Changed lines are covered.** The diff-coverage gate passes; critical modules clear the mutation bar.
+7. **No focus/rot left behind.** No focused (`.only` / `->only()`) tests committed; every skip has a reason + tracking; deleted code took its tests with it.
+<!-- TESTING-SYNC:END -->
+
+Backend specifics: the suite runs via `php -d memory_limit=-1 vendor/bin/pest`
+(`php artisan test` OOMs at 128M — see `project_backend_test_runner_memory`). Item 5's
+coexistence contract has a CI-runnable slice, `tests/Feature/Coexistence/Crm2ContractTest.php`,
+that pins the destructive-break subset (shared columns still exist + legacy umbrellas still
+declared) so it is gated on **every push**; the full HTTP/multi-app check stays local. Mutation
+(item 6) uses Infection. Exact commands: §7.
 
 ---
 
@@ -99,25 +100,22 @@ The red step proves the test has teeth. For bugs, the test comes first — alway
 
 ## 6. Waiver policy — block-by-default, waive-on-the-record
 
-A genuinely test-exempt change is waived **with a reason**, never by disabling the
-gate. In CI/commits, add a trailer:
+<!-- TESTING-SYNC:BEGIN -- shared cross-repo test contract: byte-identical in ../frontend/TESTING.md, enforced by scripts/check-guidelines-sync.sh. Edit BOTH. -->
+A genuinely test-exempt change is waived **with a reason**, never by disabling the gate — via a commit trailer `Test-exempt: <path>` (auditable in history forever), or the in-session ack file where the repo has one.
 
-```
-Test-exempt: app/Models/Foo.php   (e.g. pure rename, config, no behaviour change)
-```
+**Valid:** pure rename/move, formatting, comments/docs, config with no logic, generated code, type-only declarations, dependency bump with no behaviour change.
+**Invalid:** "no time", "will add later", "it's simple", or **anything touching a critical/invariant module** — those have **no waiver**.
+<!-- TESTING-SYNC:END -->
 
-**Valid:** pure rename/move, formatting, comments/docs, config with no logic,
-generated code, dependency bump with no behaviour change.
-**Invalid:** "no time", "will add later", "it's simple", or **anything touching a
-critical/invariant module** — those have no waiver.
+This repo waives in CI/commits via the trailer, e.g. `Test-exempt: app/Models/Foo.php`.
 
 ---
 
 ## 7. Commands
 
 ```bash
-php artisan test                 # the suite CI gates on
-composer test                    # alias
+composer test                    # the full suite (= php -d memory_limit=-1 vendor/bin/pest)
+                                 # NB: a raw `php artisan test` OOMs at the default 128M — use composer test
 composer test:stale              # stray ->only + skip/incomplete register
 composer test:sync               # missing-test gate on the committed diff
 composer test:coverage           # clover coverage (needs pcov/xdebug)
