@@ -16,7 +16,7 @@ use Tests\TestCase;
 
 /**
  * The monthly "upsell collected" rollup builder. Pins the behaviours the pure
- * allocator can't: self-consultation exclusion, the 90-day window, recognition
+ * allocator can't: self-consultation exclusion, the 60-day window, recognition
  * in the receipt month, refund clawback (negative month), and the frozen-month
  * guard. Full model: memory `project_upsell_collected_incentive`.
  */
@@ -128,7 +128,7 @@ class UpsellCollectedBuilderTest extends TestCase
         $this->assertSame(0.0, $this->collected($this->consultant, '2026-03-01'));
     }
 
-    public function test_cash_is_recognised_in_its_receipt_month_and_gated_by_the_90_day_window(): void
+    public function test_cash_is_recognised_in_its_receipt_month_and_gated_by_the_60_day_window(): void
     {
         // Sold Mar 1; payment lands Apr 10 (day 40, inside the window).
         $this->makePlan('2026-03-01', [
@@ -142,15 +142,17 @@ class UpsellCollectedBuilderTest extends TestCase
         $this->assertSame(0.0, $this->collected($this->upseller, '2026-03-01'), 'no cash in March');
         $this->assertSame(100.0, $this->collected($this->upseller, '2026-04-01'), 'recognised in the receipt month');
 
-        // A second plan whose payment arrives well past day 90 earns nothing.
+        // A second plan paid on day 75 (May 15). That is INSIDE the old 90-day
+        // window but OUTSIDE the 60-day window — so it earns nothing now.
+        // (This case is what pins 60 vs 90: revert the window and it becomes 100.)
         $late = User::factory()->doctor()->create()->id;
         $this->makePlan('2026-03-01', [
             ['sold_by' => $late, 'value' => 100],
         ], [
-            ['flow' => 'in', 'amount' => 100, 'date' => '2026-08-01'], // day ~153, retired
+            ['flow' => 'in', 'amount' => 100, 'date' => '2026-05-15'], // day 75, retired under the 60-day window
         ]);
-        $this->builder()->rebuild(1, '2026-08-01');
-        $this->assertSame(0.0, $this->collected($late, '2026-08-01'), 'cash past the 90-day window is not collected');
+        $this->builder()->rebuild(1, '2026-05-01');
+        $this->assertSame(0.0, $this->collected($late, '2026-05-01'), 'cash past the 60-day window is not collected');
     }
 
     public function test_a_refund_produces_a_clawback_in_its_month(): void

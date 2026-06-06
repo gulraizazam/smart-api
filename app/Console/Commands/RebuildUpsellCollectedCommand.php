@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\DB;
  * Rebuilds `upsell_collected_monthly` for every account × the last N months.
  *
  * Scheduled nightly (months=2) + a deeper morning catch-up (months=4) so a
- * late-arriving in-window payment or a refund up to ~90 days back self-heals.
+ * late-arriving in-window payment or a refund up to ~60 days back self-heals.
  * `--sync` runs the builder inline (used for the one-off backfill on deploy and
  * in tests); otherwise it dispatches queued jobs. Mirrors
  * RebuildManagementDashboardMetricsCommand.

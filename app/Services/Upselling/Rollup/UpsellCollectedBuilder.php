@@ -20,7 +20,7 @@ use Illuminate\Support\Facades\DB;
  *  - Upsold lines = package_services with sold_by set, EXCLUDING the
  *    self-consultation line (the plan's consultation doctor selling to their
  *    own consult — a conversion, not an upsell).
- *  - The plan's collection window = [firstUpsellSaleDate, +90 days]. Cash that
+ *  - The plan's collection window = [firstUpsellSaleDate, +COLLECTION_WINDOW_DAYS]. Cash that
  *    counts is net IN receipts inside that window minus refunds (refunds have
  *    NO window gate — they reverse forever).
  *  - "Collected this month" for a line = (its waterfall credit as cash stood at
@@ -43,6 +43,13 @@ final class UpsellCollectedBuilder
 {
     /** Tolerance below which a delta is treated as zero (rounding noise). */
     private const EPSILON = 0.005;
+
+    /**
+     * Days after the upsell sale during which incoming cash still counts toward
+     * the incentive. Cash that arrives after this no longer earns — the upsell
+     * is "retired". Tightened 90 -> 60 on 2026-06-06.
+     */
+    private const COLLECTION_WINDOW_DAYS = 60;
 
     public function __construct(
         private readonly CollectedAllocator $allocator = new CollectedAllocator(),
@@ -119,14 +126,14 @@ final class UpsellCollectedBuilder
         $prevEnd = $start->copy()->subSecond();
         $consultancyTypeId = AppointmentType::Consultancy->value;
 
-        // Candidate plans: an upsold line whose 90-day window overlaps the month.
-        // When scoped to one doctor, only plans where THEY sold a line.
+        // Candidate plans: an upsold line whose collection window overlaps the
+        // month. When scoped to one doctor, only plans where THEY sold a line.
         $planIds = DB::table('package_services as ps')
             ->join('packages as p', 'ps.package_id', '=', 'p.id')
             ->whereNotNull('ps.sold_by')
             ->where('p.account_id', $accountId)
             ->where('ps.created_at', '<=', $end)
-            ->whereRaw('DATE_ADD(ps.created_at, INTERVAL 90 DAY) >= ?', [$start])
+            ->whereRaw('DATE_ADD(ps.created_at, INTERVAL ? DAY) >= ?', [self::COLLECTION_WINDOW_DAYS, $start])
             ->when($onlyDoctor !== null, fn ($q) => $q->where('ps.sold_by', $onlyDoctor))
             ->distinct()
             ->pluck('ps.package_id')
@@ -200,7 +207,7 @@ final class UpsellCollectedBuilder
                     $firstSale = $l['sale_ts'];
                 }
             }
-            $windowEnd = $firstSale->copy()->addDays(90)->endOfDay();
+            $windowEnd = $firstSale->copy()->addDays(self::COLLECTION_WINDOW_DAYS)->endOfDay();
 
             $cash = $cashByPlan->get($planId, collect());
             $poolEnd = $this->pool($cash, $firstSale, $end, $windowEnd);
