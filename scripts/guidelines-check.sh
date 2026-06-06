@@ -87,6 +87,23 @@ else
 fi
 while IFS= read -r f; do [ -n "$f" ] && scan "$f"; done <<< "$FILES"
 
+# --- shared-charter drift ----------------------------------------------------
+# Shared blocks of GUIDELINES.md (Part A+B) and TESTING.md (DoD + waiver) must stay
+# byte-identical with the frontend copies. Canonical guard lives in the frontend
+# repo; runs only where both repos sit side by side (local / dev box) and self-skips
+# in an isolated CI checkout.
+SYNC_SCRIPT="${ROOT}/../frontend/scripts/check-guidelines-sync.sh"
+if [ -f "$SYNC_SCRIPT" ]; then
+  sync_out="$(bash "$SYNC_SCRIPT" 2>&1)"; sync_rc=$?
+  if [ "$sync_rc" -ne 0 ]; then
+    drifted="$(printf '%s\n' "$sync_out" | sed -nE 's/^guidelines-sync: (DRIFT|FAIL) ([^ ]+).*/\2/p' | paste -sd, - | sed 's/,/, /g')"
+    first_diff="$(printf '%s\n' "$sync_out" | grep -E '^[<>]' | head -1 || true)"
+    add_finding "charter" "charter-drift" \
+      "Shared charter block drifted (${drifted:-GUIDELINES.md/TESTING.md}) -- make the SAME edit in both repos (../frontend/scripts/check-guidelines-sync.sh)." \
+      "$first_diff"
+  fi
+fi
+
 # --- emit --------------------------------------------------------------------
 if [ -z "$FINDINGS" ]; then
   echo "guidelines: OK -- no machine-checkable PHP violations in changed code."
