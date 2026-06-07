@@ -18,9 +18,10 @@ use Illuminate\Support\Facades\DB;
  *
  *   1. Cadence Break
  *      ≥2 arrived treatments in the trailing 180-day baseline window,
- *      and days_since_last_visit > max(1.5 × median_gap, 30).
+ *      and max(1.5 × median_gap, 30) < days_since_last_visit ≤ 90.
  *      The 30-day floor prevents false positives on tightly-spaced
- *      sequences (consult → treatment within a week).
+ *      sequences (consult → treatment within a week); the 90-day ceiling
+ *      keeps it to "recently slipping" patients, not dormant ones.
  *
  *   2. Abandoned Package
  *      Active package + unused sessions + no future booking + last
@@ -80,6 +81,13 @@ final class AtRiskPatientsMetric
     /** Cadence-break: multiplier on personal median gap. */
     private const CADENCE_MULTIPLIER = 1.5;
 
+    /**
+     * Cadence-break: upper bound. Beyond this many days since the last visit
+     * the patient is dormant, not "recently slipping" — so the cadence signal
+     * stops firing (money signals like abandoned-package still catch them).
+     */
+    private const CADENCE_MAX_DAYS = 90;
+
     /** Abandoned package: minimum days since last visit before flagging. */
     private const ABANDONED_MIN_DAYS = 30;
 
@@ -105,6 +113,13 @@ final class AtRiskPatientsMetric
     private const NO_SHOW_STATUS_ID = 3;
 
     private const CANCELLED_STATUS_ID = 4;
+
+    /**
+     * Future appointment statuses that do NOT mean "rebooked / on track".
+     * A future-dated row in one of these states (the patient cancelled or
+     * no-showed their next visit) must not suppress the at-risk signal.
+     */
+    private const FUTURE_DEAD_STATUS_IDS = [self::NO_SHOW_STATUS_ID, self::CANCELLED_STATUS_ID];
 
     public function __construct(
         private readonly BranchResolver $branches,
@@ -739,8 +754,10 @@ final class AtRiskPatientsMetric
      * Check whether the at-risk pool is already cached for ALL of the
      * supplied branches. Latency-sensitive callers (patient list, patient
      * detail header) read this before composing `patientIdsByBranch` —
-     * on a cache miss the materialisation can take 15-25s, which would
-     * block the list. Returning `false` lets them gracefully skip the
+     * a cold materialisation is the heaviest path in this metric (measured
+     * ~0.3s for one branch, ~2.7s across all ~20 branches locally; higher on
+     * prod-scale data), enough to noticeably block a latency-sensitive list.
+     * Returning `false` lets them gracefully skip the
      * at-risk enrichment for that request and rely on the warm-up
      * command (or the dashboard) to repopulate the cache.
      *
@@ -828,6 +845,19 @@ final class AtRiskPatientsMetric
             : $this->abandonedPackagesAtBranch($scope, $branchId);
 
         $abandonedPatientIds = array_map('intval', array_keys($abandonedByPatient));
+
+        // Packages that have been refunded (any cash_flow=out / is_refund=1
+        // advance) are a closing deal — they must not contribute collectable
+        // (owed) or prepaid-at-risk money. Looked up once for the whole branch.
+        $allAbandonedPackageIds = [];
+        foreach ($abandonedByPatient as $packages) {
+            foreach ($packages as $pkg) {
+                $allAbandonedPackageIds[(int) $pkg['package_id']] = true;
+            }
+        }
+        $refundedPackageIds = array_flip(
+            $this->refundedPackageIds(array_keys($allAbandonedPackageIds)),
+        );
 
         // 2. Candidate pool = recent-treatment patients ∪ abandoned-package
         //    patients, minus anyone with a future booking at the branch.
@@ -952,16 +982,22 @@ final class AtRiskPatientsMetric
 
             $tier = $this->valueTierFor((float) ($spendByPatient[$patientId] ?? 0), $tierThresholds);
 
-            // Aggregate package money — same overpayment cap as summary tile.
-            $unusedSum = 0.0;
+            // Aggregate package money into two honest buckets:
+            //   collectable    = balance the patient still OWES on undelivered
+            //                    sessions (money we can bring in)
+            //   prepaid-at-risk= cash already paid for undelivered sessions
+            //                    (refund exposure, NOT recoverable income)
+            // Refunded packages are skipped entirely — a closed deal owes us
+            // nothing and carries no prepaid exposure.
             $prepaidSum = 0.0;
-            $unbilledSum = 0.0;
+            $collectableSum = 0.0;
             foreach ($abandoned as $pkg) {
+                if (isset($refundedPackageIds[(int) $pkg['package_id']])) {
+                    continue;
+                }
                 $prepaidUnused = min($pkg['unused_value'], max(0.0, $pkg['paid'] - $pkg['consumed_value']));
-                $unbilled = max(0.0, $pkg['unused_value'] - $prepaidUnused);
-                $unusedSum += $pkg['unused_value'];
                 $prepaidSum += $prepaidUnused;
-                $unbilledSum += $unbilled;
+                $collectableSum += max(0.0, $pkg['unused_value'] - $prepaidUnused);
             }
 
             // Tally counters. A patient with multiple firing signals
@@ -995,9 +1031,12 @@ final class AtRiskPatientsMetric
                 'overdue_multiplier' => $eval['overdue_multiplier'],
                 'value_tier' => $tier,
                 'trailing_12mo_spend' => round((float) ($spendByPatient[$patientId] ?? 0), 2),
-                'recoverable_value' => $abandoned !== [] ? round($unusedSum, 2) : 0.0,
+                // recoverable_value now means COLLECTABLE (owed); kept under
+                // the same key for back-compat + branch sort. unbilled_commitment
+                // mirrors it (both = the outstanding balance).
+                'recoverable_value' => round($collectableSum, 2),
                 'prepaid_unused' => round($prepaidSum, 2),
-                'unbilled_commitment' => round($unbilledSum, 2),
+                'unbilled_commitment' => round($collectableSum, 2),
                 'abandoned_package_count' => count($abandoned),
                 'lifetime_visits' => $lifetime,
                 'visits_in_baseline' => (int) $bs['visit_count'],
@@ -1094,6 +1133,7 @@ final class AtRiskPatientsMetric
                     ->whereColumn('af.patient_id', 'a1.patient_id')
                     ->where('af.location_id', $branchId)
                     ->where('af.scheduled_date', '>', $today)
+                    ->whereNotIn('af.appointment_status_id', self::FUTURE_DEAD_STATUS_IDS)
                     ->whereNull('af.deleted_at');
             })
             ->groupBy('a1.patient_id')
@@ -1110,6 +1150,7 @@ final class AtRiskPatientsMetric
                 ->where('location_id', $branchId)
                 ->whereIn('patient_id', $abandonedPatientIds)
                 ->where('scheduled_date', '>', $today)
+                ->whereNotIn('appointment_status_id', self::FUTURE_DEAD_STATUS_IDS)
                 ->whereNull('deleted_at')
                 ->pluck('patient_id')
                 ->map(static fn ($v): int => (int) $v)
@@ -1137,6 +1178,7 @@ final class AtRiskPatientsMetric
                     ->whereColumn('af.patient_id', 'bc.patient_id')
                     ->where('af.location_id', $branchId)
                     ->where('af.scheduled_date', '>', $today)
+                    ->whereNotIn('af.appointment_status_id', self::FUTURE_DEAD_STATUS_IDS)
                     ->whereNull('af.deleted_at');
             })
             ->whereExists(function ($sub) use ($branchId, $treatmentStatusIds): void {
@@ -1159,6 +1201,10 @@ final class AtRiskPatientsMetric
         if ($brokenIds !== []) {
             $candidateIds = array_values(array_unique(array_merge($candidateIds, $brokenIds)));
         }
+
+        // Drop deactivated / soft-deleted patient records — the at-risk pool
+        // is an actionable contact list, not a historical record.
+        $candidateIds = $this->activePatientIds($candidateIds);
 
         if ($candidateIds === []) {
             return [];
@@ -1242,6 +1288,7 @@ final class AtRiskPatientsMetric
                     ->whereColumn('af.patient_id', 'a1.patient_id')
                     ->whereColumn('af.location_id', 'a1.location_id')
                     ->where('af.scheduled_date', '>', $today)
+                    ->whereNotIn('af.appointment_status_id', self::FUTURE_DEAD_STATUS_IDS)
                     ->whereNull('af.deleted_at');
             })
             ->groupBy('a1.location_id', 'a1.patient_id')
@@ -1271,6 +1318,7 @@ final class AtRiskPatientsMetric
                 ->whereIn('location_id', $branchIds)
                 ->whereIn('patient_id', $patientIds)
                 ->where('scheduled_date', '>', $today)
+                ->whereNotIn('appointment_status_id', self::FUTURE_DEAD_STATUS_IDS)
                 ->whereNull('deleted_at')
                 ->select('location_id', 'patient_id')
                 ->get();
@@ -1301,6 +1349,7 @@ final class AtRiskPatientsMetric
                     ->whereColumn('af.patient_id', 'bc.patient_id')
                     ->whereColumn('af.location_id', 'bc.location_id')
                     ->where('af.scheduled_date', '>', $today)
+                    ->whereNotIn('af.appointment_status_id', self::FUTURE_DEAD_STATUS_IDS)
                     ->whereNull('af.deleted_at');
             })
             ->whereExists(function ($sub) use ($treatmentStatusIds): void {
@@ -1320,6 +1369,9 @@ final class AtRiskPatientsMetric
             $p = (int) $r->patient_id;
             $candidateMap[$b][$p] = true;
         }
+
+        // Drop deactivated / soft-deleted patient records across all branches.
+        $candidateMap = $this->retainActivePatients($candidateMap);
 
         if ($candidateMap === []) {
             return [];
@@ -1880,6 +1932,37 @@ final class AtRiskPatientsMetric
     }
 
     /**
+     * Package ids that have had any refund (a `cash_flow = 'out'`,
+     * `is_refund = 1` advance). Such a package is a closing deal and is
+     * excluded from the at-risk pool's collectable / prepaid valuation.
+     *
+     * @param  list<int>  $packageIds
+     * @return list<int>
+     */
+    private function refundedPackageIds(array $packageIds): array
+    {
+        if ($packageIds === []) {
+            return [];
+        }
+
+        $out = [];
+        foreach (array_chunk($packageIds, 5000) as $chunk) {
+            $ids = DB::table('package_advances')
+                ->where('cash_flow', 'out')
+                ->where('is_refund', 1)
+                ->where('cash_amount', '>', 0)
+                ->whereIn('package_id', $chunk)
+                ->distinct()
+                ->pluck('package_id');
+            foreach ($ids as $id) {
+                $out[] = (int) $id;
+            }
+        }
+
+        return $out;
+    }
+
+    /**
      * Per-package valuation query for abandoned packages. Active, not
      * refunded, recent (created within 365 days), with at least one
      * unused service. Optionally scoped to a patient subset.
@@ -2066,10 +2149,16 @@ final class AtRiskPatientsMetric
         }
 
         $cutoff = now()->subDays(self::VALUE_WINDOW_DAYS)->toDateString();
+        // Branch-scope the spend: value tiers + the By-Spend ranking must
+        // reflect what the patient spent at the in-scope branch(es), not
+        // their company-wide spend. (idsInScope returns all branches for an
+        // account-wide scope, so Overview is unaffected.)
+        $branchIds = $this->branches->idsInScope($scope);
 
         $rows = DB::table('package_advances as pa')
             ->join('packages as p', 'pa.package_id', '=', 'p.id')
             ->where('pa.account_id', $scope->accountId)
+            ->whereIn('p.location_id', $branchIds)
             ->whereDate('pa.created_at', '>=', $cutoff)
             ->whereIn('p.patient_id', $patientIds)
             ->where('pa.cash_amount', '>', 0)
@@ -2125,6 +2214,62 @@ final class AtRiskPatientsMetric
         }
 
         return $out;
+    }
+
+    /**
+     * Filter patient ids to currently-active, non-soft-deleted user records.
+     * The at-risk pool is a "who to contact" worklist, so deactivated or
+     * deleted patients must never surface. Raw query builder, so the
+     * soft-delete guard is explicit (no Eloquent global scope here).
+     *
+     * @param  list<int>  $patientIds
+     * @return list<int>
+     */
+    private function activePatientIds(array $patientIds): array
+    {
+        if ($patientIds === []) {
+            return [];
+        }
+
+        return DB::table('users')
+            ->whereIn('id', $patientIds)
+            ->where('active', 1)
+            ->whereNull('deleted_at')
+            ->pluck('id')
+            ->map(static fn ($id): int => (int) $id)
+            ->all();
+    }
+
+    /**
+     * Prune a branch -> patient candidate map down to active, non-deleted
+     * patients (the multi-branch counterpart of activePatientIds).
+     *
+     * @param  array<int, array<int, bool>>  $candidateMap
+     * @return array<int, array<int, bool>>
+     */
+    private function retainActivePatients(array $candidateMap): array
+    {
+        $pids = [];
+        foreach ($candidateMap as $patients) {
+            foreach ($patients as $p => $_) {
+                $pids[$p] = true;
+            }
+        }
+
+        $active = array_flip($this->activePatientIds(array_keys($pids)));
+
+        foreach ($candidateMap as $b => $patients) {
+            foreach ($patients as $p => $_) {
+                if (! isset($active[$p])) {
+                    unset($candidateMap[$b][$p]);
+                }
+            }
+            if (($candidateMap[$b] ?? []) === []) {
+                unset($candidateMap[$b]);
+            }
+        }
+
+        return $candidateMap;
     }
 
     /**
@@ -2219,7 +2364,9 @@ final class AtRiskPatientsMetric
 
         // --- Signal 1: Cadence Break --------------------------------------
         // ≥2 arrived treatments in baseline window AND
-        // days_since_last > max(1.5 × median_gap, 30).
+        // max(1.5 × median_gap, 30) < days_since_last ≤ 90.
+        // The upper bound keeps the signal to "recently slipping" patients;
+        // beyond 90 days they're dormant (and still caught by money signals).
         // Threshold uses native float math — a patient with median 25 fires
         // at day 38 (38 > 37.5), not day 39. The display value is rounded
         // for the UI but the comparison is precise.
@@ -2236,7 +2383,7 @@ final class AtRiskPatientsMetric
                 (float) self::CADENCE_FLOOR_DAYS,
                 $medianGapDays * self::CADENCE_MULTIPLIER,
             );
-            if ($daysSinceLast > $rawThreshold) {
+            if ($daysSinceLast > $rawThreshold && $daysSinceLast <= self::CADENCE_MAX_DAYS) {
                 $cadenceBreak = true;
                 $thresholdDays = (int) round($rawThreshold);
                 $daysOverdue = $daysSinceLast - $thresholdDays;

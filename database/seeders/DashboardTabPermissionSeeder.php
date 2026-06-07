@@ -113,6 +113,7 @@ class DashboardTabPermissionSeeder extends Seeder
                 'sort_order' => 904,
                 'children' => [
                     ['dashboard.fdm.cash.view', 'Cash (Live + Week)'],
+                    ['dashboard.fdm.today_activities.view', "Today's Activities"],
                     ['dashboard.fdm.today_status_board.view', "Today's Status Board"],
                     ['dashboard.fdm.stats.view', 'Stats (sales / revenue / KPIs)'],
                     ['dashboard.fdm.gender_revenue.view', 'Gender × Revenue'],

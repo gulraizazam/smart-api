@@ -17,8 +17,8 @@ use Tests\TestCase;
  * migrations never granted the FDM role anything.
  *
  * Pins:
- *   1. Full catalog (4 parents + 35 panels) is created & categorised.
- *   2. FDM role gets the FDM tab only (16 perms), nothing from the other tabs.
+ *   1. Full catalog (4 parents + 36 panels) is created & categorised.
+ *   2. FDM role gets the FDM tab only (17 perms), nothing from the other tabs.
  *   3. Admin roles get every panel.
  *   4. Re-running is idempotent (no dup rows / dup grants).
  *   5. A pre-existing drifted parent row is repaired (category + title).
@@ -33,6 +33,7 @@ class DashboardTabPermissionSeederTest extends TestCase
     /** Every dashboard.fdm.* panel the FDM tab exposes. */
     private const FDM_PANELS = [
         'dashboard.fdm.cash.view',
+        'dashboard.fdm.today_activities.view',
         'dashboard.fdm.today_status_board.view',
         'dashboard.fdm.stats.view',
         'dashboard.fdm.gender_revenue.view',
@@ -55,7 +56,7 @@ class DashboardTabPermissionSeederTest extends TestCase
         'dashboard_overview' => 14,
         'dashboard_practitioners' => 1,
         'dashboard_marketing' => 4,
-        'dashboard_fdm' => 16,
+        'dashboard_fdm' => 17,
     ];
 
     protected function setUp(): void
@@ -104,8 +105,8 @@ class DashboardTabPermissionSeederTest extends TestCase
             }
         }
 
-        // 4 + 35 panels (14 + 1 + 4 + 16).
-        $this->assertSame(35, Permission::where('name', 'like', 'dashboard.%')->count());
+        // 4 + 36 panels (14 + 1 + 4 + 17).
+        $this->assertSame(36, Permission::where('name', 'like', 'dashboard.%')->count());
     }
 
     public function test_fdm_role_gets_fdm_tab_only(): void
@@ -123,7 +124,7 @@ class DashboardTabPermissionSeederTest extends TestCase
         sort($fdmDashboard);
         $expected = self::FDM_PANELS;
         sort($expected);
-        $this->assertSame($expected, $fdmDashboard, 'FDM must hold exactly the 16 dashboard.fdm.* panels');
+        $this->assertSame($expected, $fdmDashboard, 'FDM must hold exactly the 17 dashboard.fdm.* panels');
 
         foreach (['dashboard.overview.', 'dashboard.practitioners.', 'dashboard.marketing.'] as $otherTab) {
             $leaked = array_filter($fdmPerms, static fn (string $p): bool => str_starts_with($p, $otherTab));
@@ -218,7 +219,7 @@ class DashboardTabPermissionSeederTest extends TestCase
         $this->assertTrue((bool) $parent->main_group);
         $this->assertSame(0, (int) $parent->parent_id);
         $this->assertTrue((bool) $parent->status);
-        $this->assertCount(16, Permission::where('parent_id', $parent->id)->get());
+        $this->assertCount(17, Permission::where('parent_id', $parent->id)->get());
     }
 
     public function test_existing_management_dashboard_parent_is_recategorised(): void
