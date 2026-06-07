@@ -8,6 +8,7 @@ use App\Models\Locations;
 use App\Models\AuditTrails;
 use App\Helpers\ACL;
 use App\Helpers\Filters;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
@@ -232,6 +233,35 @@ class BusinessClosureService
             ->where('id', $id)
             ->where('account_id', $accountId)
             ->first();
+    }
+
+    /**
+     * Closures that cover a given date for the account, optionally narrowed
+     * to a branch (a date-range closure with no location pivot is global and
+     * still matches a branch query). Locations are eager-loaded for the
+     * Resource. This is the closure-lookup behind the `check` endpoint — it
+     * answers ONLY "is there a closure event on this date?", NOT the broader
+     * "is the clinic operating?" question (which folds in the weekly pattern +
+     * per-date exceptions and lives in App\Support\OperatingDays). The two are
+     * deliberately separate, so OperatingDays is not reused here.
+     *
+     * @return Collection<int, BusinessClosure>
+     */
+    public function closuresOnDate(int $accountId, string $date, ?int $locationId = null): Collection
+    {
+        $query = BusinessClosure::with(['locations:id,name'])
+            ->where('account_id', $accountId)
+            ->whereDate('start_date', '<=', $date)
+            ->whereDate('end_date', '>=', $date);
+
+        if ($locationId !== null) {
+            $query->where(function ($q) use ($locationId): void {
+                $q->whereHas('locations', fn ($sub) => $sub->where('locations.id', $locationId))
+                    ->orWhereDoesntHave('locations');
+            });
+        }
+
+        return $query->get();
     }
 
     /**

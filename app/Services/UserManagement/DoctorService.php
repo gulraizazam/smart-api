@@ -53,6 +53,7 @@ class DoctorService
 
         $users = (clone $baseQuery)
             ->select('users.*')
+            ->with('user_roles:id,name')
             ->distinct()
             ->orderBy($params['orderBy'] ?? 'users.created_at', $params['order'] ?? 'desc')
             ->offset($params['offset'] ?? 0)
@@ -139,7 +140,11 @@ class DoctorService
             'email' => $user->email,
             'phone' => GeneralFunctions::contactStatus($user->phone),
             'gender' => config('constants.gender_array.'.$user->gender),
-            'roles' => $user->user_roles()->pluck('name')->all(),
+            // Read from the eager-loaded relation (->with('user_roles')) instead
+            // of $user->user_roles() — the relationship-method call fires one
+            // query per row (N+1) on the datatable. Same output: a flat list of
+            // role names for the row.
+            'roles' => $user->user_roles->pluck('name')->all(),
             'active' => $user->active,
             'status' => $user->active,
             'created_at' => $user->created_at->format('F j,Y h:i A'),

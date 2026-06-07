@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature\Security;
 
 use App\Exceptions\LeadException;
+use App\Models\LeadComments;
 use App\Models\Leads;
 use App\Models\User;
 use App\Services\Lead\LeadService;
@@ -101,6 +102,34 @@ class LeadAccountScopingTest extends TestCase
 
         $this->expectException(LeadException::class);
         $this->service->getLeadStatusesWithChildren($foreign->id);
+    }
+
+    public function test_add_comment_rejects_other_account_lead(): void
+    {
+        $foreign = $this->foreignLead();
+        $this->actingAsAccountOne();
+
+        $this->expectException(ModelNotFoundException::class);
+        $this->service->addComment($foreign->id, 'cross-tenant comment');
+
+        $this->assertDatabaseMissing('lead_comments', ['lead_id' => $foreign->id]);
+    }
+
+    public function test_add_comment_writes_for_own_account_lead(): void
+    {
+        $mine = Leads::factory()->create(['account_id' => 1]);
+        $this->actingAsAccountOne();
+
+        $comment = $this->service->addComment($mine->id, 'legit comment');
+
+        $this->assertInstanceOf(LeadComments::class, $comment);
+        $this->assertSame($mine->id, $comment->lead_id);
+        $this->assertSame(1, (int) $comment->account_id);
+        $this->assertDatabaseHas('lead_comments', [
+            'lead_id' => $mine->id,
+            'comment' => 'legit comment',
+            'account_id' => 1,
+        ]);
     }
 
     /** Created logged-out so account_id=2 is honoured (not restamped to 1). */

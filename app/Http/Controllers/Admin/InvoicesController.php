@@ -800,17 +800,34 @@ class InvoicesController extends Controller
      */
     public function sendLogSMS(Request $request): \Illuminate\Http\JsonResponse
     {
+        // Authorization + account scope (security audit 2026-06): this method
+        // is routed directly (POST invoices/send_logged_sms) AND proxied by
+        // Api\InvoicesController::resendSMS. It was ungated and looked the SMS
+        // log up with an unscoped findOrFail, so any authenticated user could
+        // re-send any tenant's invoice SMS (IDOR). Mirror showSMSLogs /
+        // ResendInvoiceSMSRequest: require the existing sms-log gate and scope
+        // the log to an invoice owned by the caller's account.
+        if (! Gate::allows('invoices.sms_log.view')) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
+        }
 
-        $data = $request->all();
+        $SMSLog = SMSLogs::where('sms_logs.id', $request->get('id'))
+            ->whereExists(function ($query): void {
+                $query->select(DB::raw(1))
+                    ->from('invoices')
+                    ->whereColumn('invoices.id', 'sms_logs.invoice_id')
+                    ->where('invoices.account_id', Auth::user()->account_id);
+            })
+            ->first();
 
-        $SMSLog = SMSLogs::findOrFail($request->get('id'));
+        if (! $SMSLog) {
+            return $this->errorResponse('SMS log not found.', 404);
+        }
 
-        if ($SMSLog) {
-            $response = $this->resendSMS($SMSLog->id, $SMSLog->to, $SMSLog->text, $SMSLog->invoice_id);
+        $response = $this->resendSMS($SMSLog->id, $SMSLog->to, $SMSLog->text, $SMSLog->invoice_id);
 
-            if ($response['status']) {
-                return response()->json(['status' => 1]);
-            }
+        if ($response['status']) {
+            return response()->json(['status' => 1]);
         }
 
         return response()->json(['status' => 0]);

@@ -681,6 +681,12 @@ class LeadService
 
     public function addComment(int $leadId, string $comment): LeadComments
     {
+        // Tenant-scope the client-supplied lead id (security audit 2026-06):
+        // the write never verified the lead belonged to the caller's account,
+        // so a comment could attach to another tenant's lead (IDOR). Mirror
+        // the other lead writes in this service: account-scoped findOrFail.
+        Leads::where('account_id', Auth::user()->account_id)->findOrFail($leadId);
+
         return LeadComments::create([
             'lead_id' => $leadId,
             'comment' => $comment,

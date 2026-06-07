@@ -151,4 +151,59 @@ class DoctorManagementTest extends TestCase
         $response = $this->postJson('/api/doctors/datatable', []);
         $this->assertContains($response->status(), [401, 302, 403]);
     }
+
+    /**
+     * N+1 guard: the doctor datatable eager-loads each row's roles
+     * (->with('user_roles')) instead of calling $user->user_roles() per row.
+     * The query count must NOT grow with the number of doctors-with-roles —
+     * revert the eager-load and this turns into one extra query per doctor.
+     */
+    public function test_doctor_datatable_does_not_run_per_row_role_queries(): void
+    {
+        $role = $this->createRole('Practitioner-' . uniqid());
+
+        $makeDoctorWithRole = function () use ($role): void {
+            $doctor = User::factory()->create([
+                'account_id' => auth()->user()->account_id,
+                'user_type_id' => 5,
+                'resource_type_id' => 2,
+                'active' => 1,
+            ]);
+            \App\Models\RoleHasUsers::create([
+                'role_id' => $role->id,
+                'user_id' => $doctor->id,
+            ]);
+        };
+
+        $countQueries = function (): int {
+            $service = app(\App\Services\UserManagement\DoctorService::class);
+            \Illuminate\Support\Facades\DB::flushQueryLog();
+            \Illuminate\Support\Facades\DB::enableQueryLog();
+            $service->getDatatableData(['limit' => 50, 'offset' => 0]);
+            $count = count(\Illuminate\Support\Facades\DB::getQueryLog());
+            \Illuminate\Support\Facades\DB::disableQueryLog();
+
+            return $count;
+        };
+
+        $makeDoctorWithRole();
+        // Warm-up call first: the cold Spatie permission cache adds one-off
+        // lookups that have nothing to do with the per-row roles we're
+        // measuring. Discard its count.
+        $countQueries();
+        $baseline = $countQueries();
+
+        // Add three more doctors, each with a role. If roles were lazy-loaded
+        // per row, the query count would climb by ~3.
+        $makeDoctorWithRole();
+        $makeDoctorWithRole();
+        $makeDoctorWithRole();
+        $afterMore = $countQueries();
+
+        $this->assertSame(
+            $baseline,
+            $afterMore,
+            "Doctor datatable query count grew from {$baseline} to {$afterMore} as doctors were added — roles are being lazy-loaded per row (N+1)."
+        );
+    }
 }

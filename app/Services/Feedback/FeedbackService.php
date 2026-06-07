@@ -98,7 +98,11 @@ class FeedbackService
 
     public function store(int $appointmentId, int $rating, ?string $comment = null): Feedback
     {
-        $appointment = Appointments::findOrFail($appointmentId);
+        // Tenant-scope the client-supplied appointment id (security audit
+        // 2026-06): an unscoped findOrFail let feedback attach to another
+        // tenant's appointment (IDOR). Scope to the caller's account.
+        $appointment = Appointments::byAccount(Auth::user()->account_id)
+            ->findOrFail($appointmentId);
 
         $this->ensureAppointmentIsArrivedTreatment($appointment);
         $this->ensureNoDuplicateFeedback($appointmentId);
