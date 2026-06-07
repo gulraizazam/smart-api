@@ -202,19 +202,9 @@ class BusinessClosureController extends Controller
             $date = Carbon::parse($validated['date'])->toDateString();
             $locationId = isset($validated['location_id']) ? (int) $validated['location_id'] : null;
 
-            $query = BusinessClosure::with(['locations:id,name'])
-                ->where('account_id', $accountId)
-                ->whereDate('start_date', '<=', $date)
-                ->whereDate('end_date', '>=', $date);
-
-            if ($locationId !== null) {
-                $query->where(function ($q) use ($locationId): void {
-                    $q->whereHas('locations', fn ($sub) => $sub->where('locations.id', $locationId))
-                        ->orWhereDoesntHave('locations');
-                });
-            }
-
-            $closures = $query->get();
+            // Closure-lookup lives in the service (C1: controller validates →
+            // delegates → returns a Resource). Same query, identical response.
+            $closures = $this->service->closuresOnDate($accountId, $date, $locationId);
 
             return $this->successResponse('Business closure check complete.', [
                 'date' => $date,

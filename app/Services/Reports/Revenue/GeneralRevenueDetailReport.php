@@ -26,6 +26,15 @@ class GeneralRevenueDetailReport
     ): array {
         $reportData = [];
 
+        // Eager-load every branch with its city + region up front (one query
+        // each) instead of Locations::find() per branch plus lazy city/region
+        // accessors inside the loop (N+1). Keyed by id for O(1) lookup; the
+        // city/region values read out identically below.
+        $locations = Locations::with(['city', 'region'])
+            ->whereIn('id', $locationIds)
+            ->get()
+            ->keyBy('id');
+
         foreach ($locationIds as $locationId) {
             $query = PackageAdvances::with(['user:id,name,gender,phone', 'paymentmode'])
                 ->whereDate('created_at', '>=', $startDate)
@@ -39,7 +48,7 @@ class GeneralRevenueDetailReport
             }
 
             $advances = $query->get();
-            $location = Locations::find($locationId);
+            $location = $locations->get($locationId);
 
             if (! $location) {
                 continue;

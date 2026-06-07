@@ -145,4 +145,61 @@ class BusinessClosureTest extends TestCase
         $response = $this->postJson('/api/business-closures/datatable', []);
         $this->assertContains($response->status(), [401, 302, 403]);
     }
+
+    /**
+     * The closure-lookup behind the `check` endpoint now lives in the service
+     * (BusinessClosureService::closuresOnDate) rather than inline in the
+     * controller. Pin its behavior: a closure covering the date is returned
+     * with its locations eager-loaded; the branch filter matches a closure
+     * scoped to that branch AND a global (no-location) closure, but excludes a
+     * closure scoped only to a different branch. Revert the extraction and the
+     * method no longer exists — this test goes red.
+     */
+    public function test_closures_on_date_returns_matching_closures_with_locations(): void
+    {
+        $accountId = (int) auth()->user()->account_id;
+        $branchA = Locations::first();
+        $branchB = Locations::factory()->create(['account_id' => $accountId]);
+
+        $branchClosure = \App\Models\BusinessClosure::create([
+            'title' => 'Branch A maintenance',
+            'start_date' => '2026-07-10',
+            'end_date' => '2026-07-12',
+            'account_id' => $accountId,
+        ]);
+        $branchClosure->locations()->attach($branchA->id);
+
+        $globalClosure = \App\Models\BusinessClosure::create([
+            'title' => 'Public holiday',
+            'start_date' => '2026-07-10',
+            'end_date' => '2026-07-12',
+            'account_id' => $accountId,
+        ]);
+
+        $service = app(\App\Services\Schedule\BusinessClosureService::class);
+
+        // Within the window, scoped to branch A: matches the branch-A closure
+        // AND the global closure, but not a branch-B-only closure.
+        $branchBOnly = \App\Models\BusinessClosure::create([
+            'title' => 'Branch B only',
+            'start_date' => '2026-07-10',
+            'end_date' => '2026-07-12',
+            'account_id' => $accountId,
+        ]);
+        $branchBOnly->locations()->attach($branchB->id);
+
+        $forBranchA = $service->closuresOnDate($accountId, '2026-07-11', $branchA->id);
+        $ids = $forBranchA->pluck('id')->all();
+
+        $this->assertContains($branchClosure->id, $ids);
+        $this->assertContains($globalClosure->id, $ids);
+        $this->assertNotContains($branchBOnly->id, $ids);
+
+        // Locations are eager-loaded for the Resource (no lazy query needed).
+        $matched = $forBranchA->firstWhere('id', $branchClosure->id);
+        $this->assertTrue($matched->relationLoaded('locations'));
+
+        // Outside the window: nothing matches.
+        $this->assertCount(0, $service->closuresOnDate($accountId, '2026-08-01', $branchA->id));
+    }
 }

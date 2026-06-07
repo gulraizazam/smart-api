@@ -191,8 +191,16 @@ class OrderService
             return ['status' => false, 'message' => 'No records found.'];
         }
 
+        // Detail rows: a single bulk DELETE per order instead of loading every
+        // row and deleting it one-by-one. Verified safe — OrderDetail has no
+        // SoftDeletes, no booted()/deleting|deleted event, and no registered
+        // observer, so a query-builder delete bypasses no cascade or audit
+        // side-effect. (If an observer is ever added, this must revert to a
+        // row-by-row loop so the observer fires.)
+        $orderIds = $orders->pluck('id')->all();
+        OrderDetail::whereIn('order_id', $orderIds)->delete();
+
         foreach ($orders as $order) {
-            OrderDetail::where('order_id', $order->id)->each(fn ($d) => $d->delete());
             $order->delete();
         }
 
