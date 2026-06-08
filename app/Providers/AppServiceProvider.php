@@ -395,8 +395,8 @@ class AppServiceProvider extends ServiceProvider
         // Those endpoints back BOTH the Management Dashboard (overview /
         // practitioners / marketing tabs, gated by `management_dashboard.view`)
         // AND the FDM dashboard tab, which reuses most of the same sections
-        // (overview, people, patients, utilization, at-risk, today-status-board,
-        // …). An FDM is granted the `dashboard_fdm` umbrella + `dashboard.fdm.*`
+        // (overview, people, patients, utilization, at-risk, …).
+        // An FDM is granted the `dashboard_fdm` umbrella + `dashboard.fdm.*`
         // panel permissions — but NOT `management_dashboard.view`. Gating the
         // group on `management_dashboard.view` alone therefore 403'd every FDM
         // panel ("no data in any section") even though the SPA correctly showed

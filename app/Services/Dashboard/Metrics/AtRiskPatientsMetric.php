@@ -297,6 +297,22 @@ final class AtRiskPatientsMetric
                 ->pluck('name', 'id')
                 ->toArray();
 
+        // Refunded-package set — collect every abandoned package id across ALL
+        // branches and resolve which are refunded in ONE query, instead of one
+        // refundedPackageIds() call per branch (the dominant N+1 here). package_id
+        // is globally unique, so each branch's membership tests are unchanged.
+        $allAbandonedPackageIds = [];
+        foreach ($bulkAbandoned as $branchPatients) {
+            foreach ($branchPatients as $packages) {
+                foreach ($packages as $pkg) {
+                    $allAbandonedPackageIds[(int) $pkg['package_id']] = true;
+                }
+            }
+        }
+        $bulkRefundedIds = $allAbandonedPackageIds === []
+            ? []
+            : array_flip($this->refundedPackageIds(array_keys($allAbandonedPackageIds)));
+
         $branches = [];
         $allPatients = [];
         foreach ($branchIds as $branchId) {
@@ -320,6 +336,8 @@ final class AtRiskPatientsMetric
                         $bulkLifetimeCounts[(int) $branchId] ?? [],
                         $bulkBroken[(int) $branchId] ?? [],
                         $bulkDoctorNames,
+                        $bulkRefundedIds,
+                        $branchNames[$branchId] ?? null,
                     );
                 Cache::put($cacheKey, $pool, self::CACHE_TTL);
             }
@@ -820,6 +838,8 @@ final class AtRiskPatientsMetric
     /**
      * @param  array<int, float>|null  $prefetchedSpend
      * @param  array<int, array{name: string, phone: string|null}>|null  $prefetchedProfiles
+     * @param  array<int, true>|null  $prefetchedRefundedIds  package_id => true for every refunded package across scope; lookups are by globally-unique package_id so the cross-branch set is byte-identical to a per-branch lookup
+     * @param  string|null  $prefetchedBranchName  branch name resolved once in the overview path (avoids a per-branch locations query)
      */
     private function buildBranchPoolBody(
         MetricScope $scope,
@@ -833,8 +853,11 @@ final class AtRiskPatientsMetric
         ?array $prefetchedLifetimeCounts = null,
         ?array $prefetchedBroken = null,
         ?array $prefetchedDoctorNames = null,
+        ?array $prefetchedRefundedIds = null,
+        ?string $prefetchedBranchName = null,
     ): array {
         $today = now()->toDateString();
+        $branchName = $prefetchedBranchName ?? ($this->branches->names([$branchId])[$branchId] ?? null);
 
         // 1. Per-patient abandoned packages at this branch. Drives both
         //    the candidate-pool union (so package-only patients are
@@ -848,16 +871,23 @@ final class AtRiskPatientsMetric
 
         // Packages that have been refunded (any cash_flow=out / is_refund=1
         // advance) are a closing deal — they must not contribute collectable
-        // (owed) or prepaid-at-risk money. Looked up once for the whole branch.
-        $allAbandonedPackageIds = [];
-        foreach ($abandonedByPatient as $packages) {
-            foreach ($packages as $pkg) {
-                $allAbandonedPackageIds[(int) $pkg['package_id']] = true;
+        // (owed) or prepaid-at-risk money. Looked up once per branch on the
+        // modal path; the overview path prefetches the set across ALL branches
+        // in one query and passes it in (package_id is globally unique, so a
+        // membership test against the cross-branch set is byte-identical).
+        if ($prefetchedRefundedIds !== null) {
+            $refundedPackageIds = $prefetchedRefundedIds;
+        } else {
+            $allAbandonedPackageIds = [];
+            foreach ($abandonedByPatient as $packages) {
+                foreach ($packages as $pkg) {
+                    $allAbandonedPackageIds[(int) $pkg['package_id']] = true;
+                }
             }
+            $refundedPackageIds = array_flip(
+                $this->refundedPackageIds(array_keys($allAbandonedPackageIds)),
+            );
         }
-        $refundedPackageIds = array_flip(
-            $this->refundedPackageIds(array_keys($allAbandonedPackageIds)),
-        );
 
         // 2. Candidate pool = recent-treatment patients ∪ abandoned-package
         //    patients, minus anyone with a future booking at the branch.
@@ -873,7 +903,7 @@ final class AtRiskPatientsMetric
 
         if ($candidates === []) {
             return [
-                'branch_name' => $this->branches->names([$branchId])[$branchId] ?? null,
+                'branch_name' => $branchName,
                 'rows' => [],
                 'signal_counts' => [
                     'cadence_break' => 0,
@@ -1082,7 +1112,7 @@ final class AtRiskPatientsMetric
         });
 
         return [
-            'branch_name' => $this->branches->names([$branchId])[$branchId] ?? null,
+            'branch_name' => $branchName,
             'rows' => $rows,
             'signal_counts' => $signalCounts,
         ];

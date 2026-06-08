@@ -62,7 +62,6 @@ Route::prefix('management-dashboard')
         Route::get('at-risk-list', [ManagementDashboardApiController::class, 'atRiskList'])->name('at_risk_list');
         Route::get('at-risk-by-doctor', [ManagementDashboardApiController::class, 'atRiskByDoctor'])->name('at_risk_by_doctor');
         Route::get('arrival-rate', [ManagementDashboardApiController::class, 'arrivalRate'])->name('arrival_rate');
-        Route::get('people', [ManagementDashboardApiController::class, 'people'])->name('people');
         Route::get('utilization', [ManagementDashboardApiController::class, 'utilization'])->name('utilization');
         Route::get('utilization-heatmap', [ManagementDashboardApiController::class, 'utilizationHeatmap'])->name('utilization_heatmap');
         Route::get('utilization-trend', [ManagementDashboardApiController::class, 'utilizationTrend'])->name('utilization_trend');
@@ -78,11 +77,6 @@ Route::prefix('management-dashboard')
         Route::get('lead-service-interest', [ManagementDashboardApiController::class, 'leadServiceInterest'])->name('lead_service_interest');
         Route::get('gender-revenue', [ManagementDashboardApiController::class, 'genderRevenue'])->name('gender_revenue');
         Route::get('today-activities', [ManagementDashboardApiController::class, 'todayActivities'])->name('today_activities');
-
-        // FDM dashboard panels (Front-Desk / Branch Manager tab on the SPA).
-        Route::get('today-status-board', [ManagementDashboardApiController::class, 'todayStatusBoard'])->name('today_status_board');
-        Route::get('no-show-trend', [ManagementDashboardApiController::class, 'noShowTrend'])->name('no_show_trend');
-        Route::get('target-pacing', [ManagementDashboardApiController::class, 'targetPacing'])->name('target_pacing');
     });
 
 // Google Reviews API Routes
