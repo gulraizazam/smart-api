@@ -62,7 +62,6 @@ Route::prefix('management-dashboard')
         Route::get('at-risk-list', [ManagementDashboardApiController::class, 'atRiskList'])->name('at_risk_list');
         Route::get('at-risk-by-doctor', [ManagementDashboardApiController::class, 'atRiskByDoctor'])->name('at_risk_by_doctor');
         Route::get('arrival-rate', [ManagementDashboardApiController::class, 'arrivalRate'])->name('arrival_rate');
-        Route::get('people', [ManagementDashboardApiController::class, 'people'])->name('people');
         Route::get('utilization', [ManagementDashboardApiController::class, 'utilization'])->name('utilization');
         Route::get('utilization-heatmap', [ManagementDashboardApiController::class, 'utilizationHeatmap'])->name('utilization_heatmap');
         Route::get('utilization-trend', [ManagementDashboardApiController::class, 'utilizationTrend'])->name('utilization_trend');

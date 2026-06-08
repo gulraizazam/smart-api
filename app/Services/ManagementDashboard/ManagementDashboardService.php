@@ -21,7 +21,6 @@ use App\Services\Dashboard\Metrics\LeadGenderFunnelMetric;
 use App\Services\Dashboard\Metrics\LeadServiceInterestMetric;
 use App\Services\Dashboard\Metrics\NewReturningMetric;
 use App\Services\Dashboard\Metrics\PatientCohortRetentionMetric;
-use App\Services\Dashboard\Metrics\ResourceLeaderboardMetric;
 use App\Services\Dashboard\Metrics\RevenueConcentrationMetric;
 use App\Services\Dashboard\Metrics\ServiceCategoryTrendMetric;
 use App\Services\Dashboard\Metrics\ServiceSalesTrendMetric;
@@ -48,7 +47,6 @@ final class ManagementDashboardService
         private readonly ResourceScopeResolver $scopeResolver,
         private readonly AppointmentsMetric $appointments,
         private readonly BranchLeaderboardMetric $branchLeaderboard,
-        private readonly ResourceLeaderboardMetric $resourceLeaderboard,
         private readonly PatientCohortRetentionMetric $cohorts,
         private readonly RevenueConcentrationMetric $concentration,
         private readonly ServiceCategoryTrendMetric $categoryTrend,
@@ -478,14 +476,6 @@ final class ManagementDashboardService
     public function branchDoctorFeedbackTrend(MetricScope $scope, int $branchId, int $monthsBack = 6): array
     {
         return $this->branchFeedbackTrend->branchDoctorTrend($scope, $branchId, $monthsBack);
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    public function people(MetricScope $scope, DateRange $range): array
-    {
-        return $this->resourceLeaderboard->compute($scope, $range);
     }
 
     /**
