@@ -45,6 +45,9 @@ class ScheduledCommandsTest extends TestCase
             // FIX H: the Management Dashboard daily-metrics rollup has no other
             // dispatcher; without this schedule the SPA dashboard metrics go stale.
             'management-dashboard:rebuild-metrics',
+            // Log retention sweep — without this scheduled, sms_logs/activities
+            // grow unbounded again (the problem this command was built to fix).
+            'logs:prune',
         ] as $signature) {
             $this->assertStringContainsString(
                 $signature,

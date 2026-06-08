@@ -177,6 +177,16 @@ return Application::configure(basePath: dirname(__DIR__))
             ->withoutOverlapping()
             ->onOneServer();
 
+        // Retention sweep for the flat log tables (sms_logs, activities):
+        // export rows older than the window to a compressed file, then delete
+        // them — keeps the live tables bounded so they never balloon again.
+        // Monthly on the 1st, off-peak (crm2 staff off); --force runs it
+        // unattended. See App\Console\Commands\PruneLogTables + config/log_retention.php.
+        $schedule->command('logs:prune --force')
+            ->monthlyOn(1, '03:30')->timezone($timeZone)
+            ->withoutOverlapping()
+            ->onOneServer();
+
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->dontFlash([
