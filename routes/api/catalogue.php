@@ -303,6 +303,8 @@ Route::post('schedule/save-business-working-days', [ScheduleController::class, '
     ->middleware('permission:business_working_days.edit')->name('schedule.save-business-working-days');
 Route::post('schedule/get-shifts', [ScheduleController::class, 'getShifts'])
     ->middleware('permission:scheduling_shifts.list.view')->name('schedule.get-shifts');
+Route::post('schedule/get-resources', [ScheduleController::class, 'getResources'])
+    ->middleware('permission:scheduling_shifts.list.view')->name('schedule.get-resources');
 Route::post('schedule/store-shifts', [ScheduleController::class, 'storeShifts'])
     ->middleware('permission:scheduling_shifts.create')->name('schedule.store-shifts');
 Route::post('schedule/delete-shifts', [ScheduleController::class, 'deleteShifts'])
