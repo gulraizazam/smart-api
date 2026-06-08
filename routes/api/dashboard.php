@@ -78,11 +78,6 @@ Route::prefix('management-dashboard')
         Route::get('lead-service-interest', [ManagementDashboardApiController::class, 'leadServiceInterest'])->name('lead_service_interest');
         Route::get('gender-revenue', [ManagementDashboardApiController::class, 'genderRevenue'])->name('gender_revenue');
         Route::get('today-activities', [ManagementDashboardApiController::class, 'todayActivities'])->name('today_activities');
-
-        // FDM dashboard panels (Front-Desk / Branch Manager tab on the SPA).
-        Route::get('today-status-board', [ManagementDashboardApiController::class, 'todayStatusBoard'])->name('today_status_board');
-        Route::get('no-show-trend', [ManagementDashboardApiController::class, 'noShowTrend'])->name('no_show_trend');
-        Route::get('target-pacing', [ManagementDashboardApiController::class, 'targetPacing'])->name('target_pacing');
     });
 
 // Google Reviews API Routes
