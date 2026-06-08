@@ -677,6 +677,174 @@ final class NewReturningMetric implements Metric
     }
 
     /**
+     * Batched per-(branch, month) follow-up split for the retention trend —
+     * the N-months-at-once form of followUpSplit($asOf). Computes EVERY
+     * anchor's matured-cohort split in ONE grouped query (constant query
+     * count, not one-per-month), by cross-joining the cohort self-join
+     * against the anchor list: each anchor carries its own cohort window
+     * [asOf−60, asOf−30] and its own follow-up cutoff (asOf).
+     *
+     * Identical to calling followUpSplit($scope,$branchIds,'','',$asOf) once
+     * per anchor:
+     *   - the anchor-independent a2 rules (same branch+patient, treatment,
+     *     arrived, >7d after a1, not deleted, not a1 itself) stay in the
+     *     LEFT JOIN;
+     *   - the only anchor-DEPENDENT rule, "the follow-up must be ≤ that
+     *     month's asOf", is applied per-anchor inside the has_followup CASE
+     *     (a2.scheduled_date <= an.as_of), so an out-of-window a2 only zeroes
+     *     the flag — it never drops the cohort (a1) row.
+     *
+     * @param  list<int>  $branchIds
+     * @param  list<array{label:string, key:string, asOf:string}>  $anchors
+     * @return array<string, array<int, array{total:int, with_followup:int}>>
+     *         keyed by anchor 'key' (Y-m) then branch id
+     */
+    private function followUpSplitBatched(MetricScope $scope, array $branchIds, array $anchors): array
+    {
+        $treatmentStatusIds = DoctorDashboardHelper::getTreatmentStatusIds();
+        if ($treatmentStatusIds === [] || $anchors === []) {
+            return [];
+        }
+
+        $anchorsSub = $this->anchorsSubquery($anchors);
+
+        // a1 (cohort, per branch+patient) × anchors. a2 = later same-branch
+        // arrived treatment >7d after a1 (anchor-independent → in the JOIN);
+        // the asOf cap is applied per-anchor in the CASE below.
+        $pairs = DB::table('appointments as a1')
+            ->crossJoinSub($anchorsSub, 'an')
+            ->leftJoin('appointments as a2', function ($join) use ($treatmentStatusIds): void {
+                $join->on('a2.patient_id', '=', 'a1.patient_id')
+                    ->on('a2.location_id', '=', 'a1.location_id')
+                    ->where('a2.appointment_type_id', 2)
+                    ->whereIn('a2.appointment_status_id', $treatmentStatusIds)
+                    ->whereRaw('a2.scheduled_date > DATE_ADD(a1.scheduled_date, INTERVAL 7 DAY)')
+                    ->whereColumn('a2.id', '!=', 'a1.id')
+                    ->whereNull('a2.deleted_at');
+            })
+            ->where('a1.account_id', $scope->accountId)
+            ->whereIn('a1.location_id', $branchIds)
+            ->where('a1.appointment_type_id', 2)
+            ->whereIn('a1.appointment_status_id', $treatmentStatusIds)
+            ->whereColumn('a1.scheduled_date', '>=', 'an.cohort_start')
+            ->whereColumn('a1.scheduled_date', '<=', 'an.cohort_end')
+            ->whereNull('a1.deleted_at')
+            ->select('an.k', 'a1.location_id', 'a1.patient_id')
+            ->selectRaw('MAX(CASE WHEN a2.id IS NOT NULL AND a2.scheduled_date <= an.as_of THEN 1 ELSE 0 END) AS has_followup')
+            ->groupBy('an.k', 'a1.location_id', 'a1.patient_id');
+
+        $rows = DB::query()
+            ->fromSub($pairs, 'pb')
+            ->select('k', 'location_id')
+            ->selectRaw('COUNT(*) AS total, SUM(has_followup) AS with_followup')
+            ->groupBy('k', 'location_id')
+            ->get();
+
+        $out = [];
+        foreach ($rows as $row) {
+            $out[(string) $row->k][(int) $row->location_id] = [
+                'total' => (int) $row->total,
+                'with_followup' => (int) $row->with_followup,
+            ];
+        }
+
+        return $out;
+    }
+
+    /**
+     * Batched pool-level follow-up for the retention trend — the N-months-
+     * at-once form of followUpPool($asOf). Same matured-cohort + 7-day-gap
+     * rules, but per-patient (deduped across branches) so a patient who
+     * treated at two branches counts once per month and is "returned" if
+     * they rebooked at ANY branch in scope. ONE grouped query for all
+     * anchors. Identical to one followUpPool() call per anchor; the asOf
+     * cap is applied per-anchor in the has_followup CASE, exactly as in
+     * followUpSplitBatched.
+     *
+     * @param  list<int>  $branchIds
+     * @param  list<array{label:string, key:string, asOf:string}>  $anchors
+     * @return array<string, array{cohort:int, returned:int}>  keyed by anchor 'key'
+     */
+    private function followUpPoolBatched(MetricScope $scope, array $branchIds, array $anchors): array
+    {
+        $treatmentStatusIds = DoctorDashboardHelper::getTreatmentStatusIds();
+        if ($treatmentStatusIds === [] || $anchors === []) {
+            return [];
+        }
+
+        $anchorsSub = $this->anchorsSubquery($anchors);
+
+        $pairs = DB::table('appointments as a1')
+            ->crossJoinSub($anchorsSub, 'an')
+            ->leftJoin('appointments as a2', function ($join) use ($treatmentStatusIds, $branchIds): void {
+                $join->on('a2.patient_id', '=', 'a1.patient_id')
+                    ->whereIn('a2.location_id', $branchIds)
+                    ->where('a2.appointment_type_id', 2)
+                    ->whereIn('a2.appointment_status_id', $treatmentStatusIds)
+                    ->whereRaw('a2.scheduled_date > DATE_ADD(a1.scheduled_date, INTERVAL 7 DAY)')
+                    ->whereColumn('a2.id', '!=', 'a1.id')
+                    ->whereNull('a2.deleted_at');
+            })
+            ->where('a1.account_id', $scope->accountId)
+            ->whereIn('a1.location_id', $branchIds)
+            ->where('a1.appointment_type_id', 2)
+            ->whereIn('a1.appointment_status_id', $treatmentStatusIds)
+            ->whereColumn('a1.scheduled_date', '>=', 'an.cohort_start')
+            ->whereColumn('a1.scheduled_date', '<=', 'an.cohort_end')
+            ->whereNull('a1.deleted_at')
+            ->select('an.k', 'a1.patient_id')
+            ->selectRaw('MAX(CASE WHEN a2.id IS NOT NULL AND a2.scheduled_date <= an.as_of THEN 1 ELSE 0 END) AS has_followup')
+            ->groupBy('an.k', 'a1.patient_id');
+
+        $rows = DB::query()
+            ->fromSub($pairs, 'p')
+            ->select('k')
+            ->selectRaw('COUNT(*) AS cohort, SUM(has_followup) AS returned')
+            ->groupBy('k')
+            ->get();
+
+        $out = [];
+        foreach ($rows as $row) {
+            $out[(string) $row->k] = [
+                'cohort' => (int) ($row->cohort ?? 0),
+                'returned' => (int) ($row->returned ?? 0),
+            ];
+        }
+
+        return $out;
+    }
+
+    /**
+     * Derived-table of retention anchors for the batched follow-up queries:
+     * one row per month with its key, asOf cutoff, and matured-cohort window
+     * (asOf−60 … asOf−30). Built as a UNION ALL of bound SELECTs so the dates
+     * are parameterized (no string-built SQL). Dates are precomputed in PHP
+     * (Carbon) so the window math matches followUpSplit/followUpPool exactly.
+     *
+     * @param  list<array{label:string, key:string, asOf:string}>  $anchors
+     */
+    private function anchorsSubquery(array $anchors): \Illuminate\Database\Query\Builder
+    {
+        $sub = null;
+        foreach ($anchors as $a) {
+            $anchor = \Carbon\CarbonImmutable::parse($a['asOf']);
+            $select = DB::query()->selectRaw(
+                '? as k, ? as as_of, ? as cohort_start, ? as cohort_end',
+                [
+                    $a['key'],
+                    $anchor->toDateString(),
+                    $anchor->subDays(60)->toDateString(),
+                    $anchor->subDays(30)->toDateString(),
+                ]
+            );
+            $sub = $sub === null ? $select : $sub->unionAll($select);
+        }
+
+        // $anchors is non-empty (guarded by callers), so $sub is set.
+        return $sub;
+    }
+
+    /**
      * @param  list<int>  $branchIds
      * @param  list<int>  $statusIds
      * @return array<int, array{new: int, returning: int}>
@@ -888,20 +1056,24 @@ final class NewReturningMetric implements Metric
             $poolMonthly[$a['key']] = ['cohort' => 0, 'returned' => 0];
         }
 
-        // One followUpSplit() per month (it's a single grouped query,
-        // ~6× total). Pool aggregation dedupes patients across branches
-        // via a separate helper call so two-branch patients don't
-        // double-count.
+        // Batched: ALL months' per-(branch, month) buckets in ONE grouped
+        // query, and ALL months' pooled buckets in ONE more — instead of
+        // a followUpSplit()+followUpPool() pair per month (the old per-month
+        // N+1). Each anchor carries its own cohort window + asOf cap, so the
+        // matured-cohort and "follow-up must be ≤ that month's asOf" rules
+        // are preserved exactly, just unrolled across anchors in SQL.
+        $splitByMonth = $this->followUpSplitBatched($scope, $branchIds, $anchors);
+        $poolByMonth = $this->followUpPoolBatched($scope, $branchIds, $anchors);
+
         foreach ($anchors as $a) {
-            $perBranchMonth = $this->followUpSplit($scope, $branchIds, '', '', $a['asOf']);
+            $perBranchMonth = $splitByMonth[$a['key']] ?? [];
             foreach ($branchIds as $bid) {
                 $perBranch[$bid][$a['key']] = [
                     'cohort' => $perBranchMonth[$bid]['total'] ?? 0,
                     'returned' => $perBranchMonth[$bid]['with_followup'] ?? 0,
                 ];
             }
-            $pool = $this->followUpPool($scope, $branchIds, $a['asOf']);
-            $poolMonthly[$a['key']] = $pool;
+            $poolMonthly[$a['key']] = $poolByMonth[$a['key']] ?? ['cohort' => 0, 'returned' => 0];
         }
 
         $rows = [];
