@@ -32,6 +32,7 @@ class AppointmentLookupController extends AppointmentBaseController
         $data = [
             'status' => 0,
             'patient_id' => 0,
+            'lead_id' => null,
             'phone' => null,
             'cnic' => null,
             'gender' => null,
@@ -56,14 +57,36 @@ class AppointmentLookupController extends AppointmentBaseController
             $phone = PhoneFormattingService::cleanNumber($request->phone);
             $patient = Patients::getByPhone($phone, Auth::user()->account_id, $request->patient_id ? (int) $request->patient_id : false);
             if (! $patient) {
-                $data['status'] = 1;
-                $data['service_id'] = $request->service_id;
-                $data['phone'] = $request->phone;
-                $data['dob'] = $request->dob;
-                $data['address'] = $request->address;
-                $data['cnic'] = $request->cnic;
-                $data['referred_by'] = $request->referred_by;
-                $data['gender'] = $request->gender;
+                // No patient on this phone — fall back to the latest non-junk
+                // LEAD. A consultation is always created against a lead, and an
+                // existing lead may have no patient row yet; without this the
+                // create flow would mint a duplicate lead and orphan the real
+                // one (losing its source/status/history). The downstream
+                // booking cascade (createAppointment 589-637 / 732-829) takes
+                // the returned lead_id, creates the patient, links it to the
+                // lead, sets Booked and reconciles the leads_services category.
+                $lead = Leads::latestOpenByPhone($phone, Auth::user()->account_id);
+                if ($lead) {
+                    $data['status'] = 0;
+                    $data['lead_id'] = $lead->id;
+                    $data['patient_id'] = $lead->patient_id; // may be null/0 — expected
+                    $data['name'] = $lead->name;
+                    $data['email'] = $lead->email;
+                    $data['gender'] = $lead->gender !== null ? (string) $lead->gender : null;
+                    $data['phone'] = $lead->phone;
+                    $data['service_id'] = $lead->service_id ?? $request->service_id;
+                    $data['lead_source_id'] = $lead->lead_source_id;
+                    $data['town_id'] = $lead->town_id;
+                } else {
+                    $data['status'] = 1;
+                    $data['service_id'] = $request->service_id;
+                    $data['phone'] = $request->phone;
+                    $data['dob'] = $request->dob;
+                    $data['address'] = $request->address;
+                    $data['cnic'] = $request->cnic;
+                    $data['referred_by'] = $request->referred_by;
+                    $data['gender'] = $request->gender;
+                }
             } else {
                 $lead = Leads::where(['patient_id' => $patient->id, 'service_id' => $request->service_id])->first();
                 if ($lead) {

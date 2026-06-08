@@ -199,6 +199,35 @@ class ScheduleController extends Controller
     }
 
     /**
+     * Get the active resources (doctors by default) allocated to a location.
+     *
+     * Standalone counterpart to the `resources` bundled inside getShifts —
+     * the repeating-shifts editor's "also apply to" multiselect needs just the
+     * doctor list for a location, without a date range or the shift payload.
+     * Unlike getShifts an empty list is NOT an error here: a location with a
+     * single doctor legitimately has no OTHER doctors to copy the pattern to.
+     */
+    public function getResources(Request $request): JsonResponse
+    {
+        if (! Gate::allows('scheduling_shifts.list.view')) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
+        }
+
+        $locationId = (int) $request->input('location_id');
+        $resourceTypeId = (int) $request->input('resource_type_id', 2); // Default to Doctor (2)
+
+        if (! $locationId) {
+            return $this->errorResponse('Missing required parameters', 400);
+        }
+
+        $resources = $this->getResourcesForLocation($locationId, $resourceTypeId);
+
+        return $this->successResponse('Resources retrieved successfully', [
+            'resources' => $resources,
+        ]);
+    }
+
+    /**
      * Get resources (doctors or machines) for a location
      */
     private function getResourcesForLocation(int $locationId, int $resourceTypeId): \Illuminate\Database\Eloquent\Collection

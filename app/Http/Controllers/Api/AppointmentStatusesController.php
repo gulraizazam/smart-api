@@ -103,10 +103,13 @@ class AppointmentStatusesController extends Controller
     public function dropdown(Request $request): JsonResponse
     {
         try {
-            if (! Gate::allows('appointment_statuses_manage')) {
-                return $this->errorResponse('You are not authorized to access this resource.', 403);
-            }
-
+            // No permission gate: this is a read-only reference lookup that
+            // powers the status FILTER on the treatments/consultations lists.
+            // Gating it on `appointment_statuses_manage` (a Settings-manage
+            // permission) wrongly hid the filter from list-viewing roles
+            // (e.g. Feedback) that can't manage statuses. Filtering a list you
+            // can already view needs no extra permission; results stay
+            // account-scoped below. The CRUD methods keep their manage gate.
             $request->validate([
                 'parent_id' => ['nullable', 'integer', 'min:0'],
             ]);

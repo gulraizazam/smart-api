@@ -82,7 +82,16 @@ class PackagesController extends Controller
      */
     public function create(Request $request): JsonResponse
     {
-        $this->authorize('createPlan', Packages::class);
+        // This endpoint loads the shared plan FORM DATA (discounts, payment
+        // modes, locations, random_id) for BOTH the create and the edit
+        // dialogs. Gating it on create-only meant an edit-permitted operator
+        // (plans.edit, no plans.create) got a 403 here while editing a plan —
+        // the SPA then fell back to an empty discount catalog, so every
+        // service showed "No discounts available". Allow edit holders too,
+        // matching the sibling add-service endpoints below.
+        if (! Gate::allows('plans.create') && ! Gate::allows('plans.edit')) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
+        }
 
         try {
             // Get patient ID from route parameter

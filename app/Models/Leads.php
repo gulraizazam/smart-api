@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Auth;
+use App\Services\Phone\PhoneFormattingService;
 
 class Leads extends BaseModel
 {
@@ -190,5 +191,55 @@ class Leads extends BaseModel
         return $query->where(function (Builder $q) use ($branchIds): void {
             $q->whereIn('leads.location_id', $branchIds)->orWhereNull('leads.location_id');
         });
+    }
+
+    // =========================================================================
+    // Phone lookup
+    // =========================================================================
+
+    /**
+     * The latest non-junk lead matching this phone, scoped to the account.
+     *
+     * Mirrors Patients::getByPhone — the `phone` column isn't normalised
+     * consistently across the shared DB, so we match every equivalent stored
+     * form (canonical, leading-zero, 92/+92) via
+     * PhoneFormattingService::matchVariants. Used by the consultation lookup to
+     * attach a new consultation to an existing lead that has no patient row yet
+     * (instead of minting a duplicate lead).
+     *
+     * "Open" = not a junk-status lead. Converted/inactive leads stay eligible:
+     * the consultation re-links to them and the booking cascade
+     * (BackfillLeadCategoryAction) reconciles the leads_services category.
+     * Soft-deleted rows are excluded by the SoftDeletes scope; a null
+     * lead_status_id counts as open. Account scope is intentional — leads are
+     * strictly per-account (unlike the shared users table).
+     */
+    public static function latestOpenByPhone(string $phone, int|false $accountId = false): ?self
+    {
+        $variants = PhoneFormattingService::matchVariants($phone);
+
+        $query = self::query();
+        if (empty($variants)) {
+            $query->where('phone', $phone);
+        } else {
+            $query->whereIn('phone', $variants);
+        }
+
+        if ($accountId !== false) {
+            $query->where('account_id', $accountId);
+        }
+
+        // Exclude junk-status leads. Guard against an empty id set —
+        // `whereNotIn('col', [])` compiles to a false predicate in some
+        // grammars and would drop every row.
+        $junkStatusIds = LeadStatuses::query()
+            ->when($accountId !== false, fn (Builder $q): Builder => $q->where('account_id', $accountId))
+            ->where('is_junk', 1)
+            ->pluck('id');
+        if ($junkStatusIds->isNotEmpty()) {
+            $query->whereNotIn('lead_status_id', $junkStatusIds->all());
+        }
+
+        return $query->orderByDesc('id')->first();
     }
 }

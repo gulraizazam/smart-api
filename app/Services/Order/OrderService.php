@@ -1042,13 +1042,23 @@ class OrderService
 
     public function getDoctorsWithFDM(int $locationId): array
     {
+        // A missing/zero location means "global": the treatments &
+        // consultations doctor FILTER loads the full list before any centre is
+        // picked. Strict `location_id = 0` matched nothing, so the filter came
+        // up empty for everyone. Fall back to every centre the caller can
+        // access (mirrors getDoctorsForSales); a real location keeps the
+        // original single-centre behaviour.
+        $locationIds = $locationId > 0 ? [$locationId] : ACL::getUserCentres();
+        if ($locationIds === []) {
+            return [];
+        }
+
         $doctors = DoctorHasLocations::where('is_allocated', 1)
-            ->where('location_id', $locationId)
+            ->whereIn('location_id', $locationIds)
             ->pluck('user_id')->toArray();
 
         $users = User::whereIn('id', $doctors)->where('active', 1)->pluck('name', 'id')->toArray();
 
-        $locationIds = [$locationId];
         $findFDM = UserHasLocations::whereIn('location_id', $locationIds)->pluck('user_id')->toArray();
         $findRole = DB::table('roles')->where('name', 'FDM')->first();
         $roleHasUser = RoleHasUsers::where('role_id', $findRole->id)->pluck('user_id')->toArray();
