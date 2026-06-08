@@ -266,11 +266,6 @@ class ManagementDashboardApiController extends Controller
         );
     }
 
-    public function people(Request $request): JsonResponse
-    {
-        return $this->handleSection($request, 'people', fn ($scope, $range) => $this->service->people($scope, $range));
-    }
-
     public function utilization(Request $request): JsonResponse
     {
         return $this->handleSection($request, 'utilization', fn ($scope, $range) => $this->service->utilization($scope, $range));
