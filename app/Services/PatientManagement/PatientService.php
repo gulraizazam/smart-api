@@ -583,7 +583,7 @@ class PatientService
             'location_name' => $location?->getAttribute('name'),
             'location_slug' => $location?->getAttribute('slug'),
             'last_appointment_at' => $lastAppointment->created_at
-                ? Carbon::parse($lastAppointment->created_at)->utc()->toIso8601String()
+                ? Carbon::parse($lastAppointment->created_at)->toIso8601String()
                 : null,
         ];
     }
@@ -680,7 +680,7 @@ class PatientService
             'location_name' => $location?->getAttribute('name'),
             'location_slug' => $location?->getAttribute('slug'),
             'last_appointment_at' => $appointment->scheduled_date
-                ? Carbon::parse($appointment->scheduled_date)->utc()->toIso8601String()
+                ? Carbon::parse($appointment->scheduled_date)->toIso8601String()
                 : null,
         ];
     }

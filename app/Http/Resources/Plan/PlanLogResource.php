@@ -32,10 +32,10 @@ class PlanLogResource extends JsonResource
             'appointment_type_id' => $log['appointment_type_id'] ?? null,
             'location_id' => $log['location_id'] ?? null,
             'created_at' => isset($log['created_at_orignal'])
-                ? Carbon::parse($log['created_at_orignal'])->utc()->toIso8601String()
+                ? Carbon::parse($log['created_at_orignal'])->toIso8601String()
                 : null,
             'updated_at' => isset($log['updated_at_orignal'])
-                ? Carbon::parse($log['updated_at_orignal'])->utc()->toIso8601String()
+                ? Carbon::parse($log['updated_at_orignal'])->toIso8601String()
                 : null,
             'detail_log' => array_values($log['detail_log'] ?? []),
         ];

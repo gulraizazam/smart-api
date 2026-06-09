@@ -471,7 +471,7 @@ class CashFlowDashboardController extends Controller
                         ->whereNull('deleted_at')
                         ->whereIn('payment_mode_id', $cashModeIds)
                         ->whereIn('location_id', array_keys($branchPoolMap))
-                        ->whereBetween('system_created_at', [$goLiveDate . ' 00:00:00', $lastSaturday])
+                        ->whereBetween('created_at', [$goLiveDate . ' 00:00:00', $lastSaturday])
                         ->sum('cash_amount');
                     $openingBalance += (float) $servicesIn;
 
@@ -483,7 +483,7 @@ class CashFlowDashboardController extends Controller
                         ->whereNull('deleted_at')
                         ->whereIn('payment_mode_id', $cashModeIds)
                         ->whereIn('location_id', array_keys($branchPoolMap))
-                        ->whereBetween('system_created_at', [$goLiveDate . ' 00:00:00', $lastSaturday])
+                        ->whereBetween('created_at', [$goLiveDate . ' 00:00:00', $lastSaturday])
                         ->sum('cash_amount');
                     $openingBalance -= (float) $servicesOut;
                 }
@@ -593,8 +593,8 @@ class CashFlowDashboardController extends Controller
                         ->where('cash_amount', '>', 0)
                         ->whereIn('payment_mode_id', $cashModeIds)
                         ->whereIn('location_id', array_keys($branchPoolMap))
-                        ->where('system_created_at', '>=', $sundayStart)
-                        ->where('system_created_at', '<=', $nowEnd),
+                        ->where('created_at', '>=', $sundayStart)
+                        ->where('created_at', '<=', $nowEnd),
                     'cash_amount',
                 );
 
@@ -607,8 +607,8 @@ class CashFlowDashboardController extends Controller
                         ->whereNull('order_id')
                         ->whereIn('payment_mode_id', $cashModeIds)
                         ->whereIn('location_id', array_keys($branchPoolMap))
-                        ->where('system_created_at', '>=', $sundayStart)
-                        ->where('system_created_at', '<=', $nowEnd),
+                        ->where('created_at', '>=', $sundayStart)
+                        ->where('created_at', '<=', $nowEnd),
                     'cash_amount',
                 );
 
