@@ -166,13 +166,14 @@ class ConfigurableSaveServiceTest extends TestCase
             'updated_at' => now(),
         ]);
 
+        $randomId = 'TEST-CFG-'.uniqid();
         $result = $this->discountService->saveServiceForPlan([
             'service_id' => $this->buyServiceId,
             'discount_id' => $discountId,
             'patient_id' => $this->patientId,
             'location_id' => $this->locationId,
             'user_id' => $this->patientId,
-            'random_id' => 'TEST-CFG-'.uniqid(),
+            'random_id' => $randomId,
             'package_total' => '0',
             'is_exclusive' => '0',
             'discount_price' => 0,
@@ -198,5 +199,15 @@ class ConfigurableSaveServiceTest extends TestCase
             'GET row must also appear; the fix must not drop the GET either.',
         );
         $this->assertCount(2, $rows, 'Exactly one BUY + one GET row expected.');
+
+        // Configurable Buy/Get rows are still service-type plan lines —
+        // crm3 must stamp source_type=service on each persisted row so crm2
+        // and source_type-aware consumers resolve the overloaded bundle_id
+        // against the services catalog (matches crm2).
+        $persisted = DB::table('package_bundles')->where('random_id', $randomId)->get();
+        $this->assertNotEmpty($persisted, 'configurable save must persist package_bundles rows');
+        foreach ($persisted as $row) {
+            $this->assertSame('service', $row->source_type);
+        }
     }
 }

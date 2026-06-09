@@ -1569,6 +1569,12 @@ final class PlanDiscountService
                 // can_remove gating keys off this column.
                 $bundle_data['config_group_id'] = $configGroupId;
 
+                // Tag the overloaded bundle_id as a service id so crm2 and
+                // every source_type-aware consumer (invoices, reports, name
+                // resolution) reads the right catalog. Matches crm2; bundle
+                // rows set 'bundle' elsewhere, memberships stay null.
+                $bundle_data['source_type'] = 'service';
+
                 $bundle_data['created_at'] = Filters::getCurrentTimeStamp();
                 $bundle_data['updated_at'] = Filters::getCurrentTimeStamp();
 
@@ -1704,6 +1710,12 @@ final class PlanDiscountService
         if (! ($data['discount_id'] ?? null)) {
             $bundle_data['discount_id'] = null;
         }
+
+        // Tag the overloaded bundle_id as a service id so crm2 and every
+        // source_type-aware consumer (invoices, reports, name resolution)
+        // reads the right catalog. Matches crm2; bundle rows set 'bundle'
+        // elsewhere, memberships stay null.
+        $bundle_data['source_type'] = 'service';
 
         $bundle_data['created_at'] = Filters::getCurrentTimeStamp();
         $bundle_data['updated_at'] = Filters::getCurrentTimeStamp();
