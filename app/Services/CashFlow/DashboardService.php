@@ -55,7 +55,10 @@ class DashboardService
 
     /**
      * Summary cards: Opening Balance | Inflows This Month | Outflows This Month | Net | Closing Balance
-     * Always current month. Uses system_created_at (same as pool observer) for consistency.
+     * Always current month. Windows on the PKT business-date columns (created_at for
+     * payments/advances/returns + Orders, expense_date for expenses) so totals match
+     * getDailyTrend and ReportService. NOT system_created_at (the UTC system-insert time),
+     * which mis-bucketed the midnight-05:00 PKT slice and month boundaries. See the tz audit.
      * Opening balance = pool opening balances + all activity from go-live to last day of previous month.
      */
     public function getSummaryCards(int $accountId, ?string $goLiveDate = null): array
@@ -72,12 +75,12 @@ class DashboardService
             // Patient payments (net of refunds) from go-live to end of last month
             $prePayments = (float) PackageAdvances::where('account_id', $accountId)
                 ->where('cash_flow', 'in')->where('is_cancel', 0)->whereNull('deleted_at')
-                ->whereBetween('system_created_at', [$goLiveDate . ' 00:00:00', $lastDayPrev . ' 23:59:59'])
+                ->whereBetween('created_at', [$goLiveDate . ' 00:00:00', $lastDayPrev . ' 23:59:59'])
                 ->sum('cash_amount');
 
             $preRefunds = (float) PackageAdvances::where('account_id', $accountId)
                 ->where('cash_flow', 'out')->where('is_refund', 1)->where('is_cancel', 0)->whereNull('deleted_at')
-                ->whereBetween('system_created_at', [$goLiveDate . ' 00:00:00', $lastDayPrev . ' 23:59:59'])
+                ->whereBetween('created_at', [$goLiveDate . ' 00:00:00', $lastDayPrev . ' 23:59:59'])
                 ->sum('cash_amount');
 
             // Inventory (Order) sales/refunds are overlay-only — never written
@@ -98,18 +101,18 @@ class DashboardService
             // Expenses from go-live to end of last month
             $preExpenses = (float) Expense::forAccount($accountId)
                 ->whereNull('voided_at')
-                ->whereBetween('system_created_at', [$goLiveDate . ' 00:00:00', $lastDayPrev . ' 23:59:59'])
+                ->whereBetween('expense_date', [$goLiveDate, $lastDayPrev])
                 ->sum('amount');
 
             // Staff advances net from go-live to end of last month
             $preAdvances = (float) StaffAdvance::where('account_id', $accountId)
                 ->whereNull('deleted_at')->whereNull('voided_at')
-                ->whereBetween('system_created_at', [$goLiveDate . ' 00:00:00', $lastDayPrev . ' 23:59:59'])
+                ->whereBetween('created_at', [$goLiveDate . ' 00:00:00', $lastDayPrev . ' 23:59:59'])
                 ->sum('amount');
 
             $preReturns = (float) StaffReturn::where('account_id', $accountId)
                 ->whereNull('deleted_at')->whereNull('voided_at')
-                ->whereBetween('system_created_at', [$goLiveDate . ' 00:00:00', $lastDayPrev . ' 23:59:59'])
+                ->whereBetween('created_at', [$goLiveDate . ' 00:00:00', $lastDayPrev . ' 23:59:59'])
                 ->sum('amount');
 
             $openingBalance += ($prePayments - $preRefunds)
@@ -121,12 +124,12 @@ class DashboardService
         // Current month inflows: patient payments (net of refunds) + inventory (net of refunds)
         $payments = (float) PackageAdvances::where('account_id', $accountId)
             ->where('cash_flow', 'in')->where('is_cancel', 0)->whereNull('deleted_at')
-            ->whereBetween('system_created_at', [$monthStart . ' 00:00:00', $today . ' 23:59:59'])
+            ->whereBetween('created_at', [$monthStart . ' 00:00:00', $today . ' 23:59:59'])
             ->sum('cash_amount');
 
         $refunds = (float) PackageAdvances::where('account_id', $accountId)
             ->where('cash_flow', 'out')->where('is_refund', 1)->where('is_cancel', 0)->whereNull('deleted_at')
-            ->whereBetween('system_created_at', [$monthStart . ' 00:00:00', $today . ' 23:59:59'])
+            ->whereBetween('created_at', [$monthStart . ' 00:00:00', $today . ' 23:59:59'])
             ->sum('cash_amount');
 
         // Current-month inventory (Order) sales/refunds — overlay-only, summed
@@ -144,17 +147,17 @@ class DashboardService
         // Current month outflows: expenses + staff advances net
         $expenses = (float) Expense::forAccount($accountId)
             ->whereNull('voided_at')
-            ->whereBetween('system_created_at', [$monthStart . ' 00:00:00', $today . ' 23:59:59'])
+            ->whereBetween('expense_date', [$monthStart, $today])
             ->sum('amount');
 
         $advances = (float) StaffAdvance::where('account_id', $accountId)
             ->whereNull('deleted_at')->whereNull('voided_at')
-            ->whereBetween('system_created_at', [$monthStart . ' 00:00:00', $today . ' 23:59:59'])
+            ->whereBetween('created_at', [$monthStart . ' 00:00:00', $today . ' 23:59:59'])
             ->sum('amount');
 
         $returns = (float) StaffReturn::where('account_id', $accountId)
             ->whereNull('deleted_at')->whereNull('voided_at')
-            ->whereBetween('system_created_at', [$monthStart . ' 00:00:00', $today . ' 23:59:59'])
+            ->whereBetween('created_at', [$monthStart . ' 00:00:00', $today . ' 23:59:59'])
             ->sum('amount');
 
         $totalInflows = ($payments - $refunds) + ($inventorySales - $inventoryRefunds);
