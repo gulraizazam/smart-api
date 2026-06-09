@@ -107,14 +107,16 @@ final class ActivityPulseMetric implements Metric
     {
         $type = (string) ($a->activity_type ?? '');
         $rawCreated = $a->getAttribute('created_at');
-        // Read the feed's timestamps as UTC and convert to the app timezone for
-        // display — the same convention crm2's dashboard and crm3's own
-        // ActivityLogService use. The bulk of feed rows (auto-logged
-        // appointment/lead/payment events) are stored in GMT; parsing them as
-        // already-local rendered them 5h behind ("5 hours ago"). Display-only:
-        // no storage change, so crm2 is unaffected.
+        // `activities.created_at` is written by every ActivityLogger writer via
+        // now() — i.e. config('app.timezone') (Asia/Karachi) wall-clock time —
+        // and the DB connection applies no UTC conversion, so the stored value
+        // is ALREADY local. Re-reading it AS UTC and converting to Karachi
+        // double-applied the +5h offset, pushing fresh rows into the future
+        // ("4 hours from now" on just-recorded feedback). Carbon::parse()
+        // defaults to the app timezone — exactly how it was stored, no
+        // conversion needed. This mirrors the canonical ActivityLogService.
         $createdCarbon = $rawCreated !== null
-            ? Carbon::parse((string) $rawCreated, 'UTC')->setTimezone(config('app.timezone'))
+            ? Carbon::parse((string) $rawCreated)
             : null;
 
         // Prefer the canonical compact HTML renderer so the feed format

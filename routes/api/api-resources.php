@@ -161,3 +161,4 @@ use Illuminate\Support\Facades\Route;
     Route::post('memberships/status', [MembershipsController::class, 'status'])->name('memberships.status');
     Route::post('memberships/cancel', [MembershipsController::class, 'cancelMembership'])->name('memberships.cancel');
     Route::get('memberships/{id}/student-verification', [MembershipsController::class, 'getStudentVerificationDetails'])->name('memberships.student_verification');
+    Route::get('memberships/{id}/consumption', [MembershipsController::class, 'getConsumptionHistory'])->name('memberships.consumption');

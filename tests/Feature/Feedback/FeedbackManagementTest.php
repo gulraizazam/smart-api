@@ -61,6 +61,32 @@ class FeedbackManagementTest extends TestCase
     }
 
     /**
+     * The Doctor Ratings report must include feedback recorded TODAY so its
+     * totals match the live Doctor Feedback module. The report previously
+     * clamped the end of the window to yesterday (excludeTodayFromRange),
+     * so a "Today" filter returned nothing even when feedback existed.
+     */
+    public function test_report_includes_feedback_recorded_today(): void
+    {
+        // doctor_id FKs to users — reuse the acting admin as the doctor.
+        $doctorId = (int) Auth::id();
+        // created_at auto-stamps to now() (today) on create.
+        Feedback::create(['doctor_id' => $doctorId, 'rating' => 5, 'created_by' => Auth::id()]);
+        Feedback::create(['doctor_id' => $doctorId, 'rating' => 3, 'created_by' => Auth::id()]);
+
+        $today = now()->format('Y-m-d');
+        $result = app(FeedbackService::class)->getReportData(
+            locationIds: null,
+            doctorId: $doctorId,
+            serviceId: null,
+            dateRange: "{$today} - {$today}",
+        );
+
+        $total = collect($result)->sum(fn ($row) => (int) $row->total_feedbacks);
+        $this->assertSame(2, $total, 'feedback recorded today must surface in a Today-filtered report');
+    }
+
+    /**
      * The "Add feedback" treatment picker must list ALL un-rated arrived
      * treatments for a patient — not just the last 7 days. (The store
      * endpoint has no date limit, so the picker shouldn't either.) Rated
