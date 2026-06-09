@@ -13,6 +13,7 @@ use App\Http\Resources\Invoice\InvoiceResource;
 use App\Http\Resources\Invoice\InvoiceSMSLogResource;
 use App\Models\Invoices;
 use App\Models\SMSLogs;
+use App\Services\PatientManagement\PatientSearchService;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -39,8 +40,12 @@ class InvoicesController extends Controller
      *
      * Paginated list scoped to the caller's account and the centres their
      * ACL allows (same `ACL::getUserCentres()` gate the legacy datatable
-     * uses). Supports common filters — `search` matches the numeric
-     * invoice id prefix; pass `patient_id`, `location_id`,
+     * uses). Supports common filters — `q` is the unified search box (same
+     * engine as Plans / Treatments / Consultations): it routes a `C-<id>`
+     * code / phone / name to the patient via PatientSearchService, and a
+     * plain number to the invoice number OR that patient's id. (`search`
+     * is the older invoice-number-only param, kept for back-compat.) Pass
+     * `patient_id`, `location_id`,
      * `invoice_status_id`, `invoice_status_slug`, `appointment_type_id`,
      * `created_from`, `created_to` to narrow results. `invoice_status_slug`
      * is the stable, tenant-independent way to target a status (e.g. the
@@ -56,6 +61,7 @@ class InvoicesController extends Controller
             }
 
             $request->validate([
+                'q' => ['nullable', 'string', 'max:50'],
                 'search' => ['nullable', 'string', 'max:50'],
                 'patient_id' => ['nullable', 'integer'],
                 'location_id' => ['nullable', 'integer'],
@@ -87,6 +93,25 @@ class InvoicesController extends Controller
                 $numeric = ltrim($search, '0');
                 if ($numeric !== '' && ctype_digit($numeric)) {
                     $query->where('id', (int) $numeric);
+                }
+            }
+
+            if ($request->filled('q')) {
+                // Unified search box, mirroring the Plans datatable: a plain
+                // number is ambiguous, so match the invoice number OR that
+                // patient's id; everything else (C-<id> code / phone / name)
+                // routes through the shared patient classifier. `id` IS the
+                // invoice number — InvoiceResource zero-pads it via %05d.
+                $q = trim((string) $request->string('q'));
+                $shape = PatientSearchService::classifySearchInput($q);
+                if ($shape['type'] === 'short_id') {
+                    $idVal = (int) $shape['digits'];
+                    $query->where(function ($inner) use ($idVal): void {
+                        $inner->where('id', $idVal)
+                            ->orWhere('patient_id', $idVal);
+                    });
+                } else {
+                    PatientSearchService::applyPatientFilter($query, $q, 'patient_id', $accountId);
                 }
             }
 
