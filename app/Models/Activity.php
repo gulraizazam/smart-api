@@ -74,6 +74,22 @@ class Activity extends Model
         ];
     }
 
+    /**
+     * The app runs on Asia/Karachi (PKT); the DB-default current_timestamp() is
+     * UTC. With $timestamps disabled, a writer that omits created_at/updated_at
+     * would fall to that UTC default — leaving the activity feed 5h behind (the
+     * ActivityLogObserver / Auth / Permission listeners did exactly that).
+     * Stamp PKT now() at the source so every activity row is local wall-clock.
+     */
+    protected static function booted(): void
+    {
+        static::creating(function (self $activity): void {
+            $now = now()->format('Y-m-d H:i:s');
+            $activity->created_at ??= $now;
+            $activity->updated_at ??= $now;
+        });
+    }
+
     public function plan(): BelongsTo
     {
         return $this->belongsTo(Plan::class, 'plan_id');
