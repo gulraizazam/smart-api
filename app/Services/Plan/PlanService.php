@@ -1246,7 +1246,7 @@ final class PlanService
                     ->where('active', 1)
                     ->where('account_id', $accountId)
                     ->whereNull('deleted_at')
-                    ->select('id', 'name', 'parent_id', 'active')
+                    ->select('id', 'name', 'parent_id', 'active', 'price')
                     ->get()
                     ->toArray();
             }
@@ -1254,7 +1254,7 @@ final class PlanService
             $assignedServices = DB::table('services')
                 ->whereIn('id', $serviceHasLocations)
                 ->whereNull('deleted_at')
-                ->select('id', 'name', 'parent_id', 'active')
+                ->select('id', 'name', 'parent_id', 'active', 'price')
                 ->get();
 
             $resultServices = collect();
@@ -1266,7 +1266,7 @@ final class PlanService
                         ->where('active', 1)
                         ->where('account_id', $accountId)
                         ->whereNull('deleted_at')
-                        ->select('id', 'name', 'parent_id', 'active')
+                        ->select('id', 'name', 'parent_id', 'active', 'price')
                         ->get();
 
                     $resultServices = $resultServices->merge($children);
