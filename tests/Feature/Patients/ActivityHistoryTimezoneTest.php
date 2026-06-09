@@ -13,16 +13,13 @@ use Tests\Concerns\UsesFinancialFixtures;
 use Tests\TestCase;
 
 /**
- * Regression: the patient-card Activity tab showed times 5 hours ahead.
+ * The patient-card Activity tab renders times in Asia/Karachi.
  *
- * `activities.created_at/updated_at` are written by Eloquent under
- * config('app.timezone') = Asia/Karachi (the DB connection does no UTC
- * conversion), so the stored value is already local wall-clock time.
- * ActivityLogService parsed it AS UTC and then setTimezone()-ed it to
- * Karachi, double-applying the +5h offset (a 1:20 PM event rendered as
- * 6:20 PM). This pins the stored-local timestamp through the real
- * patient-card path (PatientService::getActivityHistory →
- * ActivityLogService) and asserts it is rendered unshifted.
+ * Storage convention (shared by crm2 + crm3): activity timestamps are kept in
+ * UTC and read back as UTC→Asia/Karachi for display. A writer supplies the PKT
+ * wall-clock it observed; the Activity model normalises it to UTC on write;
+ * PatientService::getActivityHistory converts it back to PKT. This pins that
+ * round-trip end-to-end.
  */
 class ActivityHistoryTimezoneTest extends TestCase
 {
@@ -36,41 +33,44 @@ class ActivityHistoryTimezoneTest extends TestCase
         $this->actingAsAdmin();
     }
 
-    public function test_activity_time_is_not_shifted_by_the_app_utc_offset(): void
+    public function test_activity_is_stored_utc_and_renders_back_to_pkt(): void
     {
         $patient = Patients::factory()->create();
 
-        // A known wall-clock instant in the app timezone, exactly as
-        // Eloquent would have persisted it. timestamps=false so save()
-        // does not overwrite it with now().
-        $stored = '2026-05-18 13:20:27';
+        // Writer logs at 1:20 PM PKT (the wall-clock it observed).
+        $activity = Activity::create([
+            'account_id' => (int) Auth::user()->account_id,
+            'patient_id' => $patient->id,
+            'action' => 'created',
+            // Unknown type → compact renderer returns null → description path;
+            // keeps the test about time, not the renderer.
+            'activity_type' => 'test_event',
+            'description' => 'Test activity',
+            'created_by' => (int) Auth::id(),
+            'created_at' => '2026-05-18 13:20:27',
+            'updated_at' => '2026-05-18 13:20:27',
+        ]);
 
-        $activity = new Activity();
-        $activity->account_id = (int) Auth::user()->account_id;
-        $activity->patient_id = $patient->id;
-        $activity->action = 'created';
-        // Unknown type → compact renderer returns null → description path;
-        // keeps the test about time, not the renderer. Not 'lead_converted'
-        // (the only display-suppressed type).
-        $activity->activity_type = 'test_event';
-        $activity->description = 'Test activity';
-        $activity->created_by = (int) Auth::id();
-        $activity->timestamps = false;
-        $activity->created_at = $stored;
-        $activity->updated_at = $stored;
-        $activity->save();
+        // The model hook normalised both to UTC on write (1:20 PM PKT → 8:20 AM
+        // UTC). The feed displays updated_at (falling back to created_at).
+        $this->assertDatabaseHas('activities', [
+            'id' => $activity->id,
+            'created_at' => '2026-05-18 08:20:27',
+            'updated_at' => '2026-05-18 08:20:27',
+        ]);
 
+        // …and the patient-card read converts UTC→PKT back to the original 1:20 PM.
+        // (Creating the patient also auto-logs a "created" activity at now(), so
+        // select our seeded test_event explicitly rather than the latest row.)
         $logs = app(PatientService::class)->getActivityHistory($patient->id);
-
-        $this->assertNotEmpty($logs, 'The patient must have at least the seeded activity.');
-        $row = collect($logs)->firstWhere('created_at', $stored)
-            ?? collect($logs)->first();
+        $row = collect($logs)->firstWhere('type', 'test_event');
+        $this->assertNotNull($row, 'The seeded test_event activity must be in the history.');
 
         $this->assertSame(
             'May 18, 2026 1:20 PM',
             $row['time_formatted'],
-            'Stored local wall-clock time must render unshifted — a +5h '
-            .'result (6:20 PM) is the timezone double-apply bug.',
+            'Stored UTC must render back to the original PKT wall-clock — 8:20 AM '
+            .'(no conversion) or 6:20 PM (double +5h) are the bugs.',
         );
         $this->assertSame('05-18-2026 13:20', $row['time_short']);
     }
