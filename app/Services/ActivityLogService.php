@@ -268,15 +268,14 @@ class ActivityLogService
                 $description = self::appendActor($activity, $description);
             }
 
-            // `activities.created_at/updated_at` are written by Eloquent
-            // under config('app.timezone') (Asia/Karachi) — the DB
-            // connection has no UTC conversion — so the stored value is
-            // already local wall-clock time. Parsing it AS UTC and then
-            // setTimezone()-ing to Karachi double-applied the +5h offset
-            // (activity feed showed times 5 hours ahead). Carbon::parse()
-            // defaults to the app timezone, which is exactly how it was
-            // stored — no conversion needed.
-            $localTs = Carbon::parse((string) $timestamp);
+            // activities.created_at is stored in UTC (normalised on write by
+            // the Activity model; the auto-loggers' DB default is UTC too) and
+            // read as UTC→Asia/Karachi everywhere — crm2's ActivityLogService,
+            // crm3's ActivityPulseMetric, and here. Parse as UTC and convert so
+            // this patient-card path matches the rest. (An earlier fix read it
+            // as already-local; that now shows new UTC rows 5h early.)
+            $localTs = Carbon::parse((string) $timestamp, 'UTC')
+                ->setTimezone(config('app.timezone'));
 
             $data[] = [
                 'type' => $activity->activity_type ?? $activity->action ?? 'unknown',
