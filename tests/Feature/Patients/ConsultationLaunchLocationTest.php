@@ -165,4 +165,26 @@ class ConsultationLaunchLocationTest extends TestCase
             $this->service->consultationLaunchLocation((int) $patient->id),
         );
     }
+
+    public function test_last_appointment_at_is_emitted_in_pkt(): void
+    {
+        $patient = Patients::factory()->create();
+        $centre = Locations::factory()->create(['name' => 'PKT Centre']);
+
+        Appointments::factory()->create([
+            'patient_id' => $patient->id,
+            'appointment_type_id' => $this->consultancyTypeId,
+            'appointment_status_id' => $this->arrivedStatusId,
+            'location_id' => $centre->id,
+            'scheduled_date' => '2026-01-10',
+        ]);
+
+        $result = $this->service->consultationLaunchLocation((int) $patient->id);
+
+        $this->assertNotNull($result);
+        // Emitted in PKT (+05:00), NOT shifted to UTC (which would roll the
+        // date back to 2026-01-09T19:00:00+00:00).
+        $this->assertStringStartsWith('2026-01-10T', $result['last_appointment_at']);
+        $this->assertStringEndsWith('+05:00', $result['last_appointment_at']);
+    }
 }
