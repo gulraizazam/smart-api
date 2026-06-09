@@ -8,6 +8,7 @@ use App\Casts\EncryptedLegacy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
 class Activity extends Model
 {
@@ -72,6 +73,40 @@ class Activity extends Model
             // columns: patient, service, action, and the user.name relation.
             'description' => EncryptedLegacy::class,
         ];
+    }
+
+    /**
+     * Store activity timestamps in UTC — the timezone BOTH apps read them in
+     * (crm2 and crm3 parse activities.created_at as UTC, then convert to
+     * Asia/Karachi for display). Individual writers variously set now() (PKT)
+     * or omit the column (DB-default current_timestamp() = UTC); normalising to
+     * UTC here makes every new row uniform, so it renders correctly in crm2 and
+     * crm3 alike. Covers Eloquent create()/save(); bulk insert() bypasses model
+     * events, so those few call sites set UTC directly.
+     */
+    protected static function booted(): void
+    {
+        static::creating(function (self $activity): void {
+            $activity->created_at = self::toUtcStamp($activity->created_at);
+            $activity->updated_at = self::toUtcStamp($activity->updated_at);
+        });
+    }
+
+    /**
+     * Normalise a writer-supplied timestamp (PKT now(), a wall-clock string, or
+     * null) to a UTC "Y-m-d H:i:s" string. A Carbon keeps its absolute instant;
+     * a bare string is read in the app tz; null means now.
+     */
+    private static function toUtcStamp(mixed $value): string
+    {
+        if ($value instanceof \DateTimeInterface) {
+            return Carbon::instance($value)->utc()->format('Y-m-d H:i:s');
+        }
+
+        return ($value !== null && $value !== ''
+            ? Carbon::parse((string) $value)
+            : Carbon::now()
+        )->utc()->format('Y-m-d H:i:s');
     }
 
     public function plan(): BelongsTo

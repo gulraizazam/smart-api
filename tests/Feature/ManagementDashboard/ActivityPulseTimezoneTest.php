@@ -13,13 +13,13 @@ use Tests\Concerns\UsesFinancialFixtures;
 use Tests\TestCase;
 
 /**
- * The Overview "Today's Activities" feed must render times in the app timezone
- * (Asia/Karachi) — matching crm2's dashboard and crm3's own ActivityLogService.
+ * The Overview "Today's Activities" feed renders times in Asia/Karachi.
  *
- * The feed's bulk rows are auto-logged events stored in GMT; reading them as
- * already-local rendered them 5 hours behind ("5 hours ago"). ActivityPulseMetric
- * now reads created_at as UTC and converts to the app timezone for display.
- * Display-only — no storage change, so crm2 is unaffected.
+ * Storage convention (shared by crm2 + crm3): activity timestamps are kept in
+ * UTC and read back as UTC→Asia/Karachi for display. A writer supplies the PKT
+ * wall-clock it observed; the Activity model normalises it to UTC on write;
+ * ActivityPulseMetric converts it back to PKT. This pins that round-trip — a
+ * no-convert read would surface the stored UTC value, 5 hours early.
  */
 class ActivityPulseTimezoneTest extends TestCase
 {
@@ -32,15 +32,21 @@ class ActivityPulseTimezoneTest extends TestCase
         $this->seedFinancialFixtures();
     }
 
-    public function test_feed_time_is_converted_from_utc_to_app_timezone(): void
+    public function test_feed_time_round_trips_pkt_through_utc_storage(): void
     {
-        // A GMT-stored payment activity at 14:30 UTC == 19:30 Asia/Karachi (+5).
+        // Writer logs a payment at 7:30 PM PKT (the wall-clock it observed).
         Activity::create([
             'account_id' => 1,
             'activity_type' => 'payment_received',
             'action' => 'received',
             'description' => 'Test payment',
             'amount' => 100,
+            'created_at' => '2026-06-06 19:30:00',
+        ]);
+
+        // The model hook normalised it to UTC on write (7:30 PM PKT → 2:30 PM UTC).
+        $this->assertDatabaseHas('activities', [
+            'activity_type' => 'payment_received',
             'created_at' => '2026-06-06 14:30:00',
         ]);
 
@@ -50,10 +56,11 @@ class ActivityPulseTimezoneTest extends TestCase
         );
 
         $this->assertNotEmpty($out['rows'], 'the notable payment activity must be in the feed');
+        // …and the feed converts it back to the original 7:30 PM PKT.
         $this->assertSame(
             '2026-06-06 19:30:00',
             $out['rows'][0]['time'],
-            'GMT-stored feed time must render +5 (Asia/Karachi); a 14:30 result is the no-convert bug.',
+            'Stored UTC must render +5 (Asia/Karachi); a 14:30 result is the no-convert bug.',
         );
     }
 }

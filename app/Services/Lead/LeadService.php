@@ -1018,8 +1018,10 @@ class LeadService
                 'location' => $locationName,
                 'centre_id' => $locationId,
                 'created_by' => $userId,
-                'created_at' => $now,
-                'updated_at' => $now,
+                // Bulk insert() bypasses the Activity model hook, so store UTC
+                // here directly (->copy() so the shared PKT $now isn't mutated).
+                'created_at' => $now->copy()->utc()->format('Y-m-d H:i:s'),
+                'updated_at' => $now->copy()->utc()->format('Y-m-d H:i:s'),
             ];
         }
 
