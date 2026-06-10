@@ -28,6 +28,7 @@ use App\Models\PaymentModes;
 use App\Models\Services;
 use App\Models\Settings;
 use App\Models\User;
+use App\Services\Plan\ConsumptionReservation;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -274,12 +275,18 @@ class AppointmentInvoiceController extends AppointmentBaseController
             $isPlanFullyPaid = ($totalPlanPayments >= ($totalPlanValue - 1));
 
             // Ordering check: enforce BUY-before-GET within configurable
-            // discount groups — UNCONDITIONALLY. Previously skipped when the
-            // plan was fully paid, which let a free/discounted GET session be
-            // consumed before its paid BUY anchor on a fully-paid Buy/Get
-            // plan. The reverse rule on cancel (PackageService::InvoiceCancel)
-            // was already unconditional; this brings the forward path in line.
-            if ($packageService && $packageService->consumption_order > 0) {
+            // discount groups — only while the plan is NOT fully paid. A
+            // not-fully-paid plan must consume paid sessions before
+            // discounted/free ones, so a client only ever burns a session
+            // they have actually paid for. Once the plan is FULLY PAID the
+            // client may consume in any order (business rule, Shahid
+            // 2026-06-10): the money is all there, so a free GET used ahead of
+            // its BUY is safe — the BUY's money is then RESERVED (see the
+            // requiredFloor gate below + the refund gate) so it can be neither
+            // diverted to a newly added service nor refunded until the BUY is
+            // consumed. The reverse rule on cancel
+            // (PackageService::InvoiceCancel) stays unconditional.
+            if (! $isPlanFullyPaid && $packageService && $packageService->consumption_order > 0) {
                 $packageBundle = PackageBundles::find($packageService->package_bundle_id);
                 $configGroupId = $packageBundle?->config_group_id;
 
@@ -307,35 +314,19 @@ class AppointmentInvoiceController extends AppointmentBaseController
             // REGULAR price of the sessions consumed so far (this one
             // included) — capped at the plan's actual sold total, so a client
             // never has to pay more than the plan costs. A standalone single
-            // service keeps the discounted gate. Per-session "required":
-            //   bundle / service_bundle → GREATEST(orignal_price, tax_including_price)  [regular, floored at sold so never weaker than the old gate]
-            //   service / null / membership → tax_including_price                       [discounted, unchanged]
-            // source_type is authoritative for both products — no bundles
-            // join, no overloaded-bundle_id collision. Skipped when the plan
-            // is fully paid (rounding tolerance).
+            // service keeps the discounted gate.
+            //
+            // The floor also RESERVES the money of any paid BUY that a
+            // discounted/free GET was consumed ahead of (only possible once
+            // fully paid). That reserved amount keeps a later top-up service
+            // from being consumed on money already committed to the stranded
+            // BUY. ConsumptionReservation::requiredFloor owns the rule (regular
+            // for bundle/service_bundle, sold for a single service; source_type
+            // authoritative — no overloaded-bundle_id collision). Skipped when
+            // the plan is fully paid (rounding tolerance).
             if (! $isPlanFullyPaid && $packageService && $packageService->tax_including_price > 0) {
-                $requiredCase = "CASE WHEN package_bundles.source_type IN ('bundle', 'service_bundle') "
-                    ."THEN GREATEST(package_services.orignal_price, package_services.tax_including_price) "
-                    ."ELSE package_services.tax_including_price END";
-
-                // Cover already required for sessions ALREADY consumed on this
-                // plan (this session is still is_consumed=0 — the flip is later).
-                $consumedRequired = (float) PackageService::query()
-                    ->leftJoin('package_bundles', 'package_services.package_bundle_id', '=', 'package_bundles.id')
-                    ->where('package_services.package_id', $request->package_id)
-                    ->where('package_services.is_consumed', 1)
-                    ->selectRaw("COALESCE(SUM($requiredCase), 0) as req")
-                    ->value('req');
-
-                // Cover required for the session being consumed now.
-                $thisBundle = PackageBundles::find($packageService->package_bundle_id);
-                $thisIsBundleProduct = in_array($thisBundle->source_type ?? null, ['bundle', 'service_bundle'], true);
-                $thisRequired = $thisIsBundleProduct
-                    ? max((float) $packageService->orignal_price, (float) $packageService->tax_including_price)
-                    : (float) $packageService->tax_including_price;
-
-                // Cap at the plan's sold total — never require more than the plan's price.
-                $threshold = min($consumedRequired + $thisRequired, (float) $totalPlanValue);
+                $threshold = app(ConsumptionReservation::class)
+                    ->requiredFloor((int) $request->package_id, (int) $packageService->id);
 
                 if ($totalPlanPayments < $threshold) {
                     $shortfall = ceil($threshold - $totalPlanPayments);

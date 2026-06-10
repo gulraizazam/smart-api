@@ -24,6 +24,7 @@ use App\Models\PaymentModes;
 use App\Models\Services;
 use App\Models\Settings;
 use App\Models\User;
+use App\Services\Plan\ConsumptionReservation;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
@@ -35,6 +36,10 @@ final class RefundService
 {
     private const FILTER_KEY_GLOBAL = 'plansrefunds';
     private const FILTER_KEY_PATIENT = 'patientrefunds';
+
+    public function __construct(
+        private readonly ConsumptionReservation $reservation,
+    ) {}
 
     // ── Datatable: Global Refunds ─────────────────────────
 
@@ -300,7 +305,13 @@ final class RefundService
                 ['is_consumed', '=', '1'],
             ])->sum('price');
 
-            $deductions = $consumedOriginalPrice + $consumeTax + (float) $docCharges;
+            // Hold back money reserved for a paid BUY whose discounted/free GET
+            // was consumed ahead of it (out-of-order consumption on a fully-paid
+            // Buy/Get plan). Zero unless the plan was consumed out of order, so
+            // ordinary refunds are unchanged.
+            $reservedAmount = $this->reservation->reservedRefundAmount($packageId);
+
+            $deductions = $consumedOriginalPrice + $reservedAmount + $consumeTax + (float) $docCharges;
             $refundableAmount = (int) ceil(($cashReceived - $deductions) - $amountToRefund);
         }
 
@@ -394,6 +405,15 @@ final class RefundService
 
             if ($refundAmount > $cashReceived) {
                 return ['success' => false, 'message' => 'You cannot refund amount more than amount received.'];
+            }
+
+            // Server-side floor (never trust the client amount): money reserved
+            // for a paid BUY whose discounted/free GET was consumed ahead of it
+            // cannot be refunded until that BUY is consumed. Zero — and so a
+            // no-op — unless the plan was consumed out of order.
+            $reservedAmount = $this->reservation->reservedRefundAmount($packageId);
+            if ($reservedAmount > 0 && $refundAmount > ($cashReceived - $reservedAmount)) {
+                return ['success' => false, 'message' => 'Rs. '.number_format($reservedAmount).' is reserved for a paid session whose discounted/free session was already used. Consume that paid session first, or reduce the refund.'];
             }
 
             // Compute consumed amounts for settlement calculations
