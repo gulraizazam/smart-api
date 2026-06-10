@@ -50,7 +50,7 @@ class BundleRowPersistTest extends TestCase
         // Package (bundles type=multiple): catalog regular total 30,000, SOLD 21,000.
         $bundleId = (int) DB::table('bundles')->insertGetId([
             'account_id' => 1, 'name' => '3x Svc Package', 'type' => 'multiple',
-            'price' => 21000, 'services_price' => 30000,
+            'price' => 21000, 'services_price' => 30000, 'tax_treatment_type_id' => 1,
             'created_at' => now(), 'updated_at' => now(),
         ]);
         foreach ($serviceIds as $sid) {
