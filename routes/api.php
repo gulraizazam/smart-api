@@ -94,3 +94,13 @@ Route::middleware('auth.api.dual')->prefix('meta')->name('meta.')->group(functio
     Route::post('test-connection', [\App\Http\Controllers\Admin\MetaConversionController::class, 'testConnection'])->name('test');
     Route::post('send-lead-status', [\App\Http\Controllers\Admin\MetaConversionController::class, 'sendLeadStatus'])->name('lead-status');
 });
+
+// WhatsApp Cloud API webhook (Meta). Public by design — Meta's servers can't
+// log in: GET is the verify-token handshake, POST is authenticated by the
+// X-Hub-Signature-256 HMAC (app secret) inside the controller. CSRF is
+// exempted for this URI in App\Http\Middleware\VerifyCsrfToken (Meta sends
+// no session cookie, so the no-cookie skip would clear it anyway).
+Route::get('whatsapp/webhook', [\App\Http\Controllers\Api\WhatsAppWebhookController::class, 'verify'])
+    ->name('whatsapp.webhook.verify');
+Route::post('whatsapp/webhook', [\App\Http\Controllers\Api\WhatsAppWebhookController::class, 'receive'])
+    ->name('whatsapp.webhook.receive');

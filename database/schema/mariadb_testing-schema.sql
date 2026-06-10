@@ -3477,4 +3477,32 @@ CREATE TABLE `working_day_exceptions` (
   CONSTRAINT `fk_working_day_exceptions_account_id` FOREIGN KEY (`account_id`) REFERENCES `accounts` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE `whatsapp_conversations` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `wa_id` varchar(32) NOT NULL,
+  `profile_name` varchar(255) DEFAULT NULL,
+  `patient_id` bigint(20) unsigned DEFAULT NULL,
+  `last_inbound_at` timestamp NULL DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `whatsapp_conversations_wa_id_unique` (`wa_id`),
+  KEY `wa_conversations_patient` (`patient_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE `whatsapp_messages` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `whatsapp_conversation_id` bigint(20) unsigned NOT NULL,
+  `wamid` varchar(128) DEFAULT NULL,
+  `direction` varchar(10) NOT NULL,
+  `type` varchar(20) NOT NULL DEFAULT 'text',
+  `body` text DEFAULT NULL,
+  `status` varchar(20) DEFAULT NULL,
+  `payload` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`payload`)),
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `whatsapp_messages_wamid_unique` (`wamid`),
+  KEY `wa_messages_conv_created` (`whatsapp_conversation_id`,`created_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 SET FOREIGN_KEY_CHECKS=1;
