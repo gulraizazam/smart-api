@@ -3483,6 +3483,7 @@ CREATE TABLE `whatsapp_conversations` (
   `profile_name` varchar(255) DEFAULT NULL,
   `patient_id` bigint(20) unsigned DEFAULT NULL,
   `last_inbound_at` timestamp NULL DEFAULT NULL,
+  `last_read_at` timestamp NULL DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),

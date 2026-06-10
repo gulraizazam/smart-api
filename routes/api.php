@@ -73,6 +73,7 @@ Route::middleware('auth.api.dual')->name('admin.')->group(function () {
     require __DIR__ . '/api/api-resources.php';
     require __DIR__ . '/cashflow.php';
     require __DIR__ . '/api/hr.php';
+    require __DIR__ . '/api/whatsapp.php';
 });
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {

@@ -31,6 +31,6 @@ return [
     'app_secret' => env('WHATSAPP_APP_SECRET', ''),
 
     // Graph API version for outbound sends (no env key — bump here)
-    'api_version' => 'v23.0',
+    'api_version' => 'v25.0',
 
 ];

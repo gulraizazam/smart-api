@@ -24,7 +24,7 @@ use Illuminate\Support\Facades\Log;
  */
 class WhatsAppService
 {
-    public const SERVICE_WINDOW_HOURS = 24;
+    public const SERVICE_WINDOW_HOURS = WhatsappConversation::SERVICE_WINDOW_HOURS;
 
     protected mixed $token;
 
@@ -46,8 +46,7 @@ class WhatsAppService
      */
     public function windowIsOpen(WhatsappConversation $conversation): bool
     {
-        return $conversation->last_inbound_at !== null
-            && $conversation->last_inbound_at->gt(now()->subHours(self::SERVICE_WINDOW_HOURS));
+        return $conversation->windowIsOpen();
     }
 
     /**
