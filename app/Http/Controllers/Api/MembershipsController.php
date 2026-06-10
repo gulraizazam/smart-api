@@ -274,6 +274,31 @@ final class MembershipsController extends Controller
         }
     }
 
+    // ── Consumption History ─────────────────────────────
+
+    /**
+     * Which services this membership's member-discount was applied to, and the
+     * benefit (discount saved) — for tracking Gold/Student member value. Gated
+     * on the membership detail view; the service scopes the lookup to the
+     * caller's account.
+     */
+    public function getConsumptionHistory(int $id): JsonResponse
+    {
+        if (Gate::denies('memberships.detail.view')) {
+            return $this->unauthorized();
+        }
+
+        try {
+            $data = $this->membershipService->getConsumptionHistory($id);
+
+            return $this->success('Consumption', $data);
+        } catch (\Throwable $e) {
+            Log::error('Membership consumption history error', ['message' => $e->getMessage()]);
+
+            return $this->error('Failed to fetch consumption history');
+        }
+    }
+
     // ── Export PDF ──────────────────────────────────────
 
     public function exportPdf(Request $request): \Symfony\Component\HttpFoundation\Response

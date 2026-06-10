@@ -340,17 +340,14 @@ class FeedbackService
 
     /**
      * Produce the [start, end] datetime pair for a feedback report window.
-     * Dashboard reports always exclude the current day (and anything later),
-     * so an end date at or after today is clamped to yesterday 23:59:59.
+     * The Doctor Ratings report includes the current day so its totals match
+     * the live Doctor Feedback module (a "Today" filter must surface feedback
+     * recorded today). The day is NOT clamped to yesterday — the doctor
+     * DASHBOARD keeps its own excludeTodayFromRange clamp via FeedbackCalculator.
      */
     private function parseReportDateRange(string $dateRange): array
     {
-        [$startDate, $endDate] = self::excludeTodayFromRange(self::parseDateRange($dateRange));
-
-        return [
-            $startDate.' 00:00:00',
-            $endDate.' 23:59:59',
-        ];
+        return self::parseDateRangeWithTimeBounds($dateRange);
     }
 
     private function reportGroupedBy(Builder $query, string $groupField, array $relations): Collection

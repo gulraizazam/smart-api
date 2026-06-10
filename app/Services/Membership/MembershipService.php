@@ -414,6 +414,40 @@ final class MembershipService
         ];
     }
 
+    /**
+     * Per-membership consumption history: the services this card's member
+     * discount was applied to, with the benefit (discount saved). Attribution
+     * follows the memberships row — patient_id + membership_type_id → the
+     * discounts tied to that type → that patient's discounted plan rows (the
+     * same join buildServiceUsageData performs). Account-scoped. An unassigned
+     * stock card (no patient) returns empty totals.
+     *
+     * @return array<string, mixed>
+     */
+    public function getConsumptionHistory(int $membershipId): array
+    {
+        $membership = $this->scopedMembershipQuery()->with('membershipType')->findOrFail($membershipId);
+
+        $header = [
+            'membership_code' => $membership->code,
+            'membership_type' => $membership->membershipType?->name ?? 'N/A',
+            'patient_name' => null,
+        ];
+
+        if ($membership->patient_id === null) {
+            return $header + [
+                'total_services' => 0,
+                'total_discount_saved' => 0,
+                'services' => [],
+            ];
+        }
+
+        $patient = User::where('account_id', Auth::user()->account_id)->findOrFail($membership->patient_id);
+        $header['patient_name'] = $patient->name;
+
+        return $header + $this->buildServiceUsageData($membership, $patient);
+    }
+
     // ── Datatable ───────────────────────────────────────
 
     public function getDatatableData(array $rawFilters, bool $applyFilter): array
@@ -602,14 +636,21 @@ final class MembershipService
 
         $usedServices = PackageBundles::whereIn('discount_id', $membershipTypeDiscountIds)
             ->whereHas('package', fn ($q) => $q->where('patient_id', $patient->id))
-            ->with(['bundle', 'package', 'discount', 'packageservice'])
+            ->with(['service', 'bundle', 'package', 'packageservice'])
             ->get();
 
         $serviceUsage = [];
         $totalDiscountAmount = 0;
 
         foreach ($usedServices as $service) {
-            $serviceName = $service->bundle?->name ?? 'Unknown Service';
+            // On plan service rows `bundle_id` references the SERVICES table,
+            // not `bundles` — the two tables share ids, so resolving via the
+            // `bundle` (Bundles) relation showed an unrelated service name
+            // (e.g. "CoolGlide - Underarms" instead of the plan's actual
+            // "CoolGlide - Face"). Prefer the `service` (Services) relation —
+            // the same id the plan displays — and fall back to `bundle` for
+            // true multi-service bundle rows.
+            $serviceName = $service->service?->name ?? $service->bundle?->name ?? 'Unknown Service';
             $discountSaved = $service->service_price - $service->tax_including_price;
             $packageService = $service->packageservice->first();
             $isConsumed = $packageService ? (bool) $packageService->is_consumed : false;
@@ -620,7 +661,12 @@ final class MembershipService
             $serviceUsage[] = [
                 'service_name' => $serviceName,
                 'service_price' => $service->service_price,
+                // `discount_amount` is the raw stored value — for a Percentage
+                // discount it's the PERCENT (e.g. 35), not rupees. The actual
+                // money saved is price − net; surface it explicitly so the UI
+                // shows "Rs 2,098.25", not a misleading "Rs 35".
                 'discount_amount' => $service->discount_price ?? 0,
+                'discount_saved' => $discountSaved < 0 ? 0 : (float) $discountSaved,
                 'discount_type' => $service->discount_type,
                 'net_amount' => $service->tax_including_price,
                 'plan_id' => $service->package_id,
