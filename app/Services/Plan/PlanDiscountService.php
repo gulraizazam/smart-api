@@ -1957,6 +1957,11 @@ final class PlanDiscountService
                     }
                     $data['created_at'] = Filters::getCurrentTimeStamp();
                     $data['updated_at'] = Filters::getCurrentTimeStamp();
+                    // Configurable Buy/Get rows are individual services — stamp
+                    // source_type so the row isn't written untagged. bundle_id is
+                    // an overloaded FK; an untagged row resolves the wrong catalog
+                    // (and the model guard now rejects untagged non-membership rows).
+                    $data['source_type'] = 'service';
                     $packagesbundly = PackageBundles::createPackagebundle($data);
 
                     $calculated_services = [[
@@ -2163,6 +2168,10 @@ final class PlanDiscountService
                 }
                 $data['created_at'] = Filters::getCurrentTimeStamp();
                 $data['updated_at'] = Filters::getCurrentTimeStamp();
+                // Configurable Buy/Get rows are individual services — stamp
+                // source_type (see the sibling create above) so the row isn't
+                // written untagged.
+                $data['source_type'] = 'service';
 
                 $packagesbundly = PackageBundles::createPackagebundle($data);
 
