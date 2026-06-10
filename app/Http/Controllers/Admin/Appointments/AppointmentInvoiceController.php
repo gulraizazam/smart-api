@@ -238,6 +238,30 @@ class AppointmentInvoiceController extends AppointmentBaseController
         if ($request->package_service_id && $request->package_id) {
             $packageService = PackageService::find($request->package_service_id);
 
+            // Ownership guard — the session must belong to the plan being
+            // invoiced, and that plan must belong to the caller's account.
+            // A bare find() let a crafted request consume a session that
+            // lives on another plan / tenant while the invoice + settle pair
+            // were still written against $request->package_id.
+            $ownsSession = $packageService
+                && (int) $packageService->package_id === (int) $request->package_id
+                && Packages::where('id', $request->package_id)
+                    ->where('account_id', (int) Auth::user()->account_id)
+                    ->exists();
+            if (! $ownsSession) {
+                return $this->errorResponse('Session not found on this plan.', 404);
+            }
+
+            // Double-submit / idempotency guard — refuse to invoice a session
+            // that is ALREADY consumed. Without this, a double-click or a
+            // network retry wrote a SECOND invoice + cash-out settle pair
+            // against the same burned session (double-billing). The flip at
+            // the end of this method is also made conditional (is_consumed=0)
+            // as defence in depth.
+            if ($packageService->is_consumed) {
+                return $this->errorResponse('This session has already been consumed.', 200, ['already_consumed' => 1]);
+            }
+
             // Calculate plan-level payment totals once (used by both checks)
             $totalPlanPayments = PackageAdvances::where('package_id', $request->package_id)
                 ->where('cash_flow', 'in')
@@ -249,9 +273,13 @@ class AppointmentInvoiceController extends AppointmentBaseController
             // Allow 1-rupee tolerance for rounding (e.g. 3 × 6996.67 = 20990.01 vs 20990 payment)
             $isPlanFullyPaid = ($totalPlanPayments >= ($totalPlanValue - 1));
 
-            // Ordering check: enforce BUY-before-GET within configurable discount groups
-            // Skip ordering if the plan is fully paid (safe because plan is locked after first consumption)
-            if (! $isPlanFullyPaid && $packageService && $packageService->consumption_order > 0) {
+            // Ordering check: enforce BUY-before-GET within configurable
+            // discount groups — UNCONDITIONALLY. Previously skipped when the
+            // plan was fully paid, which let a free/discounted GET session be
+            // consumed before its paid BUY anchor on a fully-paid Buy/Get
+            // plan. The reverse rule on cancel (PackageService::InvoiceCancel)
+            // was already unconditional; this brings the forward path in line.
+            if ($packageService && $packageService->consumption_order > 0) {
                 $packageBundle = PackageBundles::find($packageService->package_bundle_id);
                 $configGroupId = $packageBundle?->config_group_id;
 
@@ -270,15 +298,47 @@ class AppointmentInvoiceController extends AppointmentBaseController
                 }
             }
 
-            // Payment coverage check (for any service with price > 0)
-            // Skip if plan is fully paid — rounding may cause SUM(services) to slightly exceed actual payment
+            // Minimum-to-consume check.
+            //
+            // Bundles (/bundles = service_bundles) and Packages (/packages =
+            // bundles) are sold at a heavy discount in exchange for full
+            // upfront payment. Business rule (Shahid 2026-06-10): the MINIMUM
+            // to consume a session is that cumulative payments cover the
+            // REGULAR price of the sessions consumed so far (this one
+            // included) — capped at the plan's actual sold total, so a client
+            // never has to pay more than the plan costs. A standalone single
+            // service keeps the discounted gate. Per-session "required":
+            //   bundle / service_bundle → GREATEST(orignal_price, tax_including_price)  [regular, floored at sold so never weaker than the old gate]
+            //   service / null / membership → tax_including_price                       [discounted, unchanged]
+            // source_type is authoritative for both products — no bundles
+            // join, no overloaded-bundle_id collision. Skipped when the plan
+            // is fully paid (rounding tolerance).
             if (! $isPlanFullyPaid && $packageService && $packageService->tax_including_price > 0) {
-                $totalConsumedValue = PackageService::where('package_id', $request->package_id)
-                    ->where('is_consumed', 1)
-                    ->sum('tax_including_price');
+                $requiredCase = "CASE WHEN package_bundles.source_type IN ('bundle', 'service_bundle') "
+                    ."THEN GREATEST(package_services.orignal_price, package_services.tax_including_price) "
+                    ."ELSE package_services.tax_including_price END";
 
-                if ($totalPlanPayments < ($totalConsumedValue + $packageService->tax_including_price)) {
-                    $shortfall = ceil(($totalConsumedValue + $packageService->tax_including_price) - $totalPlanPayments);
+                // Cover already required for sessions ALREADY consumed on this
+                // plan (this session is still is_consumed=0 — the flip is later).
+                $consumedRequired = (float) PackageService::query()
+                    ->leftJoin('package_bundles', 'package_services.package_bundle_id', '=', 'package_bundles.id')
+                    ->where('package_services.package_id', $request->package_id)
+                    ->where('package_services.is_consumed', 1)
+                    ->selectRaw("COALESCE(SUM($requiredCase), 0) as req")
+                    ->value('req');
+
+                // Cover required for the session being consumed now.
+                $thisBundle = PackageBundles::find($packageService->package_bundle_id);
+                $thisIsBundleProduct = in_array($thisBundle->source_type ?? null, ['bundle', 'service_bundle'], true);
+                $thisRequired = $thisIsBundleProduct
+                    ? max((float) $packageService->orignal_price, (float) $packageService->tax_including_price)
+                    : (float) $packageService->tax_including_price;
+
+                // Cap at the plan's sold total — never require more than the plan's price.
+                $threshold = min($consumedRequired + $thisRequired, (float) $totalPlanValue);
+
+                if ($totalPlanPayments < $threshold) {
+                    $shortfall = ceil($threshold - $totalPlanPayments);
 
                     return $this->errorResponse('Insufficient payment on this plan. Please collect Rs. '.number_format($shortfall).' before consuming this service.', 200);
                 }
@@ -513,7 +573,15 @@ class AppointmentInvoiceController extends AppointmentBaseController
             $count++;
         }
         if ($package_advances->package_id != null) {
-            PackageService::where('id', '=', $request->package_service_id)->update(['is_consumed' => 1, 'updated_at' => Filters::getCurrentTimeStamp(), 'consumed_at' => Filters::getCurrentTimeStamp()]);
+            // Conditional, plan-scoped flip — only burns the session if it is
+            // still unconsumed AND belongs to the invoiced plan. The early
+            // guard above already rejects an already-consumed/foreign session;
+            // scoping the UPDATE here is defence in depth so a concurrent
+            // double-flip is a no-op rather than a second burn.
+            PackageService::where('id', '=', $request->package_service_id)
+                ->where('package_id', '=', $package_advances->package_id)
+                ->where('is_consumed', '=', 0)
+                ->update(['is_consumed' => 1, 'updated_at' => Filters::getCurrentTimeStamp(), 'consumed_at' => Filters::getCurrentTimeStamp()]);
             $packagesservice = PackageService::find($request->package_service_id);
 
             $package_service_log = PackageService::updateRecordInvoice($packagesservice);

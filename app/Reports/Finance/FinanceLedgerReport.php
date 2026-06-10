@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace App\Reports\Finance;
 
+use App\Enums\PlanType;
 use App\Helpers\ACL;
 use App\Helpers\GeneralFunctions;
 use App\Models\Appointments;
 use App\Models\PackageAdvances;
 use App\Models\PackageBundles;
 use App\Models\Packages;
+use App\Models\PackageService;
 use App\Services\Reports\Concerns\ParsesDateRange;
 use Carbon\Carbon;
 use Config;
@@ -663,7 +665,17 @@ class FinanceLedgerReport
                 'total_price' => '',
                 'refunds' => [],
             ];
-            $total_price = PackageBundles::where('package_id', '=', $packagerow->id)->sum('net_amount');
+            // Plan value MUST match what the View dialog shows (the
+            // confirmed-correct source) — getDisplayData computes it as
+            // SUM(package_services.price) for plans and SUM(package_bundles
+            // .tax_including_price) for memberships. The old SUM(net_amount)
+            // here read the PRE-discount price on discounted rows, so the
+            // ledger overstated discounted plans by the discount amount
+            // (~342M across ~19.3k plans on the prod mirror). Mirroring
+            // getDisplayData keeps the report and the dialogs on one number.
+            $total_price = $packagerow->plan_type === PlanType::Membership
+                ? PackageBundles::where('package_id', '=', $packagerow->id)->sum('tax_including_price')
+                : PackageService::where('package_id', '=', $packagerow->id)->sum('price');
 
             $packagetrans[$packagerow->id]['total_price'] = $total_price;
 
