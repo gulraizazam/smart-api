@@ -211,4 +211,55 @@ class BundleRowPersistTest extends TestCase
         $this->assertTrue((bool) ($ok['success'] ?? false), $ok['message'] ?? 'delete failed');
         $this->assertFalse(DB::table('package_bundles')->where('id', $rowId)->exists());
     }
+
+    /**
+     * Adding another bundle to a SAVED bundle plan (the state a 2nd create
+     * reuses via a stale random_id) must throw the CLEAN one-bundle
+     * PlanException — NOT a fatal PlanType-enum cast Error. Regression for the
+     * "Object of class App\Enums\PlanType could not be converted to string"
+     * crash (a raw 500 the SPA masked as "Something went wrong on our end").
+     */
+    public function test_second_bundle_on_a_saved_plan_throws_clean_error_not_an_enum_crash(): void
+    {
+        $this->seedFinancialFixtures();
+        $this->actingAsAdmin();
+
+        $locId = (int) DB::table('locations')->insertGetId([
+            'account_id' => 1, 'name' => 'Reuse Centre', 'active' => 1,
+            'city_id' => 1, 'region_id' => 1, 'tax_percentage' => 0,
+            'created_at' => now(), 'updated_at' => now(),
+        ]);
+        $svcId = (int) DB::table('services')->insertGetId([
+            'name' => 'Svc Reuse', 'price' => 10000, 'tax_treatment_type_id' => 1,
+            'account_id' => 1, 'created_at' => now(), 'updated_at' => now(),
+        ]);
+        $bundleId = (int) DB::table('bundles')->insertGetId([
+            'account_id' => 1, 'name' => 'Pkg Reuse', 'type' => 'multiple',
+            'price' => 7000, 'services_price' => 10000, 'tax_treatment_type_id' => 1,
+            'created_at' => now(), 'updated_at' => now(),
+        ]);
+        DB::table('bundle_has_services')->insert([
+            'bundle_id' => $bundleId, 'service_id' => $svcId,
+            'service_price' => 10000, 'calculated_price' => 7000,
+        ]);
+
+        // A SAVED bundle plan with one bundle line (plan_type cast to the enum).
+        $randomId = 'REUSE-'.uniqid();
+        $package = \App\Models\Packages::factory()->create([
+            'random_id' => $randomId, 'plan_type' => 'bundle', 'account_id' => 1,
+        ]);
+        \App\Models\PackageBundles::create([
+            'random_id' => $randomId, 'package_id' => $package->id, 'bundle_id' => $bundleId,
+            'source_type' => 'bundle', 'qty' => 1, 'service_price' => 7000, 'net_amount' => 7000,
+            'tax_percentage' => 0, 'tax_price' => 0, 'tax_including_price' => 7000,
+            'tax_exclusive_net_amount' => 7000, 'is_exclusive' => 0, 'account_id' => 1,
+        ]);
+
+        $this->expectException(\App\Exceptions\PlanException::class);
+        $this->expectExceptionMessage('only one bundle');
+        app(PlanService::class)->addBundleService([
+            'random_id' => $randomId, 'bundle_id' => $bundleId, 'source_type' => 'bundle',
+            'location_id' => $locId, 'net_amount' => 7000, 'stage_draft' => true, 'sold_by' => null,
+        ]);
+    }
 }
