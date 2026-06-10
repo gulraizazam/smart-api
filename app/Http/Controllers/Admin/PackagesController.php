@@ -2287,6 +2287,10 @@ class PackagesController extends Controller
                     $packageBundledata['net_amount'] = str_replace(',', '', $packageBundle['RegularPrice']);
                     $packageBundledata['discount_id'] = 1;
                     $packageBundledata['bundle_id'] = $packageBundle['bundleId'];
+                    // This legacy structured-array save resolves bundle_id via
+                    // Bundles::find (below) — it's a Package. Stamp source_type
+                    // so the row isn't written untagged (model guard requires it).
+                    $packageBundledata['source_type'] = 'bundle';
                     $packageBundledata['package_id'] = $package->id;
                     $packageBundledata['tax_exclusive_net_amount'] = str_replace(',', '', $packageBundle['Amount']);
                     $packageBundledata['tax_percentage'] = 1;
