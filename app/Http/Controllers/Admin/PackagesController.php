@@ -1579,7 +1579,10 @@ class PackagesController extends Controller
         $pdf = App::make('dompdf.wrapper');
         $pdf->loadHTML($content->render());
 
-        return $pdf->stream('treatment-plans-invoice-C-'.$package->patient_id.'.pdf');
+        // Filename convention (user-specified 2026-06-10): patient id, then
+        // plan id, no prefix — e.g. C-34-50408.pdf. The SPA's downloadBlob()
+        // saves under this Content-Disposition name.
+        return $pdf->stream('C-'.$package->patient_id.'-'.$package->id.'.pdf');
     }
 
     /*
