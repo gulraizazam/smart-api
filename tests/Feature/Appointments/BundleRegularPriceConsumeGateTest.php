@@ -148,6 +148,32 @@ class BundleRegularPriceConsumeGateTest extends TestCase
         );
     }
 
+    /**
+     * The consume DIALOG reads `required_to_consume` from invoicePlanInfo to
+     * pre-check payment the SAME way saveinvoice enforces it. Pin that the
+     * expression yields the REGULAR price for a bundle/package line and the
+     * SOLD price for a standalone service — so the dialog can't drift back to
+     * showing a Bundle as consumable below its regular price.
+     */
+    public function test_plan_info_required_to_consume_is_regular_for_bundles_sold_for_services(): void
+    {
+        $plan = $this->makePlan(20000);
+        $this->makeSession($plan, $this->makeBundleRow($plan, 'service_bundle'), sold: 7000, regular: 10000);
+        $this->makeSession($plan, $this->makeBundleRow($plan, 'bundle'), sold: 7000, regular: 10000);
+        $this->makeSession($plan, $this->makeBundleRow($plan, 'service'), sold: 7000, regular: 10000);
+
+        // The exact expression invoicePlanInfo selects as `required_to_consume`.
+        $rows = DB::table('package_services')
+            ->leftJoin('package_bundles', 'package_services.package_bundle_id', '=', 'package_bundles.id')
+            ->where('package_services.package_id', $plan->id)
+            ->selectRaw("package_bundles.source_type AS st, CASE WHEN package_bundles.source_type IN ('bundle', 'service_bundle') THEN GREATEST(COALESCE(package_services.orignal_price, 0), package_services.tax_including_price) ELSE package_services.tax_including_price END AS required")
+            ->get()->keyBy('st');
+
+        $this->assertEquals(10000, (int) $rows['service_bundle']->required, 'Bundle (/bundles) → regular price.');
+        $this->assertEquals(10000, (int) $rows['bundle']->required, 'Package (/packages) → regular price.');
+        $this->assertEquals(7000, (int) $rows['service']->required, 'Standalone service → sold price.');
+    }
+
     /* ===================== helpers ===================== */
 
     private function makePlan(int $totalPrice): Packages

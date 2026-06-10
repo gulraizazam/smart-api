@@ -179,8 +179,14 @@ class PackagesController extends Controller
 
             return $this->successResponse('Bundle service added successfully', $result);
         } catch (PlanException $e) {
-            return $this->errorResponse($e->getMessage(), 500);
-        } catch (\Exception $e) {
+            // Business-rule violation (e.g. one-bundle-per-plan), not a server
+            // error — return 4xx so the SPA surfaces the real message. (The SPA
+            // masks every >=500 as a generic "Something went wrong on our end".)
+            return $this->errorResponse($e->getMessage(), 422);
+        } catch (\Throwable $e) {
+            // Catch \Throwable, not \Exception — a PHP Error (e.g. an enum
+            // mis-cast) is NOT an Exception and would otherwise escape as an
+            // unlogged raw 500.
             \Log::error('Save Bundle Service Error: '.$e->getMessage());
 
             return $this->errorResponse('Failed to add bundle service.', 500);
