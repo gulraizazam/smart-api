@@ -4164,8 +4164,20 @@ final class PlanService
         // plans.service.delete holder force-delete a FOREIGN plan's row and
         // credit a foreign patient's voucher balance. A genuinely-absent
         // row (already removed) falls through to the idempotent path below.
-        if ($packageBundle && ! $this->findOwnedPackage($packageBundle->package_id)) {
-            return ['success' => false, 'message' => 'Service not found.', 'status_code' => 404, 'data' => ['del' => 1]];
+        //
+        // Staged drafts have package_id = NULL (no package bound yet).
+        // findOwnedPackage(int|string) would TypeError on NULL (500), so for
+        // a draft we scope to the caller's create session via random_id
+        // instead — a draft row can only be removed by the session that
+        // staged it.
+        if ($packageBundle) {
+            if ($packageBundle->package_id !== null) {
+                if (! $this->findOwnedPackage($packageBundle->package_id)) {
+                    return ['success' => false, 'message' => 'Service not found.', 'status_code' => 404, 'data' => ['del' => 1]];
+                }
+            } elseif (! empty($data['random_id']) && $packageBundle->random_id !== $data['random_id']) {
+                return ['success' => false, 'message' => 'Service not found.', 'status_code' => 404, 'data' => ['del' => 1]];
+            }
         }
 
         // Block deletion if this bundle's own services are consumed
@@ -4206,7 +4218,13 @@ final class PlanService
             ];
         }
 
-        $findPackage = $this->findOwnedPackage($packageService->package_id);
+        // Saved rows only — a staged draft (package_id NULL) has no package
+        // to scope to and no committed voucher journal to refund here (the
+        // cascade `vouchers[]` param handles staged voucher reservations).
+        // Passing NULL to findOwnedPackage(int|string) would TypeError (500).
+        $findPackage = $packageService->package_id !== null
+            ? $this->findOwnedPackage($packageService->package_id)
+            : null;
         if ($findPackage) {
             // Journal lookup — find the SPECIFIC row this bundle wrote.
             // `consumeVoucherForBundle` stores `service_id` =
@@ -4793,9 +4811,18 @@ final class PlanService
         // Resolve parent package (edit mode vs create mode)
         $findPackage = Packages::where('random_id', $data['random_id'])->first();
         $isEditMode = $findPackage !== null;
+        // Stage-draft mode (SPA opt-in): persist the draft on a NEW plan too
+        // (package_id=null, is_allocate=0), symmetric to addBundleService.
+        // Without this, a service_bundle added in the CREATE dialog returned
+        // the catalog id and saved nothing — lost on save, and delete 500'd
+        // (no real row). Closes the addServiceBundleToPlan create-mode gap.
+        $stageDraft = ! $isEditMode && ($data['stage_draft'] ?? false);
+        $shouldPersist = $isEditMode || $stageDraft;
+        $persistPackageId = $isEditMode ? $findPackage->id : null;
+        $persistIsAllocate = $isEditMode ? 1 : 0;
         $packageBundleRecordId = $serviceBundle->id;
 
-        if ($isEditMode) {
+        if ($shouldPersist) {
             $packageBundleRecord = PackageBundles::create([
                 'random_id' => $data['random_id'],
                 'qty' => $sessions,
@@ -4812,8 +4839,8 @@ final class PlanService
                 'tax_price' => $taxPrice,
                 'tax_including_price' => $taxIncludingPrice,
                 'location_id' => $data['location_id'],
-                'package_id' => $findPackage->id,
-                'is_allocate' => 1,
+                'package_id' => $persistPackageId,
+                'is_allocate' => $persistIsAllocate,
             ]);
             $packageBundleRecordId = $packageBundleRecord->id;
         }
@@ -4844,10 +4871,10 @@ final class PlanService
                 $isExclusive,
             );
 
-            if ($isEditMode) {
+            if ($shouldPersist) {
                 PackageService::create([
                     'random_id' => $data['random_id'],
-                    'package_id' => $findPackage->id,
+                    'package_id' => $persistPackageId,
                     'package_bundle_id' => $packageBundleRecordId,
                     'service_id' => $service->id,
                     'price' => $sessionTaxIncluding,
