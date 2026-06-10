@@ -98,6 +98,7 @@ class PackageBundleAccountIdTest extends TestCase
             'package_id' => $pkgId,
             'random_id' => 'RID-C',
             'qty' => 1,
+            'source_type' => 'service', // valid tag required by the model guard
             'service_price' => 100,
             'net_amount' => 100,
             'active' => 1,
@@ -127,6 +128,7 @@ class PackageBundleAccountIdTest extends TestCase
         $pb = PackageBundles::create([
             'random_id' => 'RID-UNMATCHED',
             'qty' => 1,
+            'source_type' => 'service', // valid tag required by the model guard
             'service_price' => 100,
             'net_amount' => 100,
             'active' => 1,

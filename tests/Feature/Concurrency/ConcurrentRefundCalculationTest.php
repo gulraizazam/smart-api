@@ -99,6 +99,7 @@ class ConcurrentRefundCalculationTest extends TestCase
             'random_id' => (string) \Illuminate\Support\Str::uuid(),
             'package_id' => $this->package->id,
             'qty' => 1,
+            'source_type' => 'service', // valid tag required by the model guard
             'service_price' => 10000,
             'net_amount' => 10000,
             'tax_exclusive_net_amount' => 10000,

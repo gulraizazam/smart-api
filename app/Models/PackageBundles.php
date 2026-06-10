@@ -116,6 +116,35 @@ class PackageBundles extends Model
                 $bundle->setAttribute('account_id', $accountId);
             }
         });
+
+        // Type-tag invariant (the single guard against the recurring
+        // wrong-record class). `bundle_id` is an OVERLOADED FK whose meaning
+        // depends entirely on `source_type` (service → services.id, bundle →
+        // bundles.id, service_bundle → service_bundles.id). These tables share
+        // id ranges, so a row written WITHOUT a valid source_type silently
+        // resolves the WRONG catalog downstream (wrong name/price on invoices,
+        // reports, the plan dialog). Fail LOUD at write time instead of letting
+        // a mis-resolved row ship.
+        //
+        // Membership lines are keyed by their own `membership_type_id` column
+        // and intentionally leave source_type NULL (matches crm2) — exempt.
+        // crm3-only: crm2 has its own model, so this never affects crm2's
+        // writes to the shared DB, nor any existing row (creating-only).
+        static::creating(function (self $bundle): void {
+            if (! empty($bundle->getAttribute('membership_type_id'))) {
+                return; // membership line — source_type NULL by design
+            }
+            $sourceType = $bundle->getAttribute('source_type');
+            $valid = ['service', 'bundle', 'service_bundle'];
+            if (! in_array($sourceType, $valid, true)) {
+                throw new \RuntimeException(
+                    'package_bundles write rejected: a non-membership line must carry '
+                    .'source_type one of {service, bundle, service_bundle} (got '
+                    .var_export($sourceType, true).'). bundle_id is an overloaded FK; '
+                    .'an untagged row silently resolves the wrong catalog.'
+                );
+            }
+        });
     }
 
     /**
