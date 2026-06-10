@@ -4527,7 +4527,12 @@ final class PlanService
             $existingBundleCount = PackageBundles::where('package_id', $existingPackage->id)
                 ->whereNull('membership_type_id')
                 ->count();
-            if ($existingBundleCount > 0 && (string) $existingPackage->plan_type === 'bundle') {
+            // plan_type is cast to the PlanType enum — `(string) $enum` is a
+            // fatal Error (NOT an Exception, so it escapes the controller's
+            // catch as a raw 500, masked by the SPA as "Something went wrong").
+            // Compare enum-to-enum. This fired on the 2nd bundle create, when a
+            // saved package with this random_id already exists.
+            if ($existingBundleCount > 0 && $existingPackage->plan_type === PlanType::Bundle) {
                 throw new PlanException(
                     'A plan can have only one bundle. Remove the current bundle to add a different one.'
                 );

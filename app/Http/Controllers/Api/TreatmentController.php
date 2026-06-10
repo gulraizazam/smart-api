@@ -815,12 +815,20 @@ final class TreatmentController extends Controller
 
             $packageBundles = $bundleTypeBundles->merge($planTypeBundles);
 
-            // Package services for this service.
+            // Package services for this service. `required_to_consume` is the
+            // MINIMUM cumulative payment this session needs before it can be
+            // consumed — the same rule the backend enforces in
+            // AppointmentInvoiceController::saveinvoice: the REGULAR price for
+            // a bundle/package line (GREATEST(orignal, sold), floored at sold),
+            // else the sold price. The consume dialog reads this so its
+            // pre-check matches what actually happens on consume (previously it
+            // used the sold price, so Bundles looked consumable below regular).
             $packageServices = PackageService::join('services', 'package_services.service_id', '=', 'services.id')
                 ->leftJoin('package_bundles', 'package_services.package_bundle_id', '=', 'package_bundles.id')
                 ->where('package_services.package_id', $package->id)
                 ->where('package_services.service_id', $serviceId)
                 ->select('package_services.*', 'services.name as servicename', 'package_bundles.config_group_id')
+                ->selectRaw("CASE WHEN package_bundles.source_type IN ('bundle', 'service_bundle') THEN GREATEST(COALESCE(package_services.orignal_price, 0), package_services.tax_including_price) ELSE package_services.tax_including_price END AS required_to_consume")
                 ->get();
 
             $totalPlanPayments = (float) PackageAdvances::where('package_id', $package->id)
@@ -830,6 +838,16 @@ final class TreatmentController extends Controller
             $totalConsumedValue = (float) PackageService::where('package_id', $package->id)
                 ->where('is_consumed', 1)
                 ->sum('tax_including_price');
+
+            // Cumulative REGULAR requirement of already-consumed sessions —
+            // mirrors saveinvoice's `consumedRequired`. The dialog's gate adds
+            // this to the current session's `required_to_consume` (capped at the
+            // sold plan total) to decide if more payment is needed.
+            $totalConsumedRequired = (float) PackageService::leftJoin('package_bundles', 'package_services.package_bundle_id', '=', 'package_bundles.id')
+                ->where('package_services.package_id', $package->id)
+                ->where('package_services.is_consumed', 1)
+                ->selectRaw("COALESCE(SUM(CASE WHEN package_bundles.source_type IN ('bundle', 'service_bundle') THEN GREATEST(COALESCE(package_services.orignal_price, 0), package_services.tax_including_price) ELSE package_services.tax_including_price END), 0) AS req")
+                ->value('req');
 
             // All services in the same config groups, used for the
             // consumption-order lock check on the client.
@@ -863,6 +881,8 @@ final class TreatmentController extends Controller
                 'package_services'      => $packageServices,
                 'total_plan_payments'   => $totalPlanPayments,
                 'total_consumed_value'  => $totalConsumedValue,
+                'total_consumed_required' => $totalConsumedRequired,
+                'total_plan_value'      => $totalPlanValue,
                 'is_plan_fully_paid'    => $isPlanFullyPaid,
                 'config_group_services' => $configGroupServices,
             ]);
