@@ -1691,6 +1691,34 @@ final class PlanDiscountService
 
         $tax_pct = $location_information->tax_percentage ?? 0;
         $net_amount = $data['net_amount'] ?? $service_data->price;
+
+        // === Server-side price authority (business rules confirmed by the
+        // product owner 2026-06-10) ===
+        // The SPA computes net_amount client-side; this is the server's
+        // backstop so a buggy build (e.g. a swallowed catalog lookup that
+        // stages 0 — the realistic undercharge) or a crafted payload cannot
+        // persist a wrong sold price. `service_data->price` is the pre-tax
+        // catalog regular and `$net_amount` is the pre-tax sold price — same
+        // basis, so the comparison is apples-to-apples. The configurable
+        // discount path above already derives every amount from the catalog,
+        // so it needs no equivalent guard.
+        $catalogPrice = (float) $service_data->price;
+        $netAmount = (float) $net_amount;
+        if ($netAmount < 0) {
+            return ['success' => false, 'message' => 'Invalid price: amount cannot be negative.', 'status_code' => 422];
+        }
+        // Sold price is never above catalog (confirmed). 1-rupee tolerance
+        // absorbs tax/rounding noise.
+        if ($netAmount > $catalogPrice + 1) {
+            return ['success' => false, 'message' => 'Sold price cannot exceed the catalog price.', 'status_code' => 422];
+        }
+        // A zero price is only valid with a discount applied (confirmed: a 0
+        // needs a 100%/complimentary discount). A 0 with NO discount is the
+        // swallowed-lookup undercharge — reject it before it persists.
+        if ($netAmount <= 0 && ! ($data['discount_id'] ?? null)) {
+            return ['success' => false, 'message' => 'A zero price requires a discount to be applied.', 'status_code' => 422];
+        }
+
         $orgTaxTreatment = Settings::getOrgTaxTreatment(Auth::user()->account_id);
         if ($orgTaxTreatment == Config::get('constants.tax_is_exclusive') ||
             ($orgTaxTreatment == Config::get('constants.tax_both') && $is_exclusive == '1')) {

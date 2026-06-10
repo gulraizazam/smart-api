@@ -223,6 +223,28 @@ class PackagesController extends Controller
             return $this->errorResponse('You are not authorized to access this resource.', 403);
         }
 
+        // Boundary validation + tenant-scoped FK rules. This endpoint
+        // previously took raw request fields with NO validation and an
+        // UNSCOPED Packages::find — a plans.edit holder could record a
+        // payment / consume a membership / rewrite membership dates on
+        // ANY tenant's plan by id. cash_amount is validated whole-rupee
+        // >= 0 so a crafted negative can't shrink the cash pool.
+        //
+        // NOTE: validate() runs BEFORE the try{} below on purpose — the
+        // catch (\Exception) swallows everything into a generic 200/500,
+        // and ValidationException extends Exception, so validating inside
+        // the try would convert a 422 into a silent "Failed to update".
+        $accountId = (int) \Illuminate\Support\Facades\Auth::user()->account_id;
+        $request->validate([
+            'package_id' => ['required', \Illuminate\Validation\Rule::exists('packages', 'id')->where('account_id', $accountId)->whereNull('deleted_at')],
+            'patient_id' => ['nullable', \Illuminate\Validation\Rule::exists('users', 'id')->where('account_id', $accountId)],
+            'location_id' => ['nullable', \Illuminate\Validation\Rule::exists('locations', 'id')->where('account_id', $accountId)],
+            'appointment_id' => ['nullable', \Illuminate\Validation\Rule::exists('appointments', 'id')->where('account_id', $accountId)->whereNull('deleted_at')],
+            'payment_mode_id' => ['nullable', \Illuminate\Validation\Rule::exists('payment_modes', 'id')->where('account_id', $accountId)->whereNull('deleted_at')],
+            'cash_amount' => 'nullable|integer|min:0|max:99999999',
+            'grand_total' => 'nullable|numeric',
+        ]);
+
         try {
             $packageId = $request->package_id;
             $patientId = $request->patient_id;
@@ -234,13 +256,14 @@ class PackagesController extends Controller
             $isStudentMembership = $request->is_student_membership === '1';
             $membershipTypeId = $request->membership_type_id;
 
-            if (! $packageId) {
-                return $this->errorResponse('Package ID is required', 500);
-            }
-
-            $package = Packages::find($packageId);
+            // Account-scoped fetch (the validate above already rejects a
+            // foreign/missing package_id, but keep the scoped read as the
+            // authoritative guard the service logic builds on).
+            $package = Packages::where('id', $packageId)
+                ->where('account_id', $accountId)
+                ->first();
             if (! $package) {
-                return $this->errorResponse('Package not found', 500);
+                return $this->errorResponse('Package not found', 404);
             }
 
             // Check if service is already consumed
@@ -808,14 +831,20 @@ class PackagesController extends Controller
             return $this->errorResponse('You are not authorized to access this resource.', 403);
         }
 
+        // Tenant-scoped FK rules — each package_bundles id and the patient
+        // must belong to the caller's account. A bare `integer` rule let a
+        // request enumerate foreign rows for deletion + voucher credit; the
+        // service layer re-checks each row's parent package, this rejects
+        // the probe at the boundary.
+        $accountId = (int) \Illuminate\Support\Facades\Auth::user()->account_id;
         $validated = $request->validate([
             'ids' => 'required|array|min:1',
-            'ids.*' => 'integer',
+            'ids.*' => ['integer', \Illuminate\Validation\Rule::exists('package_bundles', 'id')->where('account_id', $accountId)],
             'random_id' => 'nullable|string|max:255',
             'package_total' => 'nullable',
-            'patient_id' => 'nullable|integer',
+            'patient_id' => ['nullable', 'integer', \Illuminate\Validation\Rule::exists('users', 'id')->where('account_id', $accountId)],
             'vouchers' => 'nullable|array',
-            'vouchers.*.voucher_id' => 'required_with:vouchers|integer',
+            'vouchers.*.voucher_id' => ['required_with:vouchers', 'integer', \Illuminate\Validation\Rule::exists('discounts', 'id')->where('account_id', $accountId)],
             'vouchers.*.amount' => 'required_with:vouchers|numeric|min:0',
         ]);
 
@@ -1071,9 +1100,14 @@ class PackagesController extends Controller
             return $this->errorResponse('You are not authorized to access this resource.', 403);
         }
 
+        // Tenant-scoped FK rules — a bare `exists:` let a plans.edit holder
+        // reserve against ANOTHER tenant's patient voucher (cross-tenant
+        // balance tampering). Scope both the discount (voucher) and the
+        // patient to the caller's account.
+        $accountId = (int) \Illuminate\Support\Facades\Auth::user()->account_id;
         $validated = $request->validate([
-            'voucher_id' => 'required|integer|exists:discounts,id',
-            'patient_id' => 'required|integer|exists:users,id',
+            'voucher_id' => ['required', 'integer', \Illuminate\Validation\Rule::exists('discounts', 'id')->where('account_id', $accountId)->whereNull('deleted_at')],
+            'patient_id' => ['required', 'integer', \Illuminate\Validation\Rule::exists('users', 'id')->where('account_id', $accountId)],
             'amount' => 'required|numeric|min:0',
         ]);
 
@@ -1098,9 +1132,12 @@ class PackagesController extends Controller
             return $this->errorResponse('You are not authorized to access this resource.', 403);
         }
 
+        // Tenant-scoped FK rules — mirror reserveVoucherForPlan so a refund
+        // can't restore balance on another tenant's patient voucher.
+        $accountId = (int) \Illuminate\Support\Facades\Auth::user()->account_id;
         $validated = $request->validate([
-            'voucher_id' => 'required|integer|exists:discounts,id',
-            'patient_id' => 'required|integer|exists:users,id',
+            'voucher_id' => ['required', 'integer', \Illuminate\Validation\Rule::exists('discounts', 'id')->where('account_id', $accountId)->whereNull('deleted_at')],
+            'patient_id' => ['required', 'integer', \Illuminate\Validation\Rule::exists('users', 'id')->where('account_id', $accountId)],
             'amount' => 'required|numeric|min:0',
         ]);
 
@@ -1224,8 +1261,29 @@ class PackagesController extends Controller
      */
     public function getgrandtotal_update(Request $request): JsonResponse
     {
-        if (! Gate::allows('plans.list.view')) {
+        // This endpoint WRITES (it overwrites packages.total_price), so it
+        // requires edit rights — not the read-only plans.list.view it used
+        // to accept. A viewer must not be able to rewrite a plan's total.
+        if (! Gate::allows('plans.edit')) {
             return $this->errorResponse('You are not authorized to access this resource.', 403);
+        }
+
+        // Don't let a settled plan's total be rewritten — mirrors the
+        // settled-lock the update/add paths already enforce.
+        $accountId = (int) \Illuminate\Support\Facades\Auth::user()->account_id;
+        $package = Packages::where('random_id', (string) $request->random_id)
+            ->where('account_id', $accountId)
+            ->first();
+        if ($package) {
+            $settled = PackageAdvances::where([
+                ['cash_flow', '=', 'out'],
+                ['cash_amount', '>', 0],
+                ['is_setteled', '=', '1'],
+                ['package_id', '=', $package->id],
+            ])->exists();
+            if ($settled) {
+                return $this->errorResponse('This plan is settled and its total cannot be changed.', 409);
+            }
         }
 
         try {
@@ -1259,15 +1317,23 @@ class PackagesController extends Controller
             return $this->errorResponse('You are not authorized to access this resource.', 403);
         }
 
-        try {
-            $request->validate([
-                'package_id' => 'required|exists:packages,id',
-                'appointment_id' => 'required|exists:appointments,id',
-                'payment_mode_id' => 'nullable|exists:payment_modes,id',
-                'cash_amount' => 'nullable|numeric|min:0',
-                'grand_total' => 'nullable|numeric',
-            ]);
+        // Tenant-scoped FK rules — a bare `exists:` let a request reference
+        // another tenant's package/appointment/payment-mode (cross-tenant
+        // FK injection). The service layer re-checks package ownership; this
+        // rejects the probe at the boundary. validate() runs OUTSIDE the
+        // try{} on purpose — the catch (\Exception) maps everything to 500,
+        // and ValidationException extends Exception, so validating inside
+        // would turn a 422 into a generic 500.
+        $accountId = (int) \Illuminate\Support\Facades\Auth::user()->account_id;
+        $request->validate([
+            'package_id' => ['required', \Illuminate\Validation\Rule::exists('packages', 'id')->where('account_id', $accountId)->whereNull('deleted_at')],
+            'appointment_id' => ['required', \Illuminate\Validation\Rule::exists('appointments', 'id')->where('account_id', $accountId)->whereNull('deleted_at')],
+            'payment_mode_id' => ['nullable', \Illuminate\Validation\Rule::exists('payment_modes', 'id')->where('account_id', $accountId)->whereNull('deleted_at')],
+            'cash_amount' => 'nullable|integer|min:0|max:99999999',
+            'grand_total' => 'nullable|numeric',
+        ]);
 
+        try {
             $result = $this->planService->updateBundlePayment($request->all());
 
             return $result['success']
@@ -1451,7 +1517,11 @@ class PackagesController extends Controller
             abort(403);
         }
 
-        $package = Packages::find($id);
+        // Account-scoped fetch — a bare find() streamed any tenant's plan
+        // (patient identity + full payment ledger) as a PDF by id guessing.
+        $package = Packages::where('id', $id)
+            ->where('account_id', \Illuminate\Support\Facades\Auth::user()->account_id)
+            ->firstOrFail();
 
         $location_info = Locations::find($package->location_id);
 

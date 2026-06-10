@@ -64,6 +64,12 @@ exercised.
 - **AAA + one behaviour per test.** The name states the behaviour.
 - **Deterministic.** Freeze time (`Carbon::setTestNow`), seed randomness, use
   `RefreshDatabase` + factories — never depend on existing rows or wall-clock.
+- **Flaky = broken (no "green on re-run").** A test that fails once and passes on
+  re-run is a DEFECT, not a pass — never shrug it off. Diagnose the nondeterminism
+  (cache/rate-limiter state leaking across tests, test-order coupling, unfrozen time,
+  unseeded randomness, real network/sleep) and fix it, or quarantine it with a tracked
+  owner. Tests that hit a rate-limited route must reset the limiter in `setUp`
+  (`Cache::flush()` / `RateLimiter::clear()`) so order can't cause an intermittent 429.
 - **Factories, not hand-built fixtures.** Reuse `Tests\Concerns\*`.
 - **Cover the unhappy paths** — validation failures, 403/401, null/empty/zero/max,
   permission-denied — not just the golden path.
@@ -112,6 +118,13 @@ This repo waives in CI/commits via the trailer, e.g. `Test-exempt: app/Models/Fo
 ---
 
 ## 7. Commands
+
+**The gate run must NAME its failures.** Run the deciding suite with the default
+reporter (it lists each `⨯` failure + a `FAILED` block) — never gate on
+`--compact`/dots-only output: it shows a pass/fail COUNT but not WHICH test failed,
+so a single failure forces a full ~3.5-min re-run just to learn the name. `--compact`
+is fine for a quick local loop; the run that decides "done" names its failures. When
+backgrounding, tee the full output: `php -d memory_limit=-1 vendor/bin/pest 2>&1 | tee /tmp/pest.txt`.
 
 ```bash
 composer test                    # the full suite (= php -d memory_limit=-1 vendor/bin/pest)

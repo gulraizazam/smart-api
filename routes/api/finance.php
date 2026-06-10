@@ -89,9 +89,22 @@ Route::get('packages/deleteplanrowtem', [PackagesController::class, 'deleteplanr
 
     Route::get('packages/getgrandtotal_update', [PackagesController::class, 'getgrandtotal_update'])->name('packages.getgrandtotal_update');
 
-    Route::post('packages/savepackages', [PackagesController::class, 'savepackages'])->name('packages.savepackages');
+    // `idempotent` (opt-in via Idempotency-Key header) — the SPA sends a
+    // stable key derived from the plan's random_id, so a double-click /
+    // reclick after a lost ACK replays the first response instead of
+    // creating a SECOND plan (the duplicate-plan rows the audit found).
+    Route::post('packages/savepackages', [PackagesController::class, 'savepackages'])
+        ->middleware(['throttle:60,1', 'idempotent'])
+        ->name('packages.savepackages');
 
+    // GET kept as a legacy alias; the SPA now uses the POST twin below.
+    // A plan UPDATE must not be reachable by a GET (CSRF-safe: GET bypasses
+    // VerifyCsrfToken). POST carries throttle + idempotent like the other
+    // money writes.
     Route::get('packages/updatepackages', [PackagesController::class, 'updatepackages'])->name('packages.updatepackages');
+    Route::post('packages/updatepackages', [PackagesController::class, 'updatepackages'])
+        ->middleware(['throttle:60,1', 'idempotent'])
+        ->name('packages.updatepackages_post');
 
     Route::get('packages/getserviceinfo', [PackagesController::class, 'getserviceinfo'])->name('packages.getserviceinfo');
     Route::get('packages/display/{id}', [PackagesController::class, 'display'])->name('packages.display');
@@ -105,7 +118,9 @@ Route::get('packages/deleteplanrowtem', [PackagesController::class, 'deleteplanr
     Route::get('packages/getmembershipinfo', [PackagesController::class, 'getmembershipinfo'])->name('packages.getmembershipinfo');
     Route::get('packages/searchmembershipcodes', [PackagesController::class, 'searchMembershipCodes'])->name('packages.searchmembershipcodes');
     Route::post('packages/savemembership_service', [PackagesController::class, 'savemembership_service'])->name('packages.savemembership_service');
-    Route::post('packages/update_membership_plan', [PackagesController::class, 'updateMembershipPlan'])->name('packages.update_membership_plan');
+    Route::post('packages/update_membership_plan', [PackagesController::class, 'updateMembershipPlan'])
+        ->middleware(['throttle:60,1', 'idempotent'])
+        ->name('packages.update_membership_plan');
 
     // Membership Code Generation Routes
     Route::post('membership-codes/generate', [\App\Http\Controllers\Api\MembershipCodeController::class, 'generateCodes'])->name('membership-codes.generate');
@@ -122,7 +137,12 @@ Route::get('packages/deleteplanrowtem', [PackagesController::class, 'deleteplanr
     Route::get('packages/getserviceinfo_for_plan', [PackagesController::class, 'getserviceinfo_for_plan'])->name('packages.getserviceinfo_for_plan');
     Route::get('packages/getdiscountinfo_for_plan', [PackagesController::class, 'getdiscountinfo_for_plan'])->name('packages.getdiscountinfo_for_plan');
     Route::get('packages/getdiscountinfocustom_for_plan', [PackagesController::class, 'getdiscountinfocustom_for_plan'])->name('packages.getdiscountinfocustom_for_plan');
+    // GET kept as a legacy alias; the SPA now uses the POST twin below.
+    // Staging a plan row is a state change — a GET-mutate is CSRF-exposed.
     Route::get('packages/savepackages_service_for_plan', [PackagesController::class, 'savepackages_service_for_plan'])->name('packages.savepackages_service_for_plan');
+    Route::post('packages/savepackages_service_for_plan', [PackagesController::class, 'savepackages_service_for_plan'])
+        ->middleware(['throttle:60,1', 'idempotent'])
+        ->name('packages.savepackages_service_for_plan_post');
 
     /*Routes for editing the cash in treatment plan — the edit-payment
       surface. Idempotent middleware on the two write routes catches

@@ -1616,7 +1616,10 @@ final class PlanService
     public function getEditFormData(int|string $packageId): array
     {
         try {
-            $package = Packages::with('user', 'location', 'appointment')->find($packageId)
+            $package = Packages::with('user', 'location', 'appointment')
+                ->where('id', $packageId)
+                ->where('account_id', Auth::user()->account_id)
+                ->first()
                 ?? throw PlanException::notFound($packageId);
 
             // Doctor on the consultation that anchors this plan. Surfaced
@@ -1926,7 +1929,10 @@ final class PlanService
     public function getDisplayData(int|string $packageId): array
     {
         try {
-            $package = Packages::with('user', 'location')->find($packageId)
+            $package = Packages::with('user', 'location')
+                ->where('id', $packageId)
+                ->where('account_id', Auth::user()->account_id)
+                ->first()
                 ?? throw PlanException::notFound($packageId);
 
             $packageBundles = PackageBundles::with(['bundle', 'service', 'discount', 'membershipType', 'serviceBundle.service', 'packageservice.service', 'packageservice.soldBy'])
@@ -2054,11 +2060,28 @@ final class PlanService
     // ──────────────────────────────────────────────────
 
     /**
+     * Fetch a package the authenticated user's account owns, or null.
+     *
+     * Every plan mutation/read that takes a client-supplied package id
+     * MUST resolve it through here (or an equivalent account_id-scoped
+     * query) — a bare Packages::find($id)/findOrFail($id) is a
+     * cross-tenant IDOR (GUIDELINES Part B). Returns null for BOTH
+     * "missing" and "another tenant's row" so callers surface one
+     * non-enumerable not-found (no existence leak).
+     */
+    private function findOwnedPackage(int|string $packageId): ?Packages
+    {
+        return Packages::where('id', $packageId)
+            ->where('account_id', Auth::user()->account_id)
+            ->first();
+    }
+
+    /**
      * @throws PlanException
      */
     public function deletePlan(int|string $packageId): array
     {
-        $package = Packages::find($packageId)
+        $package = $this->findOwnedPackage($packageId)
             ?? throw PlanException::notFound($packageId);
 
         $childRecords = [];
@@ -4136,6 +4159,15 @@ final class PlanService
         $id = $data['id'];
         $packageBundle = PackageBundles::find($id);
 
+        // Cross-tenant guard — if the row exists, its parent package must
+        // belong to the caller's account. A bare find() let a plans.edit /
+        // plans.service.delete holder force-delete a FOREIGN plan's row and
+        // credit a foreign patient's voucher balance. A genuinely-absent
+        // row (already removed) falls through to the idempotent path below.
+        if ($packageBundle && ! $this->findOwnedPackage($packageBundle->package_id)) {
+            return ['success' => false, 'message' => 'Service not found.', 'status_code' => 404, 'data' => ['del' => 1]];
+        }
+
         // Block deletion if this bundle's own services are consumed
         $status = PackageService::where([
             ['package_bundle_id', '=', $id],
@@ -4174,7 +4206,7 @@ final class PlanService
             ];
         }
 
-        $findPackage = Packages::find($packageService->package_id);
+        $findPackage = $this->findOwnedPackage($packageService->package_id);
         if ($findPackage) {
             // Journal lookup — find the SPECIFIC row this bundle wrote.
             // `consumeVoucherForBundle` stores `service_id` =
@@ -4393,7 +4425,12 @@ final class PlanService
      */
     public function updateBundlePayment(array $data): array
     {
-        $package = Packages::findOrFail($data['package_id']);
+        // Account-scoped fetch — a bare findOrFail let a plans.edit holder
+        // post a payment onto ANY tenant's plan by id (cross-tenant IDOR).
+        $package = $this->findOwnedPackage($data['package_id']);
+        if (! $package) {
+            return ['success' => false, 'message' => 'Plan not found.', 'status_code' => 404];
+        }
 
         // Handle payment if provided
         if (! empty($data['payment_mode_id']) && ($data['cash_amount'] ?? 0) > 0) {
@@ -5178,7 +5215,12 @@ final class PlanService
                 return ['success' => false, 'message' => 'Package service not found'];
             }
 
-            $package = Packages::find($packageService->package_id);
+            // Account-scoped parent lookup — proves the caller owns this
+            // row before exposing its sold-by metadata (cross-tenant IDOR).
+            $package = $this->findOwnedPackage($packageService->package_id);
+            if (! $package) {
+                return ['success' => false, 'message' => 'Package service not found'];
+            }
             $locationId = $locationId ?: $package->location_id;
             $currentSoldBy = $packageService->sold_by;
             $packageServices = collect([$packageService]);
@@ -5189,7 +5231,10 @@ final class PlanService
                 return ['success' => false, 'message' => 'Package bundle not found'];
             }
 
-            $package = Packages::find($packageBundle->package_id);
+            $package = $this->findOwnedPackage($packageBundle->package_id);
+            if (! $package) {
+                return ['success' => false, 'message' => 'Package bundle not found'];
+            }
             $locationId = $locationId ?: $package->location_id;
 
             $bundleIds = ! empty($configBundleIds) ? $configBundleIds : [$packageBundle->id];
@@ -5249,11 +5294,15 @@ final class PlanService
      */
     public function updateSoldBy(array $data): array
     {
-        // If package_services array is provided, update multiple services
+        // If package_services array is provided, update multiple services.
+        // Each row is mutated only after its parent package is confirmed
+        // to belong to the caller's account — without this an operator with
+        // plans.sold_by.edit could reassign attribution (and skew
+        // commission/upsell reports) on ANOTHER tenant's plan line.
         if (! empty($data['package_services']) && is_array($data['package_services'])) {
             foreach ($data['package_services'] as $serviceId) {
                 $packageService = PackageService::find($serviceId);
-                if ($packageService) {
+                if ($packageService && $this->findOwnedPackage($packageService->package_id)) {
                     $packageService->sold_by = $data['sold_by'];
                     $packageService->save();
                 }
@@ -5266,7 +5315,7 @@ final class PlanService
         if (! empty($data['package_service_id'])) {
             $packageService = PackageService::find($data['package_service_id']);
 
-            if (! $packageService) {
+            if (! $packageService || ! $this->findOwnedPackage($packageService->package_id)) {
                 return ['success' => false, 'message' => 'Package service not found'];
             }
 

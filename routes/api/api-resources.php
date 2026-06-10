@@ -109,7 +109,16 @@ use Illuminate\Support\Facades\Route;
         // duplicate ~400 lines of business logic and silently drift.
         // The method reads `appointment_id` from the request body, so
         // POSTing it from the SPA works unchanged.
-        Route::post('invoice', [\App\Http\Controllers\Admin\Appointments\AppointmentInvoiceController::class, 'saveinvoice'])->name('invoice.save');
+        //
+        // `idempotent` (opt-in via Idempotency-Key header) lets the SPA make
+        // the consume + cash-write safe against double-submit / lost-ACK
+        // retries — a duplicate POST with the same key replays the first
+        // response instead of writing a second invoice. Harmless when no key
+        // is sent (passes straight through); the SPA wiring lands in Phase 4.
+        // `throttle` matches the hardened cash routes.
+        Route::post('invoice', [\App\Http\Controllers\Admin\Appointments\AppointmentInvoiceController::class, 'saveinvoice'])
+            ->middleware(['throttle:60,1', 'idempotent'])
+            ->name('invoice.save');
     });
 
     // Appointment Routes - Using API Controller with Service Layer

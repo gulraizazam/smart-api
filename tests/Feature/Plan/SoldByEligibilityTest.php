@@ -78,6 +78,12 @@ class SoldByEligibilityTest extends TestCase
     {
         parent::setUp();
         $this->seedFinancialFixtures();
+        // getSoldByData is an authenticated endpoint — it now resolves the
+        // plan through an account_id-scoped guard (cross-tenant IDOR fix),
+        // so the service needs an authenticated account-1 caller exactly as
+        // production always has. Without this the guard reads a null
+        // Auth::user(). All fixtures below are account_id = 1.
+        $this->actingAsAdmin();
         $this->service = app(PlanService::class);
 
         // Patch appointment_statuses with the is_arrived/is_converted
