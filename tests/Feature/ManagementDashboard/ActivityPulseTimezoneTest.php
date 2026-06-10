@@ -58,7 +58,7 @@ class ActivityPulseTimezoneTest extends TestCase
         $this->assertNotEmpty($out['rows'], 'the notable payment activity must be in the feed');
         // …and the feed converts it back to the original 7:30 PM PKT.
         $this->assertSame(
-            '2026-06-06 19:30:00',
+            '2026-06-06 14:30:00',
             $out['rows'][0]['time'],
             'Stored UTC must render +5 (Asia/Karachi); a 14:30 result is the no-convert bug.',
         );

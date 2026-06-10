@@ -74,8 +74,11 @@ final class PlanDiscountService
 
         if ($discountData->type == Config::get('constants.Fixed') && $discountData->discount_type != 'voucher') {
             $discountType = Config::get('constants.Fixed');
-            $discountPrice = $discountData->amount;
-            $netAmount = ($serviceData->price) - ($discountData->amount);
+            // Cap a fixed discount at the service price (net 0 when the amount
+            // exceeds the price), consistent with getServiceInfoForPlan and
+            // the voucher min() cap.
+            $discountPrice = min((float) $discountData->amount, (float) $serviceData->price);
+            $netAmount = ($serviceData->price) - $discountPrice;
         } elseif ($discountData->type == Config::get('constants.Percentage') && $discountData->discount_type != 'voucher') {
             $discountType = Config::get('constants.Percentage');
             $discountPrice = $discountData->amount;
@@ -1219,8 +1222,12 @@ final class PlanDiscountService
 
                 if ($effective_type == Config::get('constants.Fixed') && $discount_data->discount_type != 'voucher') {
                     $discount_type = Config::get('constants.Fixed');
-                    $discount_price = $effective_amount;
-                    $net_amount = ($service_data->price) - ($effective_amount);
+                    // Cap a fixed discount at the service price so an amount
+                    // larger than the price makes the service free (net 0)
+                    // rather than dropping the discount. Mirrors the voucher
+                    // min() cap used elsewhere in this service.
+                    $discount_price = min((float) $effective_amount, (float) $service_data->price);
+                    $net_amount = ($service_data->price) - $discount_price;
                 } elseif ($effective_type == Config::get('constants.Percentage') && $discount_data->discount_type != 'voucher') {
                     $discount_type = Config::get('constants.Percentage');
                     $discount_price = $effective_amount;

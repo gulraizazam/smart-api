@@ -40,17 +40,28 @@ class DoctorRatingsApiController extends Controller
 
     /**
      * Per-doctor category breakdown — parent service rating + child treatment
-     * ratings, all-time. Mirrors the legacy `/admin/dashboard/feedback/view/{id}`
-     * page conceptually, but uses the `parentsOnly` scope so it picks up
-     * services with `parent_id IS NULL` (the legacy `parent_id = 0` filter
-     * misses 16 of 17 parent services in current data).
+     * ratings. Mirrors the legacy `/admin/dashboard/feedback/view/{id}` page
+     * conceptually, but uses the `parentsOnly` scope so it picks up services
+     * with `parent_id IS NULL` (the legacy `parent_id = 0` filter misses 16 of
+     * 17 parent services in current data).
+     *
+     * Accepts an optional `date_from`/`date_to` window so the SPA can carry the
+     * Doctor Ratings report's filter into the detail page. When both bounds are
+     * present every aggregate is scoped to feedback recorded in
+     * [from 00:00, to 23:59] (inclusive, today included — matching the report).
+     * Absent → all-time, preserving the original behaviour for direct visits.
      */
-    public function byService(int $doctorId): JsonResponse
+    public function byService(Request $request, int $doctorId): JsonResponse
     {
         try {
             if (! Gate::allows('feedbacks_manage')) {
                 return $this->errorResponse('Unauthorized.', 403);
             }
+
+            $validated = $request->validate([
+                'date_from' => 'nullable|date',
+                'date_to' => 'nullable|date|after_or_equal:date_from',
+            ]);
 
             $doctor = User::where('id', $doctorId)
                 ->where('user_type_id', self::DOCTOR_USER_TYPE_ID)
@@ -60,6 +71,16 @@ class DoctorRatingsApiController extends Controller
                 return $this->errorResponse('Doctor not found.', 404);
             }
 
+            $start = isset($validated['date_from']) ? $validated['date_from'].' 00:00:00' : null;
+            $end = isset($validated['date_to']) ? $validated['date_to'].' 23:59:59' : null;
+            $scopeDate = static function ($query) use ($start, $end) {
+                if ($start !== null && $end !== null) {
+                    $query->whereBetween('created_at', [$start, $end]);
+                }
+
+                return $query;
+            };
+
             $parents = Services::parentsOnly()
                 ->orderBy('name')
                 ->get(['id', 'name', 'color']);
@@ -68,8 +89,10 @@ class DoctorRatingsApiController extends Controller
                 ->get(['id', 'name', 'color', 'parent_id'])
                 ->groupBy('parent_id');
 
-            $parentRatings = \App\Models\Feedback::where('doctor_id', $doctorId)
-                ->whereIn('service_id', $parents->pluck('id'))
+            $parentRatings = $scopeDate(
+                \App\Models\Feedback::where('doctor_id', $doctorId)
+                    ->whereIn('service_id', $parents->pluck('id'))
+            )
                 ->select('service_id', DB::raw('AVG(rating) as avg_rating'))
                 ->groupBy('service_id')
                 ->pluck('avg_rating', 'service_id');
@@ -77,8 +100,10 @@ class DoctorRatingsApiController extends Controller
             $childIds = $childrenByParent->flatten()->pluck('id');
             $childRatings = $childIds->isEmpty()
                 ? collect()
-                : \App\Models\Feedback::where('doctor_id', $doctorId)
-                    ->whereIn('treatment_id', $childIds)
+                : $scopeDate(
+                    \App\Models\Feedback::where('doctor_id', $doctorId)
+                        ->whereIn('treatment_id', $childIds)
+                )
                     ->select('treatment_id', DB::raw('AVG(rating) as avg_rating'))
                     ->groupBy('treatment_id')
                     ->pluck('avg_rating', 'treatment_id');
@@ -112,7 +137,7 @@ class DoctorRatingsApiController extends Controller
                 }
             }
 
-            $aggregate = \App\Models\Feedback::where('doctor_id', $doctorId)
+            $aggregate = $scopeDate(\App\Models\Feedback::where('doctor_id', $doctorId))
                 ->selectRaw('ROUND(AVG(CAST(rating AS DECIMAL(4,2))), 2) as avg_rating, COUNT(*) as total_feedbacks')
                 ->first();
 

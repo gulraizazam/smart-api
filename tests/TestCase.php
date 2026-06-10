@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests;
 
+use App\Helpers\ACL;
 use App\Models\User;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 use Illuminate\Support\Facades\DB;
@@ -11,6 +12,20 @@ use Illuminate\Support\Facades\DB;
 abstract class TestCase extends BaseTestCase
 {
     use CreatesApplication;
+
+    /**
+     * ACL memoises per-user lookups (centres/regions/cities) in a static
+     * for the request lifetime. The test process outlives requests and
+     * user ids repeat after every DB refresh, so a stale memo from an
+     * earlier test poisons later ones (e.g. getUserCentres() returning
+     * another test's centre set, silently emptying location-scoped reports).
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        ACL::flushMemo();
+    }
 
     /*
     |--------------------------------------------------------------------------

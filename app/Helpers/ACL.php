@@ -107,18 +107,31 @@ class ACL
      * the lifetime of the PHP process) while removing the copy-pasted
      * skeleton from each caller. Keyed by ($key, Auth::id()) so distinct
      * lookups and distinct users don't collide.
+     *
+     * @var array<string, array<int|string, array>>
      */
+    private static array $memo = [];
+
+    /**
+     * Long-lived processes (the test suite, queue workers) outlive a single
+     * request, and in tests user ids repeat after every DB refresh — so a
+     * memo from one test can poison another. Flushed per-test in setUp.
+     */
+    public static function flushMemo(): void
+    {
+        self::$memo = [];
+    }
+
     private static function memoPerUser(string $key, Closure $loader): array
     {
-        static $cache = [];
         $userId = Auth::id();
 
-        if (isset($cache[$key][$userId])) {
-            return $cache[$key][$userId];
+        if (isset(self::$memo[$key][$userId])) {
+            return self::$memo[$key][$userId];
         }
 
         $result = $loader();
-        $cache[$key][$userId] = $result;
+        self::$memo[$key][$userId] = $result;
 
         return $result;
     }
