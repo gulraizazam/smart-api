@@ -37,6 +37,24 @@ class PermissionAliasMapTest extends TestCase
         $this->assertContains('leads.list.view_inactive', PermissionAliasMap::aliasesFor('view_inactive_leads'));
     }
 
+    public function test_legacy_contact_bridges_to_leads_and_consultations_view_contact(): void
+    {
+        // crm2 reveals the lead/appointment phone under the broad `contact`
+        // perm; crm3 gates it on the granular `*.list.view_contact` slugs. The
+        // bridge must let a `contact` grant satisfy those gates at run time —
+        // otherwise a `contact` holder sees the phone on patients (already
+        // bridged) but not on leads/consultations.
+        $this->assertContains('contact', PermissionAliasMap::aliasesFor('leads.list.view_contact'));
+        $this->assertContains('contact', PermissionAliasMap::aliasesFor('consultations.list.view_contact'));
+
+        // Inverse: a `contact` grant surfaces every contact gate (patients
+        // bridge predates this; leads + consultations are the new ones).
+        $contactAliases = PermissionAliasMap::aliasesFor('contact');
+        $this->assertContains('leads.list.view_contact', $contactAliases);
+        $this->assertContains('consultations.list.view_contact', $contactAliases);
+        $this->assertContains('patients.list.view_contact', $contactAliases);
+    }
+
     public function test_existing_plans_aliases_are_unchanged_by_the_one_to_many_fix(): void
     {
         // Regression guard: the inverse change must not alter pre-existing aliases.

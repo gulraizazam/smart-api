@@ -107,6 +107,20 @@ final class PermissionAliasMap
         'leads.convert'            => ['leads_convert'],
         'leads.list.view_junk'     => ['leads_junk'],
         'leads.list.view_inactive' => ['view_inactive_leads'],
+        // Legacy crm2 reveals the lead phone under the broad `contact` perm
+        // (Blade `@can('contact')`); crm3 gates it on the granular
+        // `leads.list.view_contact` (LeadResource). The module migration only
+        // mirrored the grant ONCE at run time, so a `contact` grant added via
+        // the role editor afterwards never reaches the lead phone. Bridge it
+        // at run time, exactly like `patients.list.view_contact` below.
+        'leads.list.view_contact'  => ['contact'],
+
+        // ── Consultations ─────────────────────────────────
+        // Same story as leads/patients: crm2's Blade appointment views reveal
+        // the patient phone under the broad `contact` perm, while crm3 gates it
+        // on `consultations.list.view_contact` (ConsultancyResource). Bridge the
+        // legacy grant so a `contact` holder sees the consultation phone too.
+        'consultations.list.view_contact' => ['contact'],
 
         // ── Blade-route bridges (go-live §5.4) ────────────
         // The legacy Blade admin routes (routes/web/admin-*.php) were re-pointed

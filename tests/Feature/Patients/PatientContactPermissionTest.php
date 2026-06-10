@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Patients;
 
+use App\Http\Resources\Consultancy\ConsultancyResource;
 use App\Http\Resources\Lead\LeadResource;
 use App\Http\Resources\Patient\PatientResource;
+use App\Models\Appointments;
 use App\Models\Leads;
 use App\Models\Patients;
 use App\Models\User;
@@ -81,6 +83,51 @@ class PatientContactPermissionTest extends TestCase
         ]);
 
         $payload = (new LeadResource($lead))->resolve(new Request);
+
+        $this->assertArrayNotHasKey('phone', $payload);
+    }
+
+    public function test_lead_resource_includes_phone_when_contact_granted(): void
+    {
+        // Regression: the broad `contact` perm must reveal the LEAD phone, not
+        // just the patient phone. crm3 gates LeadResource on
+        // `leads.list.view_contact`; without the alias bridge a `contact` grant
+        // left the lead phone hidden even though crm2 shows it under `contact`.
+        $this->actingAsUserWithContact();
+        $patient = Patients::factory()->create(['phone' => '3005551234']);
+        $lead = Leads::factory()->create([
+            'patient_id' => $patient->id,
+            'phone' => '3005551234',
+        ]);
+
+        $payload = (new LeadResource($lead))->resolve(new Request);
+
+        $this->assertArrayHasKey('phone', $payload);
+        $this->assertSame('3005551234', $payload['phone']);
+    }
+
+    public function test_consultancy_resource_includes_phone_when_contact_granted(): void
+    {
+        // Same contract as leads: the broad `contact` perm must reveal the
+        // consultation phone. ConsultancyResource gates on
+        // `consultations.list.view_contact`; the alias bridge is what lets a
+        // `contact` grant satisfy it.
+        $this->actingAsUserWithContact();
+        $patient = Patients::factory()->create(['phone' => '3007778888']);
+        $appointment = Appointments::factory()->create(['patient_id' => $patient->id]);
+
+        $payload = (new ConsultancyResource($appointment->load('patient')))->toArray(new Request);
+
+        $this->assertSame('3007778888', $payload['phone']);
+    }
+
+    public function test_consultancy_resource_omits_phone_when_permission_denied(): void
+    {
+        $this->actingAsUserWithoutContact();
+        $patient = Patients::factory()->create(['phone' => '3002223333']);
+        $appointment = Appointments::factory()->create(['patient_id' => $patient->id]);
+
+        $payload = (new ConsultancyResource($appointment->load('patient')))->resolve(new Request);
 
         $this->assertArrayNotHasKey('phone', $payload);
     }
