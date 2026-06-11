@@ -254,12 +254,13 @@ class GeneralSalesReportController extends Controller
             ],
             ReportType::GeneralRevenueDetail => [
                 'title' => 'Sales Detail',
-                'headings' => ['Centre', 'Date', 'Patient', 'Gender', 'Phone', 'Type', 'Mode', 'Cash in', 'Card in', 'Bank in', 'Refund out', 'Balance'],
+                'headings' => ['Centre', 'Date', 'Patient', 'Patient ID', 'Gender', 'Phone', 'Type', 'Mode', 'Cash in', 'Card in', 'Bank in', 'Refund out', 'Balance'],
                 'rows' => collect($result['report_data'] ?? [])->flatMap(function ($centre) {
                     return collect($centre['revenue_data'] ?? [])->map(fn ($tx) => [
                         $centre['name'] ?? '—',
                         isset($tx['created_at']) ? substr((string) $tx['created_at'], 0, 10) : '—',
                         $tx['patient'] ?? '—',
+                        $tx['patient_id'] ?? '—',
                         $tx['gender'] ?? '—',
                         $tx['phone'] ?? '—',
                         $tx['transtype'] ?? '—',
@@ -271,7 +272,9 @@ class GeneralSalesReportController extends Controller
                         round((float) ($tx['Balance'] ?? 0), 2),
                     ])->values();
                 })->values()->all(),
-                'totalsRow' => $this->salesTotalsRow($result, 7),
+                // labelSpan 8: Centre, Date, Patient, Patient ID, Gender, Phone,
+                // Type, Mode — then the numeric totals line up under Cash in.
+                'totalsRow' => $this->salesTotalsRow($result, 8),
                 'summaryBlock' => $this->salesSummaryBlock($result),
             ],
             ReportType::DailyEmployeeStats => [
