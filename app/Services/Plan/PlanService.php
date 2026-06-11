@@ -1816,12 +1816,14 @@ final class PlanService
             //
             // 1) `add_locked` mirrors `PlanService::validateConsumptionOrder`:
             //    a config group is mid-consumption-out-of-order anywhere on
-            //    this plan → adding new services is blocked.
+            //    this plan → adding new services is blocked, UNLESS the plan
+            //    is fully paid (then any-order consumption is allowed and the
+            //    reservation guards the money, so adds are allowed).
             // 2) Per-bundle `can_remove` mirrors
             //    `PlanDiscountService::deleteConfigurablePackageService`:
             //    own bundle's services consumed OR any sibling in the same
             //    config_group consumed → bundle delete blocked.
-            $addLocked = PackageService::where('package_services.package_id', $packageId)
+            $outOfOrderConsumption = PackageService::where('package_services.package_id', $packageId)
                 ->join('package_bundles', 'package_services.package_bundle_id', '=', 'package_bundles.id')
                 ->whereNotNull('package_bundles.config_group_id')
                 ->where('package_services.is_consumed', '1')
@@ -1835,6 +1837,13 @@ final class PlanService
                         ->whereColumn('ps2.consumption_order', '<', 'package_services.consumption_order');
                 })
                 ->exists();
+
+            // Out-of-order consumption only locks the plan while it is NOT
+            // fully paid. Once fully paid the client may consume in any order
+            // (reservation rule) and adding a service is allowed —
+            // ConsumptionReservation holds the paid BUY's money at consume
+            // time instead. Mirrors validateConsumptionOrder.
+            $addLocked = $outOfOrderConsumption && ! $this->isPlanFullyPaid($packageId);
 
             $addLockReason = $addLocked
                 ? 'A configurable discount group on this plan was consumed out of order. Consume the paid (BUY) sessions first, or start a new plan.'
@@ -3978,8 +3987,36 @@ final class PlanService
 
     // ── Validation helpers ──────────────────────────────
 
+    /**
+     * A plan is "fully paid" when cumulative IN payments cover the sold value
+     * of its sessions (1-rupee rounding tolerance — the same definition the
+     * consume gate uses in AppointmentInvoiceController::saveinvoice). Once
+     * fully paid the configurable BUY-before-GET order is relaxed and
+     * ConsumptionReservation guards the money instead.
+     */
+    private function isPlanFullyPaid(int|string $packageId): bool
+    {
+        $payments = (float) PackageAdvances::where('package_id', $packageId)
+            ->where('cash_flow', CashFlow::In->value)
+            ->sum('cash_amount');
+
+        $value = (float) PackageService::where('package_id', $packageId)
+            ->sum('tax_including_price');
+
+        return $payments >= ($value - 1);
+    }
+
     private function validateConsumptionOrder(Packages $package): void
     {
+        // Fully-paid plans may add/consume in any order — the BUY-before-GET
+        // rule is relaxed once the money is all in, and ConsumptionReservation
+        // guards the paid BUY's money at consume time. Evaluated from existing
+        // package_services (the new row is not inserted yet), so it reflects
+        // the pre-add payment state.
+        if ($this->isPlanFullyPaid($package->id)) {
+            return;
+        }
+
         $hasOutOfOrder = PackageService::where('package_services.package_id', $package->id)
             ->join('package_bundles', 'package_services.package_bundle_id', '=', 'package_bundles.id')
             ->whereNotNull('package_bundles.config_group_id')
