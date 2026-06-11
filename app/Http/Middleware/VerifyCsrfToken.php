@@ -20,7 +20,13 @@ class VerifyCsrfToken extends Middleware
     // CSRF is enforced for cookie/session auth (the SPA). There is no
     // blanket /api/* bypass anymore (audit 2026-06) — stateless token
     // clients are handled by the no-session-cookie skip in handle().
-    protected $except = [];
+    // The single targeted exception is the Meta WhatsApp webhook: Meta's
+    // servers POST with no session and can never carry a CSRF token; the
+    // request is authenticated by its X-Hub-Signature-256 HMAC instead
+    // (WhatsAppWebhookController::signatureIsValid).
+    protected $except = [
+        'api/whatsapp/webhook',
+    ];
 
     public function handle($request, Closure $next): Response
     {
