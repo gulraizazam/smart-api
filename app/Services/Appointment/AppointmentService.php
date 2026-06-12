@@ -213,6 +213,23 @@ class AppointmentService
             $query->where('appointment_status_id', $filters['appointment_status_id']);
         }
 
+        // "Created / Updated / Rescheduled by" filters from the list page's
+        // advanced shelf. `rescheduled_by` is the SPA label for the legacy
+        // `converted_by` column (same source the ConsultancyResource /
+        // TreatmentResource read for their `rescheduled_by` field), kept for
+        // export-filter compatibility with the legacy admin.
+        if (! empty($filters['created_by'])) {
+            $query->where('appointments.created_by', $filters['created_by']);
+        }
+
+        if (! empty($filters['updated_by'])) {
+            $query->where('appointments.updated_by', $filters['updated_by']);
+        }
+
+        if (! empty($filters['rescheduled_by'])) {
+            $query->where('appointments.converted_by', $filters['rescheduled_by']);
+        }
+
         if (! empty($filters['scheduled_date_from'])) {
             $query->where('scheduled_date', '>=', $filters['scheduled_date_from']);
         }
