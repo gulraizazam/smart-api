@@ -167,6 +167,25 @@ class ConfigurableAddLockTest extends TestCase
         return $packageId;
     }
 
+    /** Record an IN payment so the plan reads as (partly/fully) paid. */
+    private function payPlan(int $packageId, float $amount): void
+    {
+        $cash = \App\Models\PaymentModes::query()->where('name', 'Cash')->firstOrFail();
+        DB::table('package_advances')->insert([
+            'account_id' => 1,
+            'package_id' => $packageId,
+            'patient_id' => $this->patientId,
+            'payment_mode_id' => $cash->id,
+            'location_id' => $this->locationId,
+            'cash_flow' => 'in',
+            'cash_amount' => $amount,
+            'is_cancel' => 0,
+            'is_setteled' => 0,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+    }
+
     public function test_get_edit_form_data_locks_when_get_consumed_before_buy(): void
     {
         // Out-of-order: priced-GET (order=2) is_consumed, BUY (order=1)
@@ -197,6 +216,41 @@ class ConfigurableAddLockTest extends TestCase
 
         $this->assertFalse($result['add_locked']);
         $this->assertNull($result['add_lock_reason']);
+    }
+
+    public function test_add_lock_releases_when_the_plan_is_fully_paid(): void
+    {
+        // Out-of-order (GET order=2 consumed, BUY order=1 not) — but the plan
+        // is FULLY PAID. The client paid for everything, so adding a service
+        // is allowed; ConsumptionReservation holds the paid BUY's money at
+        // consume time. The lock must NOT engage.
+        $packageId = $this->makeConfigurableGroupPlan([0, 1, 0]);
+        $this->payPlan($packageId, 3000); // 3 sessions x 1000 sold = fully paid
+
+        $result = $this->service->getEditFormData($packageId);
+
+        $this->assertFalse(
+            $result['add_locked'],
+            'A fully-paid plan must allow adding a service even after out-of-order consumption.',
+        );
+        $this->assertNull($result['add_lock_reason']);
+    }
+
+    public function test_validate_consumption_order_passes_when_out_of_order_but_fully_paid(): void
+    {
+        // The server safety-net must also release when fully paid, or the save
+        // would still 400 even though the SPA now allows the add.
+        $packageId = $this->makeConfigurableGroupPlan([0, 1, 0]);
+        $this->payPlan($packageId, 3000); // fully paid
+        $package = Packages::findOrFail($packageId);
+
+        $method = (new ReflectionClass(PlanService::class))
+            ->getMethod('validateConsumptionOrder');
+        $method->setAccessible(true);
+
+        $method->invoke($this->service, $package);
+
+        $this->assertTrue(true); // no exception thrown == pass.
     }
 
     public function test_get_edit_form_data_unlocks_when_no_configurable_group_exists(): void

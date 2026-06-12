@@ -30,8 +30,10 @@ use Symfony\Component\HttpFoundation\Response as SymfonyResponse;
  *   POST /api/reports/doctor-incentive           → JSON data (aggregate or per-doctor)
  *   POST /api/reports/doctor-incentive/export    → PDF or XLSX download
  *
- * Gated on the same `staff_wise_arrival_manage` permission the legacy
- * Blade route used. Centre fallback to ACL centres mirrors the
+ * Gated on its own dedicated `doctor_incentive_report` permission so a
+ * role's access to this report can be toggled independently of Staff Wise
+ * Arrival (which previously shared the `staff_wise_arrival_manage` gate).
+ * Centre fallback to ACL centres mirrors the
  * MembershipReport pattern so an empty location_id never scans every
  * centre's package advances.
  */
@@ -47,7 +49,7 @@ class DoctorIncentiveReportController extends Controller
 
     public function __invoke(DoctorIncentiveReportRequest $request): JsonResponse
     {
-        if (! Gate::allows('staff_wise_arrival_manage')) {
+        if (! Gate::allows('doctor_incentive_report')) {
             return $this->errorResponse('Unauthorized.', 403);
         }
 
@@ -89,7 +91,7 @@ class DoctorIncentiveReportController extends Controller
 
     public function filters(): JsonResponse
     {
-        if (! Gate::allows('staff_wise_arrival_manage')) {
+        if (! Gate::allows('doctor_incentive_report')) {
             return $this->errorResponse('Unauthorized.', 403);
         }
 
@@ -124,7 +126,7 @@ class DoctorIncentiveReportController extends Controller
 
     public function doctorsForCentres(Request $request): JsonResponse
     {
-        if (! Gate::allows('staff_wise_arrival_manage')) {
+        if (! Gate::allows('doctor_incentive_report')) {
             return $this->errorResponse('Unauthorized.', 403);
         }
 
@@ -189,7 +191,7 @@ class DoctorIncentiveReportController extends Controller
      */
     public function export(Request $request): SymfonyResponse
     {
-        if (! Gate::allows('staff_wise_arrival_manage')) {
+        if (! Gate::allows('doctor_incentive_report')) {
             abort(403, 'Unauthorized.');
         }
 
