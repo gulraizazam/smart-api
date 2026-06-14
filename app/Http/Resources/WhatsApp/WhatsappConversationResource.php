@@ -24,12 +24,22 @@ class WhatsappConversationResource extends JsonResource
             'wa_id' => $this->wa_id,
             'profile_name' => $this->profile_name,
             'patient_id' => $this->patient_id,
+            'patient' => $this->whenLoaded('patient', fn () => $this->patient ? [
+                'id' => $this->patient->id,
+                'name' => $this->patient->name,
+            ] : null),
+            'assigned_to' => $this->whenLoaded('assignee', fn () => $this->assignee ? [
+                'id' => $this->assignee->id,
+                'name' => $this->assignee->name,
+            ] : null),
             'last_inbound_at' => $this->last_inbound_at?->format('Y-m-d H:i:s'),
             'last_read_at' => $this->last_read_at?->format('Y-m-d H:i:s'),
             'window_open' => $this->windowIsOpen(),
             'window_expires_at' => $this->last_inbound_at
                 ?->addHours(WhatsappConversation::SERVICE_WINDOW_HOURS)
                 ->format('Y-m-d H:i:s'),
+            'opted_out' => $this->isOptedOut(),
+            'resolved' => $this->resolved_at !== null,
             'unread_count' => (int) ($this->unread_count ?? 0),
             'last_message' => $this->whenLoaded(
                 'lastMessage',

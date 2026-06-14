@@ -3484,11 +3484,26 @@ CREATE TABLE `whatsapp_conversations` (
   `patient_id` bigint(20) unsigned DEFAULT NULL,
   `last_inbound_at` timestamp NULL DEFAULT NULL,
   `last_read_at` timestamp NULL DEFAULT NULL,
+  `opted_out_at` timestamp NULL DEFAULT NULL,
+  `assigned_to_id` bigint(20) unsigned DEFAULT NULL,
+  `resolved_at` timestamp NULL DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `whatsapp_conversations_wa_id_unique` (`wa_id`),
-  KEY `wa_conversations_patient` (`patient_id`)
+  KEY `wa_conversations_patient` (`patient_id`),
+  KEY `wa_conversations_assigned` (`assigned_to_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE `whatsapp_canned_replies` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `account_id` bigint(20) unsigned NOT NULL,
+  `title` varchar(80) NOT NULL,
+  `body` text NOT NULL,
+  `created_by` bigint(20) unsigned DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `wa_canned_account` (`account_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 CREATE TABLE `whatsapp_messages` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,

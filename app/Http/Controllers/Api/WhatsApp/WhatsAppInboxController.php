@@ -11,9 +11,11 @@ use App\Http\Resources\WhatsApp\WhatsappMessageResource;
 use App\Models\WhatsappConversation;
 use App\Models\WhatsappMessage;
 use App\Services\WhatsApp\WhatsAppService;
+use App\Support\WhatsAppMediaType;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Validation\Rule;
 
 /**
  * Team-facing WhatsApp inbox (Phase 2) — list conversations, read a thread,
@@ -30,11 +32,13 @@ class WhatsAppInboxController extends Controller
     {
         $validated = $request->validate([
             'unread' => 'sometimes|boolean',
+            'resolved' => 'sometimes|boolean',
             'per_page' => 'sometimes|integer|min:1|max:100',
+            'search' => 'sometimes|string|max:100',
         ]);
 
         $conversations = WhatsappConversation::query()
-            ->with('lastMessage')
+            ->with(['lastMessage', 'patient', 'assignee'])
             ->withCount(['messages as unread_count' => function ($q): void {
                 $q->where('direction', 'inbound')
                     ->where(function ($w): void {
@@ -43,6 +47,16 @@ class WhatsAppInboxController extends Controller
                     });
             }])
             ->when($request->boolean('unread'), fn ($q) => $q->unread())
+            ->when($request->boolean('resolved'), fn ($q) => $q->whereNotNull('resolved_at'))
+            ->when($request->filled('search'), function ($q) use ($request): void {
+                // Match the phone, the WhatsApp profile name, or the linked patient.
+                $term = trim((string) $request->string('search'));
+                $q->where(function ($w) use ($term): void {
+                    $w->where('wa_id', 'like', "%{$term}%")
+                        ->orWhere('profile_name', 'like', "%{$term}%")
+                        ->orWhereHas('patient', fn ($p) => $p->where('name', 'like', "%{$term}%"));
+                });
+            })
             ->orderByDesc(
                 WhatsappMessage::select('created_at')
                     ->whereColumn('whatsapp_conversation_id', 'whatsapp_conversations.id')
@@ -87,7 +101,7 @@ class WhatsAppInboxController extends Controller
      */
     public function show(int $id): JsonResponse
     {
-        $conversation = WhatsappConversation::findOrFail($id);
+        $conversation = WhatsappConversation::with(['patient', 'assignee'])->findOrFail($id);
 
         $messages = $conversation->messages()
             ->latest('id')
@@ -109,9 +123,53 @@ class WhatsAppInboxController extends Controller
         return $this->successResponse('Marked read');
     }
 
+    /**
+     * Assign the conversation to a staff member (or unassign with null) so the
+     * team can see who's handling each chat. The assignee must be an active
+     * user in the WhatsApp account (FK-validated, tenant-scoped).
+     */
+    public function assign(Request $request, int $id): JsonResponse
+    {
+        $validated = $request->validate([
+            'assigned_to_id' => [
+                'nullable',
+                Rule::exists('users', 'id')
+                    ->where('account_id', (int) config('whatsapp.account_id'))
+                    ->whereNull('deleted_at'),
+            ],
+        ]);
+
+        $conversation = WhatsappConversation::findOrFail($id);
+        $conversation->update(['assigned_to_id' => $validated['assigned_to_id'] ?? null]);
+
+        return $this->successResponse('Assignment updated', new WhatsappConversationResource(
+            $conversation->load(['assignee', 'patient', 'lastMessage']),
+        ));
+    }
+
+    /**
+     * Mark the conversation resolved/done (triage) or reopen it. A later inbound
+     * message reopens it automatically (see the webhook).
+     */
+    public function resolve(Request $request, int $id): JsonResponse
+    {
+        $validated = $request->validate(['resolved' => 'required|boolean']);
+
+        $conversation = WhatsappConversation::findOrFail($id);
+        $conversation->update(['resolved_at' => $validated['resolved'] ? now() : null]);
+
+        return $this->successResponse('Conversation updated', new WhatsappConversationResource(
+            $conversation->load(['assignee', 'patient', 'lastMessage']),
+        ));
+    }
+
     public function reply(SendWhatsappReplyRequest $request, int $id): JsonResponse
     {
         $conversation = WhatsappConversation::findOrFail($id);
+
+        if ($conversation->isOptedOut()) {
+            return $this->errorResponse('This customer opted out of WhatsApp messages and cannot be contacted.', 422);
+        }
 
         if (! $conversation->windowIsOpen()) {
             return $this->errorResponse(
@@ -133,27 +191,31 @@ class WhatsAppInboxController extends Controller
     }
 
     /**
-     * Reply with a voice note (or other media). The recorded file is uploaded
-     * to Meta and sent as an audio message — gated by whatsapp.inbox.reply and
-     * the 24h window, exactly like a text reply.
+     * Reply with media — a recorded voice note, a photo, a video, or a document
+     * (with an optional caption). Gated by whatsapp.inbox.reply and the 24h
+     * window, exactly like a text reply.
      */
     public function replyMedia(Request $request, int $id): JsonResponse
     {
-        $request->validate([
-            'file' => ['required', 'file', 'max:16384'], // 16 MB — WhatsApp's audio ceiling
+        $validated = $request->validate([
+            'file' => ['required', 'file', 'max:16384'], // 16 MB
+            'caption' => ['nullable', 'string', 'max:1024'],
         ]);
 
-        // Content-sniffing (mimetypes:) is unreliable for opus-ogg (finfo often
-        // reports application/ogg) and untestable with faked files, so gate on
-        // the declared audio type. Low risk: the route is staff-only and the
-        // bytes are forwarded to Meta, which validates the media itself.
+        // Gate on the declared mime (content-sniffing is unreliable for opus-ogg
+        // and untestable with faked files). Staff-only route; Meta validates the
+        // bytes too.
         $file = $request->file('file');
         $mime = (string) $file->getClientMimeType();
-        if (! str_starts_with($mime, 'audio/') && $mime !== 'application/ogg') {
-            return $this->errorResponse('Only audio voice notes can be sent here.', 422);
+        if (! WhatsAppMediaType::isSupported($mime)) {
+            return $this->errorResponse('That file type can\'t be sent on WhatsApp.', 422);
         }
 
         $conversation = WhatsappConversation::findOrFail($id);
+
+        if ($conversation->isOptedOut()) {
+            return $this->errorResponse('This customer opted out of WhatsApp messages and cannot be contacted.', 422);
+        }
 
         if (! $conversation->windowIsOpen()) {
             return $this->errorResponse(
@@ -162,15 +224,18 @@ class WhatsAppInboxController extends Controller
             );
         }
 
-        // opus-recorder always produces ogg/opus — the format WhatsApp renders
-        // as a playable voice note. Send it as audio/ogg regardless of how
-        // finfo labels the temp file.
+        $type = WhatsAppMediaType::fromMime($mime);
+        // Voice notes from the recorder are ogg/opus — send that exact mime so
+        // WhatsApp renders a playable voice note rather than a generic audio file.
+        $sendMime = $type === 'audio' ? 'audio/ogg' : $mime;
+
         $message = $this->whatsApp->sendMedia(
             $conversation->wa_id,
-            'audio',
+            $type,
             (string) file_get_contents($file->getRealPath()),
-            'audio/ogg',
-            'voice-note.ogg',
+            $sendMime,
+            $file->getClientOriginalName() ?: 'file',
+            $validated['caption'] ?? null,
         );
 
         if ($message === null) {
@@ -179,11 +244,46 @@ class WhatsAppInboxController extends Controller
 
         $conversation->update(['last_read_at' => now()]);
 
-        return $this->successResponse('Voice note sent', new WhatsappMessageResource($message));
+        return $this->successResponse('Media sent', new WhatsappMessageResource($message));
     }
 
     /**
-     * Stream a media file (image/voice note/video/document) for the inbox —
+     * Resend a failed outbound text message. Creates a fresh attempt (the
+     * failed row stays for audit); gated by the same opt-out + 24h-window rules
+     * as a normal reply.
+     */
+    public function retry(int $id, int $messageId): JsonResponse
+    {
+        $conversation = WhatsappConversation::findOrFail($id);
+
+        /** @var WhatsappMessage $failed */
+        $failed = $conversation->messages()
+            ->whereKey($messageId)
+            ->where('direction', 'outbound')
+            ->where('status', 'failed')
+            ->where('type', 'text')
+            ->firstOrFail();
+
+        if ($conversation->isOptedOut()) {
+            return $this->errorResponse('This customer opted out of WhatsApp messages and cannot be contacted.', 422);
+        }
+        if (! $conversation->windowIsOpen()) {
+            return $this->errorResponse(
+                'The 24-hour reply window is closed. It reopens when the customer messages again.',
+                422,
+            );
+        }
+
+        $message = $this->whatsApp->sendText($conversation->wa_id, (string) $failed->body);
+        if ($message === null) {
+            return $this->errorResponse('WhatsApp is not configured on the server.', 503);
+        }
+
+        return $this->successResponse('Message resent', new WhatsappMessageResource($message));
+    }
+
+    /**
+     * Stream a media file (image/voice note/document/video) for the inbox —
      * inbound attachments AND the team's own outbound voice notes (for
      * playback). Meta media URLs are short-lived and bearer-auth'd, so the SPA
      * can't load them directly; this proxies the bytes through our own

@@ -133,4 +133,19 @@ class WhatsAppServiceTest extends TestCase
         $this->assertNull((new WhatsAppService)->sendText('923001234567', 'Hello'));
         Http::assertNothingSent();
     }
+
+    public function test_send_is_refused_when_the_customer_opted_out(): void
+    {
+        Http::fake();
+        // Window open, but the customer texted STOP — Meta policy: no sends.
+        WhatsappConversation::create([
+            'wa_id' => '923001234567',
+            'last_inbound_at' => now(),
+            'opted_out_at' => now(),
+        ]);
+
+        $this->assertNull((new WhatsAppService)->sendText('923001234567', 'Hello'));
+        $this->assertSame(0, WhatsappMessage::count());
+        Http::assertNothingSent();
+    }
 }

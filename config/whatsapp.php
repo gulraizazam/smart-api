@@ -33,4 +33,13 @@ return [
     // Graph API version for outbound sends (no env key — bump here)
     'api_version' => 'v25.0',
 
+    // The account that owns the WhatsApp line — inbound wa_ids are matched to
+    // patients within this account only (the DB is single-account today; this
+    // keeps the match tenant-scoped per the security charter). Default 1.
+    'account_id' => (int) env('WHATSAPP_ACCOUNT_ID', 1),
+
+    // Dialing country code (digits, no '+') used to reconcile a wa_id
+    // (E.164, e.g. 923001234567) against locally-stored phones (0300…).
+    'country_code' => env('WHATSAPP_COUNTRY_CODE', '92'),
+
 ];

@@ -5,8 +5,11 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Patients;
 use App\Models\WhatsappConversation;
 use App\Models\WhatsappMessage;
+use App\Support\WhatsAppOptOut;
+use App\Support\WhatsAppPhoneMatch;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -146,6 +149,51 @@ class WhatsAppWebhookController extends Controller
                     ? Carbon::createFromTimestamp((int) $message['timestamp'], config('app.timezone'))
                     : now(),
             ]);
+
+            // Meta-policy opt-out: a STOP message stops all future sends; a
+            // START re-subscribes. Single source for the keywords is the
+            // WhatsAppOptOut support helper.
+            $body = $this->messageBody($message);
+            if (WhatsAppOptOut::isOptOut($body)) {
+                $conversation->update(['opted_out_at' => now()]);
+            } elseif (WhatsAppOptOut::isOptIn($body)) {
+                $conversation->update(['opted_out_at' => null]);
+            }
+
+            if ($conversation->patient_id === null) {
+                $this->matchPatient($conversation);
+            }
+
+            // A new inbound message reopens a resolved chat so the team sees it.
+            if ($conversation->resolved_at !== null) {
+                $conversation->update(['resolved_at' => null]);
+            }
+        }
+    }
+
+    /**
+     * Best-effort link of a conversation to a patient by phone number, scoped
+     * to the WhatsApp account. Exact-match on the phone_normalized candidate
+     * forms (indexed); leaves patient_id null when nothing matches.
+     */
+    private function matchPatient(WhatsappConversation $conversation): void
+    {
+        $candidates = WhatsAppPhoneMatch::candidates(
+            $conversation->wa_id,
+            (string) config('whatsapp.country_code'),
+        );
+        if ($candidates === []) {
+            return;
+        }
+
+        $patientId = Patients::query()
+            ->where('account_id', (int) config('whatsapp.account_id'))
+            ->whereNull('deleted_at')
+            ->whereIn('phone_normalized', $candidates)
+            ->value('id');
+
+        if ($patientId !== null) {
+            $conversation->update(['patient_id' => $patientId]);
         }
     }
 
