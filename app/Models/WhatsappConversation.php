@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
@@ -32,6 +33,9 @@ class WhatsappConversation extends BaseModel
         'patient_id',
         'last_inbound_at',
         'last_read_at',
+        'opted_out_at',
+        'assigned_to_id',
+        'resolved_at',
     ];
 
     protected function casts(): array
@@ -39,12 +43,39 @@ class WhatsappConversation extends BaseModel
         return [
             'last_inbound_at' => 'datetime',
             'last_read_at' => 'datetime',
+            'opted_out_at' => 'datetime',
+            'resolved_at' => 'datetime',
         ];
+    }
+
+    /**
+     * True once the customer has texted STOP (Meta policy: no further sends
+     * until they opt back in). Single source for the rule; WhatsAppService and
+     * the reply endpoints delegate here.
+     */
+    public function isOptedOut(): bool
+    {
+        return $this->opted_out_at !== null;
     }
 
     public function messages(): HasMany
     {
         return $this->hasMany(WhatsappMessage::class);
+    }
+
+    /**
+     * The matched patient (users.user_type_id = 3), linked by the webhook from
+     * the customer's phone number. Null until matched / if no patient matches.
+     */
+    public function patient(): BelongsTo
+    {
+        return $this->belongsTo(Patients::class, 'patient_id');
+    }
+
+    /** The staff member handling this conversation (users.id), or null. */
+    public function assignee(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'assigned_to_id');
     }
 
     public function lastMessage(): HasOne

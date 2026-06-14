@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\WhatsApp;
 
+use App\Models\Patients;
 use App\Models\WhatsappConversation;
 use App\Models\WhatsappMessage;
 use Illuminate\Testing\TestResponse;
@@ -210,6 +211,66 @@ class WhatsAppWebhookTest extends TestCase
         $this->assertNotNull($message);
         $this->assertSame('audio', $message->type);
         $this->assertNull($message->body);
+    }
+
+    public function test_inbound_stop_opts_the_customer_out_and_start_resubscribes(): void
+    {
+        $this->postSigned($this->inboundTextPayload(
+            waId: '923001234567', wamid: 'wamid.STOP==', text: 'STOP', timestamp: now()->timestamp,
+        ))->assertOk();
+
+        $conversation = WhatsappConversation::where('wa_id', '923001234567')->first();
+        $this->assertNotNull($conversation->opted_out_at, 'STOP should opt the customer out');
+
+        $this->postSigned($this->inboundTextPayload(
+            waId: '923001234567', wamid: 'wamid.START==', text: 'start', timestamp: now()->timestamp,
+        ))->assertOk();
+
+        $this->assertNull($conversation->fresh()->opted_out_at, 'START should re-subscribe');
+    }
+
+    public function test_an_ordinary_message_does_not_opt_the_customer_out(): void
+    {
+        $this->postSigned($this->inboundTextPayload(
+            waId: '923001234567', wamid: 'wamid.NORMAL==', text: 'please do not stop messaging me', timestamp: now()->timestamp,
+        ))->assertOk();
+
+        $this->assertNull(WhatsappConversation::where('wa_id', '923001234567')->value('opted_out_at'));
+    }
+
+    public function test_inbound_message_links_a_matching_patient_by_phone(): void
+    {
+        // wa_id 923001234567 must reconcile with the locally-stored 03001234567.
+        $patient = Patients::factory()->create(['phone' => '03001234567']);
+
+        $this->postSigned($this->inboundTextPayload(
+            waId: '923001234567', wamid: 'wamid.MATCH==', text: 'Hi', timestamp: now()->timestamp,
+        ))->assertOk();
+
+        $this->assertSame(
+            $patient->id,
+            WhatsappConversation::where('wa_id', '923001234567')->value('patient_id'),
+        );
+    }
+
+    public function test_inbound_message_from_an_unknown_number_leaves_patient_unlinked(): void
+    {
+        $this->postSigned($this->inboundTextPayload(
+            waId: '923009999999', wamid: 'wamid.NOMATCH==', text: 'Hi', timestamp: now()->timestamp,
+        ))->assertOk();
+
+        $this->assertNull(WhatsappConversation::where('wa_id', '923009999999')->value('patient_id'));
+    }
+
+    public function test_inbound_message_reopens_a_resolved_conversation(): void
+    {
+        $conversation = WhatsappConversation::create(['wa_id' => '923001234567', 'resolved_at' => now()]);
+
+        $this->postSigned($this->inboundTextPayload(
+            waId: '923001234567', wamid: 'wamid.REOPEN==', text: 'Hi again', timestamp: now()->timestamp,
+        ))->assertOk();
+
+        $this->assertNull($conversation->fresh()->resolved_at, 'a new inbound message should reopen a resolved chat');
     }
 
     /**

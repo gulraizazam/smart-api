@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\Api\WhatsApp\WhatsAppCannedReplyController;
 use App\Http\Controllers\Api\WhatsApp\WhatsAppInboxController;
 use Illuminate\Support\Facades\Route;
 
@@ -16,6 +17,13 @@ use Illuminate\Support\Facades\Route;
 Route::prefix('whatsapp')->name('whatsapp.')
     ->middleware('permission:whatsapp.inbox.view')
     ->group(function (): void {
+        Route::get('canned-replies', [WhatsAppCannedReplyController::class, 'index'])
+            ->name('canned.index');
+        Route::post('canned-replies', [WhatsAppCannedReplyController::class, 'store'])
+            ->middleware('permission:whatsapp.inbox.reply')->name('canned.store');
+        Route::delete('canned-replies/{id}', [WhatsAppCannedReplyController::class, 'destroy'])
+            ->whereNumber('id')->middleware('permission:whatsapp.inbox.reply')->name('canned.destroy');
+
         Route::get('conversations', [WhatsAppInboxController::class, 'index'])
             ->name('conversations.index');
         Route::get('conversations/unread-count', [WhatsAppInboxController::class, 'unreadCount'])
@@ -26,6 +34,10 @@ Route::prefix('whatsapp')->name('whatsapp.')
             ->whereNumber('id')->whereNumber('messageId')->name('conversations.media');
         Route::post('conversations/{id}/read', [WhatsAppInboxController::class, 'markRead'])
             ->whereNumber('id')->name('conversations.read');
+        Route::post('conversations/{id}/assign', [WhatsAppInboxController::class, 'assign'])
+            ->whereNumber('id')->middleware('throttle:60,1')->name('conversations.assign');
+        Route::post('conversations/{id}/resolve', [WhatsAppInboxController::class, 'resolve'])
+            ->whereNumber('id')->middleware('throttle:60,1')->name('conversations.resolve');
         Route::post('conversations/{id}/reply', [WhatsAppInboxController::class, 'reply'])
             ->whereNumber('id')
             ->middleware(['permission:whatsapp.inbox.reply', 'throttle:60,1'])
@@ -34,4 +46,8 @@ Route::prefix('whatsapp')->name('whatsapp.')
             ->whereNumber('id')
             ->middleware(['permission:whatsapp.inbox.reply', 'throttle:30,1'])
             ->name('conversations.reply_media');
+        Route::post('conversations/{id}/messages/{messageId}/retry', [WhatsAppInboxController::class, 'retry'])
+            ->whereNumber('id')->whereNumber('messageId')
+            ->middleware(['permission:whatsapp.inbox.reply', 'throttle:30,1'])
+            ->name('conversations.retry');
     });

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature\WhatsApp;
 
 use App\Models\User;
+use App\Models\Patients;
 use App\Models\WhatsappConversation;
 use App\Models\WhatsappMessage;
 use Illuminate\Http\UploadedFile;
@@ -362,14 +363,52 @@ class WhatsAppInboxTest extends TestCase
             ->assertStatus(403);
     }
 
-    public function test_reply_media_rejects_a_non_audio_file(): void
+    public function test_reply_media_rejects_an_unsupported_file_type(): void
     {
         $this->actAsAgentWith(['whatsapp.inbox.view', 'whatsapp.inbox.reply']);
         $conversation = $this->conversationWithInbound('923001234567', 'Hello');
 
-        $file = UploadedFile::fake()->create('not-audio.txt', 4, 'text/plain');
+        $file = UploadedFile::fake()->create('malware.exe', 4); // not a WhatsApp media type
         $this->post("/api/whatsapp/conversations/{$conversation->id}/reply-media", ['file' => $file])
             ->assertStatus(422);
+    }
+
+    public function test_reply_media_sends_a_photo_with_caption(): void
+    {
+        Http::fake([
+            'graph.facebook.com/*/media' => Http::response(['id' => 'IMG_UP_1']),
+            'graph.facebook.com/*/messages' => Http::response(['messaging_product' => 'whatsapp', 'messages' => [['id' => 'wamid.IMG==']]]),
+        ]);
+        $this->actAsAgentWith(['whatsapp.inbox.view', 'whatsapp.inbox.reply']);
+        $conversation = $this->conversationWithInbound('923001234567', 'Hi');
+
+        $file = UploadedFile::fake()->createWithContent('offer.jpg', 'JPEGBYTES');
+        $this->post("/api/whatsapp/conversations/{$conversation->id}/reply-media", [
+            'file' => $file, 'caption' => 'Our June offers',
+        ])
+            ->assertOk()
+            ->assertJsonPath('data.type', 'image')
+            ->assertJsonPath('data.body', 'Our June offers')
+            ->assertJsonPath('data.status', 'accepted');
+
+        Http::assertSent(fn ($r) => ($r['image']['caption'] ?? null) === 'Our June offers');
+    }
+
+    public function test_reply_media_sends_a_document_with_its_filename(): void
+    {
+        Http::fake([
+            'graph.facebook.com/*/media' => Http::response(['id' => 'DOC_UP_1']),
+            'graph.facebook.com/*/messages' => Http::response(['messaging_product' => 'whatsapp', 'messages' => [['id' => 'wamid.DOC==']]]),
+        ]);
+        $this->actAsAgentWith(['whatsapp.inbox.view', 'whatsapp.inbox.reply']);
+        $conversation = $this->conversationWithInbound('923001234567', 'Hi');
+
+        $file = UploadedFile::fake()->createWithContent('price-list.pdf', '%PDF-1.4 data');
+        $this->post("/api/whatsapp/conversations/{$conversation->id}/reply-media", ['file' => $file])
+            ->assertOk()
+            ->assertJsonPath('data.type', 'document');
+
+        Http::assertSent(fn ($r) => ($r['document']['filename'] ?? null) === 'price-list.pdf');
     }
 
     public function test_media_endpoint_serves_outbound_audio_by_stored_media_id(): void
@@ -393,5 +432,168 @@ class WhatsAppInboxTest extends TestCase
         $response->assertOk();
         $response->assertHeader('Content-Type', 'audio/ogg');
         $this->assertSame('VOICEBYTES', $response->getContent());
+    }
+
+    public function test_reply_to_an_opted_out_customer_is_422_and_sends_nothing(): void
+    {
+        Http::fake();
+        $this->actAsAgentWith(['whatsapp.inbox.view', 'whatsapp.inbox.reply']);
+        $conversation = $this->conversationWithInbound('923001234567', 'Hello'); // window open
+        $conversation->update(['opted_out_at' => now()]);
+
+        $this->postJson("/api/whatsapp/conversations/{$conversation->id}/reply", ['message' => 'Hi'])
+            ->assertStatus(422);
+        Http::assertNothingSent();
+        $this->assertSame(0, WhatsappMessage::where('direction', 'outbound')->count());
+    }
+
+    public function test_reply_media_to_an_opted_out_customer_is_422(): void
+    {
+        Http::fake();
+        $this->actAsAgentWith(['whatsapp.inbox.view', 'whatsapp.inbox.reply']);
+        $conversation = $this->conversationWithInbound('923001234567', 'Hello');
+        $conversation->update(['opted_out_at' => now()]);
+
+        $file = UploadedFile::fake()->createWithContent('voice-note.ogg', 'OggS'.str_repeat('x', 50));
+        $this->post("/api/whatsapp/conversations/{$conversation->id}/reply-media", ['file' => $file])
+            ->assertStatus(422);
+        Http::assertNothingSent();
+    }
+
+    public function test_list_exposes_the_opted_out_flag(): void
+    {
+        $this->actAsAgentWith(['whatsapp.inbox.view']);
+        $optedOut = $this->conversationWithInbound('923001111111', 'STOP');
+        $optedOut->update(['opted_out_at' => now()]);
+        $this->conversationWithInbound('923002222222', 'Hello'); // still subscribed
+
+        $rows = $this->getJson('/api/whatsapp/conversations')->assertOk()->json('data');
+        $this->assertTrue(collect($rows)->firstWhere('wa_id', '923001111111')['opted_out']);
+        $this->assertFalse(collect($rows)->firstWhere('wa_id', '923002222222')['opted_out']);
+    }
+
+    public function test_list_includes_the_matched_patient(): void
+    {
+        $this->actAsAgentWith(['whatsapp.inbox.view']);
+        $patient = Patients::factory()->create(['name' => 'Ayesha Khan', 'phone' => '03001234567']);
+        $conversation = $this->conversationWithInbound('923001234567', 'Hi');
+        $conversation->update(['patient_id' => $patient->id]);
+
+        $row = $this->getJson('/api/whatsapp/conversations')->assertOk()->json('data.0');
+        $this->assertSame($patient->id, $row['patient']['id']);
+        $this->assertSame('Ayesha Khan', $row['patient']['name']);
+    }
+
+    public function test_assign_sets_and_clears_the_assignee(): void
+    {
+        $this->actAsAgentWith(['whatsapp.inbox.view']);
+        $staff = User::factory()->create(['name' => 'Sara CSR']);
+        $conversation = $this->conversationWithInbound('923001234567', 'Hi');
+
+        $this->postJson("/api/whatsapp/conversations/{$conversation->id}/assign", ['assigned_to_id' => $staff->id])
+            ->assertOk()
+            ->assertJsonPath('data.assigned_to.id', $staff->id)
+            ->assertJsonPath('data.assigned_to.name', 'Sara CSR');
+        $this->assertSame($staff->id, $conversation->fresh()->assigned_to_id);
+
+        $this->postJson("/api/whatsapp/conversations/{$conversation->id}/assign", ['assigned_to_id' => null])
+            ->assertOk()
+            ->assertJsonPath('data.assigned_to', null);
+        $this->assertNull($conversation->fresh()->assigned_to_id);
+    }
+
+    public function test_assign_rejects_a_nonexistent_user(): void
+    {
+        $this->actAsAgentWith(['whatsapp.inbox.view']);
+        $conversation = $this->conversationWithInbound('923001234567', 'Hi');
+
+        $this->postJson("/api/whatsapp/conversations/{$conversation->id}/assign", ['assigned_to_id' => 999999])
+            ->assertStatus(422);
+    }
+
+    public function test_list_includes_the_assignee(): void
+    {
+        $this->actAsAgentWith(['whatsapp.inbox.view']);
+        $staff = User::factory()->create(['name' => 'Sara CSR']);
+        $conversation = $this->conversationWithInbound('923001234567', 'Hi');
+        $conversation->update(['assigned_to_id' => $staff->id]);
+
+        $row = $this->getJson('/api/whatsapp/conversations')->assertOk()->json('data.0');
+        $this->assertSame($staff->id, $row['assigned_to']['id']);
+        $this->assertSame('Sara CSR', $row['assigned_to']['name']);
+    }
+
+    public function test_search_filters_by_phone_and_patient_name(): void
+    {
+        $this->actAsAgentWith(['whatsapp.inbox.view']);
+        $patient = Patients::factory()->create(['name' => 'Zara Malik', 'phone' => '03007654321']);
+        $byPatient = $this->conversationWithInbound('923007654321', 'Hi');
+        $byPatient->update(['patient_id' => $patient->id]);
+        $this->conversationWithInbound('923009999999', 'Other'); // filtered out
+
+        $byName = $this->getJson('/api/whatsapp/conversations?search=Zara')->assertOk()->json('data');
+        $this->assertCount(1, $byName);
+        $this->assertSame('923007654321', $byName[0]['wa_id']);
+
+        $byPhone = $this->getJson('/api/whatsapp/conversations?search=7654321')->assertOk()->json('data');
+        $this->assertCount(1, $byPhone);
+        $this->assertSame('923007654321', $byPhone[0]['wa_id']);
+    }
+
+    public function test_resolve_and_reopen_a_conversation(): void
+    {
+        $this->actAsAgentWith(['whatsapp.inbox.view']);
+        $conversation = $this->conversationWithInbound('923001234567', 'Hi');
+
+        $this->postJson("/api/whatsapp/conversations/{$conversation->id}/resolve", ['resolved' => true])
+            ->assertOk()->assertJsonPath('data.resolved', true);
+        $this->assertNotNull($conversation->fresh()->resolved_at);
+
+        $this->postJson("/api/whatsapp/conversations/{$conversation->id}/resolve", ['resolved' => false])
+            ->assertOk()->assertJsonPath('data.resolved', false);
+        $this->assertNull($conversation->fresh()->resolved_at);
+    }
+
+    public function test_resolved_filter_returns_only_resolved(): void
+    {
+        $this->actAsAgentWith(['whatsapp.inbox.view']);
+        $resolved = $this->conversationWithInbound('923001111111', 'Done');
+        $resolved->update(['resolved_at' => now()]);
+        $this->conversationWithInbound('923002222222', 'Open');
+
+        $rows = $this->getJson('/api/whatsapp/conversations?resolved=1')->assertOk()->json('data');
+        $this->assertCount(1, $rows);
+        $this->assertSame('923001111111', $rows[0]['wa_id']);
+    }
+
+    public function test_retry_resends_a_failed_text_message(): void
+    {
+        Http::fake([
+            'graph.facebook.com/*' => Http::response(['messaging_product' => 'whatsapp', 'messages' => [['id' => 'wamid.RETRY_OK==']]]),
+        ]);
+        $this->actAsAgentWith(['whatsapp.inbox.view', 'whatsapp.inbox.reply']);
+        $conversation = $this->conversationWithInbound('923001234567', 'Hi'); // window open
+        $failed = $conversation->messages()->create([
+            'wamid' => null, 'direction' => 'outbound', 'type' => 'text', 'body' => 'See you at 5pm', 'status' => 'failed',
+        ]);
+
+        $this->postJson("/api/whatsapp/conversations/{$conversation->id}/messages/{$failed->id}/retry")
+            ->assertOk()
+            ->assertJsonPath('data.direction', 'outbound')
+            ->assertJsonPath('data.status', 'accepted')
+            ->assertJsonPath('data.body', 'See you at 5pm');
+        Http::assertSent(fn ($r) => ($r['text']['body'] ?? null) === 'See you at 5pm');
+    }
+
+    public function test_retry_requires_the_reply_permission(): void
+    {
+        $this->actAsAgentWith(['whatsapp.inbox.view']);
+        $conversation = $this->conversationWithInbound('923001234567', 'Hi');
+        $failed = $conversation->messages()->create([
+            'wamid' => null, 'direction' => 'outbound', 'type' => 'text', 'body' => 'x', 'status' => 'failed',
+        ]);
+
+        $this->postJson("/api/whatsapp/conversations/{$conversation->id}/messages/{$failed->id}/retry")
+            ->assertStatus(403);
     }
 }

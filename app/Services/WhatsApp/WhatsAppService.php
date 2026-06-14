@@ -61,6 +61,12 @@ class WhatsAppService
 
         $conversation = WhatsappConversation::firstOrCreate(['wa_id' => $waId]);
 
+        if ($conversation->isOptedOut()) {
+            Log::warning('WhatsApp: sendText refused — customer opted out', ['wa_id' => $waId]);
+
+            return null;
+        }
+
         if (! $this->windowIsOpen($conversation)) {
             Log::warning('WhatsApp: sendText refused — 24h service window is closed', [
                 'wa_id' => $waId,
@@ -118,13 +124,19 @@ class WhatsAppService
      *
      * @param  'audio'|'image'|'video'|'document'  $type
      */
-    public function sendMedia(string $waId, string $type, string $binary, string $mime, string $filename): ?WhatsappMessage
+    public function sendMedia(string $waId, string $type, string $binary, string $mime, string $filename, ?string $caption = null): ?WhatsappMessage
     {
         if (! $this->isConfigured()) {
             return null;
         }
 
         $conversation = WhatsappConversation::firstOrCreate(['wa_id' => $waId]);
+
+        if ($conversation->isOptedOut()) {
+            Log::warning('WhatsApp: sendMedia refused — customer opted out', ['wa_id' => $waId]);
+
+            return null;
+        }
 
         if (! $this->windowIsOpen($conversation)) {
             Log::warning('WhatsApp: sendMedia refused — 24h service window is closed', ['wa_id' => $waId]);
@@ -157,11 +169,19 @@ class WhatsAppService
             ]);
         }
 
+        $media = ['id' => $mediaId];
+        if ($type === 'document') {
+            $media['filename'] = $filename;
+        }
+        if ($caption !== null && $caption !== '' && in_array($type, ['image', 'video', 'document'], true)) {
+            $media['caption'] = $caption; // audio/voice notes can't carry a caption
+        }
+
         $response = Http::withToken($this->token)->post("{$base}/messages", [
             'messaging_product' => 'whatsapp',
             'to' => $waId,
             'type' => $type,
-            $type => ['id' => $mediaId],
+            $type => $media,
         ]);
 
         if ($response->failed()) {
@@ -177,7 +197,7 @@ class WhatsAppService
             'wamid' => $response->json('messages.0.id'),
             'direction' => 'outbound',
             'type' => $type,
-            'body' => null,
+            'body' => $caption, // null for voice notes; the caption otherwise
             'status' => $response->successful() ? 'accepted' : 'failed',
             'payload' => ['media_id' => $mediaId] + (array) $response->json(),
         ]);
