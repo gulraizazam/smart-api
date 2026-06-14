@@ -7,6 +7,7 @@ namespace Tests\Feature\WhatsApp;
 use App\Models\User;
 use App\Models\WhatsappConversation;
 use App\Models\WhatsappMessage;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Http;
 use Spatie\Permission\PermissionRegistrar;
 use Tests\Concerns\RefreshTestDatabase as RefreshDatabase;
@@ -201,5 +202,196 @@ class WhatsAppInboxTest extends TestCase
         $this->postJson("/api/whatsapp/conversations/{$conversation->id}/reply", [
             'message' => str_repeat('x', 5000),
         ])->assertStatus(422);
+    }
+
+    public function test_unread_count_returns_latest_inbound_summary_for_notifications(): void
+    {
+        $this->actAsAgentWith(['whatsapp.inbox.view']);
+        $this->conversationWithInbound('923001111111', 'Older message', 30);
+        $newer = $this->conversationWithInbound('923002222222', 'Newest message', 2);
+
+        $response = $this->getJson('/api/whatsapp/conversations/unread-count');
+
+        $response->assertOk();
+        $response->assertJsonPath('data.count', 2);
+        // The notifier keys off the single most recent inbound message.
+        $response->assertJsonPath('data.latest.preview', 'Newest message');
+        $response->assertJsonPath('data.latest.wa_id', '923002222222');
+        $response->assertJsonPath('data.latest.conversation_id', $newer->id);
+    }
+
+    public function test_unread_count_latest_is_null_when_no_inbound_messages_exist(): void
+    {
+        $this->actAsAgentWith(['whatsapp.inbox.view']);
+
+        $this->getJson('/api/whatsapp/conversations/unread-count')
+            ->assertOk()
+            ->assertJsonPath('data.count', 0)
+            ->assertJsonPath('data.latest', null);
+    }
+
+    public function test_show_exposes_a_media_url_for_inbound_media_messages(): void
+    {
+        $this->actAsAgentWith(['whatsapp.inbox.view']);
+        $conversation = WhatsappConversation::create(['wa_id' => '923001234567', 'last_inbound_at' => now()]);
+        $message = $conversation->messages()->create([
+            'wamid' => 'wamid.IMG_RES',
+            'direction' => 'inbound',
+            'type' => 'image',
+            'body' => 'Look at my skin',
+            'status' => 'received',
+            'payload' => ['type' => 'image', 'image' => ['id' => 'MEDIA_RES_1', 'mime_type' => 'image/jpeg']],
+        ]);
+        $text = $conversation->messages()->create([
+            'wamid' => 'wamid.TXT_RES',
+            'direction' => 'inbound',
+            'type' => 'text',
+            'body' => 'plain text',
+            'status' => 'received',
+            'payload' => ['type' => 'text', 'text' => ['body' => 'plain text']],
+        ]);
+
+        $messages = $this->getJson("/api/whatsapp/conversations/{$conversation->id}")
+            ->assertOk()
+            ->json('data.messages');
+
+        $imageRow = collect($messages)->firstWhere('id', $message->id);
+        $textRow = collect($messages)->firstWhere('id', $text->id);
+        $this->assertSame(
+            "/api/whatsapp/conversations/{$conversation->id}/media/{$message->id}",
+            $imageRow['media_url'],
+        );
+        // Text messages must NOT get a media_url.
+        $this->assertNull($textRow['media_url']);
+    }
+
+    public function test_media_endpoint_proxies_the_file_bytes_from_meta(): void
+    {
+        Http::fake([
+            'graph.facebook.com/*' => Http::response([
+                'url' => 'https://lookaside.fbsbx.com/whatsapp/media/abc123',
+                'mime_type' => 'image/jpeg',
+            ]),
+            'lookaside.fbsbx.com/*' => Http::response('BINARYIMAGEBYTES', 200, ['Content-Type' => 'image/jpeg']),
+        ]);
+        $this->actAsAgentWith(['whatsapp.inbox.view']);
+
+        $conversation = WhatsappConversation::create(['wa_id' => '923001234567', 'last_inbound_at' => now()]);
+        $message = $conversation->messages()->create([
+            'wamid' => 'wamid.IMG_PROXY',
+            'direction' => 'inbound',
+            'type' => 'image',
+            'body' => null,
+            'status' => 'received',
+            'payload' => ['type' => 'image', 'image' => ['id' => 'MEDIA_PROXY_1', 'mime_type' => 'image/jpeg']],
+        ]);
+
+        $response = $this->get("/api/whatsapp/conversations/{$conversation->id}/media/{$message->id}");
+
+        $response->assertOk();
+        $response->assertHeader('Content-Type', 'image/jpeg');
+        $this->assertSame('BINARYIMAGEBYTES', $response->getContent());
+    }
+
+    public function test_media_endpoint_is_permission_gated(): void
+    {
+        $this->actAsAgentWith([]); // authenticated but no whatsapp.inbox.view
+        $conversation = WhatsappConversation::create(['wa_id' => '923001234567', 'last_inbound_at' => now()]);
+        $message = $conversation->messages()->create([
+            'wamid' => 'wamid.IMG_GATE',
+            'direction' => 'inbound',
+            'type' => 'image',
+            'status' => 'received',
+            'payload' => ['type' => 'image', 'image' => ['id' => 'MEDIA_GATE_1']],
+        ]);
+
+        $this->get("/api/whatsapp/conversations/{$conversation->id}/media/{$message->id}")
+            ->assertStatus(403);
+    }
+
+    public function test_reply_media_uploads_and_sends_a_voice_note_inside_the_window(): void
+    {
+        Http::fake([
+            'graph.facebook.com/*/media' => Http::response(['id' => 'UPLOAD_MEDIA_1']),
+            'graph.facebook.com/*/messages' => Http::response([
+                'messaging_product' => 'whatsapp',
+                'messages' => [['id' => 'wamid.VN_1']],
+            ]),
+        ]);
+        $this->actAsAgentWith(['whatsapp.inbox.view', 'whatsapp.inbox.reply']);
+        $conversation = $this->conversationWithInbound('923001234567', 'Hello');
+
+        // Real bytes — a zero-byte fake trips attach()'s array_filter (drops empty contents).
+        $file = UploadedFile::fake()->createWithContent('voice-note.ogg', 'OggS'.str_repeat('x', 200));
+        $response = $this->post("/api/whatsapp/conversations/{$conversation->id}/reply-media", ['file' => $file]);
+
+        $response->assertOk();
+        $response->assertJsonPath('data.direction', 'outbound');
+        $response->assertJsonPath('data.type', 'audio');
+        $response->assertJsonPath('data.status', 'accepted');
+
+        // The sent voice note exposes a playback URL and stores the uploaded media id.
+        $msgId = $response->json('data.id');
+        $this->assertSame(
+            "/api/whatsapp/conversations/{$conversation->id}/media/{$msgId}",
+            $response->json('data.media_url'),
+        );
+        $this->assertSame('UPLOAD_MEDIA_1', WhatsappMessage::find($msgId)->payload['media_id']);
+        Http::assertSentCount(2); // upload + send
+    }
+
+    public function test_reply_media_outside_window_is_422_and_sends_nothing(): void
+    {
+        Http::fake();
+        $this->actAsAgentWith(['whatsapp.inbox.view', 'whatsapp.inbox.reply']);
+        $conversation = $this->conversationWithInbound('923001234567', 'Old', 25 * 60);
+
+        $file = UploadedFile::fake()->create('voice-note.ogg', 12, 'audio/ogg');
+        $this->post("/api/whatsapp/conversations/{$conversation->id}/reply-media", ['file' => $file])
+            ->assertStatus(422);
+        Http::assertNothingSent();
+    }
+
+    public function test_reply_media_requires_the_reply_permission(): void
+    {
+        $this->actAsAgentWith(['whatsapp.inbox.view']);
+        $conversation = $this->conversationWithInbound('923001234567', 'Hello');
+
+        $file = UploadedFile::fake()->create('voice-note.ogg', 12, 'audio/ogg');
+        $this->post("/api/whatsapp/conversations/{$conversation->id}/reply-media", ['file' => $file])
+            ->assertStatus(403);
+    }
+
+    public function test_reply_media_rejects_a_non_audio_file(): void
+    {
+        $this->actAsAgentWith(['whatsapp.inbox.view', 'whatsapp.inbox.reply']);
+        $conversation = $this->conversationWithInbound('923001234567', 'Hello');
+
+        $file = UploadedFile::fake()->create('not-audio.txt', 4, 'text/plain');
+        $this->post("/api/whatsapp/conversations/{$conversation->id}/reply-media", ['file' => $file])
+            ->assertStatus(422);
+    }
+
+    public function test_media_endpoint_serves_outbound_audio_by_stored_media_id(): void
+    {
+        Http::fake([
+            'graph.facebook.com/*' => Http::response(['url' => 'https://lookaside.fbsbx.com/voice', 'mime_type' => 'audio/ogg']),
+            'lookaside.fbsbx.com/*' => Http::response('VOICEBYTES', 200, ['Content-Type' => 'audio/ogg']),
+        ]);
+        $this->actAsAgentWith(['whatsapp.inbox.view']);
+        $conversation = WhatsappConversation::create(['wa_id' => '923001234567', 'last_inbound_at' => now()]);
+        $message = $conversation->messages()->create([
+            'wamid' => 'wamid.VN_OUT',
+            'direction' => 'outbound',
+            'type' => 'audio',
+            'status' => 'accepted',
+            'payload' => ['media_id' => 'OUT_MEDIA_1'],
+        ]);
+
+        $response = $this->get("/api/whatsapp/conversations/{$conversation->id}/media/{$message->id}");
+
+        $response->assertOk();
+        $response->assertHeader('Content-Type', 'audio/ogg');
+        $this->assertSame('VOICEBYTES', $response->getContent());
     }
 }

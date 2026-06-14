@@ -146,6 +146,72 @@ class WhatsAppWebhookTest extends TestCase
         $this->assertSame('delivered', WhatsappMessage::where('wamid', 'wamid.TEST_OUTBOUND_1==')->value('status'));
     }
 
+    public function test_inbound_image_stores_type_and_caption_as_body(): void
+    {
+        $this->postSigned([
+            'object' => 'whatsapp_business_account',
+            'entry' => [[
+                'id' => 'WABA_ID',
+                'changes' => [[
+                    'field' => 'messages',
+                    'value' => [
+                        'messaging_product' => 'whatsapp',
+                        'metadata' => ['display_phone_number' => '15550000000', 'phone_number_id' => '111222333'],
+                        'contacts' => [['profile' => ['name' => 'Test Patient'], 'wa_id' => '923001234567']],
+                        'messages' => [[
+                            'from' => '923001234567',
+                            'id' => 'wamid.IMG_IN==',
+                            'timestamp' => (string) now()->timestamp,
+                            'type' => 'image',
+                            'image' => [
+                                'id' => 'MEDIA_IN_1',
+                                'mime_type' => 'image/jpeg',
+                                'caption' => 'Here is my skin concern',
+                            ],
+                        ]],
+                    ],
+                ]],
+            ]],
+        ])->assertOk();
+
+        $message = WhatsappMessage::where('wamid', 'wamid.IMG_IN==')->first();
+        $this->assertNotNull($message);
+        $this->assertSame('image', $message->type);
+        // Caption is preserved as the displayable body; the media id stays in payload.
+        $this->assertSame('Here is my skin concern', $message->body);
+        $this->assertSame('MEDIA_IN_1', $message->payload['image']['id']);
+    }
+
+    public function test_inbound_audio_without_caption_stores_null_body(): void
+    {
+        $this->postSigned([
+            'object' => 'whatsapp_business_account',
+            'entry' => [[
+                'id' => 'WABA_ID',
+                'changes' => [[
+                    'field' => 'messages',
+                    'value' => [
+                        'messaging_product' => 'whatsapp',
+                        'metadata' => ['display_phone_number' => '15550000000', 'phone_number_id' => '111222333'],
+                        'contacts' => [['profile' => ['name' => 'Test Patient'], 'wa_id' => '923001234567']],
+                        'messages' => [[
+                            'from' => '923001234567',
+                            'id' => 'wamid.AUDIO_IN==',
+                            'timestamp' => (string) now()->timestamp,
+                            'type' => 'audio',
+                            'audio' => ['id' => 'MEDIA_AUDIO_1', 'mime_type' => 'audio/ogg', 'voice' => true],
+                        ]],
+                    ],
+                ]],
+            ]],
+        ])->assertOk();
+
+        $message = WhatsappMessage::where('wamid', 'wamid.AUDIO_IN==')->first();
+        $this->assertNotNull($message);
+        $this->assertSame('audio', $message->type);
+        $this->assertNull($message->body);
+    }
+
     /**
      * POST the payload signed the way Meta signs it: X-Hub-Signature-256 =
      * sha256 HMAC of the raw JSON body, keyed with the app secret.
