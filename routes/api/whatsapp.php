@@ -22,10 +22,16 @@ Route::prefix('whatsapp')->name('whatsapp.')
             ->name('conversations.unread_count');
         Route::get('conversations/{id}', [WhatsAppInboxController::class, 'show'])
             ->whereNumber('id')->name('conversations.show');
+        Route::get('conversations/{id}/media/{messageId}', [WhatsAppInboxController::class, 'media'])
+            ->whereNumber('id')->whereNumber('messageId')->name('conversations.media');
         Route::post('conversations/{id}/read', [WhatsAppInboxController::class, 'markRead'])
             ->whereNumber('id')->name('conversations.read');
         Route::post('conversations/{id}/reply', [WhatsAppInboxController::class, 'reply'])
             ->whereNumber('id')
             ->middleware(['permission:whatsapp.inbox.reply', 'throttle:60,1'])
             ->name('conversations.reply');
+        Route::post('conversations/{id}/reply-media', [WhatsAppInboxController::class, 'replyMedia'])
+            ->whereNumber('id')
+            ->middleware(['permission:whatsapp.inbox.reply', 'throttle:30,1'])
+            ->name('conversations.reply_media');
     });

@@ -13,6 +13,7 @@ use App\Models\WhatsappMessage;
 use App\Services\WhatsApp\WhatsAppService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 
 /**
  * Team-facing WhatsApp inbox (Phase 2) — list conversations, read a thread,
@@ -54,12 +55,29 @@ class WhatsAppInboxController extends Controller
     }
 
     /**
-     * Count of conversations with unread inbound messages — the sidebar badge.
+     * Count of conversations with unread inbound messages (the sidebar badge)
+     * plus a summary of the single most recent inbound message. The SPA polls
+     * this app-wide and uses `latest.message_id` as the change signal that
+     * drives the desktop notification + sound — so one cheap poll feeds the
+     * badge, the tab-title count, and the alert.
      */
     public function unreadCount(): JsonResponse
     {
+        $latest = WhatsappMessage::query()
+            ->where('direction', 'inbound')
+            ->with('conversation:id,wa_id,profile_name')
+            ->latest('id')
+            ->first();
+
         return $this->successResponse('Unread conversations', [
             'count' => WhatsappConversation::unread()->count(),
+            'latest' => $latest?->conversation ? [
+                'message_id' => $latest->id,
+                'conversation_id' => $latest->conversation->id,
+                'wa_id' => $latest->conversation->wa_id,
+                'profile_name' => $latest->conversation->profile_name,
+                'preview' => $latest->body,
+            ] : null,
         ]);
     }
 
@@ -112,5 +130,88 @@ class WhatsAppInboxController extends Controller
         $conversation->update(['last_read_at' => now()]);
 
         return $this->successResponse('Reply sent', new WhatsappMessageResource($message));
+    }
+
+    /**
+     * Reply with a voice note (or other media). The recorded file is uploaded
+     * to Meta and sent as an audio message — gated by whatsapp.inbox.reply and
+     * the 24h window, exactly like a text reply.
+     */
+    public function replyMedia(Request $request, int $id): JsonResponse
+    {
+        $request->validate([
+            'file' => ['required', 'file', 'max:16384'], // 16 MB — WhatsApp's audio ceiling
+        ]);
+
+        // Content-sniffing (mimetypes:) is unreliable for opus-ogg (finfo often
+        // reports application/ogg) and untestable with faked files, so gate on
+        // the declared audio type. Low risk: the route is staff-only and the
+        // bytes are forwarded to Meta, which validates the media itself.
+        $file = $request->file('file');
+        $mime = (string) $file->getClientMimeType();
+        if (! str_starts_with($mime, 'audio/') && $mime !== 'application/ogg') {
+            return $this->errorResponse('Only audio voice notes can be sent here.', 422);
+        }
+
+        $conversation = WhatsappConversation::findOrFail($id);
+
+        if (! $conversation->windowIsOpen()) {
+            return $this->errorResponse(
+                'The 24-hour reply window is closed. It reopens when the customer messages again.',
+                422,
+            );
+        }
+
+        // opus-recorder always produces ogg/opus — the format WhatsApp renders
+        // as a playable voice note. Send it as audio/ogg regardless of how
+        // finfo labels the temp file.
+        $message = $this->whatsApp->sendMedia(
+            $conversation->wa_id,
+            'audio',
+            (string) file_get_contents($file->getRealPath()),
+            'audio/ogg',
+            'voice-note.ogg',
+        );
+
+        if ($message === null) {
+            return $this->errorResponse('WhatsApp is not configured on the server.', 503);
+        }
+
+        $conversation->update(['last_read_at' => now()]);
+
+        return $this->successResponse('Voice note sent', new WhatsappMessageResource($message));
+    }
+
+    /**
+     * Stream a media file (image/voice note/video/document) for the inbox —
+     * inbound attachments AND the team's own outbound voice notes (for
+     * playback). Meta media URLs are short-lived and bearer-auth'd, so the SPA
+     * can't load them directly; this proxies the bytes through our own
+     * permission-gated endpoint. Media older than ~30 days is purged by Meta
+     * and returns 502.
+     */
+    public function media(int $id, int $messageId): Response|JsonResponse
+    {
+        $conversation = WhatsappConversation::findOrFail($id);
+
+        /** @var WhatsappMessage $message */
+        $message = $conversation->messages()->whereKey($messageId)->firstOrFail();
+
+        // Inbound media stores the id under the type key; outbound (our send)
+        // stores the uploaded media id flat as `media_id`.
+        $mediaId = $message->payload[$message->type]['id'] ?? $message->payload['media_id'] ?? null;
+        if ($mediaId === null) {
+            return $this->errorResponse('This message has no downloadable media.', 404);
+        }
+
+        $media = $this->whatsApp->fetchMedia((string) $mediaId);
+        if ($media === null) {
+            return $this->errorResponse('Media is unavailable — it may have expired on WhatsApp.', 502);
+        }
+
+        return response($media['body'], 200, [
+            'Content-Type' => $media['mime'],
+            'Cache-Control' => 'private, max-age=86400',
+        ]);
     }
 }

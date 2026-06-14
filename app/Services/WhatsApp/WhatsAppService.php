@@ -108,6 +108,125 @@ class WhatsAppService
         ]);
     }
 
+    /**
+     * Send an outbound media message (voice note / image / video / document).
+     * Two hops: upload the bytes to Meta's media endpoint for a media id, then
+     * send a message referencing it. Window-gated exactly like sendText —
+     * media replies are only allowed inside the 24h service window. The stored
+     * outbound row keeps the media id in its payload so the inbox can play the
+     * file back through the media proxy.
+     *
+     * @param  'audio'|'image'|'video'|'document'  $type
+     */
+    public function sendMedia(string $waId, string $type, string $binary, string $mime, string $filename): ?WhatsappMessage
+    {
+        if (! $this->isConfigured()) {
+            return null;
+        }
+
+        $conversation = WhatsappConversation::firstOrCreate(['wa_id' => $waId]);
+
+        if (! $this->windowIsOpen($conversation)) {
+            Log::warning('WhatsApp: sendMedia refused — 24h service window is closed', ['wa_id' => $waId]);
+
+            return null;
+        }
+
+        $base = 'https://graph.facebook.com/'.config('whatsapp.api_version')."/{$this->phoneNumberId}";
+
+        $upload = Http::withToken($this->token)
+            ->attach('file', $binary, $filename, ['Content-Type' => $mime])
+            ->post("{$base}/media", ['messaging_product' => 'whatsapp', 'type' => $mime]);
+
+        $mediaId = $upload->json('id');
+
+        if ($upload->failed() || ! is_string($mediaId) || $mediaId === '') {
+            Log::error('WhatsApp: media upload failed', [
+                'wa_id' => $waId,
+                'type' => $type,
+                'http_status' => $upload->status(),
+            ]);
+
+            return $conversation->messages()->create([
+                'wamid' => null,
+                'direction' => 'outbound',
+                'type' => $type,
+                'body' => null,
+                'status' => 'failed',
+                'payload' => ['error' => 'upload_failed', 'response' => $upload->json()],
+            ]);
+        }
+
+        $response = Http::withToken($this->token)->post("{$base}/messages", [
+            'messaging_product' => 'whatsapp',
+            'to' => $waId,
+            'type' => $type,
+            $type => ['id' => $mediaId],
+        ]);
+
+        if ($response->failed()) {
+            Log::error('WhatsApp: media send failed', [
+                'wa_id' => $waId,
+                'type' => $type,
+                'http_status' => $response->status(),
+                'response' => $response->json(),
+            ]);
+        }
+
+        return $conversation->messages()->create([
+            'wamid' => $response->json('messages.0.id'),
+            'direction' => 'outbound',
+            'type' => $type,
+            'body' => null,
+            'status' => $response->successful() ? 'accepted' : 'failed',
+            'payload' => ['media_id' => $mediaId] + (array) $response->json(),
+        ]);
+    }
+
+    /**
+     * Resolve and download an inbound media object by its Meta media id.
+     * Two hops, both bearer-auth'd: GET /{media-id} returns a short-lived
+     * signed URL; GET that URL returns the bytes. Returns the binary + its
+     * mime type, or null when not configured / Meta refused / media expired.
+     *
+     * @return array{body: string, mime: string}|null
+     */
+    public function fetchMedia(string $mediaId): ?array
+    {
+        if (! $this->isConfigured()) {
+            return null;
+        }
+
+        $apiVersion = config('whatsapp.api_version');
+        $meta = Http::withToken($this->token)->get("https://graph.facebook.com/{$apiVersion}/{$mediaId}");
+        $url = $meta->json('url');
+
+        if ($meta->failed() || ! is_string($url) || $url === '') {
+            Log::error('WhatsApp: media URL resolve failed', [
+                'media_id' => $mediaId,
+                'http_status' => $meta->status(),
+            ]);
+
+            return null;
+        }
+
+        $binary = Http::withToken($this->token)->get($url);
+
+        if ($binary->failed()) {
+            Log::error('WhatsApp: media download failed', [
+                'media_id' => $mediaId,
+                'http_status' => $binary->status(),
+            ]);
+
+            return null;
+        }
+
+        return [
+            'body' => $binary->body(),
+            'mime' => $meta->json('mime_type') ?: ($binary->header('Content-Type') ?: 'application/octet-stream'),
+        ];
+    }
+
     protected function isConfigured(): bool
     {
         if (empty($this->token) || empty($this->phoneNumberId)) {

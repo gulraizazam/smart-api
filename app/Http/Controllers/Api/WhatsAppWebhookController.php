@@ -128,7 +128,7 @@ class WhatsAppWebhookController extends Controller
                     'wamid' => $wamid,
                     'direction' => 'inbound',
                     'type' => $message['type'] ?? 'unknown',
-                    'body' => $message['text']['body'] ?? null,
+                    'body' => $this->messageBody($message),
                     'status' => 'received',
                     'payload' => $message,
                 ]);
@@ -147,6 +147,23 @@ class WhatsAppWebhookController extends Controller
                     : now(),
             ]);
         }
+    }
+
+    /**
+     * Display text for a stored inbound message: the text body, else a media
+     * caption when the customer attached one (image/video/document carry an
+     * optional caption; audio/voice/sticker don't). Null when neither is
+     * present — the SPA then renders the media itself plus a type label.
+     */
+    private function messageBody(array $message): ?string
+    {
+        if (isset($message['text']['body'])) {
+            return $message['text']['body'];
+        }
+
+        $type = $message['type'] ?? null;
+
+        return $type !== null ? ($message[$type]['caption'] ?? null) : null;
     }
 
     /**
