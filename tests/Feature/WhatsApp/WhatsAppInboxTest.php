@@ -380,6 +380,41 @@ class WhatsAppInboxTest extends TestCase
         $this->assertSame(0, $row['unread_count']);
     }
 
+    public function test_mark_read_sends_a_read_receipt_to_meta(): void
+    {
+        Http::fake(['graph.facebook.com/*' => Http::response(['success' => true])]);
+        $this->actAsAgentWith(['whatsapp.inbox.view']);
+        $conversation = $this->conversationWithInbound('923001234567', 'Hello');
+
+        $this->postJson("/api/whatsapp/conversations/{$conversation->id}/read")->assertOk();
+
+        // The customer sees blue ticks: a status=read POST for the inbound wamid.
+        Http::assertSent(fn ($r) => str_contains($r->url(), '/messages')
+            && $r['status'] === 'read'
+            && str_starts_with($r['message_id'], 'wamid.IN_'));
+    }
+
+    public function test_typing_sends_the_typing_indicator(): void
+    {
+        Http::fake(['graph.facebook.com/*' => Http::response(['success' => true])]);
+        $this->actAsAgentWith(['whatsapp.inbox.view', 'whatsapp.inbox.reply']);
+        $conversation = $this->conversationWithInbound('923001234567', 'Hello');
+
+        $this->postJson("/api/whatsapp/conversations/{$conversation->id}/typing")->assertOk();
+
+        Http::assertSent(fn ($r) => str_contains($r->url(), '/messages')
+            && $r['status'] === 'read'
+            && ($r['typing_indicator']['type'] ?? null) === 'text');
+    }
+
+    public function test_typing_requires_the_reply_permission(): void
+    {
+        $this->actAsAgentWith(['whatsapp.inbox.view']);
+        $conversation = $this->conversationWithInbound('923001234567', 'Hello');
+
+        $this->postJson("/api/whatsapp/conversations/{$conversation->id}/typing")->assertStatus(403);
+    }
+
     public function test_reply_requires_the_reply_permission(): void
     {
         $this->actAsAgentWith(['whatsapp.inbox.view']);

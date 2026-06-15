@@ -49,6 +49,8 @@ Route::prefix('whatsapp')->name('whatsapp.')
             ->whereNumber('id')->name('conversations.read');
         Route::post('conversations/{id}/unread', [WhatsAppInboxController::class, 'markUnread'])
             ->whereNumber('id')->name('conversations.unread');
+        Route::post('conversations/{id}/typing', [WhatsAppInboxController::class, 'typing'])
+            ->whereNumber('id')->middleware(['permission:whatsapp.inbox.reply', 'throttle:30,1'])->name('conversations.typing');
         Route::post('conversations/{id}/assign', [WhatsAppInboxController::class, 'assign'])
             ->whereNumber('id')->middleware('throttle:60,1')->name('conversations.assign');
         Route::post('conversations/{id}/resolve', [WhatsAppInboxController::class, 'resolve'])
