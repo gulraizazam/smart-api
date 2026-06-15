@@ -85,8 +85,19 @@ class WhatsAppServiceTest extends TestCase
         Http::assertNothingSent();
     }
 
-    public function test_send_template_is_allowed_outside_the_window(): void
+    public function test_send_template_is_refused_by_the_free_tier_backstop(): void
     {
+        Http::fake();
+        WhatsappConversation::create(['wa_id' => '923001234567', 'last_inbound_at' => now()->subDays(3)]);
+
+        // free_tier_only defaults true — templates (the paid surface) are blocked.
+        $this->assertNull((new WhatsAppService)->sendTemplate('923001234567', 'appointment_reminder'));
+        Http::assertNothingSent();
+    }
+
+    public function test_send_template_is_allowed_when_free_tier_is_deliberately_off(): void
+    {
+        config(['whatsapp.free_tier_only' => false]); // deliberate opt-in to paid templates
         Http::fake([
             'graph.facebook.com/*' => Http::response([
                 'messaging_product' => 'whatsapp',
