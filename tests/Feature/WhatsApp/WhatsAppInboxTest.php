@@ -505,6 +505,47 @@ class WhatsAppInboxTest extends TestCase
         $this->assertNotNull($conversation->fresh()->last_read_at);
     }
 
+    public function test_reply_can_quote_an_earlier_message(): void
+    {
+        Http::fake([
+            'graph.facebook.com/*' => Http::response([
+                'messaging_product' => 'whatsapp',
+                'messages' => [['id' => 'wamid.QREPLY_1==']],
+            ]),
+        ]);
+        $this->actAsAgentWith(['whatsapp.inbox.view', 'whatsapp.inbox.reply']);
+        $conversation = $this->conversationWithInbound('923001234567', 'Can I book?');
+        $quoted = 'wamid.IN_923001234567_5';
+
+        $response = $this->postJson("/api/whatsapp/conversations/{$conversation->id}/reply", [
+            'message' => 'Yes — 5pm works.',
+            'reply_to_wamid' => $quoted,
+        ]);
+
+        $response->assertOk();
+        // The stored outbound exposes reply_to so the SPA can render the quote.
+        $this->assertSame($quoted, $response->json('data.reply_to'));
+        // Meta received the quote context referencing that message.
+        Http::assertSent(fn ($r) => str_contains($r->url(), '/messages')
+            && ($r['context']['message_id'] ?? null) === $quoted);
+    }
+
+    public function test_reply_rejects_a_quoted_wamid_not_in_this_thread(): void
+    {
+        Http::fake();
+        $this->actAsAgentWith(['whatsapp.inbox.view', 'whatsapp.inbox.reply']);
+        $conversation = $this->conversationWithInbound('923001234567', 'Hello');
+
+        // Quoting a message that isn't in this conversation is rejected before
+        // anything is sent.
+        $this->postJson("/api/whatsapp/conversations/{$conversation->id}/reply", [
+            'message' => 'Quoting a stranger',
+            'reply_to_wamid' => 'wamid.FROM_ANOTHER_CHAT',
+        ])->assertStatus(422);
+
+        Http::assertNothingSent();
+    }
+
     public function test_reply_outside_window_is_422_and_sends_nothing(): void
     {
         Http::fake();

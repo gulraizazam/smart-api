@@ -54,8 +54,9 @@ class WhatsAppService
     /**
      * Send a free-form text message. Refused (returns null, no API call) when
      * the 24h window is closed — use sendTemplate() instead in that case.
+     * Pass $replyToWamid to quote (reply to) an earlier message in the thread.
      */
-    public function sendText(string $waId, string $text): ?WhatsappMessage
+    public function sendText(string $waId, string $text, ?string $replyToWamid = null): ?WhatsappMessage
     {
         if (! $this->isConfigured()) {
             return null;
@@ -78,12 +79,18 @@ class WhatsAppService
             return null;
         }
 
-        return $this->dispatch($conversation, 'text', $text, [
+        $payload = [
             'messaging_product' => 'whatsapp',
             'to' => $waId,
             'type' => 'text',
             'text' => ['body' => $text],
-        ]);
+        ];
+
+        if ($replyToWamid !== null && $replyToWamid !== '') {
+            $payload['context'] = ['message_id' => $replyToWamid];
+        }
+
+        return $this->dispatch($conversation, 'text', $text, $payload);
     }
 
     /**
@@ -432,13 +439,22 @@ class WhatsAppService
             ]);
         }
 
+        $stored = (array) $response->json();
+
+        // The Meta send-response omits the quoted-message context we sent, so
+        // preserve it (normalised to the inbound `context.id` shape the resource
+        // reads) — this is what marks the outbound message as a reply.
+        if (isset($payload['context']['message_id'])) {
+            $stored['context'] = ['id' => $payload['context']['message_id']];
+        }
+
         return $conversation->messages()->create([
             'wamid' => $response->json('messages.0.id'),
             'direction' => 'outbound',
             'type' => $type,
             'body' => $body,
             'status' => $response->successful() ? 'accepted' : 'failed',
-            'payload' => $response->json(),
+            'payload' => $stored,
         ]);
     }
 }

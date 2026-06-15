@@ -384,7 +384,11 @@ class WhatsAppInboxController extends Controller
             );
         }
 
-        $message = $this->whatsApp->sendText($conversation->wa_id, $request->validated()['message']);
+        $message = $this->whatsApp->sendText(
+            $conversation->wa_id,
+            $request->validated()['message'],
+            $request->validated()['reply_to_wamid'] ?? null,
+        );
 
         if ($message === null) {
             return $this->errorResponse('WhatsApp is not configured on the server.', 503);
