@@ -104,9 +104,7 @@ class WhatsAppInboxController extends Controller
             ->first();
 
         return $this->successResponse('Unread conversations', [
-            'count' => WhatsappConversation::unread()
-                ->whereDoesntHave('tags', fn ($t) => $t->where('is_muting', true))
-                ->count(),
+            'count' => $notMuted(WhatsappConversation::unread())->count(),
             'latest' => $latest?->conversation ? [
                 'message_id' => $latest->id,
                 'conversation_id' => $latest->conversation->id,

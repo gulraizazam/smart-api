@@ -3545,7 +3545,9 @@ CREATE TABLE `whatsapp_messages` (
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `whatsapp_messages_wamid_unique` (`wamid`),
-  KEY `wa_messages_conv_created` (`whatsapp_conversation_id`,`created_at`)
+  KEY `wa_messages_conv_created` (`whatsapp_conversation_id`,`created_at`),
+  KEY `wa_messages_direction_created` (`direction`,`created_at`),
+  KEY `wa_messages_direction_status_updated` (`direction`,`status`,`updated_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 SET FOREIGN_KEY_CHECKS=1;
