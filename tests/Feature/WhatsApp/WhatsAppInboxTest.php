@@ -350,6 +350,36 @@ class WhatsAppInboxTest extends TestCase
         $this->assertSame(0, $this->getJson('/api/whatsapp/conversations/unread-count')->json('data.count'));
     }
 
+    public function test_mark_unread_reflags_a_read_conversation(): void
+    {
+        $this->actAsAgentWith(['whatsapp.inbox.view']);
+        $conversation = $this->conversationWithInbound('923001234567', 'Hello');
+        // Read it first → 0 unread.
+        $this->postJson("/api/whatsapp/conversations/{$conversation->id}/read")->assertOk();
+        $row = collect($this->getJson('/api/whatsapp/conversations')->json('data'))->firstWhere('id', $conversation->id);
+        $this->assertSame(0, $row['unread_count']);
+
+        // Mark unread → the latest inbound counts again (badge = 1).
+        $this->postJson("/api/whatsapp/conversations/{$conversation->id}/unread")->assertOk();
+        $row = collect($this->getJson('/api/whatsapp/conversations')->json('data'))->firstWhere('id', $conversation->id);
+        $this->assertSame(1, $row['unread_count']);
+        $this->assertSame(1, $this->getJson('/api/whatsapp/conversations/unread-count')->json('data.count'));
+    }
+
+    public function test_mark_unread_is_a_no_op_when_there_is_no_inbound_message(): void
+    {
+        $this->actAsAgentWith(['whatsapp.inbox.view']);
+        // Outbound-only conversation: nothing inbound to flag unread.
+        $conversation = WhatsappConversation::create(['wa_id' => '923009999999', 'profile_name' => 'X']);
+        $conversation->messages()->create([
+            'wamid' => 'wamid.OUT==', 'direction' => 'outbound', 'type' => 'text', 'body' => 'Hi', 'status' => 'sent',
+        ]);
+
+        $this->postJson("/api/whatsapp/conversations/{$conversation->id}/unread")->assertOk();
+        $row = collect($this->getJson('/api/whatsapp/conversations')->json('data'))->firstWhere('id', $conversation->id);
+        $this->assertSame(0, $row['unread_count']);
+    }
+
     public function test_reply_requires_the_reply_permission(): void
     {
         $this->actAsAgentWith(['whatsapp.inbox.view']);
