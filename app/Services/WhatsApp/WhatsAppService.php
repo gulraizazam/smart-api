@@ -92,6 +92,17 @@ class WhatsAppService
      */
     public function sendTemplate(string $waId, string $templateName, string $language = 'en', array $components = []): ?WhatsappMessage
     {
+        // Free-tier backstop: templates are the only PAID surface. Refuse them
+        // unless free-tier mode has been deliberately turned off.
+        if (config('whatsapp.free_tier_only')) {
+            Log::warning('WhatsApp: sendTemplate refused — free_tier_only is on (paid templates disabled)', [
+                'wa_id' => $waId,
+                'template' => $templateName,
+            ]);
+
+            return null;
+        }
+
         if (! $this->isConfigured()) {
             return null;
         }

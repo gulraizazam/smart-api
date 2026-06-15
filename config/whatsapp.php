@@ -42,4 +42,11 @@ return [
     // (E.164, e.g. 923001234567) against locally-stored phones (0300…).
     'country_code' => env('WHATSAPP_COUNTRY_CODE', '92'),
 
+    // Free-tier backstop: when true (default), WhatsAppService refuses to send
+    // template messages (the only PAID surface) — a permanent guard so paid
+    // sends are impossible even if a future endpoint/UI wires sendTemplate().
+    // Flip to false (env WHATSAPP_FREE_TIER_ONLY=false) only as a deliberate
+    // decision to start using paid templates.
+    'free_tier_only' => (bool) env('WHATSAPP_FREE_TIER_ONLY', true),
+
 ];
