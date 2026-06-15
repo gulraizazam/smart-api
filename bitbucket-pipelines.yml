@@ -78,14 +78,14 @@ definitions:
             bash scripts/test-sync-check.sh "$BASE"
             bash scripts/guidelines-check.sh "$BASE"     # GUIDELINES.md machine-checkable PHP rules
 
-    # ---------- Quality: diff-coverage + mutation (Infection) ----------
-    # MANUAL + tolerant (|| true) while we CALIBRATE: the first run reports the real
-    # mutation score / diff-coverage so we can set infection.json5 thresholds. Once
-    # calibrated: remove the `|| true`, drop `trigger: manual`, and add `*quality`
-    # to the branch pipelines to make it GATING. Needs a coverage driver -> pcov.
+    # ---------- Quality: diff-coverage + mutation (Infection) -- GATING ----------
+    # Promoted from manual+tolerant 2026-06-10 (TESTING.md DoD item 6 is now enforced
+    # in CI, not just on paper). diff-cover gates at a fixed 90% of changed lines.
+    # Infection gates at the BOOTSTRAP FLOOR in infection.json5 -- the first green
+    # run reports the real MSI; ratchet the thresholds up to just below it, then
+    # never down. Needs a coverage driver -> pcov (installed below).
     - step: &quality
-        name: 'Quality: diff-cover + mutation (manual; calibrate then gate)'
-        trigger: manual
+        name: 'Quality: diff-cover + mutation (gating)'
         caches: [composer]
         services: [mariadb]
         script:
@@ -129,8 +129,8 @@ definitions:
             fi
           - php artisan migrate --database=mariadb_testing --force
           - git fetch --no-tags --depth=200 origin backend || true
-          - composer test:diff-cover || true   # changed lines covered (calibrate, then make strict)
-          - composer test:mutation  || true   # Infection on critical modules (calibrate minCoveredMsi, then strict)
+          - composer test:diff-cover   # changed lines must be covered (gate: 90%)
+          - composer test:mutation     # Infection on critical modules (gate: infection.json5 thresholds)
 
     # ---------- Deploy over SSH (assets are committed -> no npm build) ----------
     - step: &deploy
@@ -192,8 +192,8 @@ pipelines:
     backend:
       - step: *ci
       - step: *gates
-      # Manual quality gate (diff-cover + mutation). Trigger to calibrate, then
-      # promote to a gating step (see &quality note).
+      # Gating quality step (diff-cover + mutation) -- runs automatically; the
+      # first green run calibrates the Infection ratchet (see &quality note).
       - step: *quality
 
     # === Integration / dev branches: test only, never deploy ===

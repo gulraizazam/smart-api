@@ -80,7 +80,7 @@
             "@php -d memory_limit=-1 vendor/bin/pest --coverage-clover=build/coverage.xml",
             "diff-cover build/coverage.xml --compare-branch origin/backend --fail-under 90"
         ],
-        "test:mutation": "vendor/bin/infection --filter=app/Services/CashFlow/MovementService.php,app/Support/OperatingDays.php,app/Helpers/BundleHelper.php,app/Models/Bundles.php,app/Services/Plan/PlanDiscountService.php --threads=4 --no-progress"
+        "test:mutation": "vendor/bin/infection --filter=app/Services/CashFlow/MovementService.php,app/Support/OperatingDays.php,app/Helpers/BundleHelper.php,app/Models/Bundles.php,app/Services/Plan/PlanDiscountService.php --threads=1 --no-progress"
     },
     "extra": {
         "laravel": {

@@ -36,6 +36,10 @@ declared) so it is gated on **every push**; the full HTTP/multi-app check stays 
 
 ## 2. The change→test map — what to write when
 
+<!-- TESTING-SYNC:BEGIN -- shared cross-repo test contract: byte-identical in ../frontend/TESTING.md, enforced by scripts/check-guidelines-sync.sh. Edit BOTH. -->
+**Extend before create — the anti-bloat rule.** If a test file for the subject already exists, new or changed behaviour goes into **that file** — *update* the existing case when behaviour changed (the old expectation is now wrong), *add* a focused new case when behaviour is new (never overload one test with two behaviours). A brand-new test file needs a reason: a genuinely new subject or behaviour area with no existing home — so before creating one, search for the tests already covering that subject and extend them. **Never two test files pinning the same behaviour** — duplicate pins double the maintenance and rot in parallel.
+<!-- TESTING-SYNC:END -->
+
 | You changed… | You owe… | Suite |
 |---|---|---|
 | Service / business logic (`app/Services/**`) | Unit or Feature test of behaviour + edges | `tests/Unit` or `tests/Feature` |

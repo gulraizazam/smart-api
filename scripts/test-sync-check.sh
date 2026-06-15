@@ -34,6 +34,13 @@ is_exempt() {
   esac; return 1
 }
 
+is_critical() {  # invariant-map modules (TESTING.md sec.6): NO waiver, ever
+  case "$1" in
+    app/Services/Plan/*|app/Models/Bundles.php|app/Helpers/BundleHelper.php) return 0 ;;
+    app/Support/OperatingDays.php|*PlanDiscount*|*MovementService*|*PatientLifecycle*) return 0 ;;
+  esac; return 1
+}
+
 # waivers from commit trailers in the range
 ACK="$(git log --format=%B "${BASE}..HEAD" 2>/dev/null | sed -nE 's/^[Tt]est-exempt:[[:space:]]*([^[:space:]]+).*/\1/p' || true)"
 is_acked() { printf '%s\n' "$ACK" | grep -qxF "$1" 2>/dev/null; }
@@ -59,8 +66,14 @@ if [ "$HAS_TEST_CHANGE" -eq 0 ]; then
   UNMET=""
   while IFS= read -r f; do
     [ -z "$f" ] && continue
-    is_acked "$f" && continue
-    UNMET+="  - $f"$'\n'
+    if is_critical "$f"; then
+      # No-waiver rule: a Test-exempt trailer NEVER satisfies an invariant-map module.
+      if is_acked "$f"; then UNMET+="  - $f  (CRITICAL -- Test-exempt trailer IGNORED: no-waiver module)"$'\n'
+      else UNMET+="  - $f  (CRITICAL -- invariant map, no waiver)"$'\n'; fi
+    else
+      is_acked "$f" && continue
+      UNMET+="  - $f"$'\n'
+    fi
   done <<< "$(printf '%s' "$SRC" | awk 'NF' | sort -u)"
   if [ -n "$UNMET" ]; then
     echo "FAIL: backend logic changed but no test changed in this diff:"
