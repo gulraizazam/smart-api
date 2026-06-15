@@ -302,6 +302,44 @@ class WhatsAppInboxTest extends TestCase
         $this->assertSame('923001234567', $response->json('data.conversation.wa_id'));
     }
 
+    public function test_reaction_message_surfaces_the_emoji_as_its_body(): void
+    {
+        // A reaction arrives as a 'reaction' message with no body — the emoji is
+        // in the payload. The resource must surface it so the SPA shows 👍, not
+        // a literal "[reaction]".
+        $this->actAsAgentWith(['whatsapp.inbox.view']);
+        $conversation = $this->conversationWithInbound('923001234567', 'Hi');
+        $conversation->messages()->create([
+            'wamid' => 'wamid.REACT==',
+            'direction' => 'inbound',
+            'type' => 'reaction',
+            'body' => null,
+            'status' => 'received',
+            'payload' => ['type' => 'reaction', 'reaction' => ['message_id' => 'wamid.X', 'emoji' => '👍🏻']],
+        ]);
+
+        $messages = $this->getJson("/api/whatsapp/conversations/{$conversation->id}")->assertOk()->json('data.messages');
+        $reaction = collect($messages)->firstWhere('type', 'reaction');
+        $this->assertSame('👍🏻', $reaction['body']);
+    }
+
+    public function test_removed_reaction_has_a_null_body(): void
+    {
+        $this->actAsAgentWith(['whatsapp.inbox.view']);
+        $conversation = $this->conversationWithInbound('923001234567', 'Hi');
+        $conversation->messages()->create([
+            'wamid' => 'wamid.UNREACT==',
+            'direction' => 'inbound',
+            'type' => 'reaction',
+            'body' => null,
+            'status' => 'received',
+            'payload' => ['type' => 'reaction', 'reaction' => ['message_id' => 'wamid.X', 'emoji' => '']],
+        ]);
+
+        $messages = $this->getJson("/api/whatsapp/conversations/{$conversation->id}")->assertOk()->json('data.messages');
+        $this->assertNull(collect($messages)->firstWhere('type', 'reaction')['body']);
+    }
+
     public function test_mark_read_clears_the_unread_count(): void
     {
         $this->actAsAgentWith(['whatsapp.inbox.view']);
