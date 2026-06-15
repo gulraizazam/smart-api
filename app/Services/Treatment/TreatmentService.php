@@ -328,13 +328,16 @@ final class TreatmentService
                 throw TreatmentException::operationFailed('Failed to update appointment.');
             }
 
-            $defaultStatus = AppointmentStatuses::getADefaultStatusOnly($accountId);
-            if ($defaultStatus) {
-                $statusUpdate = [
-                    'appointment_status_id' => $defaultStatus->id,
-                    'base_appointment_status_id' => $defaultStatus->id,
-                    'appointment_status_allow_message' => $defaultStatus->allow_message,
-                ];
+            // A reschedule resets the workflow status to the default
+            // (Pending) UNLESS the treatment has already Arrived — that
+            // reflects real progress and must survive a date change.
+            // (Treatments have no Converted status; the shared helper
+            // handles both kinds for parity with the consultation path.)
+            $statusUpdate = AppointmentStatuses::resetStatusOnReschedule(
+                (int) $appointment->base_appointment_status_id,
+                $accountId,
+            );
+            if ($statusUpdate !== []) {
                 // Re-notify only when the DATE moved — a same-day
                 // time-only drag doesn't re-send. Don't clear an already-
                 // pending flag on a time-only move either; the original

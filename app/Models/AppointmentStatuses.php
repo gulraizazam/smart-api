@@ -103,6 +103,43 @@ class AppointmentStatuses extends BaseModel
     }
 
     /**
+     * Status-field updates an appointment should carry after a reschedule.
+     *
+     * Rescheduling invalidates a workflow status: anything that is NOT
+     * Arrived or Converted resets to the account default (Pending) so a
+     * moved appointment starts fresh on the new date. Arrived / Converted
+     * reflect real progress (the patient showed up, or the lead converted)
+     * and are preserved. Treatments never carry a Converted status, so for
+     * them the is_converted check is simply always false — the same rule
+     * cleanly reduces to "reset unless Arrived".
+     *
+     * Returns [] (apply nothing) when the current status is already
+     * Arrived/Converted, or when no default status is configured.
+     *
+     * @return array<string, mixed>
+     */
+    public static function resetStatusOnReschedule(?int $currentBaseStatusId, int $accountId): array
+    {
+        if ($currentBaseStatusId) {
+            $current = self::where(['id' => $currentBaseStatusId, 'account_id' => $accountId])->first();
+            if ($current && ((int) $current->is_arrived === 1 || (int) $current->is_converted === 1)) {
+                return [];
+            }
+        }
+
+        $default = self::getADefaultStatusOnly($accountId);
+        if (! $default) {
+            return [];
+        }
+
+        return [
+            'appointment_status_id' => $default->id,
+            'base_appointment_status_id' => $default->id,
+            'appointment_status_allow_message' => $default->allow_message,
+        ];
+    }
+
+    /**
      * Get Cancelled Status
      */
     public static function getCancelledStatusOnly($account_id)

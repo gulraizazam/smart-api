@@ -389,6 +389,13 @@ class Patients extends BaseModel
             $query->whereIn('phone', $variants);
         }
 
+        // A phone maps to exactly one patient WITHIN an account. Scope to the
+        // caller's account when given — without this an identical number in a
+        // different clinic account could be returned and wrongly linked.
+        if ($accountId !== false) {
+            $query->where('account_id', $accountId);
+        }
+
         if ($patientId) {
             $query->where('id', $patientId);
         }

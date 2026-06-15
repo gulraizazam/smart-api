@@ -78,4 +78,23 @@ class PatientGetByPhoneTest extends TestCase
 
         $this->assertNull(Patients::getByPhone('3009998887'));
     }
+
+    public function test_scopes_the_lookup_to_the_given_account(): void
+    {
+        // A phone maps to exactly one patient WITHIN an account. When an
+        // account_id is supplied the lookup must honour it — previously the
+        // parameter was accepted but ignored, so a number could resolve a
+        // patient from a different clinic account.
+        $patient = Patients::factory()->create(['phone' => '3215044424', 'account_id' => 1]);
+
+        // Scoped to a foreign account → invisible (this would have wrongly
+        // resolved before the fix).
+        $this->assertNull(Patients::getByPhone('3215044424', 999));
+
+        // Scoped to its own account → resolves.
+        $this->assertSame($patient->id, Patients::getByPhone('3215044424', 1)?->id);
+
+        // No account given (false) → back-compat, account is not constrained.
+        $this->assertSame($patient->id, Patients::getByPhone('3215044424')?->id);
+    }
 }
