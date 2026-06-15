@@ -80,6 +80,44 @@ class WhatsAppCannedReplyTest extends TestCase
         $this->postJson('/api/whatsapp/canned-replies', ['title' => '', 'body' => ''])->assertStatus(422);
     }
 
+    public function test_update_edits_an_own_account_reply(): void
+    {
+        $this->actAsAgentWith(['whatsapp.inbox.view', 'whatsapp.inbox.reply']);
+        $reply = WhatsappCannedReply::create(['account_id' => 1, 'title' => 'Hours', 'body' => 'old text']);
+
+        $this->putJson("/api/whatsapp/canned-replies/{$reply->id}", ['title' => 'Opening hours', 'body' => 'We are open 10am–10pm'])
+            ->assertOk()
+            ->assertJsonPath('data.title', 'Opening hours')
+            ->assertJsonPath('data.body', 'We are open 10am–10pm');
+
+        $this->assertDatabaseHas('whatsapp_canned_replies', [
+            'id' => $reply->id, 'title' => 'Opening hours', 'body' => 'We are open 10am–10pm',
+        ]);
+    }
+
+    public function test_update_requires_the_reply_permission(): void
+    {
+        $this->actAsAgentWith(['whatsapp.inbox.view']);
+        $reply = WhatsappCannedReply::create(['account_id' => 1, 'title' => 'X', 'body' => 'Y']);
+
+        $this->putJson("/api/whatsapp/canned-replies/{$reply->id}", ['title' => 'A', 'body' => 'B'])->assertStatus(403);
+    }
+
+    public function test_update_validates_input(): void
+    {
+        $this->actAsAgentWith(['whatsapp.inbox.view', 'whatsapp.inbox.reply']);
+        $reply = WhatsappCannedReply::create(['account_id' => 1, 'title' => 'X', 'body' => 'Y']);
+
+        $this->putJson("/api/whatsapp/canned-replies/{$reply->id}", ['title' => '', 'body' => ''])->assertStatus(422);
+    }
+
+    public function test_update_404s_for_an_id_outside_the_account_scope(): void
+    {
+        $this->actAsAgentWith(['whatsapp.inbox.view', 'whatsapp.inbox.reply']);
+
+        $this->putJson('/api/whatsapp/canned-replies/999999', ['title' => 'A', 'body' => 'B'])->assertStatus(404);
+    }
+
     public function test_destroy_deletes_an_own_account_reply(): void
     {
         $this->actAsAgentWith(['whatsapp.inbox.view', 'whatsapp.inbox.reply']);
