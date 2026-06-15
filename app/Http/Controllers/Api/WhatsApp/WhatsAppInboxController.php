@@ -244,6 +244,29 @@ class WhatsAppInboxController extends Controller
     }
 
     /**
+     * Re-flag a conversation as unread (a manual "come back to this" marker).
+     * Sets last_read_at to just before the latest inbound message so exactly
+     * that message counts as unread (badge = 1). A chat with no inbound message
+     * has nothing to mark unread — no-op. Only affects our read tracking;
+     * nothing is sent to the customer.
+     */
+    public function markUnread(int $id): JsonResponse
+    {
+        $conversation = WhatsappConversation::findOrFail($id);
+
+        $lastInboundAt = $conversation->messages()
+            ->where('direction', 'inbound')
+            ->latest('created_at')
+            ->value('created_at');
+
+        if ($lastInboundAt !== null) {
+            $conversation->update(['last_read_at' => $lastInboundAt->copy()->subSecond()]);
+        }
+
+        return $this->successResponse('Marked unread');
+    }
+
+    /**
      * Assign the conversation to a staff member (or unassign with null) so the
      * team can see who's handling each chat. The assignee must be an active
      * user in the WhatsApp account (FK-validated, tenant-scoped).
