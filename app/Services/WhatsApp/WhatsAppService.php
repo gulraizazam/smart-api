@@ -6,6 +6,8 @@ namespace App\Services\WhatsApp;
 
 use App\Models\WhatsappConversation;
 use App\Models\WhatsappMessage;
+use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -157,9 +159,18 @@ class WhatsAppService
 
         $base = 'https://graph.facebook.com/'.config('whatsapp.api_version')."/{$this->phoneNumberId}";
 
-        $upload = Http::withToken($this->token)
-            ->attach('file', $binary, $filename, ['Content-Type' => $mime])
-            ->post("{$base}/media", ['messaging_product' => 'whatsapp', 'type' => $mime]);
+        try {
+            $upload = $this->mediaClient()
+                ->attach('file', $binary, $filename, ['Content-Type' => $mime])
+                ->post("{$base}/media", ['messaging_product' => 'whatsapp', 'type' => $mime]);
+        } catch (ConnectionException $e) {
+            Log::error('WhatsApp: media upload connection error', ['wa_id' => $waId, 'type' => $type, 'error' => $e->getMessage()]);
+
+            return $conversation->messages()->create([
+                'wamid' => null, 'direction' => 'outbound', 'type' => $type,
+                'body' => null, 'status' => 'failed', 'payload' => ['error' => 'connection_error'],
+            ]);
+        }
 
         $mediaId = $upload->json('id');
 
@@ -188,12 +199,21 @@ class WhatsAppService
             $media['caption'] = $caption; // audio/voice notes can't carry a caption
         }
 
-        $response = Http::withToken($this->token)->post("{$base}/messages", [
-            'messaging_product' => 'whatsapp',
-            'to' => $waId,
-            'type' => $type,
-            $type => $media,
-        ]);
+        try {
+            $response = $this->client()->post("{$base}/messages", [
+                'messaging_product' => 'whatsapp',
+                'to' => $waId,
+                'type' => $type,
+                $type => $media,
+            ]);
+        } catch (ConnectionException $e) {
+            Log::error('WhatsApp: media send connection error', ['wa_id' => $waId, 'type' => $type, 'error' => $e->getMessage()]);
+
+            return $conversation->messages()->create([
+                'wamid' => null, 'direction' => 'outbound', 'type' => $type,
+                'body' => $caption, 'status' => 'failed', 'payload' => ['media_id' => $mediaId, 'error' => 'connection_error'],
+            ]);
+        }
 
         if ($response->failed()) {
             Log::error('WhatsApp: media send failed', [
@@ -229,19 +249,28 @@ class WhatsAppService
         }
 
         $apiVersion = config('whatsapp.api_version');
-        $meta = Http::withToken($this->token)->get("https://graph.facebook.com/{$apiVersion}/{$mediaId}");
-        $url = $meta->json('url');
 
-        if ($meta->failed() || ! is_string($url) || $url === '') {
-            Log::error('WhatsApp: media URL resolve failed', [
-                'media_id' => $mediaId,
-                'http_status' => $meta->status(),
-            ]);
+        try {
+            $meta = $this->client()->get("https://graph.facebook.com/{$apiVersion}/{$mediaId}");
+            $url = $meta->json('url');
+
+            if ($meta->failed() || ! is_string($url) || $url === '') {
+                Log::error('WhatsApp: media URL resolve failed', [
+                    'media_id' => $mediaId,
+                    'http_status' => $meta->status(),
+                ]);
+
+                return null;
+            }
+
+            $binary = $this->mediaClient()->get($url);
+        } catch (ConnectionException $e) {
+            // Timeout reaching Meta — the proxy turns null into a graceful
+            // "attachment unavailable" rather than hanging the request.
+            Log::error('WhatsApp: media fetch connection error', ['media_id' => $mediaId, 'error' => $e->getMessage()]);
 
             return null;
         }
-
-        $binary = Http::withToken($this->token)->get($url);
 
         if ($binary->failed()) {
             Log::error('WhatsApp: media download failed', [
@@ -256,6 +285,30 @@ class WhatsAppService
             'body' => $binary->body(),
             'mime' => $meta->json('mime_type') ?: ($binary->header('Content-Type') ?: 'application/octet-stream'),
         ];
+    }
+
+    /**
+     * Bearer-auth'd HTTP client for control-plane Graph calls (send a message,
+     * resolve a media URL). Bounded timeouts so a stalled Meta endpoint can't
+     * hang the agent's "Send" request until PHP's max_execution_time.
+     */
+    protected function client(): PendingRequest
+    {
+        return Http::withToken($this->token)
+            ->connectTimeout((int) config('whatsapp.connect_timeout', 5))
+            ->timeout((int) config('whatsapp.timeout', 10));
+    }
+
+    /**
+     * Like client() but with a longer ceiling for media byte transfers
+     * (uploading an attachment / downloading inbound media), which can be a
+     * few MB on a slow link.
+     */
+    protected function mediaClient(): PendingRequest
+    {
+        return Http::withToken($this->token)
+            ->connectTimeout((int) config('whatsapp.connect_timeout', 5))
+            ->timeout((int) config('whatsapp.media_timeout', 30));
     }
 
     protected function isConfigured(): bool
@@ -274,7 +327,26 @@ class WhatsAppService
      */
     protected function dispatch(WhatsappConversation $conversation, string $type, string $body, array $payload): WhatsappMessage
     {
-        $response = Http::withToken($this->token)->post($this->baseUrl, $payload);
+        try {
+            $response = $this->client()->post($this->baseUrl, $payload);
+        } catch (ConnectionException $e) {
+            // Timeout / network error reaching Meta — record a failed row so the
+            // agent sees "Failed · Retry" instead of a 500, and can resend.
+            Log::error('WhatsApp: send connection error', [
+                'wa_id' => $conversation->wa_id,
+                'type' => $type,
+                'error' => $e->getMessage(),
+            ]);
+
+            return $conversation->messages()->create([
+                'wamid' => null,
+                'direction' => 'outbound',
+                'type' => $type,
+                'body' => $body,
+                'status' => 'failed',
+                'payload' => ['error' => 'connection_error'],
+            ]);
+        }
 
         if ($response->failed()) {
             Log::error('WhatsApp: send failed', [

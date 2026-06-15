@@ -136,12 +136,14 @@ class WhatsAppWebhookController extends Controller
             // (mind the country-code prefix), scoped to account_id, writing
             // the match to whatsapp_conversations.patient_id. Not in Phase 1.
 
+            $body = $this->messageBody($message);
+
             try {
                 $conversation->messages()->create([
                     'wamid' => $wamid,
                     'direction' => 'inbound',
                     'type' => $message['type'] ?? 'unknown',
-                    'body' => $this->messageBody($message),
+                    'body' => $body,
                     'status' => 'received',
                     'payload' => $message,
                 ]);
@@ -151,32 +153,35 @@ class WhatsAppWebhookController extends Controller
                 continue;
             }
 
-            // Meta sends an epoch timestamp (UTC); express it in the app
-            // timezone so it round-trips the datetime column like every
-            // other Eloquent timestamp in this app.
-            $conversation->update([
+            // Apply every conversation-level change from this message in ONE
+            // UPDATE: stamp the 24h-window anchor, honour STOP/START opt-out,
+            // and reopen a resolved chat so the team sees the new message.
+            $mutations = [
+                // Meta sends an epoch timestamp (UTC); express it in the app
+                // timezone so it round-trips the datetime column like every
+                // other Eloquent timestamp in this app.
                 'last_inbound_at' => isset($message['timestamp'])
                     ? Carbon::createFromTimestamp((int) $message['timestamp'], config('app.timezone'))
                     : now(),
-            ]);
+            ];
 
-            // Meta-policy opt-out: a STOP message stops all future sends; a
-            // START re-subscribes. Single source for the keywords is the
-            // WhatsAppOptOut support helper.
-            $body = $this->messageBody($message);
+            // Meta-policy opt-out: STOP stops all future sends; START re-subscribes.
+            // Single source for the keywords is the WhatsAppOptOut support helper.
             if (WhatsAppOptOut::isOptOut($body)) {
-                $conversation->update(['opted_out_at' => now()]);
+                $mutations['opted_out_at'] = now();
             } elseif (WhatsAppOptOut::isOptIn($body)) {
-                $conversation->update(['opted_out_at' => null]);
+                $mutations['opted_out_at'] = null;
             }
+
+            // A new inbound message reopens a resolved chat.
+            if ($conversation->resolved_at !== null) {
+                $mutations['resolved_at'] = null;
+            }
+
+            $conversation->update($mutations);
 
             if ($conversation->patient_id === null) {
                 $this->matchPatient($conversation);
-            }
-
-            // A new inbound message reopens a resolved chat so the team sees it.
-            if ($conversation->resolved_at !== null) {
-                $conversation->update(['resolved_at' => null]);
             }
         }
     }

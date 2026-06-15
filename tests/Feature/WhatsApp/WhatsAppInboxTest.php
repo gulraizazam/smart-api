@@ -801,8 +801,11 @@ class WhatsAppInboxTest extends TestCase
         $this->actAsAgentWith(['whatsapp.inbox.view']);
         $spam = WhatsappTag::create(['account_id' => 1, 'name' => 'Spam', 'color' => 'danger', 'is_muting' => true]);
         $this->conversationWithInbound('923001111111', 'spam')->tags()->attach($spam->id);
+        // An unmuted unread chat alongside the muted one — the count reflects
+        // only the unmuted (the muted-exclusion closure is reused on the count).
+        $this->conversationWithInbound('923002222222', 'real customer');
 
-        $this->assertSame(0, $this->getJson('/api/whatsapp/conversations/unread-count')->json('data.count'));
+        $this->assertSame(1, $this->getJson('/api/whatsapp/conversations/unread-count')->json('data.count'));
     }
 
     public function test_mine_and_unassigned_filters(): void

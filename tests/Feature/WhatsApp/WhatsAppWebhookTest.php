@@ -302,6 +302,22 @@ class WhatsAppWebhookTest extends TestCase
         $this->assertNull($conversation->fresh()->opted_out_at, 'START should re-subscribe');
     }
 
+    public function test_one_stop_delivery_stamps_the_window_anchor_and_opts_out_together(): void
+    {
+        // The webhook applies last_inbound_at + opt-out in a single UPDATE — a
+        // STOP message must both stamp the 24h-window anchor AND opt the
+        // customer out from the same delivery.
+        $sentAt = now()->subMinutes(2)->startOfSecond();
+
+        $this->postSigned($this->inboundTextPayload(
+            waId: '923001234567', wamid: 'wamid.STOP_ONE==', text: 'STOP', timestamp: $sentAt->timestamp,
+        ))->assertOk();
+
+        $conversation = WhatsappConversation::where('wa_id', '923001234567')->first();
+        $this->assertSame($sentAt->timestamp, $conversation->last_inbound_at?->timestamp, 'window anchor stamped');
+        $this->assertNotNull($conversation->opted_out_at, 'opted out in the same delivery');
+    }
+
     public function test_an_ordinary_message_does_not_opt_the_customer_out(): void
     {
         $this->postSigned($this->inboundTextPayload(

@@ -136,6 +136,39 @@ class WhatsAppServiceTest extends TestCase
         $this->assertNull($message->wamid);
     }
 
+    public function test_send_records_a_failed_row_on_a_connection_timeout(): void
+    {
+        // A timeout / network error reaching Meta must NOT bubble a 500 to the
+        // agent — it records a failed row so they see "Failed · Retry".
+        Http::fake(function (): void {
+            throw new \Illuminate\Http\Client\ConnectionException('cURL error 28: timed out');
+        });
+
+        WhatsappConversation::create(['wa_id' => '923001234567', 'last_inbound_at' => now()->subHour()]);
+
+        $message = (new WhatsAppService)->sendText('923001234567', 'Hello');
+
+        $this->assertNotNull($message);
+        $this->assertSame('failed', $message->status);
+        $this->assertNull($message->wamid);
+        $this->assertSame('connection_error', $message->payload['error']);
+    }
+
+    public function test_send_media_records_a_failed_row_on_a_connection_timeout(): void
+    {
+        Http::fake(function (): void {
+            throw new \Illuminate\Http\Client\ConnectionException('cURL error 28: timed out');
+        });
+
+        WhatsappConversation::create(['wa_id' => '923001234567', 'last_inbound_at' => now()->subHour()]);
+
+        $message = (new WhatsAppService)->sendMedia('923001234567', 'audio', 'oggbytes', 'audio/ogg', 'voice-note.ogg');
+
+        $this->assertNotNull($message);
+        $this->assertSame('failed', $message->status);
+        $this->assertSame('connection_error', $message->payload['error']);
+    }
+
     public function test_send_is_skipped_when_credentials_are_not_configured(): void
     {
         config(['whatsapp.token' => '', 'whatsapp.phone_number_id' => '']);
