@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Appointments;
 
+use App\Helpers\ACL;
 use App\Models\Appointments;
 use App\Models\Packages;
 use App\Models\PaymentModes;
@@ -36,7 +37,18 @@ class TreatmentPackagePriceSettleClampTest extends TestCase
     {
         parent::setUp();
         $this->seedFinancialFixtures();
-        $this->actingAsAdmin();
+        $admin = $this->actingAsAdmin();
+        // The package-price endpoint scopes the appointment lookup to the
+        // user's assigned centres (ACL::getUserCentres, statically memoised and
+        // NOT rolled back between tests). Flush the memo and assign the acting
+        // admin to this test's centre, or the lookup 404s when run after other
+        // tests (a fresh admin is only id 1 = "all centres" when run first).
+        ACL::flushMemo();
+        DB::table('user_has_locations')->insert([
+            'user_id' => $admin->id,
+            'location_id' => $this->defaultLocation->id,
+            'region_id' => (int) $this->defaultLocation->region_id,
+        ]);
 
         // The endpoint only takes the multi-service settle branch when the
         // bundle row (package_bundles.bundle_id = 1 below) resolves to a
