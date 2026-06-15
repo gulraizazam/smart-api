@@ -1014,7 +1014,7 @@ final class TreatmentController extends Controller
                 'tax_price'     => (float) $packageService->tax_price,
                 'service_price' => (float) $price,
                 'outstanding'   => max(0, (float) $outstanding),
-                'settle_amount' => round((float) $settleAmount, 2),
+                'settle_amount' => round(max(0, (float) $settleAmount), 2),
                 'balance'       => round((float) $balance, 2),
                 'remaining'     => (float) $remaining,
             ]);
