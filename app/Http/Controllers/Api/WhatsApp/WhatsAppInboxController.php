@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api\WhatsApp;
 
+use App\Http\Controllers\Api\WhatsAppWebhookController;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\WhatsApp\SendWhatsappReplyRequest;
 use App\Http\Resources\WhatsApp\WhatsappConversationResource;
@@ -15,6 +16,8 @@ use App\Support\WhatsAppMediaType;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Validation\Rule;
 
 /**
@@ -33,21 +36,33 @@ class WhatsAppInboxController extends Controller
         $validated = $request->validate([
             'unread' => 'sometimes|boolean',
             'resolved' => 'sometimes|boolean',
+            'muted' => 'sometimes|boolean',
+            'mine' => 'sometimes|boolean',
+            'unassigned' => 'sometimes|boolean',
             'per_page' => 'sometimes|integer|min:1|max:100',
             'search' => 'sometimes|string|max:100',
         ]);
 
         $conversations = WhatsappConversation::query()
-            ->with(['lastMessage', 'patient', 'assignee'])
+            ->with(['lastMessage', 'patient', 'assignee', 'tags'])
             ->withCount(['messages as unread_count' => function ($q): void {
                 $q->where('direction', 'inbound')
                     ->where(function ($w): void {
                         $w->whereNull('whatsapp_conversations.last_read_at')
                             ->orWhereColumn('whatsapp_messages.created_at', '>', 'whatsapp_conversations.last_read_at');
                     });
-            }])
+            }, 'notes'])
             ->when($request->boolean('unread'), fn ($q) => $q->unread())
             ->when($request->boolean('resolved'), fn ($q) => $q->whereNotNull('resolved_at'))
+            ->when($request->boolean('mine'), fn ($q) => $q->where('assigned_to_id', $request->user()->id))
+            ->when($request->boolean('unassigned'), fn ($q) => $q->whereNull('assigned_to_id'))
+            // "Spam"-style muting tags hide a chat from the default inbox; the
+            // `muted` filter is the only view that shows them.
+            ->when(
+                $request->boolean('muted'),
+                fn ($q) => $q->whereHas('tags', fn ($t) => $t->where('is_muting', true)),
+                fn ($q) => $q->whereDoesntHave('tags', fn ($t) => $t->where('is_muting', true)),
+            )
             ->when($request->filled('search'), function ($q) use ($request): void {
                 // Match the phone, the WhatsApp profile name, or the linked patient.
                 $term = trim((string) $request->string('search'));
@@ -77,14 +92,20 @@ class WhatsAppInboxController extends Controller
      */
     public function unreadCount(): JsonResponse
     {
+        // Muted ("Spam") chats never raise alerts or count toward the badge.
+        $notMuted = fn ($q) => $q->whereDoesntHave('tags', fn ($t) => $t->where('is_muting', true));
+
         $latest = WhatsappMessage::query()
             ->where('direction', 'inbound')
+            ->whereHas('conversation', $notMuted)
             ->with('conversation:id,wa_id,profile_name')
             ->latest('id')
             ->first();
 
         return $this->successResponse('Unread conversations', [
-            'count' => WhatsappConversation::unread()->count(),
+            'count' => WhatsappConversation::unread()
+                ->whereDoesntHave('tags', fn ($t) => $t->where('is_muting', true))
+                ->count(),
             'latest' => $latest?->conversation ? [
                 'message_id' => $latest->id,
                 'conversation_id' => $latest->conversation->id,
@@ -96,12 +117,44 @@ class WhatsAppInboxController extends Controller
     }
 
     /**
+     * Webhook health for the inbox banner. Meta has no "fetch past messages"
+     * API, so we can't backfill a missed delivery — instead we detect when
+     * deliveries have stopped arriving at all.
+     *
+     * The reliable signal: every outbound reply triggers Meta status callbacks
+     * (sent/delivered/read) within seconds. So if the team sent a reply a while
+     * ago and no webhook has landed since, the subscription is almost certainly
+     * down. Quiet customer periods don't false-alarm — with no recent outbound,
+     * nothing is expecting a callback.
+     */
+    public function health(): JsonResponse
+    {
+        $lastWebhookIso = Cache::get(WhatsAppWebhookController::LAST_WEBHOOK_KEY);
+        $lastWebhook = $lastWebhookIso ? Carbon::parse($lastWebhookIso) : null;
+
+        $lastOutbound = WhatsappMessage::query()
+            ->where('direction', 'outbound')
+            ->latest('created_at')
+            ->value('created_at');
+
+        // We only "expect" a callback once a reply has had time to be delivered.
+        $awaitingCallback = $lastOutbound !== null && $lastOutbound->lt(now()->subMinutes(15));
+        $stale = $awaitingCallback && ($lastWebhook === null || $lastWebhook->lt($lastOutbound));
+
+        return $this->successResponse('WhatsApp health', [
+            'last_webhook_at' => $lastWebhook?->toIso8601String(),
+            'last_outbound_at' => $lastOutbound?->toIso8601String(),
+            'healthy' => ! $stale,
+        ]);
+    }
+
+    /**
      * One conversation + its latest 200 messages in chronological order.
      * Read-only — marking as read is the explicit POST below (no GET mutates).
      */
     public function show(int $id): JsonResponse
     {
-        $conversation = WhatsappConversation::with(['patient', 'assignee'])->findOrFail($id);
+        $conversation = WhatsappConversation::with(['patient', 'assignee', 'tags'])->findOrFail($id);
 
         $messages = $conversation->messages()
             ->latest('id')
@@ -143,7 +196,7 @@ class WhatsAppInboxController extends Controller
         $conversation->update(['assigned_to_id' => $validated['assigned_to_id'] ?? null]);
 
         return $this->successResponse('Assignment updated', new WhatsappConversationResource(
-            $conversation->load(['assignee', 'patient', 'lastMessage']),
+            $conversation->load(['assignee', 'patient', 'lastMessage', 'tags']),
         ));
     }
 
@@ -159,7 +212,36 @@ class WhatsAppInboxController extends Controller
         $conversation->update(['resolved_at' => $validated['resolved'] ? now() : null]);
 
         return $this->successResponse('Conversation updated', new WhatsappConversationResource(
-            $conversation->load(['assignee', 'patient', 'lastMessage']),
+            $conversation->load(['assignee', 'patient', 'lastMessage', 'tags']),
+        ));
+    }
+
+    /** Apply a tag to the conversation (idempotent). */
+    public function tag(Request $request, int $id): JsonResponse
+    {
+        $validated = $request->validate([
+            'tag_id' => [
+                'required',
+                Rule::exists('whatsapp_tags', 'id')->where('account_id', $request->user()->account_id),
+            ],
+        ]);
+
+        $conversation = WhatsappConversation::findOrFail($id);
+        $conversation->tags()->syncWithoutDetaching([$validated['tag_id']]);
+
+        return $this->successResponse('Tag applied', new WhatsappConversationResource(
+            $conversation->load(['assignee', 'patient', 'lastMessage', 'tags']),
+        ));
+    }
+
+    /** Remove a tag from the conversation. */
+    public function untag(int $id, int $tagId): JsonResponse
+    {
+        $conversation = WhatsappConversation::findOrFail($id);
+        $conversation->tags()->detach($tagId);
+
+        return $this->successResponse('Tag removed', new WhatsappConversationResource(
+            $conversation->load(['assignee', 'patient', 'lastMessage', 'tags']),
         ));
     }
 

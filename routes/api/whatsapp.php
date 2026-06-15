@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 use App\Http\Controllers\Api\WhatsApp\WhatsAppCannedReplyController;
 use App\Http\Controllers\Api\WhatsApp\WhatsAppInboxController;
+use App\Http\Controllers\Api\WhatsApp\WhatsAppNoteController;
+use App\Http\Controllers\Api\WhatsApp\WhatsAppTagController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -24,6 +26,14 @@ Route::prefix('whatsapp')->name('whatsapp.')
         Route::delete('canned-replies/{id}', [WhatsAppCannedReplyController::class, 'destroy'])
             ->whereNumber('id')->middleware('permission:whatsapp.inbox.reply')->name('canned.destroy');
 
+        Route::get('tags', [WhatsAppTagController::class, 'index'])->name('tags.index');
+        Route::post('tags', [WhatsAppTagController::class, 'store'])
+            ->middleware('permission:whatsapp.inbox.reply')->name('tags.store');
+        Route::delete('tags/{id}', [WhatsAppTagController::class, 'destroy'])
+            ->whereNumber('id')->middleware('permission:whatsapp.inbox.reply')->name('tags.destroy');
+
+        Route::get('health', [WhatsAppInboxController::class, 'health'])->name('health');
+
         Route::get('conversations', [WhatsAppInboxController::class, 'index'])
             ->name('conversations.index');
         Route::get('conversations/unread-count', [WhatsAppInboxController::class, 'unreadCount'])
@@ -38,6 +48,16 @@ Route::prefix('whatsapp')->name('whatsapp.')
             ->whereNumber('id')->middleware('throttle:60,1')->name('conversations.assign');
         Route::post('conversations/{id}/resolve', [WhatsAppInboxController::class, 'resolve'])
             ->whereNumber('id')->middleware('throttle:60,1')->name('conversations.resolve');
+        Route::post('conversations/{id}/tags', [WhatsAppInboxController::class, 'tag'])
+            ->whereNumber('id')->middleware('throttle:60,1')->name('conversations.tag');
+        Route::delete('conversations/{id}/tags/{tagId}', [WhatsAppInboxController::class, 'untag'])
+            ->whereNumber('id')->whereNumber('tagId')->name('conversations.untag');
+        Route::get('conversations/{id}/notes', [WhatsAppNoteController::class, 'index'])
+            ->whereNumber('id')->name('conversations.notes.index');
+        Route::post('conversations/{id}/notes', [WhatsAppNoteController::class, 'store'])
+            ->whereNumber('id')->middleware('throttle:60,1')->name('conversations.notes.store');
+        Route::delete('conversations/{id}/notes/{noteId}', [WhatsAppNoteController::class, 'destroy'])
+            ->whereNumber('id')->whereNumber('noteId')->name('conversations.notes.destroy');
         Route::post('conversations/{id}/reply', [WhatsAppInboxController::class, 'reply'])
             ->whereNumber('id')
             ->middleware(['permission:whatsapp.inbox.reply', 'throttle:60,1'])
