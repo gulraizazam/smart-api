@@ -129,13 +129,12 @@ class WhatsAppInboxController extends Controller
      */
     public function health(): JsonResponse
     {
-        $lastWebhookIso = Cache::get(WhatsAppWebhookController::LAST_WEBHOOK_KEY);
-        $lastWebhook = $lastWebhookIso ? Carbon::parse($lastWebhookIso) : null;
-
         $lastOutbound = WhatsappMessage::query()
             ->where('direction', 'outbound')
             ->latest('created_at')
             ->value('created_at');
+
+        $lastWebhook = $this->lastWebhookActivityAt();
 
         // We only "expect" a callback once a reply has had time to be delivered.
         $awaitingCallback = $lastOutbound !== null && $lastOutbound->lt(now()->subMinutes(15));
@@ -146,6 +145,37 @@ class WhatsAppInboxController extends Controller
             'last_outbound_at' => $lastOutbound?->toIso8601String(),
             'healthy' => ! $stale,
         ]);
+    }
+
+    /**
+     * Best estimate of "the last time Meta sent us anything". The cache
+     * heartbeat catches every signed POST but is wiped by a deploy's
+     * cache:clear, so we also derive it from durable DB facts that ONLY a
+     * webhook can produce: an inbound message landing, or an outbound
+     * message's status advancing past 'sent' (delivered/read/failed). Taking
+     * the latest of the three keeps a deploy from raising a false alarm.
+     */
+    private function lastWebhookActivityAt(): ?Carbon
+    {
+        $iso = Cache::get(WhatsAppWebhookController::LAST_WEBHOOK_KEY);
+
+        $candidates = array_filter([
+            $iso ? Carbon::parse($iso) : null,
+            WhatsappMessage::where('direction', 'inbound')->latest('created_at')->value('created_at'),
+            WhatsappMessage::where('direction', 'outbound')
+                ->whereIn('status', ['delivered', 'read', 'failed'])
+                ->latest('updated_at')
+                ->value('updated_at'),
+        ]);
+
+        $latest = null;
+        foreach ($candidates as $candidate) {
+            if ($latest === null || $candidate->gt($latest)) {
+                $latest = $candidate;
+            }
+        }
+
+        return $latest;
     }
 
     /**

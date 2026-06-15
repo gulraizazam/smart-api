@@ -139,8 +139,15 @@ class WhatsAppInboxTest extends TestCase
     public function test_health_flags_stale_when_an_old_reply_got_no_callback(): void
     {
         $this->actAsAgentWith(['whatsapp.inbox.view']);
-        Cache::forget(WhatsAppWebhookController::LAST_WEBHOOK_KEY); // no webhook ever landed
-        $conversation = $this->conversationWithInbound('923001234567', 'Hi', 60);
+        Cache::forget(WhatsAppWebhookController::LAST_WEBHOOK_KEY); // no heartbeat
+        // Customer messaged 25 min ago; we replied 20 min ago; since then Meta
+        // has sent NOTHING back (no delivery callback, no new inbound).
+        $conversation = WhatsappConversation::create([
+            'wa_id' => '923001234567',
+            'profile_name' => 'Test',
+            'last_inbound_at' => now()->subMinutes(25),
+        ]);
+        $this->inboundReceivedMinutesAgo($conversation, 'wamid.IN_old', 25);
         $this->outboundSentMinutesAgo($conversation, 'wamid.OUT_old', 20);
 
         $this->getJson('/api/whatsapp/health')
@@ -148,12 +155,60 @@ class WhatsAppInboxTest extends TestCase
             ->assertJsonPath('data.healthy', false);
     }
 
-    public function test_health_is_healthy_when_a_webhook_landed_after_the_reply(): void
+    public function test_health_recovers_after_a_cache_clear_when_a_newer_inbound_landed(): void
+    {
+        // Regression for the deploy false alarm: cache:clear wipes the
+        // heartbeat, but a more recent inbound message proves webhooks still
+        // flow, so an old reply must NOT raise the banner.
+        $this->actAsAgentWith(['whatsapp.inbox.view']);
+        Cache::forget(WhatsAppWebhookController::LAST_WEBHOOK_KEY);
+        $conversation = WhatsappConversation::create([
+            'wa_id' => '923001234567',
+            'profile_name' => 'Test',
+            'last_inbound_at' => now()->subMinutes(2),
+        ]);
+        $this->outboundSentMinutesAgo($conversation, 'wamid.OUT_old', 20); // reply 20 min ago, still 'sent'
+        $this->inboundReceivedMinutesAgo($conversation, 'wamid.IN_new', 2); // customer wrote back 2 min ago
+
+        $this->getJson('/api/whatsapp/health')
+            ->assertOk()
+            ->assertJsonPath('data.healthy', true);
+    }
+
+    public function test_health_is_healthy_when_the_reply_was_delivered_even_with_no_cache(): void
+    {
+        // The reply's own delivered status is a status webhook — proves the
+        // subscription is up without any cache heartbeat or new inbound.
+        $this->actAsAgentWith(['whatsapp.inbox.view']);
+        Cache::forget(WhatsAppWebhookController::LAST_WEBHOOK_KEY);
+        $conversation = WhatsappConversation::create([
+            'wa_id' => '923001234567',
+            'profile_name' => 'Test',
+            'last_inbound_at' => now()->subHours(2),
+        ]);
+        $message = $conversation->messages()->create([
+            'wamid' => 'wamid.OUT_delivered',
+            'direction' => 'outbound',
+            'type' => 'text',
+            'body' => 'Delivered reply',
+            'status' => 'delivered', // a status callback advanced it past 'sent'
+        ]);
+        WhatsappMessage::where('id', $message->id)->update(['created_at' => now()->subMinutes(20)]);
+
+        $this->getJson('/api/whatsapp/health')
+            ->assertOk()
+            ->assertJsonPath('data.healthy', true);
+    }
+
+    public function test_health_is_healthy_when_the_cache_heartbeat_is_recent(): void
     {
         $this->actAsAgentWith(['whatsapp.inbox.view']);
-        $conversation = $this->conversationWithInbound('923001234567', 'Hi', 60);
-        $this->outboundSentMinutesAgo($conversation, 'wamid.OUT_old2', 20);
-        // A status callback arrived a minute ago — webhooks are flowing.
+        $conversation = WhatsappConversation::create([
+            'wa_id' => '923001234567',
+            'profile_name' => 'Test',
+            'last_inbound_at' => now()->subHour(),
+        ]);
+        $this->outboundSentMinutesAgo($conversation, 'wamid.OUT_old', 20);
         Cache::put(WhatsAppWebhookController::LAST_WEBHOOK_KEY, now()->subMinute()->toIso8601String());
 
         $this->getJson('/api/whatsapp/health')
@@ -162,9 +217,9 @@ class WhatsAppInboxTest extends TestCase
     }
 
     /**
-     * Create an outbound message and force its created_at into the past.
-     * Eloquent stamps created_at = now() on insert even when supplied, so a
-     * raw update is the reliable way to age a row in tests.
+     * Create a message and force its created_at into the past. Eloquent stamps
+     * created_at = now() on insert even when supplied, so a raw update is the
+     * reliable way to age a row in tests.
      */
     private function outboundSentMinutesAgo(WhatsappConversation $conversation, string $wamid, int $minutesAgo): void
     {
@@ -174,6 +229,18 @@ class WhatsAppInboxTest extends TestCase
             'type' => 'text',
             'body' => 'We replied earlier',
             'status' => 'sent',
+        ]);
+        WhatsappMessage::where('id', $message->id)->update(['created_at' => now()->subMinutes($minutesAgo)]);
+    }
+
+    private function inboundReceivedMinutesAgo(WhatsappConversation $conversation, string $wamid, int $minutesAgo): void
+    {
+        $message = $conversation->messages()->create([
+            'wamid' => $wamid,
+            'direction' => 'inbound',
+            'type' => 'text',
+            'body' => 'Customer message',
+            'status' => 'received',
         ]);
         WhatsappMessage::where('id', $message->id)->update(['created_at' => now()->subMinutes($minutesAgo)]);
     }
