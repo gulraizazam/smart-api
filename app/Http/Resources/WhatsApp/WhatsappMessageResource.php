@@ -22,11 +22,29 @@ class WhatsappMessageResource extends JsonResource
             'id' => $this->id,
             'direction' => $this->direction,
             'type' => $this->type,
-            'body' => $this->body,
+            'body' => $this->displayBody(),
             'status' => $this->status,
             'media_url' => $this->mediaUrl(),
             'created_at' => $this->created_at?->format('Y-m-d H:i:s'),
         ];
+    }
+
+    /**
+     * Text the UI should show for the bubble. Normally the stored body, but a
+     * reaction ('reaction' message) carries no body — the emoji lives in the
+     * payload (`reaction.emoji`), so surface it here for existing AND future
+     * reactions instead of the SPA falling back to a literal "[reaction]". An
+     * empty emoji means the customer removed their reaction → null.
+     */
+    private function displayBody(): ?string
+    {
+        if ($this->type === 'reaction') {
+            $emoji = $this->payload['reaction']['emoji'] ?? '';
+
+            return $emoji !== '' ? $emoji : null;
+        }
+
+        return $this->body;
     }
 
     /**
