@@ -288,6 +288,36 @@ class WhatsAppService
     }
 
     /**
+     * Send a read receipt for an inbound message — the customer sees the blue
+     * double-tick. Optionally also show the typing indicator: Meta bundles
+     * "typing" into the mark-as-read call, and it auto-clears after ~25s or
+     * when we next send. Best-effort: never throws, returns false on failure.
+     */
+    public function sendReadReceipt(string $wamid, bool $typing = false): bool
+    {
+        if (! $this->isConfigured() || $wamid === '') {
+            return false;
+        }
+
+        $payload = [
+            'messaging_product' => 'whatsapp',
+            'status' => 'read',
+            'message_id' => $wamid,
+        ];
+        if ($typing) {
+            $payload['typing_indicator'] = ['type' => 'text'];
+        }
+
+        try {
+            return $this->client()->post($this->baseUrl, $payload)->successful();
+        } catch (ConnectionException $e) {
+            Log::warning('WhatsApp: read receipt failed', ['wamid' => $wamid, 'error' => $e->getMessage()]);
+
+            return false;
+        }
+    }
+
+    /**
      * Bearer-auth'd HTTP client for control-plane Graph calls (send a message,
      * resolve a media URL). Bounded timeouts so a stalled Meta endpoint can't
      * hang the agent's "Send" request until PHP's max_execution_time.

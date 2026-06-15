@@ -238,9 +238,43 @@ class WhatsAppInboxController extends Controller
 
     public function markRead(int $id): JsonResponse
     {
-        WhatsappConversation::findOrFail($id)->update(['last_read_at' => now()]);
+        $conversation = WhatsappConversation::findOrFail($id);
+        $conversation->update(['last_read_at' => now()]);
+
+        // Send the read receipt (blue ticks) for the latest inbound message —
+        // best-effort, bounded by the service timeout; never blocks the read.
+        $wamid = $this->latestInboundWamid($conversation);
+        if ($wamid !== null) {
+            $this->whatsApp->sendReadReceipt($wamid);
+        }
 
         return $this->successResponse('Marked read');
+    }
+
+    /**
+     * Show the "typing…" indicator to the customer while an agent composes a
+     * reply (Meta bundles it into the mark-as-read call, referencing the latest
+     * inbound message). It auto-clears after ~25s or when we send. No-op when
+     * there's no inbound message to reference.
+     */
+    public function typing(int $id): JsonResponse
+    {
+        $conversation = WhatsappConversation::findOrFail($id);
+        $wamid = $this->latestInboundWamid($conversation);
+        if ($wamid !== null) {
+            $this->whatsApp->sendReadReceipt($wamid, typing: true);
+        }
+
+        return $this->successResponse('Typing');
+    }
+
+    private function latestInboundWamid(WhatsappConversation $conversation): ?string
+    {
+        return $conversation->messages()
+            ->where('direction', 'inbound')
+            ->whereNotNull('wamid')
+            ->latest('created_at')
+            ->value('wamid');
     }
 
     /**
