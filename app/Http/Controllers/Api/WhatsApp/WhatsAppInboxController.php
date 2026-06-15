@@ -18,6 +18,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Validation\Rule;
 
 /**
@@ -176,6 +177,44 @@ class WhatsAppInboxController extends Controller
         }
 
         return $latest;
+    }
+
+    /**
+     * Meta's quality rating (GREEN/YELLOW/RED) for the number we send from, so
+     * the team can watch the number's health without logging into Meta. Read
+     * straight from the Graph API and cached for an hour — the rating moves on
+     * a rolling multi-day window, and reading it is free (not a message send).
+     * Returns null quality when unconfigured or Meta is unreachable; the SPA
+     * then simply hides the badge.
+     */
+    public function numberQuality(): JsonResponse
+    {
+        $data = Cache::remember('whatsapp:number_quality', now()->addHour(), function (): array {
+            $phoneNumberId = (string) config('whatsapp.phone_number_id');
+            $token = (string) config('whatsapp.token');
+
+            if ($phoneNumberId === '' || $token === '') {
+                return ['quality_rating' => null, 'display_phone_number' => null];
+            }
+
+            $version = (string) config('whatsapp.api_version');
+            $response = Http::withToken($token)
+                ->timeout(5)
+                ->get("https://graph.facebook.com/{$version}/{$phoneNumberId}", [
+                    'fields' => 'quality_rating,display_phone_number',
+                ]);
+
+            if (! $response->successful()) {
+                return ['quality_rating' => null, 'display_phone_number' => null];
+            }
+
+            return [
+                'quality_rating' => $response->json('quality_rating'),
+                'display_phone_number' => $response->json('display_phone_number'),
+            ];
+        });
+
+        return $this->successResponse('WhatsApp number quality', $data);
     }
 
     /**
