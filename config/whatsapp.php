@@ -33,6 +33,14 @@ return [
     // Graph API version for outbound sends (no env key — bump here)
     'api_version' => 'v25.0',
 
+    // HTTP timeouts (seconds) for Graph calls. Bounded so a stalled Meta
+    // endpoint can't hang an agent's "Send" request: control-plane calls
+    // (send a message, resolve a media URL) use `timeout`; media byte
+    // transfers (upload/download, can be a few MB) use `media_timeout`.
+    'connect_timeout' => (int) env('WHATSAPP_CONNECT_TIMEOUT', 5),
+    'timeout' => (int) env('WHATSAPP_TIMEOUT', 10),
+    'media_timeout' => (int) env('WHATSAPP_MEDIA_TIMEOUT', 30),
+
     // The account that owns the WhatsApp line — inbound wa_ids are matched to
     // patients within this account only (the DB is single-account today; this
     // keeps the match tenant-scoped per the security charter). Default 1.

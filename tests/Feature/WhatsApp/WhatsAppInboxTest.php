@@ -200,6 +200,42 @@ class WhatsAppInboxTest extends TestCase
             ->assertJsonPath('data.healthy', true);
     }
 
+    public function test_number_quality_requires_view_permission(): void
+    {
+        $this->actAsAgentWith([]);
+
+        $this->getJson('/api/whatsapp/number-quality')->assertStatus(403);
+    }
+
+    public function test_number_quality_returns_metas_rating(): void
+    {
+        $this->actAsAgentWith(['whatsapp.inbox.view']);
+        Cache::forget('whatsapp:number_quality');
+        Http::fake([
+            'graph.facebook.com/*' => Http::response([
+                'quality_rating' => 'GREEN',
+                'display_phone_number' => '+92 311 1113366',
+                'id' => '111222333',
+            ]),
+        ]);
+
+        $this->getJson('/api/whatsapp/number-quality')
+            ->assertOk()
+            ->assertJsonPath('data.quality_rating', 'GREEN')
+            ->assertJsonPath('data.display_phone_number', '+92 311 1113366');
+    }
+
+    public function test_number_quality_is_null_when_meta_is_unreachable(): void
+    {
+        $this->actAsAgentWith(['whatsapp.inbox.view']);
+        Cache::forget('whatsapp:number_quality');
+        Http::fake(['graph.facebook.com/*' => Http::response([], 500)]);
+
+        $this->getJson('/api/whatsapp/number-quality')
+            ->assertOk()
+            ->assertJsonPath('data.quality_rating', null);
+    }
+
     public function test_health_is_healthy_when_the_cache_heartbeat_is_recent(): void
     {
         $this->actAsAgentWith(['whatsapp.inbox.view']);
@@ -765,8 +801,11 @@ class WhatsAppInboxTest extends TestCase
         $this->actAsAgentWith(['whatsapp.inbox.view']);
         $spam = WhatsappTag::create(['account_id' => 1, 'name' => 'Spam', 'color' => 'danger', 'is_muting' => true]);
         $this->conversationWithInbound('923001111111', 'spam')->tags()->attach($spam->id);
+        // An unmuted unread chat alongside the muted one — the count reflects
+        // only the unmuted (the muted-exclusion closure is reused on the count).
+        $this->conversationWithInbound('923002222222', 'real customer');
 
-        $this->assertSame(0, $this->getJson('/api/whatsapp/conversations/unread-count')->json('data.count'));
+        $this->assertSame(1, $this->getJson('/api/whatsapp/conversations/unread-count')->json('data.count'));
     }
 
     public function test_mine_and_unassigned_filters(): void
