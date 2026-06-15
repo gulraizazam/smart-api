@@ -424,6 +424,64 @@ class WhatsAppInboxTest extends TestCase
             ->assertStatus(403);
     }
 
+    public function test_react_sends_an_emoji_reaction_pinned_to_the_target_message(): void
+    {
+        Http::fake([
+            'graph.facebook.com/*' => Http::response([
+                'messaging_product' => 'whatsapp',
+                'messages' => [['id' => 'wamid.REACT_1==']],
+            ]),
+        ]);
+        $this->actAsAgentWith(['whatsapp.inbox.view', 'whatsapp.inbox.reply']);
+        $conversation = $this->conversationWithInbound('923001234567', 'Hello');
+        $target = 'wamid.IN_923001234567_5';
+
+        $response = $this->postJson("/api/whatsapp/conversations/{$conversation->id}/react", [
+            'wamid' => $target,
+            'emoji' => '👍',
+        ]);
+
+        $response->assertOk();
+        // Stored as an outbound reaction; the resource surfaces the emoji (body)
+        // and its target wamid (reaction_to) so the SPA pins it onto that bubble.
+        $this->assertSame('reaction', $response->json('data.type'));
+        $this->assertSame('outbound', $response->json('data.direction'));
+        $this->assertSame('👍', $response->json('data.body'));
+        $this->assertSame($target, $response->json('data.reaction_to'));
+
+        Http::assertSent(fn ($r) => str_contains($r->url(), '/messages')
+            && ($r['type'] ?? null) === 'reaction'
+            && ($r['reaction']['message_id'] ?? null) === $target
+            && ($r['reaction']['emoji'] ?? null) === '👍');
+    }
+
+    public function test_react_requires_the_reply_permission(): void
+    {
+        $this->actAsAgentWith(['whatsapp.inbox.view']);
+        $conversation = $this->conversationWithInbound('923001234567', 'Hello');
+
+        $this->postJson("/api/whatsapp/conversations/{$conversation->id}/react", [
+            'wamid' => 'wamid.IN_923001234567_5',
+            'emoji' => '👍',
+        ])->assertStatus(403);
+    }
+
+    public function test_react_rejects_a_wamid_that_is_not_in_this_thread(): void
+    {
+        Http::fake();
+        $this->actAsAgentWith(['whatsapp.inbox.view', 'whatsapp.inbox.reply']);
+        $conversation = $this->conversationWithInbound('923001234567', 'Hello');
+
+        // Reacting to a wamid that doesn't belong to this conversation is rejected
+        // before anything is sent to Meta (no reacting to arbitrary ids).
+        $this->postJson("/api/whatsapp/conversations/{$conversation->id}/react", [
+            'wamid' => 'wamid.NOT_IN_THIS_THREAD',
+            'emoji' => '👍',
+        ])->assertStatus(422);
+
+        Http::assertNothingSent();
+    }
+
     public function test_reply_inside_window_sends_and_stores_outbound(): void
     {
         Http::fake([

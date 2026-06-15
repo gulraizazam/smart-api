@@ -235,6 +235,51 @@ class WhatsAppService
     }
 
     /**
+     * React to one of the customer's messages with an emoji (an agent 👍).
+     * Stored as an outbound 'reaction' row so it renders on the target bubble
+     * like an inbound reaction. Window- and opt-out-gated like any send; an
+     * empty emoji removes our reaction.
+     */
+    public function sendReaction(string $waId, string $wamid, string $emoji): ?WhatsappMessage
+    {
+        if (! $this->isConfigured()) {
+            return null;
+        }
+
+        $conversation = WhatsappConversation::firstOrCreate(['wa_id' => $waId]);
+
+        if ($conversation->isOptedOut() || ! $this->windowIsOpen($conversation)) {
+            Log::warning('WhatsApp: sendReaction refused (opted out or window closed)', ['wa_id' => $waId]);
+
+            return null;
+        }
+
+        try {
+            $response = $this->client()->post($this->baseUrl, [
+                'messaging_product' => 'whatsapp',
+                'to' => $waId,
+                'type' => 'reaction',
+                'reaction' => ['message_id' => $wamid, 'emoji' => $emoji],
+            ]);
+        } catch (ConnectionException $e) {
+            Log::error('WhatsApp: reaction connection error', ['wa_id' => $waId, 'error' => $e->getMessage()]);
+
+            return null;
+        }
+
+        return $conversation->messages()->create([
+            'wamid' => $response->json('messages.0.id'),
+            'direction' => 'outbound',
+            'type' => 'reaction',
+            'body' => null,
+            'status' => $response->successful() ? 'accepted' : 'failed',
+            // Mirror the inbound reaction shape so the resource/SPA render it the
+            // same way (emoji pinned onto the target bubble).
+            'payload' => ['reaction' => ['message_id' => $wamid, 'emoji' => $emoji]] + (array) $response->json(),
+        ]);
+    }
+
+    /**
      * Resolve and download an inbound media object by its Meta media id.
      * Two hops, both bearer-auth'd: GET /{media-id} returns a short-lived
      * signed URL; GET that URL returns the bytes. Returns the binary + its

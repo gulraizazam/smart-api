@@ -397,6 +397,46 @@ class WhatsAppInboxController extends Controller
     }
 
     /**
+     * React to one of the customer's messages with an emoji (an agent 👍).
+     * The target wamid must be an inbound message in THIS thread (no reacting to
+     * arbitrary ids). An empty emoji removes our reaction. Gated by the same
+     * opt-out + 24h window rules as a reply.
+     */
+    public function react(Request $request, int $id): JsonResponse
+    {
+        $conversation = WhatsappConversation::findOrFail($id);
+
+        $validated = $request->validate([
+            'wamid' => [
+                'required', 'string',
+                Rule::exists('whatsapp_messages', 'wamid')
+                    ->where('whatsapp_conversation_id', $conversation->id)
+                    ->where('direction', 'inbound'),
+            ],
+            'emoji' => ['nullable', 'string', 'max:8'],
+        ]);
+
+        if ($conversation->isOptedOut()) {
+            return $this->errorResponse('This customer opted out of WhatsApp messages and cannot be contacted.', 422);
+        }
+
+        if (! $conversation->windowIsOpen()) {
+            return $this->errorResponse(
+                'The 24-hour reply window is closed. It reopens when the customer messages again.',
+                422,
+            );
+        }
+
+        $message = $this->whatsApp->sendReaction($conversation->wa_id, $validated['wamid'], $validated['emoji'] ?? '');
+
+        if ($message === null) {
+            return $this->errorResponse('Could not send the reaction.', 503);
+        }
+
+        return $this->successResponse('Reaction sent', new WhatsappMessageResource($message));
+    }
+
+    /**
      * Reply with media — a recorded voice note, a photo, a video, or a document
      * (with an optional caption). Gated by whatsapp.inbox.reply and the 24h
      * window, exactly like a text reply.

@@ -20,11 +20,18 @@ class WhatsappMessageResource extends JsonResource
     {
         return [
             'id' => $this->id,
+            'wamid' => $this->wamid,
             'direction' => $this->direction,
             'type' => $this->type,
             'body' => $this->displayBody(),
             'status' => $this->status,
             'media_url' => $this->mediaUrl(),
+            // For a reaction, the wamid of the message it reacts to — lets the
+            // SPA pin the emoji onto that bubble instead of a separate line.
+            'reaction_to' => $this->type === 'reaction' ? ($this->payload['reaction']['message_id'] ?? null) : null,
+            // When this message quotes another (a reply), the quoted message's
+            // wamid — the SPA looks it up in the thread to show the snippet.
+            'reply_to' => $this->payload['context']['id'] ?? null,
             'created_at' => $this->created_at?->format('Y-m-d H:i:s'),
         ];
     }
