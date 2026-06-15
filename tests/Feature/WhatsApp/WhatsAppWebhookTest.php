@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace Tests\Feature\WhatsApp;
 
+use App\Http\Controllers\Api\WhatsAppWebhookController;
 use App\Models\Patients;
 use App\Models\WhatsappConversation;
 use App\Models\WhatsappMessage;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Testing\TestResponse;
 use Tests\Concerns\RefreshTestDatabase as RefreshDatabase;
 use Tests\TestCase;
@@ -76,6 +78,32 @@ class WhatsAppWebhookTest extends TestCase
         $this->assertSame('text', $message->type);
         $this->assertSame('Hello, I would like to book a consultation', $message->body);
         $this->assertSame('received', $message->status);
+    }
+
+    public function test_a_signed_post_stamps_the_webhook_heartbeat(): void
+    {
+        Cache::forget(WhatsAppWebhookController::LAST_WEBHOOK_KEY);
+
+        $this->postSigned($this->inboundTextPayload(
+            waId: '923001234567',
+            wamid: 'wamid.HEARTBEAT==',
+            text: 'Hi',
+            timestamp: now()->timestamp,
+        ))->assertOk();
+
+        $this->assertNotNull(Cache::get(WhatsAppWebhookController::LAST_WEBHOOK_KEY));
+    }
+
+    public function test_an_unsigned_post_does_not_stamp_the_heartbeat(): void
+    {
+        Cache::forget(WhatsAppWebhookController::LAST_WEBHOOK_KEY);
+        $payload = $this->inboundTextPayload(waId: '923001234567', wamid: 'wamid.X==', text: 'Hi', timestamp: now()->timestamp);
+
+        $this->postJson('/api/whatsapp/webhook', $payload, [
+            'X-Hub-Signature-256' => 'sha256='.hash_hmac('sha256', json_encode($payload), 'wrong-secret'),
+        ])->assertStatus(403);
+
+        $this->assertNull(Cache::get(WhatsAppWebhookController::LAST_WEBHOOK_KEY));
     }
 
     public function test_duplicate_wamid_does_not_create_a_second_message(): void

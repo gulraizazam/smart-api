@@ -3505,6 +3505,33 @@ CREATE TABLE `whatsapp_canned_replies` (
   PRIMARY KEY (`id`),
   KEY `wa_canned_account` (`account_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE `whatsapp_tags` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `account_id` bigint(20) unsigned NOT NULL,
+  `name` varchar(40) NOT NULL,
+  `color` varchar(16) NOT NULL DEFAULT 'neutral',
+  `is_muting` tinyint(1) NOT NULL DEFAULT 0,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `wa_tags_account_name` (`account_id`,`name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE `whatsapp_conversation_tag` (
+  `whatsapp_conversation_id` bigint(20) unsigned NOT NULL,
+  `whatsapp_tag_id` bigint(20) unsigned NOT NULL,
+  PRIMARY KEY (`whatsapp_conversation_id`,`whatsapp_tag_id`),
+  KEY `wa_conv_tag_tag` (`whatsapp_tag_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE `whatsapp_notes` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `whatsapp_conversation_id` bigint(20) unsigned NOT NULL,
+  `body` text NOT NULL,
+  `created_by` bigint(20) unsigned DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `wa_notes_conv` (`whatsapp_conversation_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 CREATE TABLE `whatsapp_messages` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `whatsapp_conversation_id` bigint(20) unsigned NOT NULL,

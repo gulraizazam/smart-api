@@ -15,6 +15,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -32,6 +33,9 @@ use Illuminate\Support\Facades\Log;
  */
 class WhatsAppWebhookController extends Controller
 {
+    /** Cache key holding the ISO timestamp of the last signed webhook POST. */
+    public const LAST_WEBHOOK_KEY = 'whatsapp:last_webhook_at';
+
     /**
      * GET — Meta's one-time webhook verification handshake. Meta sends
      * hub.mode / hub.verify_token / hub.challenge (PHP exposes the dotted
@@ -60,6 +64,12 @@ class WhatsAppWebhookController extends Controller
 
             return $this->errorResponse('Invalid signature', 403);
         }
+
+        // Heartbeat for the inbox health check: every signed POST from Meta
+        // (inbound message OR status callback) stamps "webhooks are live". The
+        // inbox warns the team when this goes quiet while replies are flowing —
+        // the signal that Meta silently dropped our webhook subscription.
+        Cache::put(self::LAST_WEBHOOK_KEY, now()->toIso8601String(), now()->addDays(30));
 
         foreach ((array) $request->input('entry', []) as $entry) {
             foreach ((array) ($entry['changes'] ?? []) as $change) {

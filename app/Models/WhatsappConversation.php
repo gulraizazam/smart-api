@@ -6,6 +6,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
@@ -63,6 +64,11 @@ class WhatsappConversation extends BaseModel
         return $this->hasMany(WhatsappMessage::class);
     }
 
+    public function notes(): HasMany
+    {
+        return $this->hasMany(WhatsappNote::class);
+    }
+
     /**
      * The matched patient (users.user_type_id = 3), linked by the webhook from
      * the customer's phone number. Null until matched / if no patient matches.
@@ -81,6 +87,26 @@ class WhatsappConversation extends BaseModel
     public function lastMessage(): HasOne
     {
         return $this->hasOne(WhatsappMessage::class)->latestOfMany();
+    }
+
+    public function tags(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            WhatsappTag::class,
+            'whatsapp_conversation_tag',
+            'whatsapp_conversation_id',
+            'whatsapp_tag_id',
+        );
+    }
+
+    /**
+     * True when any applied tag is a muting tag (e.g. "Spam") — such chats are
+     * hidden from the default inbox and don't raise alerts. Requires `tags`
+     * to be loaded.
+     */
+    public function isMuted(): bool
+    {
+        return $this->tags->contains('is_muting', true);
     }
 
     /**

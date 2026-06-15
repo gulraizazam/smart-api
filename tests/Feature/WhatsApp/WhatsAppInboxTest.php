@@ -4,11 +4,14 @@ declare(strict_types=1);
 
 namespace Tests\Feature\WhatsApp;
 
+use App\Http\Controllers\Api\WhatsAppWebhookController;
 use App\Models\User;
 use App\Models\Patients;
 use App\Models\WhatsappConversation;
 use App\Models\WhatsappMessage;
+use App\Models\WhatsappTag;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Spatie\Permission\PermissionRegistrar;
 use Tests\Concerns\RefreshTestDatabase as RefreshDatabase;
@@ -113,6 +116,66 @@ class WhatsAppInboxTest extends TestCase
         $count = $this->getJson('/api/whatsapp/conversations/unread-count');
         $count->assertOk();
         $this->assertSame(1, $count->json('data.count'));
+    }
+
+    public function test_health_requires_view_permission(): void
+    {
+        $this->actAsAgentWith([]);
+
+        $this->getJson('/api/whatsapp/health')->assertStatus(403);
+    }
+
+    public function test_health_is_healthy_with_no_recent_outbound(): void
+    {
+        $this->actAsAgentWith(['whatsapp.inbox.view']);
+        Cache::forget(WhatsAppWebhookController::LAST_WEBHOOK_KEY);
+
+        // Nothing has been sent, so nothing is expecting a callback.
+        $this->getJson('/api/whatsapp/health')
+            ->assertOk()
+            ->assertJsonPath('data.healthy', true);
+    }
+
+    public function test_health_flags_stale_when_an_old_reply_got_no_callback(): void
+    {
+        $this->actAsAgentWith(['whatsapp.inbox.view']);
+        Cache::forget(WhatsAppWebhookController::LAST_WEBHOOK_KEY); // no webhook ever landed
+        $conversation = $this->conversationWithInbound('923001234567', 'Hi', 60);
+        $this->outboundSentMinutesAgo($conversation, 'wamid.OUT_old', 20);
+
+        $this->getJson('/api/whatsapp/health')
+            ->assertOk()
+            ->assertJsonPath('data.healthy', false);
+    }
+
+    public function test_health_is_healthy_when_a_webhook_landed_after_the_reply(): void
+    {
+        $this->actAsAgentWith(['whatsapp.inbox.view']);
+        $conversation = $this->conversationWithInbound('923001234567', 'Hi', 60);
+        $this->outboundSentMinutesAgo($conversation, 'wamid.OUT_old2', 20);
+        // A status callback arrived a minute ago — webhooks are flowing.
+        Cache::put(WhatsAppWebhookController::LAST_WEBHOOK_KEY, now()->subMinute()->toIso8601String());
+
+        $this->getJson('/api/whatsapp/health')
+            ->assertOk()
+            ->assertJsonPath('data.healthy', true);
+    }
+
+    /**
+     * Create an outbound message and force its created_at into the past.
+     * Eloquent stamps created_at = now() on insert even when supplied, so a
+     * raw update is the reliable way to age a row in tests.
+     */
+    private function outboundSentMinutesAgo(WhatsappConversation $conversation, string $wamid, int $minutesAgo): void
+    {
+        $message = $conversation->messages()->create([
+            'wamid' => $wamid,
+            'direction' => 'outbound',
+            'type' => 'text',
+            'body' => 'We replied earlier',
+            'status' => 'sent',
+        ]);
+        WhatsappMessage::where('id', $message->id)->update(['created_at' => now()->subMinutes($minutesAgo)]);
     }
 
     public function test_show_returns_messages_in_chronological_order(): void
@@ -595,5 +658,74 @@ class WhatsAppInboxTest extends TestCase
 
         $this->postJson("/api/whatsapp/conversations/{$conversation->id}/messages/{$failed->id}/retry")
             ->assertStatus(403);
+    }
+
+    public function test_tag_and_untag_a_conversation(): void
+    {
+        $this->actAsAgentWith(['whatsapp.inbox.view']);
+        $conversation = $this->conversationWithInbound('923001234567', 'Hi');
+        $tag = WhatsappTag::create(['account_id' => 1, 'name' => 'Interested', 'color' => 'accent']);
+
+        $this->postJson("/api/whatsapp/conversations/{$conversation->id}/tags", ['tag_id' => $tag->id])
+            ->assertOk()
+            ->assertJsonPath('data.tags.0.name', 'Interested');
+        $this->assertSame(1, $conversation->tags()->count());
+
+        $this->deleteJson("/api/whatsapp/conversations/{$conversation->id}/tags/{$tag->id}")->assertOk();
+        $this->assertSame(0, $conversation->fresh()->tags()->count());
+    }
+
+    public function test_a_muting_tag_hides_the_chat_from_the_default_list_but_the_muted_filter_shows_it(): void
+    {
+        $this->actAsAgentWith(['whatsapp.inbox.view']);
+        $spam = WhatsappTag::create(['account_id' => 1, 'name' => 'Spam', 'color' => 'danger', 'is_muting' => true]);
+        $muted = $this->conversationWithInbound('923001111111', 'buy followers');
+        $muted->tags()->attach($spam->id);
+        $this->conversationWithInbound('923002222222', 'Hello'); // normal
+
+        $default = $this->getJson('/api/whatsapp/conversations')->assertOk()->json('data');
+        $this->assertCount(1, $default);
+        $this->assertSame('923002222222', $default[0]['wa_id']);
+
+        $mutedOnly = $this->getJson('/api/whatsapp/conversations?muted=1')->assertOk()->json('data');
+        $this->assertCount(1, $mutedOnly);
+        $this->assertSame('923001111111', $mutedOnly[0]['wa_id']);
+        $this->assertTrue($mutedOnly[0]['muted']);
+    }
+
+    public function test_unread_count_excludes_muted_chats(): void
+    {
+        $this->actAsAgentWith(['whatsapp.inbox.view']);
+        $spam = WhatsappTag::create(['account_id' => 1, 'name' => 'Spam', 'color' => 'danger', 'is_muting' => true]);
+        $this->conversationWithInbound('923001111111', 'spam')->tags()->attach($spam->id);
+
+        $this->assertSame(0, $this->getJson('/api/whatsapp/conversations/unread-count')->json('data.count'));
+    }
+
+    public function test_mine_and_unassigned_filters(): void
+    {
+        $this->actAsAgentWith(['whatsapp.inbox.view']);
+        $me = auth()->user();
+        $mine = $this->conversationWithInbound('923001111111', 'Hi');
+        $mine->update(['assigned_to_id' => $me->id]);
+        $this->conversationWithInbound('923002222222', 'Hello'); // unassigned
+
+        $mineRows = $this->getJson('/api/whatsapp/conversations?mine=1')->assertOk()->json('data');
+        $this->assertCount(1, $mineRows);
+        $this->assertSame('923001111111', $mineRows[0]['wa_id']);
+
+        $unassigned = $this->getJson('/api/whatsapp/conversations?unassigned=1')->assertOk()->json('data');
+        $this->assertCount(1, $unassigned);
+        $this->assertSame('923002222222', $unassigned[0]['wa_id']);
+    }
+
+    public function test_list_includes_the_notes_count(): void
+    {
+        $this->actAsAgentWith(['whatsapp.inbox.view']);
+        $conversation = $this->conversationWithInbound('923001234567', 'Hi');
+        $conversation->notes()->create(['body' => 'Called, interested', 'created_by' => auth()->id()]);
+
+        $row = $this->getJson('/api/whatsapp/conversations')->assertOk()->json('data.0');
+        $this->assertSame(1, $row['notes_count']);
     }
 }
