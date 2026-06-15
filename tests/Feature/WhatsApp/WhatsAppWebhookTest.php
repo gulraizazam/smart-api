@@ -175,6 +175,51 @@ class WhatsAppWebhookTest extends TestCase
         $this->assertSame('delivered', WhatsappMessage::where('wamid', 'wamid.TEST_OUTBOUND_1==')->value('status'));
     }
 
+    public function test_failed_status_captures_metas_error_on_the_message(): void
+    {
+        $conversation = WhatsappConversation::create(['wa_id' => '923001234567']);
+        $conversation->messages()->create([
+            'wamid' => 'wamid.TEST_FAILED==',
+            'direction' => 'outbound',
+            'type' => 'text',
+            'body' => 'We offer hydrafacial at a discount',
+            'status' => 'sent',
+            'payload' => ['messages' => [['id' => 'wamid.TEST_FAILED==']]],
+        ]);
+
+        $this->postSigned([
+            'object' => 'whatsapp_business_account',
+            'entry' => [[
+                'id' => 'WABA_ID',
+                'changes' => [[
+                    'field' => 'messages',
+                    'value' => [
+                        'messaging_product' => 'whatsapp',
+                        'metadata' => ['display_phone_number' => '15550000000', 'phone_number_id' => '111222333'],
+                        'statuses' => [[
+                            'id' => 'wamid.TEST_FAILED==',
+                            'status' => 'failed',
+                            'timestamp' => (string) now()->timestamp,
+                            'recipient_id' => '16468605037',
+                            'errors' => [[
+                                'code' => 131049,
+                                'title' => 'This message was not delivered to maintain healthy ecosystem engagement.',
+                                'error_data' => ['details' => 'Meta chose not to deliver this message.'],
+                            ]],
+                        ]],
+                    ],
+                ]],
+            ]],
+        ])->assertOk();
+
+        $message = WhatsappMessage::where('wamid', 'wamid.TEST_FAILED==')->first();
+        $this->assertSame('failed', $message->status);
+        $this->assertSame(131049, $message->payload['error']['code']);
+        $this->assertSame('This message was not delivered to maintain healthy ecosystem engagement.', $message->payload['error']['title']);
+        // The original send response is preserved alongside the captured error.
+        $this->assertSame('wamid.TEST_FAILED==', $message->payload['messages'][0]['id']);
+    }
+
     public function test_inbound_image_stores_type_and_caption_as_body(): void
     {
         $this->postSigned([

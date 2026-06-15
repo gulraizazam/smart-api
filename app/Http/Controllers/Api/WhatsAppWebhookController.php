@@ -226,7 +226,10 @@ class WhatsAppWebhookController extends Controller
 
     /**
      * Delivery-status notifications (sent/delivered/read/failed) for our
-     * outbound messages — match by wamid and update the stored row.
+     * outbound messages — match by wamid and update the stored row. On a
+     * 'failed' status we also capture Meta's error (code/title/detail) onto
+     * the message payload and log it, so the team sees WHY a send bounced
+     * instead of a bare "Failed".
      */
     protected function applyStatusUpdates(array $value): void
     {
@@ -238,7 +241,25 @@ class WhatsAppWebhookController extends Controller
                 continue;
             }
 
-            WhatsappMessage::where('wamid', $wamid)->update(['status' => $state]);
+            $message = WhatsappMessage::where('wamid', $wamid)->first();
+            if (! $message) {
+                continue;
+            }
+
+            $attributes = ['status' => $state];
+
+            if ($state === 'failed' && ! empty($status['errors'])) {
+                $error = $status['errors'][0];
+                $detail = [
+                    'code' => $error['code'] ?? null,
+                    'title' => $error['title'] ?? null,
+                    'detail' => $error['error_data']['details'] ?? ($error['message'] ?? null),
+                ];
+                $attributes['payload'] = array_merge((array) $message->payload, ['error' => $detail]);
+                Log::warning('WhatsApp outbound message failed', ['wamid' => $wamid] + $detail);
+            }
+
+            $message->update($attributes);
         }
     }
 }

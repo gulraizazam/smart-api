@@ -1843,7 +1843,7 @@ final class PlanService
             // (reservation rule) and adding a service is allowed —
             // ConsumptionReservation holds the paid BUY's money at consume
             // time instead. Mirrors validateConsumptionOrder.
-            $addLocked = $outOfOrderConsumption && ! $this->isPlanFullyPaid($packageId);
+            $addLocked = $outOfOrderConsumption && ! $this->isReservationFloorCovered($packageId);
 
             $addLockReason = $addLocked
                 ? 'A configurable discount group on this plan was consumed out of order. Consume the paid (BUY) sessions first, or start a new plan.'
@@ -3988,32 +3988,40 @@ final class PlanService
     // ── Validation helpers ──────────────────────────────
 
     /**
-     * A plan is "fully paid" when cumulative IN payments cover the sold value
-     * of its sessions (1-rupee rounding tolerance — the same definition the
-     * consume gate uses in AppointmentInvoiceController::saveinvoice). Once
-     * fully paid the configurable BUY-before-GET order is relaxed and
-     * ConsumptionReservation guards the money instead.
+     * True when cumulative IN payments cover the plan's reservation FLOOR —
+     * everything consumed PLUS everything reserved (a paid BUY whose
+     * discounted/free GET was used ahead of it). Same floor the consume gate
+     * enforces (ConsumptionReservation::requiredFloor). A newly-added,
+     * unconsumed, non-grouped service does NOT count toward the floor, so when
+     * this is true the operator may add a service to an out-of-order plan
+     * without a spurious "consume the BUY first" error — the reservation still
+     * blocks CONSUMING that new service until its own money is collected. It
+     * only goes false if a refund later drops the plan below the reserved
+     * floor. 1-rupee rounding tolerance.
      */
-    private function isPlanFullyPaid(int|string $packageId): bool
+    private function isReservationFloorCovered(int|string $packageId): bool
     {
         $payments = (float) PackageAdvances::where('package_id', $packageId)
             ->where('cash_flow', CashFlow::In->value)
             ->sum('cash_amount');
 
-        $value = (float) PackageService::where('package_id', $packageId)
-            ->sum('tax_including_price');
+        $floor = app(ConsumptionReservation::class)->requiredFloor((int) $packageId);
 
-        return $payments >= ($value - 1);
+        return $payments >= ($floor - 1);
     }
 
     private function validateConsumptionOrder(Packages $package): void
     {
-        // Fully-paid plans may add/consume in any order — the BUY-before-GET
-        // rule is relaxed once the money is all in, and ConsumptionReservation
-        // guards the paid BUY's money at consume time. Evaluated from existing
-        // package_services (the new row is not inserted yet), so it reflects
-        // the pre-add payment state.
-        if ($this->isPlanFullyPaid($package->id)) {
+        // The reservation gate (saveinvoice) is the real money protection, so
+        // adding a service to an out-of-order plan is fine AS LONG AS payments
+        // still cover the reservation floor (everything consumed + reserved).
+        // The newly-added service doesn't count toward the floor, so this
+        // allows the add cleanly when the existing Buy/Get is paid, and throws
+        // only if a refund dropped the plan below the reserved floor. This
+        // replaces the old "fully paid?" check, which re-fired after the add
+        // pushed the plan total up — surfacing a confusing error AFTER the
+        // service had already saved.
+        if ($this->isReservationFloorCovered($package->id)) {
             return;
         }
 

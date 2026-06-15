@@ -931,6 +931,17 @@ final class TreatmentController extends Controller
 
             $balance = (int) ceil(((float) ($balanceData->total_in ?? 0)) - ((float) ($balanceData->total_out ?? 0)));
 
+            // Reserved money — a paid BUY whose discounted/free GET was consumed
+            // ahead of it — is NOT available to settle a different service. Hold
+            // it back so the dialog shows the TRUE outstanding instead of "0",
+            // mirroring the saveinvoice reservation gate (ConsumptionReservation).
+            // Zero unless the plan was consumed out of order, so ordinary plans
+            // are unaffected.
+            $reservedBalance = (int) ceil(
+                app(\App\Services\Plan\ConsumptionReservation::class)->reservedRefundAmount($packageId)
+            );
+            $balance = (int) max(0, $balance - $reservedBalance);
+
             $packageService = PackageService::find($packageServiceId);
             if (!$packageService) {
                 return $this->errorResponse('Package service not found.', 404);
