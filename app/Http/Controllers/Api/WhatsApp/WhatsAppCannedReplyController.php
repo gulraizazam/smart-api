@@ -43,6 +43,19 @@ class WhatsAppCannedReplyController extends Controller
         return $this->successResponse('Canned reply added', new WhatsappCannedReplyResource($reply));
     }
 
+    public function update(int $id, Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'title' => 'required|string|max:80',
+            'body' => 'required|string|max:1024',
+        ]);
+
+        $reply = WhatsappCannedReply::findOrFail($id);
+        $reply->update(['title' => $validated['title'], 'body' => $validated['body']]);
+
+        return $this->successResponse('Canned reply updated', new WhatsappCannedReplyResource($reply));
+    }
+
     public function destroy(int $id): JsonResponse
     {
         WhatsappCannedReply::findOrFail($id)->delete();

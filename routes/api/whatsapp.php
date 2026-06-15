@@ -23,6 +23,8 @@ Route::prefix('whatsapp')->name('whatsapp.')
             ->name('canned.index');
         Route::post('canned-replies', [WhatsAppCannedReplyController::class, 'store'])
             ->middleware('permission:whatsapp.inbox.reply')->name('canned.store');
+        Route::put('canned-replies/{id}', [WhatsAppCannedReplyController::class, 'update'])
+            ->whereNumber('id')->middleware('permission:whatsapp.inbox.reply')->name('canned.update');
         Route::delete('canned-replies/{id}', [WhatsAppCannedReplyController::class, 'destroy'])
             ->whereNumber('id')->middleware('permission:whatsapp.inbox.reply')->name('canned.destroy');
 
