@@ -186,6 +186,48 @@ class ConfigurableAddLockTest extends TestCase
         ]);
     }
 
+    /** Add an ungrouped, unconsumed single service (mimics the operator's "Add row"). */
+    private function addPlainService(int $packageId, float $price): void
+    {
+        $bundleId = (int) DB::table('package_bundles')->insertGetId([
+            'package_id' => $packageId,
+            'random_id' => 'TEST-ADD-'.uniqid(),
+            'config_group_id' => null,
+            'is_allocate' => 1,
+            'qty' => 1,
+            'service_price' => $price,
+            'net_amount' => $price,
+            'tax_including_price' => $price,
+            'tax_exclusive_net_amount' => $price,
+            'tax_percentage' => 0,
+            'tax_price' => 0,
+            'location_id' => $this->locationId,
+            'active' => 1,
+            'is_exclusive' => 0,
+            'discount_name' => '-',
+            'discount_type' => '-',
+            'discount_price' => 0,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        DB::table('package_services')->insert([
+            'package_id' => $packageId,
+            'package_bundle_id' => $bundleId,
+            'service_id' => $this->serviceId,
+            'sold_by' => $this->patientId,
+            'consumption_order' => 0,
+            'is_consumed' => 0,
+            'price' => $price,
+            'orignal_price' => $price,
+            'tax_including_price' => $price,
+            'tax_price' => 0,
+            'tax_exclusive_price' => $price,
+            'tax_percentage' => 0,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+    }
+
     public function test_get_edit_form_data_locks_when_get_consumed_before_buy(): void
     {
         // Out-of-order: priced-GET (order=2) is_consumed, BUY (order=1)
@@ -251,6 +293,50 @@ class ConfigurableAddLockTest extends TestCase
         $method->invoke($this->service, $package);
 
         $this->assertTrue(true); // no exception thrown == pass.
+    }
+
+    public function test_add_lock_stays_released_after_an_added_service_inflates_the_total(): void
+    {
+        // The exact bug Shahid hit: out-of-order plan, fully paid for the group,
+        // operator adds a service that pushes the plan total ABOVE payments.
+        // The reservation floor (consumed + reserved BUY) is still covered, so
+        // the lock must STAY released and the server must NOT throw — no
+        // "saved, then ugly error" after the add. (Pre-fix the add re-locked
+        // because the inflated total made the old "fully paid?" check false.)
+        $packageId = $this->makeConfigurableGroupPlan([0, 1, 0]); // floor = 2000 (order2 consumed + order1 reserved)
+        $this->payPlan($packageId, 3000);          // covers the group
+        $this->addPlainService($packageId, 5000);  // total now 8000 > 3000 paid
+
+        $result = $this->service->getEditFormData($packageId);
+        $this->assertFalse(
+            $result['add_locked'],
+            'An added service that inflates the total must not re-lock the plan while the reservation floor is still covered.',
+        );
+
+        $package = Packages::findOrFail($packageId);
+        $method = (new ReflectionClass(PlanService::class))->getMethod('validateConsumptionOrder');
+        $method->setAccessible(true);
+        $method->invoke($this->service, $package); // must NOT throw
+
+        $this->assertTrue(true);
+    }
+
+    public function test_add_lock_re_engages_when_payments_fall_below_the_reserved_floor(): void
+    {
+        // Counterpart: if payments don't cover the reserved floor (e.g. a refund
+        // pulled money out), the reserved BUY is exposed → the lock must engage
+        // and the server safety-net must throw.
+        $packageId = $this->makeConfigurableGroupPlan([0, 1, 0]); // floor = 2000
+        $this->payPlan($packageId, 1500); // below the 2000 reserved floor
+
+        $result = $this->service->getEditFormData($packageId);
+        $this->assertTrue($result['add_locked']);
+
+        $package = Packages::findOrFail($packageId);
+        $method = (new ReflectionClass(PlanService::class))->getMethod('validateConsumptionOrder');
+        $method->setAccessible(true);
+        $this->expectException(PlanException::class);
+        $method->invoke($this->service, $package);
     }
 
     public function test_get_edit_form_data_unlocks_when_no_configurable_group_exists(): void
