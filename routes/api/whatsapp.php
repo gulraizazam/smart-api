@@ -33,6 +33,7 @@ Route::prefix('whatsapp')->name('whatsapp.')
             ->whereNumber('id')->middleware('permission:whatsapp.inbox.reply')->name('tags.destroy');
 
         Route::get('health', [WhatsAppInboxController::class, 'health'])->name('health');
+        Route::get('number-quality', [WhatsAppInboxController::class, 'numberQuality'])->name('number_quality');
 
         Route::get('conversations', [WhatsAppInboxController::class, 'index'])
             ->name('conversations.index');
