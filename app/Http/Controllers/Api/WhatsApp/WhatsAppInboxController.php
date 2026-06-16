@@ -40,6 +40,7 @@ class WhatsAppInboxController extends Controller
             'muted' => 'sometimes|boolean',
             'mine' => 'sometimes|boolean',
             'unassigned' => 'sometimes|boolean',
+            'window_closed' => 'sometimes|boolean',
             'per_page' => 'sometimes|integer|min:1|max:100',
             'search' => 'sometimes|string|max:100',
         ]);
@@ -57,6 +58,8 @@ class WhatsAppInboxController extends Controller
             ->when($request->boolean('resolved'), fn ($q) => $q->whereNotNull('resolved_at'))
             ->when($request->boolean('mine'), fn ($q) => $q->where('assigned_to_id', $request->user()->id))
             ->when($request->boolean('unassigned'), fn ($q) => $q->whereNull('assigned_to_id'))
+            // Chats we can no longer reply to until the customer messages again.
+            ->when($request->boolean('window_closed'), fn ($q) => $q->windowClosed())
             // "Spam"-style muting tags hide a chat from the default inbox; the
             // `muted` filter is the only view that shows them.
             ->when(
@@ -230,9 +233,48 @@ class WhatsAppInboxController extends Controller
             ->reverse()
             ->values();
 
+        // Whether older messages exist beyond this first page + the conversation's
+        // full message count — drives the SPA's "Load older (N earlier)" control
+        // and its "showing X of Y" progress.
+        $total = $conversation->messages()->count();
+        $hasMore = $messages->isNotEmpty()
+            && $conversation->messages()->where('id', '<', $messages->first()->id)->exists();
+
         return $this->successResponse('Conversation', [
             'conversation' => new WhatsappConversationResource($conversation),
             'messages' => WhatsappMessageResource::collection($messages),
+            'has_more' => $hasMore,
+            'total' => $total,
+        ]);
+    }
+
+    /**
+     * One page of OLDER messages — the messages immediately before $before (the
+     * oldest one the client currently has). Returns up to 50, oldest-first, plus
+     * has_more so the SPA knows whether to keep offering "Load older".
+     */
+    public function olderMessages(int $id, Request $request): JsonResponse
+    {
+        $conversation = WhatsappConversation::findOrFail($id);
+
+        $validated = $request->validate([
+            'before' => ['required', 'integer', 'min:1'],
+        ]);
+
+        $messages = $conversation->messages()
+            ->where('id', '<', $validated['before'])
+            ->latest('id')
+            ->limit(50)
+            ->get()
+            ->reverse()
+            ->values();
+
+        $hasMore = $messages->isNotEmpty()
+            && $conversation->messages()->where('id', '<', $messages->first()->id)->exists();
+
+        return $this->successResponse('Older messages', [
+            'messages' => WhatsappMessageResource::collection($messages),
+            'has_more' => $hasMore,
         ]);
     }
 
@@ -384,7 +426,11 @@ class WhatsAppInboxController extends Controller
             );
         }
 
-        $message = $this->whatsApp->sendText($conversation->wa_id, $request->validated()['message']);
+        $message = $this->whatsApp->sendText(
+            $conversation->wa_id,
+            $request->validated()['message'],
+            $request->validated()['reply_to_wamid'] ?? null,
+        );
 
         if ($message === null) {
             return $this->errorResponse('WhatsApp is not configured on the server.', 503);
@@ -394,6 +440,46 @@ class WhatsAppInboxController extends Controller
         $conversation->update(['last_read_at' => now()]);
 
         return $this->successResponse('Reply sent', new WhatsappMessageResource($message));
+    }
+
+    /**
+     * React to one of the customer's messages with an emoji (an agent 👍).
+     * The target wamid must be an inbound message in THIS thread (no reacting to
+     * arbitrary ids). An empty emoji removes our reaction. Gated by the same
+     * opt-out + 24h window rules as a reply.
+     */
+    public function react(Request $request, int $id): JsonResponse
+    {
+        $conversation = WhatsappConversation::findOrFail($id);
+
+        $validated = $request->validate([
+            'wamid' => [
+                'required', 'string',
+                Rule::exists('whatsapp_messages', 'wamid')
+                    ->where('whatsapp_conversation_id', $conversation->id)
+                    ->where('direction', 'inbound'),
+            ],
+            'emoji' => ['nullable', 'string', 'max:8'],
+        ]);
+
+        if ($conversation->isOptedOut()) {
+            return $this->errorResponse('This customer opted out of WhatsApp messages and cannot be contacted.', 422);
+        }
+
+        if (! $conversation->windowIsOpen()) {
+            return $this->errorResponse(
+                'The 24-hour reply window is closed. It reopens when the customer messages again.',
+                422,
+            );
+        }
+
+        $message = $this->whatsApp->sendReaction($conversation->wa_id, $validated['wamid'], $validated['emoji'] ?? '');
+
+        if ($message === null) {
+            return $this->errorResponse('Could not send the reaction.', 503);
+        }
+
+        return $this->successResponse('Reaction sent', new WhatsappMessageResource($message));
     }
 
     /**

@@ -125,6 +125,18 @@ class WhatsappConversation extends BaseModel
     }
 
     /**
+     * Conversations whose 24h reply window has CLOSED — never messaged us, or
+     * not within the last 24 hours. The inverse of windowIsOpen(); same rule.
+     */
+    public function scopeWindowClosed(Builder $query): Builder
+    {
+        return $query->where(function ($w): void {
+            $w->whereNull('last_inbound_at')
+                ->orWhere('last_inbound_at', '<=', now()->subHours(self::SERVICE_WINDOW_HOURS));
+        });
+    }
+
+    /**
      * True while the 24h customer-service window is open — i.e. the customer
      * has sent us a message within the last 24 hours. Single source of the
      * rule; WhatsAppService delegates here.

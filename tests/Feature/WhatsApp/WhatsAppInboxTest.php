@@ -302,6 +302,81 @@ class WhatsAppInboxTest extends TestCase
         $this->assertSame('923001234567', $response->json('data.conversation.wa_id'));
     }
 
+    public function test_show_reports_no_more_and_the_total_for_a_short_thread(): void
+    {
+        $this->actAsAgentWith(['whatsapp.inbox.view']);
+        $conversation = $this->conversationWithInbound('923001234567', 'Hi');
+
+        $response = $this->getJson("/api/whatsapp/conversations/{$conversation->id}");
+
+        $response->assertOk();
+        $this->assertFalse($response->json('data.has_more'));
+        $this->assertSame(1, $response->json('data.total')); // the one inbound message
+    }
+
+    public function test_older_messages_returns_the_previous_page_oldest_first(): void
+    {
+        $this->actAsAgentWith(['whatsapp.inbox.view']);
+        $conversation = WhatsappConversation::create(['wa_id' => '923001234567', 'profile_name' => 'X']);
+        $ids = [];
+        foreach (range(1, 5) as $n) {
+            $ids[] = $conversation->messages()->create([
+                'wamid' => "wamid.$n", 'direction' => 'inbound', 'type' => 'text',
+                'body' => "msg $n", 'status' => 'received',
+            ])->id;
+        }
+
+        // Messages older than the 4th → the first three, oldest-first.
+        $response = $this->getJson("/api/whatsapp/conversations/{$conversation->id}/older?before={$ids[3]}");
+
+        $response->assertOk();
+        $this->assertSame(['msg 1', 'msg 2', 'msg 3'], array_column($response->json('data.messages'), 'body'));
+        $this->assertFalse($response->json('data.has_more')); // nothing before msg 1
+    }
+
+    public function test_older_messages_reports_has_more_when_a_full_page_has_older_still(): void
+    {
+        $this->actAsAgentWith(['whatsapp.inbox.view']);
+        $conversation = WhatsappConversation::create(['wa_id' => '923001234567', 'profile_name' => 'X']);
+        foreach (range(1, 55) as $n) {
+            $conversation->messages()->create([
+                'wamid' => "wamid.$n", 'direction' => 'inbound', 'type' => 'text',
+                'body' => "msg $n", 'status' => 'received',
+            ]);
+        }
+
+        // Past the newest id → the newest 50 come back, with 5 older still beyond.
+        $response = $this->getJson("/api/whatsapp/conversations/{$conversation->id}/older?before=100000");
+
+        $response->assertOk();
+        $this->assertCount(50, $response->json('data.messages'));
+        $this->assertTrue($response->json('data.has_more'));
+    }
+
+    public function test_older_messages_requires_a_before_cursor(): void
+    {
+        $this->actAsAgentWith(['whatsapp.inbox.view']);
+        $conversation = WhatsappConversation::create(['wa_id' => '923001234567', 'profile_name' => 'X']);
+
+        $this->getJson("/api/whatsapp/conversations/{$conversation->id}/older")->assertStatus(422);
+    }
+
+    public function test_window_closed_filter_returns_only_chats_past_the_24h_window(): void
+    {
+        $this->actAsAgentWith(['whatsapp.inbox.view']);
+        $this->conversationWithInbound('923001111111', 'recent', 5);        // 5 min ago → open
+        $this->conversationWithInbound('923002222222', 'old', 25 * 60);     // 25h ago → closed
+        WhatsappConversation::create(['wa_id' => '923003333333', 'profile_name' => 'X']); // never messaged → closed
+
+        $response = $this->getJson('/api/whatsapp/conversations?window_closed=1');
+
+        $response->assertOk();
+        $waIds = array_column($response->json('data'), 'wa_id');
+        $this->assertContains('923002222222', $waIds);
+        $this->assertContains('923003333333', $waIds);
+        $this->assertNotContains('923001111111', $waIds); // window still open
+    }
+
     public function test_reaction_message_surfaces_the_emoji_as_its_body(): void
     {
         // A reaction arrives as a 'reaction' message with no body — the emoji is
@@ -424,6 +499,64 @@ class WhatsAppInboxTest extends TestCase
             ->assertStatus(403);
     }
 
+    public function test_react_sends_an_emoji_reaction_pinned_to_the_target_message(): void
+    {
+        Http::fake([
+            'graph.facebook.com/*' => Http::response([
+                'messaging_product' => 'whatsapp',
+                'messages' => [['id' => 'wamid.REACT_1==']],
+            ]),
+        ]);
+        $this->actAsAgentWith(['whatsapp.inbox.view', 'whatsapp.inbox.reply']);
+        $conversation = $this->conversationWithInbound('923001234567', 'Hello');
+        $target = 'wamid.IN_923001234567_5';
+
+        $response = $this->postJson("/api/whatsapp/conversations/{$conversation->id}/react", [
+            'wamid' => $target,
+            'emoji' => '👍',
+        ]);
+
+        $response->assertOk();
+        // Stored as an outbound reaction; the resource surfaces the emoji (body)
+        // and its target wamid (reaction_to) so the SPA pins it onto that bubble.
+        $this->assertSame('reaction', $response->json('data.type'));
+        $this->assertSame('outbound', $response->json('data.direction'));
+        $this->assertSame('👍', $response->json('data.body'));
+        $this->assertSame($target, $response->json('data.reaction_to'));
+
+        Http::assertSent(fn ($r) => str_contains($r->url(), '/messages')
+            && ($r['type'] ?? null) === 'reaction'
+            && ($r['reaction']['message_id'] ?? null) === $target
+            && ($r['reaction']['emoji'] ?? null) === '👍');
+    }
+
+    public function test_react_requires_the_reply_permission(): void
+    {
+        $this->actAsAgentWith(['whatsapp.inbox.view']);
+        $conversation = $this->conversationWithInbound('923001234567', 'Hello');
+
+        $this->postJson("/api/whatsapp/conversations/{$conversation->id}/react", [
+            'wamid' => 'wamid.IN_923001234567_5',
+            'emoji' => '👍',
+        ])->assertStatus(403);
+    }
+
+    public function test_react_rejects_a_wamid_that_is_not_in_this_thread(): void
+    {
+        Http::fake();
+        $this->actAsAgentWith(['whatsapp.inbox.view', 'whatsapp.inbox.reply']);
+        $conversation = $this->conversationWithInbound('923001234567', 'Hello');
+
+        // Reacting to a wamid that doesn't belong to this conversation is rejected
+        // before anything is sent to Meta (no reacting to arbitrary ids).
+        $this->postJson("/api/whatsapp/conversations/{$conversation->id}/react", [
+            'wamid' => 'wamid.NOT_IN_THIS_THREAD',
+            'emoji' => '👍',
+        ])->assertStatus(422);
+
+        Http::assertNothingSent();
+    }
+
     public function test_reply_inside_window_sends_and_stores_outbound(): void
     {
         Http::fake([
@@ -445,6 +578,47 @@ class WhatsAppInboxTest extends TestCase
         $this->assertSame(1, $conversation->messages()->where('direction', 'outbound')->count());
         // Replying marks the thread read.
         $this->assertNotNull($conversation->fresh()->last_read_at);
+    }
+
+    public function test_reply_can_quote_an_earlier_message(): void
+    {
+        Http::fake([
+            'graph.facebook.com/*' => Http::response([
+                'messaging_product' => 'whatsapp',
+                'messages' => [['id' => 'wamid.QREPLY_1==']],
+            ]),
+        ]);
+        $this->actAsAgentWith(['whatsapp.inbox.view', 'whatsapp.inbox.reply']);
+        $conversation = $this->conversationWithInbound('923001234567', 'Can I book?');
+        $quoted = 'wamid.IN_923001234567_5';
+
+        $response = $this->postJson("/api/whatsapp/conversations/{$conversation->id}/reply", [
+            'message' => 'Yes — 5pm works.',
+            'reply_to_wamid' => $quoted,
+        ]);
+
+        $response->assertOk();
+        // The stored outbound exposes reply_to so the SPA can render the quote.
+        $this->assertSame($quoted, $response->json('data.reply_to'));
+        // Meta received the quote context referencing that message.
+        Http::assertSent(fn ($r) => str_contains($r->url(), '/messages')
+            && ($r['context']['message_id'] ?? null) === $quoted);
+    }
+
+    public function test_reply_rejects_a_quoted_wamid_not_in_this_thread(): void
+    {
+        Http::fake();
+        $this->actAsAgentWith(['whatsapp.inbox.view', 'whatsapp.inbox.reply']);
+        $conversation = $this->conversationWithInbound('923001234567', 'Hello');
+
+        // Quoting a message that isn't in this conversation is rejected before
+        // anything is sent.
+        $this->postJson("/api/whatsapp/conversations/{$conversation->id}/reply", [
+            'message' => 'Quoting a stranger',
+            'reply_to_wamid' => 'wamid.FROM_ANOTHER_CHAT',
+        ])->assertStatus(422);
+
+        Http::assertNothingSent();
     }
 
     public function test_reply_outside_window_is_422_and_sends_nothing(): void

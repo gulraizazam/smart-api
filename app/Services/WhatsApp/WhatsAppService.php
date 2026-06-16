@@ -54,8 +54,9 @@ class WhatsAppService
     /**
      * Send a free-form text message. Refused (returns null, no API call) when
      * the 24h window is closed — use sendTemplate() instead in that case.
+     * Pass $replyToWamid to quote (reply to) an earlier message in the thread.
      */
-    public function sendText(string $waId, string $text): ?WhatsappMessage
+    public function sendText(string $waId, string $text, ?string $replyToWamid = null): ?WhatsappMessage
     {
         if (! $this->isConfigured()) {
             return null;
@@ -78,12 +79,18 @@ class WhatsAppService
             return null;
         }
 
-        return $this->dispatch($conversation, 'text', $text, [
+        $payload = [
             'messaging_product' => 'whatsapp',
             'to' => $waId,
             'type' => 'text',
             'text' => ['body' => $text],
-        ]);
+        ];
+
+        if ($replyToWamid !== null && $replyToWamid !== '') {
+            $payload['context'] = ['message_id' => $replyToWamid];
+        }
+
+        return $this->dispatch($conversation, 'text', $text, $payload);
     }
 
     /**
@@ -231,6 +238,51 @@ class WhatsAppService
             'body' => $caption, // null for voice notes; the caption otherwise
             'status' => $response->successful() ? 'accepted' : 'failed',
             'payload' => ['media_id' => $mediaId] + (array) $response->json(),
+        ]);
+    }
+
+    /**
+     * React to one of the customer's messages with an emoji (an agent 👍).
+     * Stored as an outbound 'reaction' row so it renders on the target bubble
+     * like an inbound reaction. Window- and opt-out-gated like any send; an
+     * empty emoji removes our reaction.
+     */
+    public function sendReaction(string $waId, string $wamid, string $emoji): ?WhatsappMessage
+    {
+        if (! $this->isConfigured()) {
+            return null;
+        }
+
+        $conversation = WhatsappConversation::firstOrCreate(['wa_id' => $waId]);
+
+        if ($conversation->isOptedOut() || ! $this->windowIsOpen($conversation)) {
+            Log::warning('WhatsApp: sendReaction refused (opted out or window closed)', ['wa_id' => $waId]);
+
+            return null;
+        }
+
+        try {
+            $response = $this->client()->post($this->baseUrl, [
+                'messaging_product' => 'whatsapp',
+                'to' => $waId,
+                'type' => 'reaction',
+                'reaction' => ['message_id' => $wamid, 'emoji' => $emoji],
+            ]);
+        } catch (ConnectionException $e) {
+            Log::error('WhatsApp: reaction connection error', ['wa_id' => $waId, 'error' => $e->getMessage()]);
+
+            return null;
+        }
+
+        return $conversation->messages()->create([
+            'wamid' => $response->json('messages.0.id'),
+            'direction' => 'outbound',
+            'type' => 'reaction',
+            'body' => null,
+            'status' => $response->successful() ? 'accepted' : 'failed',
+            // Mirror the inbound reaction shape so the resource/SPA render it the
+            // same way (emoji pinned onto the target bubble).
+            'payload' => ['reaction' => ['message_id' => $wamid, 'emoji' => $emoji]] + (array) $response->json(),
         ]);
     }
 
@@ -387,13 +439,22 @@ class WhatsAppService
             ]);
         }
 
+        $stored = (array) $response->json();
+
+        // The Meta send-response omits the quoted-message context we sent, so
+        // preserve it (normalised to the inbound `context.id` shape the resource
+        // reads) — this is what marks the outbound message as a reply.
+        if (isset($payload['context']['message_id'])) {
+            $stored['context'] = ['id' => $payload['context']['message_id']];
+        }
+
         return $conversation->messages()->create([
             'wamid' => $response->json('messages.0.id'),
             'direction' => 'outbound',
             'type' => $type,
             'body' => $body,
             'status' => $response->successful() ? 'accepted' : 'failed',
-            'payload' => $response->json(),
+            'payload' => $stored,
         ]);
     }
 }

@@ -43,6 +43,8 @@ Route::prefix('whatsapp')->name('whatsapp.')
             ->name('conversations.unread_count');
         Route::get('conversations/{id}', [WhatsAppInboxController::class, 'show'])
             ->whereNumber('id')->name('conversations.show');
+        Route::get('conversations/{id}/older', [WhatsAppInboxController::class, 'olderMessages'])
+            ->whereNumber('id')->name('conversations.older');
         Route::get('conversations/{id}/media/{messageId}', [WhatsAppInboxController::class, 'media'])
             ->whereNumber('id')->whereNumber('messageId')->name('conversations.media');
         Route::post('conversations/{id}/read', [WhatsAppInboxController::class, 'markRead'])
@@ -51,6 +53,8 @@ Route::prefix('whatsapp')->name('whatsapp.')
             ->whereNumber('id')->name('conversations.unread');
         Route::post('conversations/{id}/typing', [WhatsAppInboxController::class, 'typing'])
             ->whereNumber('id')->middleware(['permission:whatsapp.inbox.reply', 'throttle:30,1'])->name('conversations.typing');
+        Route::post('conversations/{id}/react', [WhatsAppInboxController::class, 'react'])
+            ->whereNumber('id')->middleware(['permission:whatsapp.inbox.reply', 'throttle:30,1'])->name('conversations.react');
         Route::post('conversations/{id}/assign', [WhatsAppInboxController::class, 'assign'])
             ->whereNumber('id')->middleware('throttle:60,1')->name('conversations.assign');
         Route::post('conversations/{id}/resolve', [WhatsAppInboxController::class, 'resolve'])
