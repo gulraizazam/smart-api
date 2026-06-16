@@ -226,7 +226,7 @@ class LegacyOrderFlowTest extends TestCase
         ]);
 
         Membership::create([
-            'code' => 'GOLD-'.random_int(1000, 9999),
+            'code' => 'CA2871',
             'membership_type_id' => $type->id,
             'patient_id' => $patient->id,
             'start_date' => now()->subDay(),
@@ -252,6 +252,18 @@ class LegacyOrderFlowTest extends TestCase
         $check = app(OrderService::class)->checkMembership($patient->id);
         $this->assertTrue($check['has_active_membership']);
         $this->assertSame('Gold Membership', $check['membership_type']);
+
+        // The HTTP endpoint MUST wrap the result in the standard
+        // { success, data } envelope — the SPA's api.ts unwraps `.data`, so a
+        // bare flat body unwraps to null and the order dialog never sees the
+        // membership (discount stays hidden). Assert the shape, not just the
+        // service: a revert to `response()->json($result)` fails here.
+        $this->getJson('/api/orders/check_membership?patient_id='.$patient->id)
+            ->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('data.has_active_membership', true)
+            ->assertJsonPath('data.membership_type', 'Gold Membership')
+            ->assertJsonPath('data.membership_code', 'CA2871');
     }
 
     public function test_server_ignores_client_supplied_price(): void
