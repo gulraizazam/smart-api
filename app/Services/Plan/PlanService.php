@@ -1579,12 +1579,23 @@ final class PlanService
             }
 
             $displayService = null;
+            // A `service_bundle` row's `bundle_id` is polymorphic — it
+            // resolves against `service_bundles`, NOT `bundles` — so the
+            // eager-loaded `bundle` relation is an unrelated id-collision
+            // record (e.g. plan #50321 showed "Ultraformer - Double Chin
+            // HIFU" over its 3× Mesotherapy sessions). The repeated service,
+            // prefixed with qty, is authoritative here and must OVERWRITE
+            // any wrongly-populated `bundle`/`service` relation, not defer
+            // to it. (Print was already correct because it reads
+            // `serviceBundle.service` directly instead of `bundle`.)
+            $authoritative = false;
 
             if ($pb->source_type === 'service_bundle' && $pb->serviceBundle?->service) {
                 $src = $pb->serviceBundle->service;
                 $displayService = $src->replicate();
                 $displayService->id = $src->id;
                 $displayService->name = $pb->qty.'x '.$src->name;
+                $authoritative = true;
             } elseif ($pb->service) {
                 $displayService = $pb->service;
             } elseif ($pb->bundle) {
@@ -1601,10 +1612,10 @@ final class PlanService
                 continue;
             }
 
-            if (! $pb->bundle) {
+            if ($authoritative || ! $pb->bundle) {
                 $pb->setRelation('bundle', $displayService);
             }
-            if (! $pb->service) {
+            if ($authoritative || ! $pb->service) {
                 $pb->setRelation('service', $displayService);
             }
         }
