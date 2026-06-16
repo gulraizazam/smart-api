@@ -39,6 +39,7 @@ use App\Models\PackageBundles;
 use App\Models\Packages;
 use App\Models\PackageService;
 use App\Models\PaymentModes;
+use App\Models\ServiceBundle;
 use App\Models\Services;
 use App\Models\AppointmentTypes;
 use App\Models\User;
@@ -269,7 +270,7 @@ final class TreatmentController extends Controller
                 ]);
             }
 
-            $perPage = max(1, min((int) $request->get('per_page', 15), 100));
+            $perPage = max(1, min((int) $request->get('per_page', 15), 200));
             $paginator = $query->paginate($perPage)->appends($request->query());
 
             // Same batch preload for the paginated path — collapses the
@@ -814,6 +815,28 @@ final class TreatmentController extends Controller
                 ->get();
 
             $packageBundles = $bundleTypeBundles->merge($planTypeBundles);
+
+            // A `service_bundle` row's `bundle_id` is a polymorphic FK that
+            // resolves against `service_bundles`, NOT `bundles`/`services` —
+            // so both JOINs above label it with an id-colliding bundle/service
+            // name (e.g. "Aqualyx - Double chin 2ml" shown over 3× Mesotherapy).
+            // Resolve the real label from the service_bundle's own service,
+            // prefixed with qty — matching Print and the plan View/Edit
+            // (PlanService::normalizeBundleDisplayRelations). Display-only:
+            // pricing, consumption gating and ids are left untouched.
+            $serviceBundleRows = $packageBundles->where('source_type', 'service_bundle');
+            if ($serviceBundleRows->isNotEmpty()) {
+                $serviceBundleNames = ServiceBundle::with('service')
+                    ->whereIn('id', $serviceBundleRows->pluck('bundle_id')->unique()->all())
+                    ->get()
+                    ->keyBy('id');
+                foreach ($serviceBundleRows as $pb) {
+                    $sb = $serviceBundleNames->get($pb->bundle_id);
+                    if ($sb?->service) {
+                        $pb->bundlename = ((int) $pb->qty).'x '.$sb->service->name;
+                    }
+                }
+            }
 
             // Package services for this service. `required_to_consume` is the
             // MINIMUM cumulative payment this session needs before it can be

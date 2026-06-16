@@ -73,7 +73,7 @@ class ConsultancyController extends Controller
                 );
             }
 
-            $perPage = max(1, min((int) $request->get('per_page', 15), 100));
+            $perPage = max(1, min((int) $request->get('per_page', 15), 200));
             $paginator = $query->paginate($perPage)->appends($request->query());
 
             // Same batch preload for the paginated path — collapses the
