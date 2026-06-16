@@ -8,6 +8,7 @@ use App\Casts\EncryptedLegacy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Carbon;
 
 class Activity extends Model
@@ -127,6 +128,19 @@ class Activity extends Model
     public function patientR(): BelongsTo
     {
         return $this->belongsTo(Patients::class, 'patient_id');
+    }
+
+    /**
+     * The feedback row this activity was logged for, matched on the shared
+     * appointment_id (feedback.appointment_id is unique). Lets the dashboard
+     * feed show the rating the patient gave without storing it on the activity
+     * itself — and resolves uniformly whether crm2 or crm3 created the row.
+     * Eager-load it (the management dashboard does) before rendering, or the
+     * renderer falls back to the rating-less phrasing.
+     */
+    public function feedbackR(): HasOne
+    {
+        return $this->hasOne(Feedback::class, 'appointment_id', 'appointment_id');
     }
 
     public function user(): BelongsTo
