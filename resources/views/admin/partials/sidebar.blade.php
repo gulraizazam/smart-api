@@ -505,7 +505,7 @@
                     <i class="menu-section-icon flaticon-more-v2"></i>
                 </li>
 
-                <li class="menu-item menu-item-submenu {{ openMenu(['admin.cashflow.dashboard','admin.cashflow.expenses','admin.cashflow.transfers','admin.cashflow.vendors','admin.cashflow.staff','admin.cashflow.fdm','admin.cashflow.reports','admin.cashflow.settings']) }}" aria-haspopup="true" data-menu-toggle="hover">
+                <!-- <li class="menu-item menu-item-submenu {{ openMenu(['admin.cashflow.dashboard','admin.cashflow.expenses','admin.cashflow.transfers','admin.cashflow.vendors','admin.cashflow.staff','admin.cashflow.fdm','admin.cashflow.reports','admin.cashflow.settings']) }}" aria-haspopup="true" data-menu-toggle="hover">
                     <a href="javascript:;" class="menu-link menu-toggle">
                         <i class="menu-icon la la-money-bill-wave"></i>
                         <span class="menu-text">Cash Flow</span>
@@ -583,7 +583,7 @@
                             @endcan
                         </ul>
                     </div>
-                </li>
+                </li> -->
                 @endcan
 
                 {{-- ───────────────── Human Resources ───────────────── --}}

@@ -155,7 +155,13 @@
       "Bash(\"C:/laragon/www/cutera-upgradation/vendor/bin/pint\" app/Services/Lead/LeadService.php app/Helpers/LeadHelper.php)",
       "Bash(\"C:/laragon/www/cutera-upgradation/vendor/bin/pint\" app/Services/Appointment/AppointmentService.php app/Models/Appointments.php)",
       "Bash(git stash *)",
-      "Bash(php artisan migrate:*)"
+      "Bash(php artisan migrate:*)",
+      "Bash(grep -ril \"cannot be generated\" --include=\"*.php\" .)",
+      "Bash(grep -ril \"can not be generated\" --include=\"*.php\" .)",
+      "Bash(grep -ril \"future date\" --include=\"*.php\" .)",
+      "Bash(grep -rni \"future\\\\|past\" --include=\"*.php\" app/Http/Controllers/Admin/Invoices*.php app/Http/Controllers/Admin/Invoice*.php)",
+      "Bash(find app/Http/Controllers/Admin -name \"*Invoice*\")",
+      "Bash(find app *)"
     ]
   }
 }
