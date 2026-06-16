@@ -59,7 +59,7 @@ class ActivityPulseFeedbackTest extends TestCase
 
         $this->assertNotEmpty($out['rows'], 'the feedback activity must be in the feed');
         $html = (string) $out['rows'][0]['description_html'];
-        $this->assertStringContainsString('Jane Doe rated their visit 8/10', $html);
+        $this->assertStringContainsString('Client Jane Doe rated their visit 8/10', $html);
         $this->assertStringNotContainsString('Feedback added for', $html);
     }
 

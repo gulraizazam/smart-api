@@ -813,16 +813,16 @@ final class ActivityLogRenderer
     /**
      * Feedback line. When the originating feedback row is eager-loaded — the
      * management dashboard does this — lead with the client and the rating
-     * they gave ("Jane Doe rated their visit 8/10"). Without the relation
-     * loaded (e.g. the audit-log report), fall back to the plain phrasing
-     * rather than firing a per-row query.
+     * they gave ("Client Jane Doe rated their visit 8/10"). Without the
+     * relation loaded (e.g. the audit-log report), fall back to the plain
+     * phrasing rather than firing a per-row query.
      */
     private static function feedbackPrimary(object $a, string $patient): string
     {
         $rating = self::loadedFeedbackRating($a);
 
         return $rating !== null
-            ? e($patient).' rated their visit '.$rating.'/10'
+            ? 'Client '.e($patient).' rated their visit '.$rating.'/10'
             : 'Feedback added for '.e($patient);
     }
 
