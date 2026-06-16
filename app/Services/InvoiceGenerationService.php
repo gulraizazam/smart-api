@@ -3,11 +3,8 @@
 declare(strict_types=1);
 namespace App\Services;
 
-use App\Support\OperatingDays;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
-use Carbon\CarbonImmutable;
 
 class InvoiceGenerationService
 {
@@ -137,41 +134,30 @@ class InvoiceGenerationService
     }
 
     /**
-     * Operating days in the window, sourced from OperatingDays so the
-     * answer respects the weekly pattern, per-date exceptions, and
-     * business closures rather than only excluding Sundays.
+     * Working days in the window = every calendar day EXCEPT Sundays.
      *
-     * When location_ids names a single branch, a closure on that branch
-     * subtracts the day. When it names several branches, a closure has
-     * to hit ALL of them for the day to be lost (an org rollup shouldn't
-     * lose a day because one branch was closed while others were open).
+     * Deliberately NOT closure/exception-aware (it does not use the
+     * `OperatingDays` helper). This is crm2 parity: the tax calculation
+     * report must reproduce the legacy crm2 numbers exactly, and crm2's
+     * denominator excludes only Sundays. An earlier change routed this
+     * through `OperatingDays::datesInRange()` (honouring business closures,
+     * weekly off-days and date exceptions), which made the crm3 report
+     * disagree with crm2 for the same inputs. That was reverted on purpose
+     * (Shahid, 2026-06-16) — do NOT reintroduce OperatingDays here without
+     * that decision being revisited.
      */
     protected function calculateWorkingDays(): void
     {
-        $user = Auth::user();
-        if ($user === null) {
-            // The service queries account-scoped settings/closures. A null
-            // user means no tenant context — silently falling back to
-            // account 1 would either leak another tenant's denominator or
-            // hide a broken middleware. Fail loudly instead.
-            throw new \RuntimeException(
-                'InvoiceGenerationService requires an authenticated user to resolve account_id.'
-            );
+        $this->workingDays = [];
+        $current = $this->dateFrom->copy();
+
+        while ($current <= $this->dateTo) {
+            // Exclude Sundays (0 = Sunday in Carbon)
+            if ($current->dayOfWeek !== Carbon::SUNDAY) {
+                $this->workingDays[] = $current->copy();
+            }
+            $current->addDay();
         }
-        $accountId = (int) $user->account_id;
-        $locationIds = array_values(array_map('intval', $this->locationIds ?? []));
-
-        $dates = OperatingDays::datesInRange(
-            $accountId,
-            $locationIds,
-            CarbonImmutable::parse($this->dateFrom),
-            CarbonImmutable::parse($this->dateTo),
-        );
-
-        $this->workingDays = array_map(
-            static fn (string $date): Carbon => Carbon::parse($date)->startOfDay(),
-            $dates,
-        );
     }
 
     /**

@@ -348,6 +348,9 @@ class InventoryReportService
                 'buyer_type' => $buyerType,
                 'purchased_by' => $purchasedBy,
                 'patient_id' => $order->patient_id,
+                // Patient phone for the SPA's patient cell (copyable). Only
+                // meaningful for patient buyers; employee sales have no patient.
+                'patient_phone' => $buyerType === 'patient' ? ($order->patients->phone ?? null) : null,
                 'employee_id' => $order->employee_id,
                 'product_name' => $productNames ?: 'N/A',
                 'quantity' => $quantityList,
