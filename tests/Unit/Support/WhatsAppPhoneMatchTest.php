@@ -39,4 +39,16 @@ class WhatsAppPhoneMatchTest extends TestCase
     {
         $this->assertSame([], WhatsAppPhoneMatch::candidates('', '92'));
     }
+
+    public function test_search_candidates_maps_local_and_national_input_to_international(): void
+    {
+        // Local leading-0 form → also try the international form.
+        $this->assertSame(['03001234567', '923001234567'], WhatsAppPhoneMatch::searchCandidates('0300 123 4567', '92'));
+        // National (no 0, no country code) → prepend the country code.
+        $this->assertSame(['3001234567', '923001234567'], WhatsAppPhoneMatch::searchCandidates('3001234567', '92'));
+        // Already international → just itself.
+        $this->assertSame(['923001234567'], WhatsAppPhoneMatch::searchCandidates('+92 300 1234567', '92'));
+        // Non-numeric input → nothing to match on.
+        $this->assertSame([], WhatsAppPhoneMatch::searchCandidates('Zara', '92'));
+    }
 }

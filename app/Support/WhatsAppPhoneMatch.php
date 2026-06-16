@@ -35,4 +35,31 @@ final class WhatsAppPhoneMatch
 
         return array_values(array_unique($forms));
     }
+
+    /**
+     * Digit forms to LIKE-match a user's free-text phone search against a stored
+     * wa_id (international digits, no '+'). Handles '+', spaces and the local
+     * leading-0 form so "0300…", "+92 300…" and "923…" all find "923…".
+     *
+     * @return list<string>
+     */
+    public static function searchCandidates(string $input, string $countryCode): array
+    {
+        $digits = preg_replace('/\D/', '', $input) ?? '';
+        if ($digits === '') {
+            return [];
+        }
+
+        $forms = [$digits];                                   // as typed (digits only)
+
+        if ($countryCode !== '') {
+            if (str_starts_with($digits, '0')) {
+                $forms[] = $countryCode.substr($digits, 1);   // 0300… → 92300…
+            } elseif (! str_starts_with($digits, $countryCode)) {
+                $forms[] = $countryCode.$digits;              // 300…  → 92300…
+            }
+        }
+
+        return array_values(array_unique($forms));
+    }
 }

@@ -983,6 +983,22 @@ class WhatsAppInboxTest extends TestCase
         $this->assertSame('923007654321', $byPhone[0]['wa_id']);
     }
 
+    public function test_search_matches_message_text_and_the_local_phone_format(): void
+    {
+        $this->actAsAgentWith(['whatsapp.inbox.view']);
+        $this->conversationWithInbound('923001112222', 'I want a hydrafacial please');
+        $this->conversationWithInbound('923008765432', 'Hello');
+        $this->conversationWithInbound('923009999999', 'unrelated'); // must NOT match either search
+
+        // Find a chat by a word inside a message (not just name/number).
+        $byText = $this->getJson('/api/whatsapp/conversations?search=hydrafacial')->assertOk()->json('data');
+        $this->assertSame(['923001112222'], array_column($byText, 'wa_id'));
+
+        // The local leading-0 format finds the stored international wa_id.
+        $byPhone = $this->getJson('/api/whatsapp/conversations?search=03008765432')->assertOk()->json('data');
+        $this->assertSame(['923008765432'], array_column($byPhone, 'wa_id'));
+    }
+
     public function test_resolve_and_reopen_a_conversation(): void
     {
         $this->actAsAgentWith(['whatsapp.inbox.view']);
