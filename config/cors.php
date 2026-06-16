@@ -35,7 +35,12 @@ return [
 
     'allowed_headers' => ['*'],
 
-    'exposed_headers' => [],
+    // crm3 runs cross-origin from the API in production (crm3.cutera.pk →
+    // api.cutera.pk). `Content-Disposition` is not a CORS-safelisted response
+    // header, so the SPA's fetch-based file downloads (api.ts `downloadBlob`)
+    // can't read the server-provided filename unless it's explicitly exposed —
+    // without this every report/PDF/Excel export saved as `download.bin`.
+    'exposed_headers' => ['Content-Disposition'],
 
     'max_age' => 0,
 
