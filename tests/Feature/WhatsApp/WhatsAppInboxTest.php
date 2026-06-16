@@ -983,6 +983,22 @@ class WhatsAppInboxTest extends TestCase
         $this->assertSame('923007654321', $byPhone[0]['wa_id']);
     }
 
+    public function test_search_matches_message_text_and_the_local_phone_format(): void
+    {
+        $this->actAsAgentWith(['whatsapp.inbox.view']);
+        $this->conversationWithInbound('923001112222', 'I want a hydrafacial please');
+        $this->conversationWithInbound('923008765432', 'Hello');
+        $this->conversationWithInbound('923009999999', 'unrelated'); // must NOT match either search
+
+        // Find a chat by a word inside a message (not just name/number).
+        $byText = $this->getJson('/api/whatsapp/conversations?search=hydrafacial')->assertOk()->json('data');
+        $this->assertSame(['923001112222'], array_column($byText, 'wa_id'));
+
+        // The local leading-0 format finds the stored international wa_id.
+        $byPhone = $this->getJson('/api/whatsapp/conversations?search=03008765432')->assertOk()->json('data');
+        $this->assertSame(['923008765432'], array_column($byPhone, 'wa_id'));
+    }
+
     public function test_resolve_and_reopen_a_conversation(): void
     {
         $this->actAsAgentWith(['whatsapp.inbox.view']);
@@ -1071,6 +1087,24 @@ class WhatsAppInboxTest extends TestCase
         $this->assertCount(1, $mutedOnly);
         $this->assertSame('923001111111', $mutedOnly[0]['wa_id']);
         $this->assertTrue($mutedOnly[0]['muted']);
+    }
+
+    public function test_search_finds_a_muted_chat_even_though_the_default_list_hides_it(): void
+    {
+        $this->actAsAgentWith(['whatsapp.inbox.view']);
+        $spam = WhatsappTag::create(['account_id' => 1, 'name' => 'Spam', 'color' => 'danger', 'is_muting' => true]);
+        $muted = $this->conversationWithInbound('923001111111', 'Hi');
+        $muted->update(['profile_name' => 'Red Signal']);
+        $muted->tags()->attach($spam->id);
+
+        // The default list still hides the muted chat.
+        $default = $this->getJson('/api/whatsapp/conversations')->assertOk()->json('data');
+        $this->assertNotContains('923001111111', array_column($default, 'wa_id'));
+
+        // But a deliberate search reaches it (a known contact is findable even
+        // when it's been tagged Spam).
+        $found = $this->getJson('/api/whatsapp/conversations?search=Red+Signal')->assertOk()->json('data');
+        $this->assertSame(['923001111111'], array_column($found, 'wa_id'));
     }
 
     public function test_unread_count_excludes_muted_chats(): void

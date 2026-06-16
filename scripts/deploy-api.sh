@@ -138,9 +138,17 @@ echo "   $API_URL/api/user    -> $u (want 401 for JSON = app up, auth enforced)"
 v="$(curl -skS "$API_URL/api/version" 2>/dev/null | sed -n 's/.*"commit"[^"]*"\([^"]*\)".*/\1/p')"
 echo "   $API_URL/api/version -> commit $v"
 [ "$v" = "$HEAD_SHORT" ] && say "  /api/version matches deploy ($v)" || warn "/api/version=$v != deployed $HEAD_SHORT"
-c2="$(curl -skS -o /dev/null -w '%{http_code}' "$CRM2_URL/login" 2>/dev/null || echo 000)"
-echo "   $CRM2_URL/login -> $c2 (want 200 = crm2 unbroken)"
-[ "$c2" = 200 ] || warn "crm2 not 200 after deploy - investigate immediately."
+# crm2 is intentionally Basic-Auth locked for maintenance (same creds as the crm3
+# gate); 200 (authed) or 401 (gate up) both mean it's alive — only an unreachable
+# box (000/5xx) is a real problem. Authenticate when the gate creds are present.
+CRM2_GATE_AUTH="${CRM2_GATE_AUTH:-${CRM3_GATE_AUTH:-}}"
+if [ -n "$CRM2_GATE_AUTH" ]; then
+  c2="$(curl -skS -u "$CRM2_GATE_AUTH" -o /dev/null -w '%{http_code}' "$CRM2_URL/login" 2>/dev/null)"
+else
+  c2="$(curl -skS -o /dev/null -w '%{http_code}' "$CRM2_URL/login" 2>/dev/null)"
+fi
+echo "   $CRM2_URL/login -> ${c2:-000} (200 authed / 401 maintenance lock = crm2 OK)"
+case "${c2:-000}" in 200|401) ;; *) warn "crm2 ${c2:-000} after deploy - investigate immediately." ;; esac
 
 say "DONE. Deployed $HEAD_SHORT to api."
 say "Rollback: ssh in, 'cd $API_REMOTE_DIR && git reset --hard $PREV_SHA', then migrate/cache as needed."

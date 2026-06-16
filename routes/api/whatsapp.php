@@ -31,8 +31,8 @@ Route::prefix('whatsapp')->name('whatsapp.')
         Route::get('tags', [WhatsAppTagController::class, 'index'])->name('tags.index');
         Route::post('tags', [WhatsAppTagController::class, 'store'])
             ->middleware('permission:whatsapp.inbox.reply')->name('tags.store');
-        Route::delete('tags/{id}', [WhatsAppTagController::class, 'destroy'])
-            ->whereNumber('id')->middleware('permission:whatsapp.inbox.reply')->name('tags.destroy');
+        // Tag DELETION is intentionally not exposed — tags are a fixed, managed
+        // set (changed only via migration). No destroy route, by design.
 
         Route::get('health', [WhatsAppInboxController::class, 'health'])->name('health');
         Route::get('number-quality', [WhatsAppInboxController::class, 'numberQuality'])->name('number_quality');

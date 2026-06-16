@@ -13,6 +13,7 @@ use App\Models\WhatsappConversation;
 use App\Models\WhatsappMessage;
 use App\Services\WhatsApp\WhatsAppService;
 use App\Support\WhatsAppMediaType;
+use App\Support\WhatsAppPhoneMatch;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -61,19 +62,34 @@ class WhatsAppInboxController extends Controller
             // Chats we can no longer reply to until the customer messages again.
             ->when($request->boolean('window_closed'), fn ($q) => $q->windowClosed())
             // "Spam"-style muting tags hide a chat from the default inbox; the
-            // `muted` filter is the only view that shows them.
+            // `muted` filter is the only view that shows them — EXCEPT a deliberate
+            // search spans everything (incl. spam), so you can always find a known
+            // contact by name/number/message even if it's been muted.
             ->when(
                 $request->boolean('muted'),
                 fn ($q) => $q->whereHas('tags', fn ($t) => $t->where('is_muting', true)),
-                fn ($q) => $q->whereDoesntHave('tags', fn ($t) => $t->where('is_muting', true)),
+                fn ($q) => $request->filled('search')
+                    ? $q
+                    : $q->whereDoesntHave('tags', fn ($t) => $t->where('is_muting', true)),
             )
             ->when($request->filled('search'), function ($q) use ($request): void {
-                // Match the phone, the WhatsApp profile name, or the linked patient.
+                // Match the WhatsApp profile name, the linked patient, the phone
+                // (in any common format), OR the text of any message in the chat.
                 $term = trim((string) $request->string('search'));
-                $q->where(function ($w) use ($term): void {
-                    $w->where('wa_id', 'like', "%{$term}%")
-                        ->orWhere('profile_name', 'like', "%{$term}%")
-                        ->orWhereHas('patient', fn ($p) => $p->where('name', 'like', "%{$term}%"));
+                $phoneForms = WhatsAppPhoneMatch::searchCandidates(
+                    $term,
+                    (string) config('whatsapp.country_code', ''),
+                );
+                $q->where(function ($w) use ($term, $phoneForms): void {
+                    $w->where('profile_name', 'like', "%{$term}%")
+                        ->orWhereHas('patient', fn ($p) => $p->where('name', 'like', "%{$term}%"))
+                        // Search message bodies (both directions). Leading-wildcard
+                        // LIKE = no index; fine at inbox scale, revisit with a
+                        // FULLTEXT index if the messages table grows large.
+                        ->orWhereHas('messages', fn ($m) => $m->where('body', 'like', "%{$term}%"));
+                    foreach ($phoneForms as $form) {
+                        $w->orWhere('wa_id', 'like', "%{$form}%");
+                    }
                 });
             })
             ->orderByDesc(
