@@ -40,6 +40,7 @@ class WhatsAppInboxController extends Controller
             'muted' => 'sometimes|boolean',
             'mine' => 'sometimes|boolean',
             'unassigned' => 'sometimes|boolean',
+            'window_closed' => 'sometimes|boolean',
             'per_page' => 'sometimes|integer|min:1|max:100',
             'search' => 'sometimes|string|max:100',
         ]);
@@ -57,6 +58,8 @@ class WhatsAppInboxController extends Controller
             ->when($request->boolean('resolved'), fn ($q) => $q->whereNotNull('resolved_at'))
             ->when($request->boolean('mine'), fn ($q) => $q->where('assigned_to_id', $request->user()->id))
             ->when($request->boolean('unassigned'), fn ($q) => $q->whereNull('assigned_to_id'))
+            // Chats we can no longer reply to until the customer messages again.
+            ->when($request->boolean('window_closed'), fn ($q) => $q->windowClosed())
             // "Spam"-style muting tags hide a chat from the default inbox; the
             // `muted` filter is the only view that shows them.
             ->when(

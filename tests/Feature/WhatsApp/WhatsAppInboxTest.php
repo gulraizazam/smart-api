@@ -361,6 +361,22 @@ class WhatsAppInboxTest extends TestCase
         $this->getJson("/api/whatsapp/conversations/{$conversation->id}/older")->assertStatus(422);
     }
 
+    public function test_window_closed_filter_returns_only_chats_past_the_24h_window(): void
+    {
+        $this->actAsAgentWith(['whatsapp.inbox.view']);
+        $this->conversationWithInbound('923001111111', 'recent', 5);        // 5 min ago → open
+        $this->conversationWithInbound('923002222222', 'old', 25 * 60);     // 25h ago → closed
+        WhatsappConversation::create(['wa_id' => '923003333333', 'profile_name' => 'X']); // never messaged → closed
+
+        $response = $this->getJson('/api/whatsapp/conversations?window_closed=1');
+
+        $response->assertOk();
+        $waIds = array_column($response->json('data'), 'wa_id');
+        $this->assertContains('923002222222', $waIds);
+        $this->assertContains('923003333333', $waIds);
+        $this->assertNotContains('923001111111', $waIds); // window still open
+    }
+
     public function test_reaction_message_surfaces_the_emoji_as_its_body(): void
     {
         // A reaction arrives as a 'reaction' message with no body — the emoji is
