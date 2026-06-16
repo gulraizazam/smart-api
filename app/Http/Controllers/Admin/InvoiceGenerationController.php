@@ -71,7 +71,7 @@ class InvoiceGenerationController extends Controller
     /**
      * Export exempt invoices to Excel
      */
-    public function exportExemptInvoices(InvoiceCalculationRequest $request): \Illuminate\Http\JsonResponse
+    public function exportExemptInvoices(InvoiceCalculationRequest $request): \Symfony\Component\HttpFoundation\StreamedResponse|\Illuminate\Http\JsonResponse
     {
         $validated = $request->validated();
 
@@ -134,14 +134,23 @@ class InvoiceGenerationController extends Controller
             // Generate filename
             $filename = 'exempt_invoices_' . $dates['from'] . '_to_' . $dates['to'] . '.xlsx';
 
-            // Output to browser
-            header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-            header('Content-Disposition: attachment;filename="' . $filename . '"');
-            header('Cache-Control: max-age=0');
-
+            // Stream through a real Laravel response, NOT header()+exit. The SPA
+            // (crm3.cutera.pk) fetches this cross-origin from api.cutera.pk; an
+            // `exit` skips the HandleCors middleware, so the response carries no
+            // Access-Control-Allow-Origin header and the browser blocks it with
+            // a bare "Failed to fetch". streamDownload returns the response back
+            // up through the stack so CORS + Content-Disposition get applied.
+            // (crm2's Blade page POSTs a same-origin <form>, so it never hit this.)
             $writer = new Xlsx($spreadsheet);
-            $writer->save('php://output');
-            exit;
+
+            return response()->streamDownload(
+                static fn () => $writer->save('php://output'),
+                $filename,
+                [
+                    'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                    'Cache-Control' => 'max-age=0',
+                ],
+            );
 
         } catch (\Exception $e) {
             return response()->json([
