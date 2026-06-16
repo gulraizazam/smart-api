@@ -89,6 +89,14 @@ class InvoiceGenerationController extends Controller
             'max_invoices_per_day' => (int) ($validated['max_invoices_per_day'] ?? 2),
         ];
 
+        // Building the full workbook (Summary + every exempt/taxable invoice +
+        // patient distribution) holds the whole spreadsheet in memory, so large
+        // months can otherwise blow past PHP's defaults and the worker dies
+        // mid-stream — the browser then shows a bare "Failed to fetch". Lift the
+        // ceilings to the same prod-proven budget the invoice-ZIP export uses.
+        set_time_limit(600);
+        ini_set('memory_limit', '512M');
+
         try {
             // Use cached result from calculateAmounts to ensure consistency
             $result = session('invoice_generation_result');
