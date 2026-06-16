@@ -424,6 +424,23 @@ class AppointmentService
                 }
             }
 
+            // Server-side phone de-dup — the authoritative backstop. A phone
+            // maps to exactly ONE patient within an account, so before we ever
+            // mint a patient from a bare phone, look one up. The SPA resolves
+            // the patient_id client-side, but that lookup is async (debounced +
+            // network) and the Save button doesn't wait for it; a fast submit,
+            // or any non-SPA caller (legacy crm2 / direct API), can arrive with
+            // a phone and no patient_id. Without this guard each such create
+            // spawned a DUPLICATE patient (e.g. a repeat visit at another
+            // branch). Only runs when nothing is resolved yet — the exact case
+            // that would otherwise fall through to new-patient creation below.
+            if (! isset($data['patient_id']) && ! isset($data['lead_id']) && ! empty($data['phone'])) {
+                $existingByPhone = Patients::getByPhone((string) $data['phone'], $this->getAccountId());
+                if ($existingByPhone) {
+                    $data['patient_id'] = $existingByPhone->id;
+                }
+            }
+
             // Decide whether to spawn a new patient. A new patient is created
             // ONLY when the caller supplied NO identity (neither lead_id NOR
             // patient_id) — either via the explicit "new patient" toggle or
@@ -1500,6 +1517,19 @@ class AppointmentService
             ) {
                 $updateData['send_message'] = 1;
             }
+
+            // A reschedule resets the workflow status: anything that isn't
+            // Arrived or Converted goes back to the default (Pending) so the
+            // moved appointment starts fresh on the new date. Arrived /
+            // Converted are preserved (real progress). Mirrors the treatment
+            // drag-drop path; the helper is the single source of this rule.
+            $updateData = array_merge(
+                $updateData,
+                AppointmentStatuses::resetStatusOnReschedule(
+                    (int) $appointment->base_appointment_status_id,
+                    $accountId,
+                ),
+            );
 
             $appointment->update($updateData);
 
