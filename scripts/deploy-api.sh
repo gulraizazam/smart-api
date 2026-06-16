@@ -2,15 +2,15 @@
 #
 # deploy-api.sh - the SANCTIONED, gated way to deploy the Laravel backend to
 # api.cutera.pk. FAIL-CLOSED: prod can only ever run code that is EXACTLY
-# origin/backend, passed the full test suite, passed the crm2 coexistence
-# check, and is >= prod (no schema drift, local ahead). Deploy mechanics are
+# origin/backend, passed the full test suite, and is >= prod (no schema drift,
+# local ahead). Deploy mechanics are
 # the documented manual flow: git push local->server (the box can't pull from
 # Bitbucket), then migrate + clear caches with php8.4. See
 # project_deploy_pipelines / project_local_vs_production_db.
 #
 # Prerequisites:
-#   - Local coexistence mirror up (Herd backend.test + crm2.test) for Gate 4.
-#   - Read SSH access to the box for Gate 5 (parity) - pre-authorized.
+#   - Local backend up (Herd backend.test) for the Gate 3 test suite.
+#   - Read SSH access to the box for Gate 4 (parity) - pre-authorized.
 #
 # Usage:
 #   bash scripts/deploy-api.sh --check   # run ALL gates, do NOT deploy
@@ -43,7 +43,7 @@ ssh_prod() { ssh -i "$SSH_KEY" -p "$SSH_PORT" "$SSH_HOST" "$@"; }
 http() { curl -skS -o /dev/null -w '%{http_code}' -H 'Accept: application/json' "$1" 2>/dev/null || echo 000; }
 
 # ---- Gate 1: on the backend release branch, clean tree ----------------------
-say "Gate 1/5: on '$DEPLOY_BRANCH' with a clean tree"
+say "Gate 1/4: on '$DEPLOY_BRANCH' with a clean tree"
 branch="$(git rev-parse --abbrev-ref HEAD)"
 [ "$branch" = "$DEPLOY_BRANCH" ] \
   || die "on '$branch', not '$DEPLOY_BRANCH'. Deploy only from the backend release branch (merge shahid -> backend first)."
@@ -54,25 +54,22 @@ HEAD_SHORT="$(git rev-parse --short HEAD)"
 echo "   HEAD = $HEAD_SHORT"
 
 # ---- Gate 2: local == origin/backend (no laptop-only code) ------------------
-say "Gate 2/5: local '$DEPLOY_BRANCH' is in sync with origin/$DEPLOY_BRANCH"
+say "Gate 2/4: local '$DEPLOY_BRANCH' is in sync with origin/$DEPLOY_BRANCH"
 git fetch origin "$DEPLOY_BRANCH" --quiet
 [ "$HEAD_SHA" = "$(git rev-parse "origin/$DEPLOY_BRANCH")" ] \
   || die "local $DEPLOY_BRANCH != origin/$DEPLOY_BRANCH. Push/pull so you deploy EXACTLY origin -
          prod must never run laptop-only code (this is what caused the 2026-06-03 drift)."
 
 # ---- Gate 3: full backend test suite ----------------------------------------
-say "Gate 3/5: full backend test suite (pest)"
+say "Gate 3/4: full backend test suite (pest)"
 "$LOCAL_PHP" -d memory_limit=-1 vendor/bin/pest \
   || die "backend test suite FAILED - fix before deploying."
 
-# ---- Gate 4: crm2 coexistence (local shared-DB mirror) ----------------------
-say "Gate 4/5: coexistence-check.sh (this code must not break crm2)"
-"$LOCAL_PHP" artisan config:clear >/dev/null 2>&1 || true
-bash scripts/coexistence-check.sh \
-  || die "coexistence-check FAILED - this code would break crm2 on the shared DB. Refusing."
-
-# ---- Gate 5: parity (local >= prod, no drift, crm2 200) ---------------------
-say "Gate 5/5: parity-check.sh (local >= prod, no schema drift, crm2 healthy)"
+# ---- Gate 4: parity (local >= prod, no drift) -------------------------------
+# Gate 4 "coexistence-check" retired 2026-06-16: crm2 was delinked from the
+# shared DB (cutover complete), so "must not break crm2" no longer applies.
+# See plan Tier S3/S4.
+say "Gate 4/4: parity-check.sh (local >= prod, no schema drift)"
 PARITY_PROD_SSH="-p $SSH_PORT -i $SSH_KEY $SSH_HOST" \
 PARITY_PROD_ARTISAN="cd $API_REMOTE_DIR && $PHP84 artisan" \
   bash scripts/parity-check.sh \
