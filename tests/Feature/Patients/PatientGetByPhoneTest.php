@@ -72,6 +72,28 @@ class PatientGetByPhoneTest extends TestCase
         }
     }
 
+    public function test_finds_patient_stored_with_a_formatted_phone(): void
+    {
+        // The exact duplicate-causing gap: a patient row saved WITH formatting
+        // (spaces). The clean-variant whereIn on the raw `phone` column missed
+        // it entirely — a repeat (often cross-branch) visit then minted a
+        // DUPLICATE patient. The phone_normalized match resolves it regardless
+        // of how the stored value is formatted.
+        $patient = Patients::factory()->create(['phone' => '0311 0088 221']);
+        $this->assertSame(
+            '0311 0088 221',
+            (string) DB::table('users')->where('id', $patient->id)->value('phone'),
+        );
+
+        foreach (['3110088221', '03110088221', '923110088221', '+923110088221', '0311-0088-221'] as $input) {
+            $this->assertSame(
+                $patient->id,
+                Patients::getByPhone($input)?->id,
+                "Input '{$input}' must resolve to the patient stored as '0311 0088 221'.",
+            );
+        }
+    }
+
     public function test_returns_null_for_unknown_phone(): void
     {
         Patients::factory()->create(['phone' => '3215044424']);

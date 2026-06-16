@@ -375,18 +375,30 @@ class Patients extends BaseModel
 
     public static function getByPhone(string $phone, int|false $accountId = false, int|false $patientId = false): ?self
     {
-        // Match every equivalent stored form (canonical, raw leading zero,
-        // 92/+92 country code) — the `phone` column is not normalised
-        // consistently across the shared DB, so an exact match on the
-        // cleaned number alone misses ~1k consultation-created rows that
-        // kept the leading zero. See PhoneFormattingService::matchVariants.
+        // Match every equivalent stored form so the lookup is immune to BOTH
+        // an inconsistent `phone` column (canonical vs raw leading zero vs
+        // 92/+92 country code) AND to formatting in the stored value (spaces,
+        // dashes, `+`). Primary path is the digits-only `phone_normalized`
+        // column (indexed, always populated) — it matches a row stored as
+        // "0311 0088 221" that the raw-`phone` whereIn would miss, which is how
+        // a repeat (often cross-branch) visit minted a DUPLICATE patient. The
+        // raw-`phone` variant match is kept as a backstop. See
+        // PhoneFormattingService::{normalizedVariants,matchVariants}.
         $variants = PhoneFormattingService::matchVariants($phone);
+        $normalizedVariants = PhoneFormattingService::normalizedVariants($phone);
 
         $query = self::where('user_type_id', self::$USER_TYPE);
-        if (empty($variants)) {
+        if (empty($variants) && empty($normalizedVariants)) {
             $query->where('phone', $phone);
         } else {
-            $query->whereIn('phone', $variants);
+            $query->where(function ($q) use ($variants, $normalizedVariants): void {
+                if (! empty($normalizedVariants)) {
+                    $q->orWhereIn('phone_normalized', $normalizedVariants);
+                }
+                if (! empty($variants)) {
+                    $q->orWhereIn('phone', $variants);
+                }
+            });
         }
 
         // A phone maps to exactly one patient WITHIN an account. Scope to the
