@@ -29,6 +29,7 @@ trait ApiResponse
         LengthAwarePaginator|Paginator|CursorPaginator $paginator,
         ?string $resourceClass = null,
         int $code = 200,
+        array $extraMeta = [],
     ): JsonResponse {
         $items = $paginator->getCollection();
 
@@ -80,7 +81,7 @@ trait ApiResponse
             'status'  => true,
             'message' => $message,
             'data' => $data,
-            'meta' => $meta,
+            'meta' => array_merge($meta, $extraMeta),
             'links' => $links,
             'errors' => [],
         ], $code);

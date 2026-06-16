@@ -154,8 +154,7 @@ class WhatsAppWebhookController extends Controller
             }
 
             // Apply every conversation-level change from this message in ONE
-            // UPDATE: stamp the 24h-window anchor, honour STOP/START opt-out,
-            // and reopen a resolved chat so the team sees the new message.
+            // UPDATE: stamp the 24h-window anchor and honour STOP/START opt-out.
             $mutations = [
                 // Meta sends an epoch timestamp (UTC); express it in the app
                 // timezone so it round-trips the datetime column like every
@@ -171,11 +170,6 @@ class WhatsAppWebhookController extends Controller
                 $mutations['opted_out_at'] = now();
             } elseif (WhatsAppOptOut::isOptIn($body)) {
                 $mutations['opted_out_at'] = null;
-            }
-
-            // A new inbound message reopens a resolved chat.
-            if ($conversation->resolved_at !== null) {
-                $mutations['resolved_at'] = null;
             }
 
             $conversation->update($mutations);

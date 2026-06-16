@@ -57,8 +57,6 @@ Route::prefix('whatsapp')->name('whatsapp.')
             ->whereNumber('id')->middleware(['permission:whatsapp.inbox.reply', 'throttle:30,1'])->name('conversations.react');
         Route::post('conversations/{id}/assign', [WhatsAppInboxController::class, 'assign'])
             ->whereNumber('id')->middleware('throttle:60,1')->name('conversations.assign');
-        Route::post('conversations/{id}/resolve', [WhatsAppInboxController::class, 'resolve'])
-            ->whereNumber('id')->middleware('throttle:60,1')->name('conversations.resolve');
         Route::post('conversations/{id}/tags', [WhatsAppInboxController::class, 'tag'])
             ->whereNumber('id')->middleware('throttle:60,1')->name('conversations.tag');
         Route::delete('conversations/{id}/tags/{tagId}', [WhatsAppInboxController::class, 'untag'])

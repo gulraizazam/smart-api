@@ -37,7 +37,6 @@ class WhatsAppInboxController extends Controller
     {
         $validated = $request->validate([
             'unread' => 'sometimes|boolean',
-            'resolved' => 'sometimes|boolean',
             'muted' => 'sometimes|boolean',
             'mine' => 'sometimes|boolean',
             'unassigned' => 'sometimes|boolean',
@@ -45,6 +44,17 @@ class WhatsAppInboxController extends Controller
             'per_page' => 'sometimes|integer|min:1|max:100',
             'search' => 'sometimes|string|max:100',
         ]);
+
+        // The default "Active" view shows only chats we can still reply to (the
+        // 24h window is open). Closed-window chats live behind the explicit
+        // `window_closed` filter; the other lenses and a deliberate search span
+        // everyone, so a known contact is always reachable.
+        $isDefaultView = ! $request->boolean('unread')
+            && ! $request->boolean('mine')
+            && ! $request->boolean('unassigned')
+            && ! $request->boolean('window_closed')
+            && ! $request->boolean('muted')
+            && ! $request->filled('search');
 
         $conversations = WhatsappConversation::query()
             ->with(['lastMessage', 'patient', 'assignee', 'tags'])
@@ -56,11 +66,12 @@ class WhatsAppInboxController extends Controller
                     });
             }, 'notes'])
             ->when($request->boolean('unread'), fn ($q) => $q->unread())
-            ->when($request->boolean('resolved'), fn ($q) => $q->whereNotNull('resolved_at'))
             ->when($request->boolean('mine'), fn ($q) => $q->where('assigned_to_id', $request->user()->id))
             ->when($request->boolean('unassigned'), fn ($q) => $q->whereNull('assigned_to_id'))
             // Chats we can no longer reply to until the customer messages again.
             ->when($request->boolean('window_closed'), fn ($q) => $q->windowClosed())
+            // Default "Active" view hides closed-window chats (can't reply anyway).
+            ->when($isDefaultView, fn ($q) => $q->windowOpen())
             // "Spam"-style muting tags hide a chat from the default inbox; the
             // `muted` filter is the only view that shows them — EXCEPT a deliberate
             // search spans everything (incl. spam), so you can always find a known
@@ -100,7 +111,20 @@ class WhatsAppInboxController extends Controller
             )
             ->paginate((int) ($validated['per_page'] ?? 50));
 
-        return $this->paginatedResponse('Conversations', $conversations, WhatsappConversationResource::class);
+        // Count of closed-window chats (excluding muted "Spam") — drives the
+        // "Window closed (N)" badge so nothing feels lost while they're hidden
+        // from the default view. Matches what the `window_closed` filter shows.
+        $windowClosedCount = WhatsappConversation::query()
+            ->windowClosed()
+            ->whereDoesntHave('tags', fn ($t) => $t->where('is_muting', true))
+            ->count();
+
+        return $this->paginatedResponse(
+            'Conversations',
+            $conversations,
+            WhatsappConversationResource::class,
+            extraMeta: ['window_closed_count' => $windowClosedCount],
+        );
     }
 
     /**
@@ -378,22 +402,6 @@ class WhatsAppInboxController extends Controller
         $conversation->update(['assigned_to_id' => $validated['assigned_to_id'] ?? null]);
 
         return $this->successResponse('Assignment updated', new WhatsappConversationResource(
-            $conversation->load(['assignee', 'patient', 'lastMessage', 'tags']),
-        ));
-    }
-
-    /**
-     * Mark the conversation resolved/done (triage) or reopen it. A later inbound
-     * message reopens it automatically (see the webhook).
-     */
-    public function resolve(Request $request, int $id): JsonResponse
-    {
-        $validated = $request->validate(['resolved' => 'required|boolean']);
-
-        $conversation = WhatsappConversation::findOrFail($id);
-        $conversation->update(['resolved_at' => $validated['resolved'] ? now() : null]);
-
-        return $this->successResponse('Conversation updated', new WhatsappConversationResource(
             $conversation->load(['assignee', 'patient', 'lastMessage', 'tags']),
         ));
     }

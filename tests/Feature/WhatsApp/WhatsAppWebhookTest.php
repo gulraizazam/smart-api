@@ -351,17 +351,6 @@ class WhatsAppWebhookTest extends TestCase
         $this->assertNull(WhatsappConversation::where('wa_id', '923009999999')->value('patient_id'));
     }
 
-    public function test_inbound_message_reopens_a_resolved_conversation(): void
-    {
-        $conversation = WhatsappConversation::create(['wa_id' => '923001234567', 'resolved_at' => now()]);
-
-        $this->postSigned($this->inboundTextPayload(
-            waId: '923001234567', wamid: 'wamid.REOPEN==', text: 'Hi again', timestamp: now()->timestamp,
-        ))->assertOk();
-
-        $this->assertNull($conversation->fresh()->resolved_at, 'a new inbound message should reopen a resolved chat');
-    }
-
     /**
      * POST the payload signed the way Meta signs it: X-Hub-Signature-256 =
      * sha256 HMAC of the raw JSON body, keyed with the app secret.

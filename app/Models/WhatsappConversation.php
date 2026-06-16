@@ -36,7 +36,6 @@ class WhatsappConversation extends BaseModel
         'last_read_at',
         'opted_out_at',
         'assigned_to_id',
-        'resolved_at',
     ];
 
     protected function casts(): array
@@ -45,7 +44,6 @@ class WhatsappConversation extends BaseModel
             'last_inbound_at' => 'datetime',
             'last_read_at' => 'datetime',
             'opted_out_at' => 'datetime',
-            'resolved_at' => 'datetime',
         ];
     }
 
@@ -134,6 +132,17 @@ class WhatsappConversation extends BaseModel
             $w->whereNull('last_inbound_at')
                 ->orWhere('last_inbound_at', '<=', now()->subHours(self::SERVICE_WINDOW_HOURS));
         });
+    }
+
+    /**
+     * Conversations whose 24h reply window is still OPEN — the customer messaged
+     * within the last 24 hours, so we can reply. Inverse of windowClosed(); the
+     * default "Active" inbox view shows only these.
+     */
+    public function scopeWindowOpen(Builder $query): Builder
+    {
+        return $query->whereNotNull('last_inbound_at')
+            ->where('last_inbound_at', '>', now()->subHours(self::SERVICE_WINDOW_HOURS));
     }
 
     /**
