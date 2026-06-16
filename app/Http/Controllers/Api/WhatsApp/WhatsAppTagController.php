@@ -50,12 +50,7 @@ class WhatsAppTagController extends Controller
         return $this->successResponse('Tag added', new WhatsappTagResource($tag));
     }
 
-    public function destroy(int $id): JsonResponse
-    {
-        $tag = WhatsappTag::findOrFail($id);
-        $tag->conversations()->detach(); // pivot has no FK cascade
-        $tag->delete();
-
-        return $this->successResponse('Tag deleted');
-    }
+    // No destroy(): tag deletion is intentionally not supported. Tags are a fixed,
+    // managed set — retire one via a migration, not at runtime (a hard delete here
+    // would silently unmute every chat that carried the tag).
 }

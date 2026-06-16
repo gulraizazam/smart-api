@@ -83,16 +83,15 @@ class WhatsAppTagTest extends TestCase
         $this->postJson('/api/whatsapp/tags', ['name' => 'New'])->assertStatus(403);
     }
 
-    public function test_destroy_deletes_the_tag_and_detaches_it(): void
+    public function test_tag_deletion_is_not_exposed(): void
     {
+        // Tags are a fixed, managed set — there is no delete endpoint. The tag
+        // (and any chats carrying it) must survive a DELETE attempt.
         $this->actAsAgentWith(['whatsapp.inbox.view', 'whatsapp.inbox.reply']);
-        $tag = WhatsappTag::create(['account_id' => 1, 'name' => 'Temp', 'color' => 'neutral']);
-        $conversation = WhatsappConversation::create(['wa_id' => '923001234567']);
-        $conversation->tags()->attach($tag->id);
+        $tag = WhatsappTag::create(['account_id' => 1, 'name' => 'Spam', 'color' => 'danger', 'is_muting' => true]);
 
-        $this->deleteJson("/api/whatsapp/tags/{$tag->id}")->assertOk();
+        $this->deleteJson("/api/whatsapp/tags/{$tag->id}")->assertNotFound();
 
-        $this->assertDatabaseMissing('whatsapp_tags', ['id' => $tag->id]);
-        $this->assertDatabaseMissing('whatsapp_conversation_tag', ['whatsapp_tag_id' => $tag->id]);
+        $this->assertDatabaseHas('whatsapp_tags', ['id' => $tag->id]);
     }
 }
