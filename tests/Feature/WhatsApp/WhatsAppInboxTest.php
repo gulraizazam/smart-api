@@ -1089,6 +1089,24 @@ class WhatsAppInboxTest extends TestCase
         $this->assertTrue($mutedOnly[0]['muted']);
     }
 
+    public function test_search_finds_a_muted_chat_even_though_the_default_list_hides_it(): void
+    {
+        $this->actAsAgentWith(['whatsapp.inbox.view']);
+        $spam = WhatsappTag::create(['account_id' => 1, 'name' => 'Spam', 'color' => 'danger', 'is_muting' => true]);
+        $muted = $this->conversationWithInbound('923001111111', 'Hi');
+        $muted->update(['profile_name' => 'Red Signal']);
+        $muted->tags()->attach($spam->id);
+
+        // The default list still hides the muted chat.
+        $default = $this->getJson('/api/whatsapp/conversations')->assertOk()->json('data');
+        $this->assertNotContains('923001111111', array_column($default, 'wa_id'));
+
+        // But a deliberate search reaches it (a known contact is findable even
+        // when it's been tagged Spam).
+        $found = $this->getJson('/api/whatsapp/conversations?search=Red+Signal')->assertOk()->json('data');
+        $this->assertSame(['923001111111'], array_column($found, 'wa_id'));
+    }
+
     public function test_unread_count_excludes_muted_chats(): void
     {
         $this->actAsAgentWith(['whatsapp.inbox.view']);

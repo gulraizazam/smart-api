@@ -62,11 +62,15 @@ class WhatsAppInboxController extends Controller
             // Chats we can no longer reply to until the customer messages again.
             ->when($request->boolean('window_closed'), fn ($q) => $q->windowClosed())
             // "Spam"-style muting tags hide a chat from the default inbox; the
-            // `muted` filter is the only view that shows them.
+            // `muted` filter is the only view that shows them — EXCEPT a deliberate
+            // search spans everything (incl. spam), so you can always find a known
+            // contact by name/number/message even if it's been muted.
             ->when(
                 $request->boolean('muted'),
                 fn ($q) => $q->whereHas('tags', fn ($t) => $t->where('is_muting', true)),
-                fn ($q) => $q->whereDoesntHave('tags', fn ($t) => $t->where('is_muting', true)),
+                fn ($q) => $request->filled('search')
+                    ? $q
+                    : $q->whereDoesntHave('tags', fn ($t) => $t->where('is_muting', true)),
             )
             ->when($request->filled('search'), function ($q) use ($request): void {
                 // Match the WhatsApp profile name, the linked patient, the phone
