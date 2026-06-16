@@ -107,16 +107,13 @@ final class ActivityPulseMetric implements Metric
     {
         $type = (string) ($a->activity_type ?? '');
         $rawCreated = $a->getAttribute('created_at');
-        // `activities.created_at` is written by every ActivityLogger writer via
-        // now() — i.e. config('app.timezone') (Asia/Karachi) wall-clock time —
-        // and the DB connection applies no UTC conversion, so the stored value
-        // is ALREADY local. Re-reading it AS UTC and converting to Karachi
-        // double-applied the +5h offset, pushing fresh rows into the future
-        // ("4 hours from now" on just-recorded feedback). Carbon::parse()
-        // defaults to the app timezone — exactly how it was stored, no
-        // conversion needed. This mirrors the canonical ActivityLogService.
+        // `activities.created_at` is stored in UTC (Activity::creating →
+        // toUtcStamp). Read it AS UTC and convert to the app timezone
+        // (Asia/Karachi) for display — exactly what the canonical
+        // ActivityLogService does. Parsing it without a zone (treating the UTC
+        // value as local) showed every fresh row "5 hours ago".
         $createdCarbon = $rawCreated !== null
-            ? Carbon::parse((string) $rawCreated)
+            ? Carbon::parse((string) $rawCreated, 'UTC')->setTimezone(config('app.timezone'))
             : null;
 
         // Prefer the canonical compact HTML renderer so the feed format
