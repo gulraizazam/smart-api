@@ -70,7 +70,9 @@ final class ActivityPulseMetric implements Metric
         }
 
         $query = Activity::query()
-            ->with(['user', 'serviceR', 'patientR', 'centre'])
+            // feedbackR lets the renderer show "<patient> rated their visit
+            // N/10" for feedback rows; eager-loaded here to avoid N+1.
+            ->with(['user', 'serviceR', 'patientR', 'centre', 'feedbackR'])
             ->where('account_id', $scope->accountId)
             ->whereIn('activity_type', self::NOTABLE_TYPES)
             ->whereBetween('created_at', [

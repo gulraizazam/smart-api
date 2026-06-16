@@ -787,7 +787,7 @@ final class ActivityLogRenderer
         $primary = match (true) {
             $type === 'note_added' => 'Note added to '.e($patient)."'s record",
             $type === 'note_updated' => e($patient)."'s note updated",
-            $type === 'feedback_added' => 'Feedback added for '.e($patient).($service !== '' ? ' · '.e($service) : ''),
+            $type === 'feedback_added' => self::feedbackPrimary($a, $patient),
             str_starts_with($type, 'appointmentimage_created') => 'Photo added to '.e($patient)."'s record",
             str_starts_with($type, 'appointmentimage_deleted') => 'Photo removed from '.e($patient)."'s record",
             str_starts_with($type, 'documents_created') => 'Document added to '.e($patient)."'s record",
@@ -798,11 +798,43 @@ final class ActivityLogRenderer
         };
 
         $segments = [$primary];
+        // Feedback leads with the client + rating; the treatment trails as
+        // small context. (Other USER rows carry no service.)
+        if ($type === 'feedback_added' && $service !== '') {
+            $segments[] = e($service);
+        }
         if ($centre !== '') {
             $segments[] = e($centre);
         }
 
         return self::compose('USER', $segments, $actor);
+    }
+
+    /**
+     * Feedback line. When the originating feedback row is eager-loaded — the
+     * management dashboard does this — lead with the client and the rating
+     * they gave ("Jane Doe rated their visit 8/10"). Without the relation
+     * loaded (e.g. the audit-log report), fall back to the plain phrasing
+     * rather than firing a per-row query.
+     */
+    private static function feedbackPrimary(object $a, string $patient): string
+    {
+        $rating = self::loadedFeedbackRating($a);
+
+        return $rating !== null
+            ? e($patient).' rated their visit '.$rating.'/10'
+            : 'Feedback added for '.e($patient);
+    }
+
+    private static function loadedFeedbackRating(object $a): ?int
+    {
+        if (! method_exists($a, 'relationLoaded') || ! $a->relationLoaded('feedbackR')) {
+            return null;
+        }
+
+        $rating = $a->getRelation('feedbackR')?->rating;
+
+        return $rating !== null ? (int) $rating : null;
     }
 
     private static function renderAuth(object $a, string $type, string $action): string
