@@ -16,7 +16,7 @@ jobs:
         image: mariadb:11
         env:
           MARIADB_ROOT_PASSWORD: password
-          MARIADB_DATABASE: cutera_test
+          MARIADB_DATABASE: ALLURA_test
         ports:
           - 3306:3306
         options: >-
@@ -28,7 +28,7 @@ jobs:
     env:
       DB_TEST_HOST: 127.0.0.1
       DB_TEST_PORT: 3306
-      DB_TEST_DATABASE: cutera_test
+      DB_TEST_DATABASE: ALLURA_test
       DB_TEST_USERNAME: root
       DB_TEST_PASSWORD: password
 
@@ -73,7 +73,7 @@ jobs:
 
       - name: Load test database schema
         run: |
-          mysql -h 127.0.0.1 -u root -ppassword cutera_test < database/schema/mysql_testing-schema.sql
+          mysql -h 127.0.0.1 -u root -ppassword ALLURA_test < database/schema/mysql_testing-schema.sql
 
       - name: Run migrations on test database
         run: php artisan migrate --database=mysql_testing --force

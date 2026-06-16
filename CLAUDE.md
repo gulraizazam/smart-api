@@ -119,7 +119,7 @@ Default thought order: **business logic preserved → security → data integrit
 
 - **For non-trivial tasks (>1 file or any logic change), read relevant files first**, summarise findings, then act. Trivial typo/format fixes can proceed directly.
 - **Don't bundle unrelated module changes** in one PR/commit. Cross-cutting changes (permission renames, security patches) are explicitly cross-cutting and stated as such.
-- **If unsure about business logic**, add `// CUTERA-REVIEW: <question>` inline and ask the user — never guess.
+- **If unsure about business logic**, add `// ALLURA-REVIEW: <question>` inline and ask the user — never guess.
 - **Show a diff summary before applying bulk changes** (>3 files or >100 lines).
 - Confirm before destructive or shared-state actions (deletes, force-push, prod-like DB changes, outbound emails, 3rd-party API calls).
 - Never `--no-verify` or hook-bypass without explicit user request.

@@ -20,7 +20,7 @@ use Illuminate\Support\Facades\Log;
  * web submit route /admin/appointmentsmedical/{form_id}/{appointment_id}).
  * The appointment_id + patient reference_id travel in the request body.
  *
- * CUTERA-REVIEW: the spec says {id} maps to the web
+ * ALLURA-REVIEW: the spec says {id} maps to the web
  * GET /admin/medicalhistoryform/{id} which there identifies the patient.
  * For a POST "fill" the required key is the form template id — that is
  * what the corresponding web submit uses. Confirm with product that the

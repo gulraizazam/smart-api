@@ -130,7 +130,7 @@
             var borderColor = bal < 0 ? '#F64E60' : (bal === 0 ? '#E4E6EF' : '#1BC5BD');
             var amtColor = bal < 0 ? '#F64E60' : '#181C32';
             var isBank = p.type === 'bank_account';
-            var label = isBank ? esc(p.name) : esc(p.name).replace(/^CUTERA\s*/i, '');
+            var label = isBank ? esc(p.name) : esc(p.name).replace(/^ALLURA\s*/i, '');
             var borderLeft = isBank ? '3px solid #8950FC' : '3px solid ' + borderColor;
 
             var card = '<div style="border-left:' + borderLeft + ';background:#F8F9FB;border-radius:4px;padding:4px 10px;display:inline-flex;align-items:center;gap:6px;">' +

@@ -78,7 +78,7 @@
         <tr>
             <td>
                 <div style="font-size:22px; font-weight:bold; letter-spacing:3px;">
-                    <span style="font-weight:lighter;">CUTERA</span> AESTHETICS
+                    <span style="font-weight:lighter;"></span> 
                 </div>
                 <p class="logo_caption">{{ $location->address }}.</p>
                 <p class="logo_caption logo_caption2">Phone. {{ $location->fdo_phone }} &nbsp; | &nbsp; Email. care@alluraesthetics.pk &nbsp; | &nbsp; www.alluraesthetics.pk &nbsp; | &nbsp; NTN. {{ $location->ntn }} &nbsp; | &nbsp; STN. {{ $location->stn }}</p>

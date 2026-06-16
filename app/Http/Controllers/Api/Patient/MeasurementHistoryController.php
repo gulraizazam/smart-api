@@ -19,7 +19,7 @@ use Illuminate\Support\Facades\Log;
  * {id} is the custom-form template id being filled (same semantics as the
  * web submit route /admin/appointmentsmeasurement/{form_id}/{appointment_id}).
  *
- * CUTERA-REVIEW: see MedicalHistoryController — same {id} semantics.
+ * ALLURA-REVIEW: see MedicalHistoryController — same {id} semantics.
  */
 class MeasurementHistoryController extends Controller
 {

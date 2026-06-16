@@ -451,7 +451,7 @@ function initCentreWiseArrival(period, centreID, time = '') {
                 walkin_t += walkin;
                 arrived_t += arrived;
                 total_t += total;
-                var centre_name = barLenght[i].replace(/\bCUTERA \b/gi, '');
+                var centre_name = barLenght[i].replace(/\bALLURA \b/gi, '');
                 if (total != 0 && !isNaN(total)) {
                     TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + centre_name + "</td><td>" + arrived + "/" + total + "</td><td>" + walkin + "</td><td>" + ((arrived / total) * 100).toFixed(2) + "%</td></tr>";
                 }
@@ -530,8 +530,8 @@ function ConsultanciesByStatus(bar) {
     let Data = bar.data.bar;
     let modifiedData;
     if (Data.length > 0) {
-        if (Data.some(str => str.includes('CUTERA'))) {
-            modifiedData = Data.map(location => location.replace('CUTERA ', ''));
+        if (Data.some(str => str.includes('ALLURA'))) {
+            modifiedData = Data.map(location => location.replace('ALLURA ', ''));
         } else {
             modifiedData = Data;
         }
@@ -1075,8 +1075,8 @@ function AllDoctorWiseConversion(bar) {
     if (labels.some(str => str.includes('All Centres'))) {
         modifiedData = labels.map(location => location.replace('All Centres ', ''));
     }
-    if (labels.some(str => str.includes('CUTERA'))) {
-        modifiedData = labels.map(location => location.replace('CUTERA ', ''));
+    if (labels.some(str => str.includes('ALLURA'))) {
+        modifiedData = labels.map(location => location.replace('ALLURA ', ''));
     }
 
     // Calculate dynamic width based on number of items (min 800px, 60px per item)

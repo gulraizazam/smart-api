@@ -1,11 +1,11 @@
-﻿CUTERA CRM
+﻿ALLURA CRM
 Doctor Performance Dashboard
 Functional & UX Specification — v1.1
-Prepared for: Cutera CRM Development Team
+Prepared for: ALLURA CRM Development Team
 Stack: Laravel Blade + ApexCharts
 Date: 13 March 2026
 1. Overview & Purpose
-The Doctor Performance Dashboard is a dedicated, role-aware dashboard within the Cutera CRM system. It replaces the standard dashboard for any user whose role has been granted the 'Doctor Dashboard' permission. Its primary purpose is to give doctors a comprehensive, real-time view of their own clinical and commercial performance — covering revenue generation, patient engagement, upselling, membership sales, procedure averages, patient feedback, and Google review counts.
+The Doctor Performance Dashboard is a dedicated, role-aware dashboard within the ALLURA CRM system. It replaces the standard dashboard for any user whose role has been granted the 'Doctor Dashboard' permission. Its primary purpose is to give doctors a comprehensive, real-time view of their own clinical and commercial performance — covering revenue generation, patient engagement, upselling, membership sales, procedure averages, patient feedback, and Google review counts.
 The dashboard is built around a motivational philosophy: every metric is shown alongside the best-in-network anonymous benchmark so doctors are aware of where they stand relative to all peers nationwide. Personal bests, streak tracking, and goal progress bars reinforce a culture of performance and healthy self-improvement.
 This is the first of three planned role-specific dashboards (Doctor, Frontdesk Manager, Management). The permission routing system built here serves as the scalable foundation for all future dashboards.
 The dashboard loads data in real-time on every page visit. There are no scheduled background refreshes or push notifications — all data is current as of the moment the page loads.
@@ -478,4 +478,4 @@ No — last month
 Yes (highest)
 Yes
 Yes (monthly trend)
-Cutera CRM — Doctor Dashboard Specification v1.1 | Confidential | redsignal.net
+ALLURA CRM — Doctor Dashboard Specification v1.1 | Confidential | redsignal.net

@@ -51,7 +51,7 @@ trait RefreshTestDatabase
         $database = $connection->getDatabaseName();
 
         // Hard guard: never wipe a database whose name doesn't end in
-        // `_test`. The mysql_testing connection defaults to `cutera_test`
+        // `_test`. The mysql_testing connection defaults to `ALLURA_test`
         // but a misconfigured env could point at the dev `crm` database;
         // catching that here prevents accidental data loss.
         if (! str_ends_with($database, '_test')) {

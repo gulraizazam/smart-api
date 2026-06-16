@@ -19,7 +19,7 @@ use Illuminate\Support\Facades\Schema;
  * from 2014_10_12_000000_create_users_table.php line 31), but existing
  * address values cannot be recovered from this migration alone.
  *
- * CUTERA-REVIEW: before running in production verify you have a recent
+ * ALLURA-REVIEW: before running in production verify you have a recent
  * `users` table backup; recovery from a rollback requires restoring
  * those rows from the backup into the newly-re-added column.
  */

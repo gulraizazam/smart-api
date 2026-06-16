@@ -334,35 +334,35 @@ return [
 
     /*
      * Centre abbreviations for the compact renderer. Long centre names
-     * from `locations.name` (or the city-prefixed form "Karachi-CUTERA
+     * from `locations.name` (or the city-prefixed form "Karachi-ALLURA
      * Johar Karachi") map to a ~5-char label. Unmapped centres fall
      * through to the raw name (truncated to 15 chars by the renderer).
      */
     'centre_labels' => [
-        'Hyderabad-CUTERA Hyderabad' => 'Hyd',
-        'CUTERA Hyderabad' => 'Hyd',
-        'CUTERA Saddar Rawalpindi' => 'Rwp Saddar',
-        'Rawalpindi-CUTERA Saddar Rawalpindi' => 'Rwp Saddar',
-        'Faisalabad-CUTERA Faisalabad' => 'Fsd',
-        'CUTERA Faisalabad' => 'Fsd',
-        'Karachi-CUTERA Johar Karachi' => 'Khi Johar',
-        'CUTERA Johar Karachi' => 'Khi Johar',
-        'Karachi-CUTERA DHA Karachi' => 'Khi DHA',
-        'CUTERA DHA Karachi' => 'Khi DHA',
-        'Karachi-CUTERA Bahadurabad Karachi' => 'Khi Bhd',
-        'CUTERA Bahadurabad Karachi' => 'Khi Bhd',
-        'Islamabad-CUTERA F-7 Islamabad' => 'Isb F-7',
-        'CUTERA F-7 Islamabad' => 'Isb F-7',
-        'Islamabad-CUTERA I-8 Islamabad' => 'Isb I-8',
-        'CUTERA I-8 Islamabad' => 'Isb I-8',
-        'Lahore-CUTERA Gulberg Lahore' => 'Lhr Gbg',
-        'CUTERA Gulberg Lahore' => 'Lhr Gbg',
-        'Lahore-CUTERA DHA Lahore' => 'Lhr DHA',
-        'CUTERA DHA Lahore' => 'Lhr DHA',
-        'Lahore-CUTERA Johar Town Lahore' => 'Lhr JT',
-        'CUTERA Johar Town Lahore' => 'Lhr JT',
-        'Sialkot-CUTERA Sialkot' => 'Skt',
-        'CUTERA Sialkot' => 'Skt',
+        'Hyderabad-ALLURA Hyderabad' => 'Hyd',
+        'ALLURA Hyderabad' => 'Hyd',
+        'ALLURA Saddar Rawalpindi' => 'Rwp Saddar',
+        'Rawalpindi-ALLURA Saddar Rawalpindi' => 'Rwp Saddar',
+        'Faisalabad-ALLURA Faisalabad' => 'Fsd',
+        'ALLURA Faisalabad' => 'Fsd',
+        'Karachi-ALLURA Johar Karachi' => 'Khi Johar',
+        'ALLURA Johar Karachi' => 'Khi Johar',
+        'Karachi-ALLURA DHA Karachi' => 'Khi DHA',
+        'ALLURA DHA Karachi' => 'Khi DHA',
+        'Karachi-ALLURA Bahadurabad Karachi' => 'Khi Bhd',
+        'ALLURA Bahadurabad Karachi' => 'Khi Bhd',
+        'Islamabad-ALLURA F-7 Islamabad' => 'Isb F-7',
+        'ALLURA F-7 Islamabad' => 'Isb F-7',
+        'Islamabad-ALLURA I-8 Islamabad' => 'Isb I-8',
+        'ALLURA I-8 Islamabad' => 'Isb I-8',
+        'Lahore-ALLURA Gulberg Lahore' => 'Lhr Gbg',
+        'ALLURA Gulberg Lahore' => 'Lhr Gbg',
+        'Lahore-ALLURA DHA Lahore' => 'Lhr DHA',
+        'ALLURA DHA Lahore' => 'Lhr DHA',
+        'Lahore-ALLURA Johar Town Lahore' => 'Lhr JT',
+        'ALLURA Johar Town Lahore' => 'Lhr JT',
+        'Sialkot-ALLURA Sialkot' => 'Skt',
+        'ALLURA Sialkot' => 'Skt',
     ],
 
     /*

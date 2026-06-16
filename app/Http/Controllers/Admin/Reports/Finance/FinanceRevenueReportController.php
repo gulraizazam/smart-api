@@ -145,8 +145,8 @@ class FinanceRevenueReportController extends Controller
         foreach ($soldServicesQuery as $data) {
             $locationName = $locations[$data->location_id]->name ?? 'Unknown';
 
-            // Remove the word "CUTERA" (case-insensitive)
-            $cleanName = preg_replace('/\bCUTERA\b/i', '', $locationName);
+            // Remove the word "ALLURA" (case-insensitive)
+            $cleanName = preg_replace('/\bALLURA\b/i', '', $locationName);
 
             // Optionally trim whitespace
             $labels[] = trim($cleanName);

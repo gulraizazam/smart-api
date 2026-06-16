@@ -1,4 +1,4 @@
-# Code Duplication Audit — Cutera Upgradation
+# Code Duplication Audit — ALLURA Upgradation
 
 **Scope:** Full project.
 **Deliverable type:** Read-only audit. No code changes in this pass.

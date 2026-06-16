@@ -1,8 +1,8 @@
 {
   "info": {
-    "_postman_id": "c7e01a3b-1b2e-4f4b-9e2b-cutera-api-0001",
-    "name": "Cutera API",
-    "description": "Backend API collection for the Cutera admin + mobile clients.\n\n## How to use\n\n1. Import this collection into Postman.\n2. Set `base_url` in **Collection Variables** (already defaults to `http://cutera-upgradation.test` for local dev).\n3. Run **Auth → Login** once with a real admin email/password — the post-response script stores `access_token` + `refresh_token` on the collection.\n4. Every other request inherits `Authorization: Bearer {{access_token}}` from collection-level auth.\n5. Access tokens expire in 15 minutes; run **Auth → Refresh** to rotate without re-entering credentials.\n\n## Scope\n\n- Auth (Passport password grant — v2)\n- Application Users (CRUD, status, password change)\n- Roles (CRUD + duplicate)\n- Permissions (CRUD + parent groups)\n\nMore modules will be appended as they're requested.",
+    "_postman_id": "c7e01a3b-1b2e-4f4b-9e2b-ALLURA-api-0001",
+    "name": "ALLURA API",
+    "description": "Backend API collection for the ALLURA admin + mobile clients.\n\n## How to use\n\n1. Import this collection into Postman.\n2. Set `base_url` in **Collection Variables** (already defaults to `http://ALLURA-upgradation.test` for local dev).\n3. Run **Auth → Login** once with a real admin email/password — the post-response script stores `access_token` + `refresh_token` on the collection.\n4. Every other request inherits `Authorization: Bearer {{access_token}}` from collection-level auth.\n5. Access tokens expire in 15 minutes; run **Auth → Refresh** to rotate without re-entering credentials.\n\n## Scope\n\n- Auth (Passport password grant — v2)\n- Application Users (CRUD, status, password change)\n- Roles (CRUD + duplicate)\n- Permissions (CRUD + parent groups)\n\nMore modules will be appended as they're requested.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "auth": {
@@ -18,7 +18,7 @@
   "variable": [
     {
       "key": "base_url",
-      "value": "http://cutera-upgradation.test",
+      "value": "http://ALLURA-upgradation.test",
       "type": "string"
     },
     {
@@ -1454,7 +1454,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"operator_name\": \"Twilio — Prod\",\n  \"url\": \"https://api.twilio.com/2010-04-01\",\n  \"username\": \"AC...\",\n  \"password\": \"supersecret\",\n  \"mask\": \"CUTERA\",\n  \"test_mode\": 0,\n  \"string_1\": null,\n  \"string_2\": null\n}"
+              "raw": "{\n  \"operator_name\": \"Twilio — Prod\",\n  \"url\": \"https://api.twilio.com/2010-04-01\",\n  \"username\": \"AC...\",\n  \"password\": \"supersecret\",\n  \"mask\": \"ALLURA\",\n  \"test_mode\": 0,\n  \"string_1\": null,\n  \"string_2\": null\n}"
             },
             "url": {
               "raw": "{{base_url}}/api/operator-settings/:operatorSetting",
@@ -1557,7 +1557,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"operator_name\": \"Twilio\",\n  \"url\": \"https://api.twilio.com\",\n  \"username\": \"AC...\",\n  \"password\": \"supersecret\",\n  \"mask\": \"CUTERA\",\n  \"test_mode\": 0,\n  \"string_1\": null,\n  \"string_2\": null\n}"
+              "raw": "{\n  \"operator_name\": \"Twilio\",\n  \"url\": \"https://api.twilio.com\",\n  \"username\": \"AC...\",\n  \"password\": \"supersecret\",\n  \"mask\": \"ALLURA\",\n  \"test_mode\": 0,\n  \"string_1\": null,\n  \"string_2\": null\n}"
             },
             "url": {
               "raw": "{{base_url}}/api/user_operator_settings/:id",
@@ -2766,7 +2766,7 @@
               "host": ["{{base_url}}"],
               "path": ["api", "hr", "my", "profile"]
             },
-            "description": "Allowlist-only: `phone`, `dob`, `gender`, `address`, emergency contact fields. Any other field (salary, department, manager, active) is silently dropped. If the user has no EmployeeDetail row, emergency-contact fields no-op (documented CUTERA-REVIEW)."
+            "description": "Allowlist-only: `phone`, `dob`, `gender`, `address`, emergency contact fields. Any other field (salary, department, manager, active) is silently dropped. If the user has no EmployeeDetail row, emergency-contact fields no-op (documented ALLURA-REVIEW)."
           }
         },
         {

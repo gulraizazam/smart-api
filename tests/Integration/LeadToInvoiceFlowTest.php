@@ -22,7 +22,7 @@ use Tests\TestCase;
 /**
  * Lead → Patient → Appointment → Invoice → Package → PackageAdvance.
  *
- * The Cutera business model is a funnel: a marketing/walk-in lead becomes
+ * The ALLURA business model is a funnel: a marketing/walk-in lead becomes
  * a patient, the patient books a consultation appointment, the consultation
  * is upgraded to a treatment package, an invoice is issued, and cash is
  * collected against the package as an `in` advance. Each table has its own

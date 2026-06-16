@@ -1,10 +1,10 @@
 ﻿
-CUTERA CRM
+ALLURA CRM
 Cash Flow & Expense Management Module
 Complete Software Requirements Specification
 FINAL CONSOLIDATED VERSION
 Version 2.1  |  March 2026
-Prepared for: Red Signal / Cutera Pakistan
+Prepared for: Red Signal / ALLURA Pakistan
 CONFIDENTIAL
 
 Single definitive build spec. Supersedes all previous versions, addendums, and errata.
@@ -40,7 +40,7 @@ Table of Contents
 27. Implementation Notes for Developer
 
 1. Overview & Objectives
-Complete, consolidated build specification for the Cash Flow & Expense Management module within the Cutera CRM. Supersedes all previous documents.
+Complete, consolidated build specification for the Cash Flow & Expense Management module within the ALLURA CRM. Supersedes all previous documents.
 
 1.1 Primary Objectives
 Real-time cash position: Exact balance at every branch, head office, and bank at any moment.
@@ -67,56 +67,90 @@ Dynamic branches: Currently 12. System reads dynamically.
 Patient refunds: Handled by existing CRM. Refunds reduce pool balance through existing payment data. No action needed in this module.
 
 2.2 Key Assumptions
-#
-Assumption
+#
 
-A1
-Branches managed in CRM. Cash flow reads dynamically.
+Assumption
 
-A2
-Each active branch auto-gets a cash pool.
 
-A3
-Head office = separate permanent cash pool.
+A1
 
-A4
-1 bank account. Supports adding more.
+Branches managed in CRM. Cash flow reads dynamically.
 
-A5
-Vendors = anyone the business pays (suppliers, landlords, lawyers, hosting, etc).
 
-A6
-Vendor CRUD: admin-only. Accountant selects or suggests new.
+A2
 
-A7
-Expense categories: admin-only. Accountant selects or suggests new.
+Each active branch auto-gets a cash pool.
 
-A8
-Laravel 8+ / MySQL. Follows existing CRM patterns.
 
-A9
-Payment methods from existing CRM config (Cash, Credit Card, Bank Transfer).
+A3
 
-A10
-Attachments = Google Drive links. Mandatory for cash expenses.
+Head office = separate permanent cash pool.
 
-A11
-All dropdowns use existing CRM searchable component (same as patient search).
 
-A12
-Branch access follows existing CRM user-branch assignment. Same filtering logic as other modules.
+A4
 
-A13
-All amounts in whole PKR. No paisa/decimal places. DB uses DECIMAL(15,2) but UI shows integers.
+1 bank account. Supports adding more.
 
-A14
-Doctors are salaried. Payments under Salaries category, not separate.
 
-A15
-Card processing fees recorded separately as Bank Charges expense.
+A5
 
-A16
-Credit card settlement timing not tracked. Mapped to bank pool immediately.
+Vendors = anyone the business pays (suppliers, landlords, lawyers, hosting, etc).
+
+
+A6
+
+Vendor CRUD: admin-only. Accountant selects or suggests new.
+
+
+A7
+
+Expense categories: admin-only. Accountant selects or suggests new.
+
+
+A8
+
+Laravel 8+ / MySQL. Follows existing CRM patterns.
+
+
+A9
+
+Payment methods from existing CRM config (Cash, Credit Card, Bank Transfer).
+
+
+A10
+
+Attachments = Google Drive links. Mandatory for cash expenses.
+
+
+A11
+
+All dropdowns use existing CRM searchable component (same as patient search).
+
+
+A12
+
+Branch access follows existing CRM user-branch assignment. Same filtering logic as other modules.
+
+
+A13
+
+All amounts in whole PKR. No paisa/decimal places. DB uses DECIMAL(15,2) but UI shows integers.
+
+
+A14
+
+Doctors are salaried. Payments under Salaries category, not separate.
+
+
+A15
+
+Card processing fees recorded separately as Bank Charges expense.
+
+
+A16
+
+Credit card settlement timing not tracked. Mapped to bank pool immediately.
+
 
 
 3. Module Initialization (Go-Live)
@@ -130,45 +164,75 @@ Go-live date frozen after first period lock.
 ⚠ SECURITY: Without this filter, cash flow includes years of historical payments without matching expenses. All numbers wrong.
 
 3.2 Setup Checklist
-#
-Step
-Details
+#
 
-1
-Set go-live date
-Settings → Go-Live Date
+Step
 
-2
-Verify cash pools
-Auto-created from CRM branches.
+Details
 
-3
-Enter pool balances
-Actual counted cash + bank balance as of go-live morning.
 
-4
-Create vendors
-All active vendors with outstanding balances.
+1
 
-5
-Mark advance-eligible staff
-Flag users who can receive cash advances.
+Set go-live date
 
-6
-Staff advance balances
-Opening advances for staff holding unaccounted cash.
+Settings → Go-Live Date
 
-7
-Sanity check
-Pool balances = actual cash. Vendor balances = actual payables.
 
-8
-Start operations
-Every transaction from go-live recorded.
+2
 
-9
-First month-end lock
-Review, lock. Freezes opening balances permanently.
+Verify cash pools
+
+Auto-created from CRM branches.
+
+
+3
+
+Enter pool balances
+
+Actual counted cash + bank balance as of go-live morning.
+
+
+4
+
+Create vendors
+
+All active vendors with outstanding balances.
+
+
+5
+
+Mark advance-eligible staff
+
+Flag users who can receive cash advances.
+
+
+6
+
+Staff advance balances
+
+Opening advances for staff holding unaccounted cash.
+
+
+7
+
+Sanity check
+
+Pool balances = actual cash. Vendor balances = actual payables.
+
+
+8
+
+Start operations
+
+Every transaction from go-live recorded.
+
+
+9
+
+First month-end lock
+
+Review, lock. Freezes opening balances permanently.
+
 
 
 3.3 Module Reset (First Month Only)
@@ -179,21 +243,33 @@ During the first month before the first period lock, admin can reset the entire 
 A Cash Pool = any place money is held. Every transaction references one.
 
 4.1 Pool Types
-Type
-Count
-Creation
+Type
 
-branch_cash
-1 per active branch
-Auto on new branch. Balance=0. Admin notified.
+Count
 
-head_office_cash
-1 (fixed)
-Module setup. Always exists.
+Creation
 
-bank_account
-1 (currently)
-Module setup. Admin can add more.
+
+branch_cash
+
+1 per active branch
+
+Auto on new branch. Balance=0. Admin notified.
+
+
+head_office_cash
+
+1 (fixed)
+
+Module setup. Always exists.
+
+
+bank_account
+
+1 (currently)
+
+Module setup. Admin can add more.
+
 
 Total Pools = Active CRM Branches + 1 Head Office + 1 Bank
 
@@ -217,115 +293,203 @@ Balance = Opening + Inflows – Outflows + Transfers In – Transfers Out
 Core feature. Accountant records every business payment.
 
 5.1 Expense Fields
-Field
-Type
-Req
-Description
+Field
 
-Expense Date
-Date
-Yes
-Pre-filled today. ONLY field that pre-fills.
+Type
 
-Amount
-Integer (PKR)
-Yes
-Whole numbers only. No paisa.
+Req
 
-Category
-FK
-Yes
-Admin-managed. Searchable dropdown.
+Description
 
-Paid From
-FK (Pool)
-Yes
-Searchable grouped dropdown: Branch > HO > Bank
 
-For Branch
-FK (nullable)
-Yes
-Branch, Head Office, or General / Company-wide
+Expense Date
 
-Payment Method
-From CRM
-Yes
-Cash, Credit Card, Bank Transfer
+Date
 
-Vendor
-FK (nullable)
-No
-Always visible. Emphasis based on category.
+Yes
 
-Expense By (Staff)
-FK (nullable)
-No
-Auto-updates staff ledger
+Pre-filled today. ONLY field that pre-fills.
 
-Description
-Text
-Yes
-What was purchased
 
-Reference No.
-String
-No
-Invoice/cheque/transaction number
+Amount
 
-Attachment
-URL
-Cond.
-MANDATORY for cash expenses. Optional for card/bank.
+Integer (PKR)
 
-Notes
-Text
-No
-Remarks
+Yes
 
-Status
-Enum
-Auto
-approved | pending | rejected
+Whole numbers only. No paisa.
 
-Verified By
-FK (nullable)
-Auto
-Admin who approved
 
-Rejection Reason
-Text
-Cond.
-Mandatory when admin rejects
+Category
 
-Is Flagged
-Boolean
-Auto
-System flags suspicious entries
+FK
 
-Flag Reason
-String
-Auto
-Why flagged
+Yes
 
-Created By
-FK
-Auto
-Who created
+Admin-managed. Searchable dropdown.
 
-Voided At/By
-Timestamps
-Auto
-Set when admin voids
 
-Void Reason
-Text
-Cond.
-Mandatory on void (min 10 chars)
+Paid From
 
-Edit Reason
-Text
-Cond.
-Mandatory when admin edits any entry
+FK (Pool)
+
+Yes
+
+Searchable grouped dropdown: Branch > HO > Bank
+
+
+For Branch
+
+FK (nullable)
+
+Yes
+
+Branch, Head Office, or General / Company-wide
+
+
+Payment Method
+
+From CRM
+
+Yes
+
+Cash, Credit Card, Bank Transfer
+
+
+Vendor
+
+FK (nullable)
+
+No
+
+Always visible. Emphasis based on category.
+
+
+Expense By (Staff)
+
+FK (nullable)
+
+No
+
+Auto-updates staff ledger
+
+
+Description
+
+Text
+
+Yes
+
+What was purchased
+
+
+Reference No.
+
+String
+
+No
+
+Invoice/cheque/transaction number
+
+
+Attachment
+
+URL
+
+Cond.
+
+MANDATORY for cash expenses. Optional for card/bank.
+
+
+Notes
+
+Text
+
+No
+
+Remarks
+
+
+Status
+
+Enum
+
+Auto
+
+approved | pending | rejected
+
+
+Verified By
+
+FK (nullable)
+
+Auto
+
+Admin who approved
+
+
+Rejection Reason
+
+Text
+
+Cond.
+
+Mandatory when admin rejects
+
+
+Is Flagged
+
+Boolean
+
+Auto
+
+System flags suspicious entries
+
+
+Flag Reason
+
+String
+
+Auto
+
+Why flagged
+
+
+Created By
+
+FK
+
+Auto
+
+Who created
+
+
+Voided At/By
+
+Timestamps
+
+Auto
+
+Set when admin voids
+
+
+Void Reason
+
+Text
+
+Cond.
+
+Mandatory on void (min 10 chars)
+
+
+Edit Reason
+
+Text
+
+Cond.
+
+Mandatory when admin edits any entry
+
 
 
 5.2 Expense Approval Flow
@@ -342,45 +506,71 @@ Accountant edits rejected entry and resubmits → status back to 'pending', pool
 ⚠ SECURITY: This is the ONLY case where accountant can edit an entry — resubmitting a rejected expense.
 
 5.3 "For Branch" Options
-Option
-When to Use
+Option
 
-Specific branch
-Expense clearly for one branch
+When to Use
 
-Head Office
-For HO operations specifically
 
-General / Company-wide
-Whole business or unattributable
+Specific branch
+
+Expense clearly for one branch
+
+
+Head Office
+
+For HO operations specifically
+
+
+General / Company-wide
+
+Whole business or unattributable
+
 
 Database: for_branch_id nullable FK. Null = General. Branch reports exclude null. Company reports include all.
 ⚠ SECURITY: 'Leave blank' NOT allowed. One must be selected.
 
 "Paid From" vs "For Branch" Examples
-Scenario
-Paid From
-For Branch
+Scenario
 
-Branch buys own supplies
-Lahore DHA Cash
-Lahore DHA
+Paid From
 
-HO pays Islamabad rent
-Head Office Cash
-Islamabad
+For Branch
 
-Bank pays brand marketing
-Bank Account
-General / Company-wide
 
-Karachi pays for Faisalabad
-Karachi Cash
-Faisalabad
+Branch buys own supplies
 
-Tissue paper for all branches
-Head Office Cash
-General / Company-wide
+Lahore DHA Cash
+
+Lahore DHA
+
+
+HO pays Islamabad rent
+
+Head Office Cash
+
+Islamabad
+
+
+Bank pays brand marketing
+
+Bank Account
+
+General / Company-wide
+
+
+Karachi pays for Faisalabad
+
+Karachi Cash
+
+Faisalabad
+
+
+Tissue paper for all branches
+
+Head Office Cash
+
+General / Company-wide
+
 
 
 5.4 Vendor Field Behavior
@@ -397,21 +587,33 @@ Expense saved without vendor, flagged 'Vendor Pending'.
 Admin creates vendor if legit. Accountant or admin links vendor to flagged expense later.
 
 5.5 Attachment Rules
-Payment Method
-Attachment
-Reason
+Payment Method
 
-Cash
-MANDATORY — cannot save without it
-Anti-fraud: prevents fake cash expenses
+Attachment
 
-Credit Card
-Optional
-Bank records provide audit trail
+Reason
 
-Bank Transfer
-Optional
-Bank records provide audit trail
+
+Cash
+
+MANDATORY — cannot save without it
+
+Anti-fraud: prevents fake cash expenses
+
+
+Credit Card
+
+Optional
+
+Bank records provide audit trail
+
+
+Bank Transfer
+
+Optional
+
+Bank records provide audit trail
+
 
 Google Drive links only. Validated with regex (drive.google.com or docs.google.com).
 
@@ -419,98 +621,165 @@ Google Drive links only. Validated with regex (drive.google.com or docs.google.c
 ⚠ SECURITY: ONLY Expense Date pre-fills (today). All other fields empty every time. After save, form resets completely. No session memory.
 
 5.7 Editing Rules
-Who
-Can Edit
-Condition
+Who
 
-Accountant
-Only rejected entries
-To fix and resubmit. No other editing.
+Can Edit
 
-Admin
-Any entry
-Open period only. Edit reason mandatory. 'Edited' badge shown.
+Condition
 
-Branch Manager
-Nothing
-Read-only
 
-FDM
-Nothing
-Read-only
+Accountant
+
+Only rejected entries
+
+To fix and resubmit. No other editing.
+
+
+Admin
+
+Any entry
+
+Open period only. Edit reason mandatory. 'Edited' badge shown.
+
+
+Branch Manager
+
+Nothing
+
+Read-only
+
+
+FDM
+
+Nothing
+
+Read-only
+
 
 
 6. Cash Transfers
 Money between pools. Not expense — total cash unchanged. No approval needed regardless of amount.
 
 6.1 Actual Transfer Flows
-Flow
-Method
-How It Happens
+Flow
 
-Branch → Head Office
-physical_cash
-Staff member carries cash to HO
+Method
 
-Head Office → Bank
-bank_deposit
-Someone deposits cash at bank
+How It Happens
 
-Branch → Bank
-bank_deposit
-Someone deposits cash at bank directly
+
+Branch → Head Office
+
+physical_cash
+
+Staff member carries cash to HO
+
+
+Head Office → Bank
+
+bank_deposit
+
+Someone deposits cash at bank
+
+
+Branch → Bank
+
+bank_deposit
+
+Someone deposits cash at bank directly
+
 
 
 6.2 Transfer Fields
-Field
-Type
-Req
-Description
+Field
 
-Date
-Date
-Yes
-When transfer happened
+Type
 
-Amount
-Integer (PKR)
-Yes
-Whole numbers only
+Req
 
-From Pool
-FK
-Yes
-Source. Searchable grouped dropdown.
+Description
 
-To Pool
-FK
-Yes
-Destination. Searchable grouped dropdown.
 
-Method
-Enum
-Yes
-physical_cash | bank_deposit
+Date
 
-Reference No.
-String
-Yes
-Always required. Deposit slip or handover reference.
+Date
 
-Attachment
-URL
-Yes
-Always required. Photo of deposit slip or cash handover proof.
+Yes
 
-Description
-Text
-No
-Reason
+When transfer happened
 
-Created By
-FK
-Auto
-Who recorded
+
+Amount
+
+Integer (PKR)
+
+Yes
+
+Whole numbers only
+
+
+From Pool
+
+FK
+
+Yes
+
+Source. Searchable grouped dropdown.
+
+
+To Pool
+
+FK
+
+Yes
+
+Destination. Searchable grouped dropdown.
+
+
+Method
+
+Enum
+
+Yes
+
+physical_cash | bank_deposit
+
+
+Reference No.
+
+String
+
+Yes
+
+Always required. Deposit slip or handover reference.
+
+
+Attachment
+
+URL
+
+Yes
+
+Always required. Photo of deposit slip or cash handover proof.
+
+
+Description
+
+Text
+
+No
+
+Reason
+
+
+Created By
+
+FK
+
+Auto
+
+Who recorded
+
 
 
 6.3 Rules
@@ -524,53 +793,89 @@ Vendors = anyone the business pays. Product suppliers, landlords, lawyers, print
 ⚠ SECURITY: Vendor CRUD is ADMIN-ONLY. Accountant selects from list or requests new vendor. Eliminates ghost vendor fraud.
 
 7.1 Vendor Master (Admin-Only)
-Field
-Type
-Description
+Field
 
-Name
-String (unique)
-Company or person
+Type
 
-Contact Person
-String
-Primary contact
+Description
 
-Phone
-String
-Phone(s)
 
-Email
-String (nullable)
-Email
+Name
 
-Address
-Text
-Address
+String (unique)
 
-Payment Terms
-Enum
-upfront | net_7 | net_15 | net_30 | custom
+Company or person
 
-Category
-String
-Supplier, service, utility, landlord, etc.
 
-Opening Balance
-Integer (PKR)
-Amount owed at setup. Positive = you owe.
+Contact Person
 
-Cached Balance
-Integer
-Auto-updated
+String
 
-Is Active
-Boolean
-Soft delete
+Primary contact
 
-Notes
-Text
-Special terms, account numbers
+
+Phone
+
+String
+
+Phone(s)
+
+
+Email
+
+String (nullable)
+
+Email
+
+
+Address
+
+Text
+
+Address
+
+
+Payment Terms
+
+Enum
+
+upfront | net_7 | net_15 | net_30 | custom
+
+
+Category
+
+String
+
+Supplier, service, utility, landlord, etc.
+
+
+Opening Balance
+
+Integer (PKR)
+
+Amount owed at setup. Positive = you owe.
+
+
+Cached Balance
+
+Integer
+
+Auto-updated
+
+
+Is Active
+
+Boolean
+
+Soft delete
+
+
+Notes
+
+Text
+
+Special terms, account numbers
+
 
 
 7.2 Transaction Types
@@ -615,73 +920,119 @@ System flags perfect-match advances (expenses = advance, zero return).
 Admin-only management. Accountant selects from list or suggests new (admin approves).
 
 9.1 Default Categories (13)
-Category
-Vendor Emphasis
+Category
 
-Rent & Property
-Yes
+Vendor Emphasis
 
-Utilities
-Yes
 
-Salaries & Wages (includes doctors)
-No
+Rent & Property
 
-Medical Supplies & Consumables
-Yes
+Yes
 
-Equipment & Machinery
-Yes
 
-Marketing & Advertising
-Yes
+Utilities
 
-Office Supplies
-Yes
+Yes
 
-Travel & Transport
-No
 
-Professional Fees
-Yes
+Salaries & Wages (includes doctors)
 
-Software & Subscriptions
-Yes
+No
 
-Bank Charges
-No
 
-Government & Compliance
-No
+Medical Supplies & Consumables
 
-Miscellaneous
-No
+Yes
+
+
+Equipment & Machinery
+
+Yes
+
+
+Marketing & Advertising
+
+Yes
+
+
+Office Supplies
+
+Yes
+
+
+Travel & Transport
+
+No
+
+
+Professional Fees
+
+Yes
+
+
+Software & Subscriptions
+
+Yes
+
+
+Bank Charges
+
+No
+
+
+Government & Compliance
+
+No
+
+
+Miscellaneous
+
+No
+
 
 
 9.2 Category Fields
-Field
-Type
-Description
+Field
 
-Name
-String (unique)
-Display name
+Type
 
-Description
-Text (nullable)
-Guidance for accountant
+Description
 
-Vendor Emphasis
-Boolean
-Drives vendor field visual emphasis
 
-Is Active
-Boolean
-Never hard delete — deactivate only
+Name
 
-Sort Order
-Integer
-Dropdown sequence
+String (unique)
+
+Display name
+
+
+Description
+
+Text (nullable)
+
+Guidance for accountant
+
+
+Vendor Emphasis
+
+Boolean
+
+Drives vendor field visual emphasis
+
+
+Is Active
+
+Boolean
+
+Never hard delete — deactivate only
+
+
+Sort Order
+
+Integer
+
+Dropdown sequence
+
 
 
 9.3 Category Suggestion Flow
@@ -764,99 +1115,168 @@ Record as a separate expense: Category = Bank Charges, Paid From = Bank Account,
 11. Security & Fraud Prevention
 
 11.1 Fraud Risk Matrix
-Risk
-Attack
-Prevention
+Risk
 
-Ghost Vendor
-Create fake vendor
-Vendor CRUD admin-only. Dormant vendor report.
+Attack
 
-Inflated Expense
-Record higher amount
-Approval above 10k. Attachment mandatory for cash.
+Prevention
 
-Expense Splitting
-Multiple small entries to dodge threshold
-Daily auto-approved total flag (default 50k).
 
-Backdated Entry
-Date entry months ago
-Auto-flag if created > 7 days after expense date.
+Ghost Vendor
 
-Post-Hoc Edit
-Edit entry after review
-Admin-only editing. Edit reason mandatory. 'Edited' badge.
+Create fake vendor
 
-Duplicate Payment
-Pay same vendor same amount twice
-Auto-flag same vendor + same amount within 24 hours.
+Vendor CRUD admin-only. Dormant vendor report.
 
-Advance Abuse
-Inflated receipts against advance
-Flag zero-return advances (perfect match).
 
-Opening Balance Manipulation
-Change balance to cover shortfall
-Frozen after first period lock.
+Inflated Expense
 
-Void Abuse
-Void to hide transactions
-Mandatory reason. Reversal entry. Dashboard 7 days. Digest.
+Record higher amount
 
-Admin Self-Approval
-Admin approves own expense
-Auto-flag 'Self-approved by admin'. In daily digest.
+Approval above 10k. Attachment mandatory for cash.
 
-Period Unlock Abuse
-Unlock, alter, re-lock
-Mandatory reason. Both logged. Changes in digest.
 
-Fake Small Expenses
-Below-threshold fake entries
-Cash attachment mandatory. Daily total flag.
+Expense Splitting
+
+Multiple small entries to dodge threshold
+
+Daily auto-approved total flag (default 50k).
+
+
+Backdated Entry
+
+Date entry months ago
+
+Auto-flag if created > 7 days after expense date.
+
+
+Post-Hoc Edit
+
+Edit entry after review
+
+Admin-only editing. Edit reason mandatory. 'Edited' badge.
+
+
+Duplicate Payment
+
+Pay same vendor same amount twice
+
+Auto-flag same vendor + same amount within 24 hours.
+
+
+Advance Abuse
+
+Inflated receipts against advance
+
+Flag zero-return advances (perfect match).
+
+
+Opening Balance Manipulation
+
+Change balance to cover shortfall
+
+Frozen after first period lock.
+
+
+Void Abuse
+
+Void to hide transactions
+
+Mandatory reason. Reversal entry. Dashboard 7 days. Digest.
+
+
+Admin Self-Approval
+
+Admin approves own expense
+
+Auto-flag 'Self-approved by admin'. In daily digest.
+
+
+Period Unlock Abuse
+
+Unlock, alter, re-lock
+
+Mandatory reason. Both logged. Changes in digest.
+
+
+Fake Small Expenses
+
+Below-threshold fake entries
+
+Cash attachment mandatory. Daily total flag.
+
 
 
 11.2 Auto-Flagging System
-Trigger
-Condition
-Flag Reason
+Trigger
 
-Backdated
-created_at minus expense_date > 7 days
-'Entry created [X] days after date'
+Condition
 
-No attachment (cash)
-Payment method = cash, attachment null
-'No receipt for cash expense'
+Flag Reason
 
-Advance perfect-match
-Expenses = advance, zero return
-'Advance fully spent, no return'
 
-Negative pool
-Pool balance < 0
-'Negative pool balance'
+Backdated
 
-Vendor overpayment
-Payment > outstanding
-'Exceeds vendor balance'
+created_at minus expense_date > 7 days
 
-Duplicate payment
-Same vendor + same amount within 24hrs
-'Potential duplicate'
+'Entry created [X] days after date'
 
-Admin self-approval
-Admin created AND approved same entry
-'Self-approved by admin'
 
-Daily splitting
-Total auto-approved (below 10k) in one day > 50k
-'High daily auto-approved total'
+No attachment (cash)
 
-Vendor pending
-Expense saved without vendor (request pending)
-'Vendor pending'
+Payment method = cash, attachment null
+
+'No receipt for cash expense'
+
+
+Advance perfect-match
+
+Expenses = advance, zero return
+
+'Advance fully spent, no return'
+
+
+Negative pool
+
+Pool balance < 0
+
+'Negative pool balance'
+
+
+Vendor overpayment
+
+Payment > outstanding
+
+'Exceeds vendor balance'
+
+
+Duplicate payment
+
+Same vendor + same amount within 24hrs
+
+'Potential duplicate'
+
+
+Admin self-approval
+
+Admin created AND approved same entry
+
+'Self-approved by admin'
+
+
+Daily splitting
+
+Total auto-approved (below 10k) in one day > 50k
+
+'High daily auto-approved total'
+
+
+Vendor pending
+
+Expense saved without vendor (request pending)
+
+'Vendor pending'
+
 
 
 11.3 Attachment Validation
@@ -878,131 +1298,239 @@ Both visible in dashboard alerts for 7 days.
 12. Permissions & Roles
 Branch access follows existing CRM user-branch assignment. Same filtering as other modules.
 
-Action
-Admin
-Accountant
-Branch Mgr
-FDM
-View Only
+Action
 
-Dashboard
-✓
-✓
-Own branch
-✗
-✓
+Admin
 
-FDM Cash View
-✓
-✗
-✗
-Own branch
-✗
+Accountant
 
-Add expense
-✓
-✓
-✗
-✗
-✗
+Branch Mgr
 
-Edit expense
-✓ (any, with reason)
-Rejected only
-✗
-✗
-✗
+FDM
 
-Approve/reject expense
-✓
-✗
-✗
-✗
-✗
+View Only
 
-Void expense
-✓
-✗
-✗
-✗
-✗
 
-Add transfer
-✓
-✓
-✗
-✗
-✗
+Dashboard
 
-Vendor CRUD
-✓
-✗ (suggest only)
-✗
-✗
-✗
+✓
 
-Vendor ledger view
-✓
-✓
-✗
-✗
-✓
+✓
 
-Vendor purchase/payment
-✓
-✓
-✗
-✗
-✗
+Own branch
 
-Staff advance/return
-✓
-✓
-✗
-✗
-✗
+✗
 
-Categories
-✓
-✗ (suggest only)
-✗
-✗
-✗
+✓
 
-Cash pool mgmt
-✓
-✗
-✗
-✗
-✗
 
-Period lock
-✓
-✗
-✗
-✗
-✗
+FDM Cash View
 
-Audit trail
-✓
-✗
-✗
-✗
-✗
+✓
 
-Thresholds/settings
-✓
-✗
-✗
-✗
-✗
+✗
 
-Reports + export
-✓
-✓
-✗
-✗
-✓
+✗
+
+Own branch
+
+✗
+
+
+Add expense
+
+✓
+
+✓
+
+✗
+
+✗
+
+✗
+
+
+Edit expense
+
+✓ (any, with reason)
+
+Rejected only
+
+✗
+
+✗
+
+✗
+
+
+Approve/reject expense
+
+✓
+
+✗
+
+✗
+
+✗
+
+✗
+
+
+Void expense
+
+✓
+
+✗
+
+✗
+
+✗
+
+✗
+
+
+Add transfer
+
+✓
+
+✓
+
+✗
+
+✗
+
+✗
+
+
+Vendor CRUD
+
+✓
+
+✗ (suggest only)
+
+✗
+
+✗
+
+✗
+
+
+Vendor ledger view
+
+✓
+
+✓
+
+✗
+
+✗
+
+✓
+
+
+Vendor purchase/payment
+
+✓
+
+✓
+
+✗
+
+✗
+
+✗
+
+
+Staff advance/return
+
+✓
+
+✓
+
+✗
+
+✗
+
+✗
+
+
+Categories
+
+✓
+
+✗ (suggest only)
+
+✗
+
+✗
+
+✗
+
+
+Cash pool mgmt
+
+✓
+
+✗
+
+✗
+
+✗
+
+✗
+
+
+Period lock
+
+✓
+
+✗
+
+✗
+
+✗
+
+✗
+
+
+Audit trail
+
+✓
+
+✗
+
+✗
+
+✗
+
+✗
+
+
+Thresholds/settings
+
+✓
+
+✗
+
+✗
+
+✗
+
+✗
+
+
+Reports + export
+
+✓
+
+✓
+
+✗
+
+✗
+
+✓
+
 
 
 ⚠ SECURITY: Single admin risk: if admin unavailable, pending expenses pile up. Strongly recommend adding a backup admin or approval role.
@@ -1023,45 +1551,75 @@ Settings/threshold changed
 Module reset
 
 13.2 Log Fields
-Field
-Type
-Description
+Field
 
-Timestamp
-DateTime
-Server time
+Type
 
-User ID
-FK (nullable)
-Null for system/auto
+Description
 
-Action
-Enum
-created | updated | voided | approved | rejected | resubmitted | locked | unlocked | deactivated | auto_created | reset
 
-Entity Type
-String
-expense | transfer | vendor | etc.
+Timestamp
 
-Entity ID
-Integer
-Affected record
+DateTime
 
-Old Values
-JSON
-Before (null for create)
+Server time
 
-New Values
-JSON
-After
 
-Reason
-Text (nullable)
-Edit reason, void reason, rejection reason, unlock reason
+User ID
 
-IP Address
-String
-User IP
+FK (nullable)
+
+Null for system/auto
+
+
+Action
+
+Enum
+
+created | updated | voided | approved | rejected | resubmitted | locked | unlocked | deactivated | auto_created | reset
+
+
+Entity Type
+
+String
+
+expense | transfer | vendor | etc.
+
+
+Entity ID
+
+Integer
+
+Affected record
+
+
+Old Values
+
+JSON
+
+Before (null for create)
+
+
+New Values
+
+JSON
+
+After
+
+
+Reason
+
+Text (nullable)
+
+Edit reason, void reason, rejection reason, unlock reason
+
+
+IP Address
+
+String
+
+User IP
+
 
 ⚠ SECURITY: cashflow_audit_logs: NO delete, NO update, NO truncate. Write-only forever.
 
@@ -1098,7 +1656,7 @@ All entry forms (expense, transfer, vendor purchase, staff advance) open as moda
 
 15.4 Post-Save Behavior
 Confirmation popup: amount, pool, new balance, attachment check.
-Form resets completely. Only date stays as today.
+Form resets completely. Only date stays as today.ALLURA
 Form stays open for next entry.
 
 15.5 Search & Filter (Expense List)
@@ -1107,23 +1665,35 @@ Collapsible filter panel. Status filter: All | Pending | Approved | Rejected | F
 Accountant status filter: 'My Pending' / 'My Rejected' for quick access.
 
 15.6 Keyboard Shortcuts
-Shortcut
-Action
+Shortcut
 
-Alt+E
-Add Expense
+Action
 
-Alt+T
-Add Transfer
 
-Tab
-Move fields
+Alt+E
 
-Ctrl+Enter
-Save
+ALLURApense
 
-Escape
-Close/cancel
+
+Alt+T
+
+Add Transfer
+
+
+Tab
+
+Move fields
+
+
+Ctrl+Enter
+
+Save
+
+
+Escape
+
+Close/cancel
+
 
 
 15.7 Branch-Specific Dashboard
@@ -1195,35 +1765,55 @@ No entry, no edit, no export
 
 17. Notifications
 17.1 In-App Notifications (Bell Icon)
-Event
-Recipient
+Event
 
-Expense pending approval
-Admin
+Recipient
 
-Expense approved
-Accountant
 
-Expense rejected (with reason)
-Accountant
+Expense pending approval
 
-New vendor request
-Admin
+Admin
 
-New category request
-Admin
 
-Staff advance given
-Admin
+Expense approved
 
-Negative pool balance
-Admin + Branch Manager (own branch)
+Accountant
 
-Expense recorded for branch
-Branch Manager (own branch)
 
-Transfer involving branch pool
-Branch Manager (own branch)
+Expense rejected (with reason)
+
+Accountant
+
+
+New vendor request
+
+Admin
+
+
+New category request
+
+Admin
+
+
+Staff advance given
+
+Admin
+
+
+Negative pool balance
+
+Admin + Branch Manager (own branch)
+
+
+Expense recorded for branch
+
+Branch Manager (own branch)
+
+
+Transfer involving branch pool
+
+Branch Manager (own branch)
+
 
 
 17.2 Daily Digest Email (Simplified)
@@ -1242,50 +1832,80 @@ Auto-sent on the 1st. Previous month summary: inflows, outflows, net, category b
 Laravel conventions. DECIMAL(15,2) for money (UI shows integers). SoftDeletes everywhere.
 
 18.1 Tables
-Table
-Purpose
+Table
 
-cash_pools
-Dynamic per branch + HO + bank. cached_balance.
+Purpose
 
-expense_categories
-Admin-managed. vendor_emphasis boolean.
 
-expenses
-All entries. status (approved|pending|rejected), verified_by, rejection_reason, is_flagged, flag_reason, voided_at/by/reason, edit_reason.
+cash_pools
 
-cash_transfers
-Inter-pool. Reference + attachment always required.
+Dynamic per branch + HO + bank. cached_balance.
 
-vendors
-Admin-managed. cached_balance.
 
-vendor_transactions
-Purchases + payments.
+expense_categories
 
-vendor_requests
-Pending vendor suggestions from accountant.
+Admin-managed. vendor_emphasis boolean.
 
-category_requests
-Pending category suggestions from accountant.
 
-staff_advances
-Cash advances to eligible users.
+expenses
 
-staff_returns
-Cash returns.
+All entries. status (approved|pending|rejected), verified_by, rejection_reason, is_flagged, flag_reason, voided_at/by/reason, edit_reason.
 
-period_locks
-Month/year + balance snapshots (JSON).
 
-cashflow_audit_logs
-Immutable. Write-only.
+cash_transfers
 
-cashflow_settings
-Key-value: thresholds, go-live, digest config.
+Inter-pool. Reference + attachment always required.
 
-cashflow_notifications
-In-app notifications.
+
+vendors
+
+Admin-managed. cached_balance.
+
+
+vendor_transactions
+
+Purchases + payments.
+
+
+vendor_requests
+
+Pending vendor suggestions from accountant.
+
+
+category_requests
+
+Pending category suggestions from accountant.
+
+
+staff_advances
+
+Cash advances to eligible users.
+
+
+staff_returns
+
+Cash returns.
+
+
+period_locks
+
+Month/year + balance snapshots (JSON).
+
+
+cashflow_audit_logs
+
+Immutable. Write-only.
+
+
+cashflow_settings
+
+Key-value: thresholds, go-live, digest config.
+
+
+cashflow_notifications
+
+In-app notifications.
+
 
 
 18.2 Key Design Rules
@@ -1353,49 +1973,82 @@ EXPLAIN on critical queries. N+1 detection.
 What tested, expected vs actual, pass/fail, bugs and fixes. Documentation is a deliverable.
 
 22. Configurable Thresholds
-Setting
-Default
-Purpose
+Setting
 
-Go-Live Date
-(set once)
-Module start. Payments filtered from here.
+Default
 
-Expense Approval Threshold
-PKR 10,000
-Admin approval above this.
+Purpose
 
-Backdated Entry Flag Days
-7 days
-Flag if created > X days after date.
 
-Daily Auto-Approved Limit
-PKR 50,000
-Flag if total below-threshold expenses in one day exceed this.
+Go-Live Date
 
-Advance Aging Alert Days
-15 days
-Alert unsettled advances.
+(set once)
 
-Cumulative Advance Threshold
-PKR 100,000
-Alert staff total outstanding.
+Module start. Payments filtered from here.
 
-Dormant Vendor Days
-90 days
-Flag inactive vendors.
 
-Void Alert Display Days
-7 days
-Voided entries in dashboard alerts.
+Expense Approval Threshold
 
-Daily Digest Send Time
-08:00 AM
-Email time.
+PKR 10,000
 
-Daily Digest Recipients
-Admin email(s)
-Comma-separated.
+Admin approval above this.
+
+
+Backdated Entry Flag Days
+
+7 days
+
+Flag if created > X days after date.
+
+
+Daily Auto-Approved Limit
+
+PKR 50,000
+
+Flag if total below-threshold expenses in one day exceed this.
+
+
+Advance Aging Alert Days
+
+15 days
+
+Alert unsettled advances.
+
+
+Cumulative Advance Threshold
+
+PKR 100,000
+
+Alert staff total outstanding.
+
+
+Dormant Vendor Days
+
+90 days
+
+Flag inactive vendors.
+
+
+Void Alert Display Days
+
+7 days
+
+Voided entries in dashboard alerts.
+
+
+Daily Digest Send Time
+
+08:00 AM
+
+Email time.
+
+
+Daily Digest Recipients
+
+Admin email(s)
+
+Comma-separated.
+
 
 
 23. Implementation Plan (Developer-Designed)

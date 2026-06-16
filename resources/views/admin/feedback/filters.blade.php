@@ -24,13 +24,13 @@
             <label>Centre:</label>
             <select class="form-control filter-field select2" id="search_location_id">
                 <option value="">Select</option>
-                <option value="2">CUTERA DHA Karachi</option>
-                <option value="3">CUTERA Bahadurabad Karachi</option>
-                <option value="46">CUTERA Johar Town, Lahore</option>
-                <option value="47">CUTERA Gulshan/Johar Karachi</option>
-                <option value="48">CUTERA DHA Lahore</option>
-                <option value="49">CUTERA Gulberg Lahore</option>
-                <option value="50">CUTERA Faisalabad</option>
+                <option value="2">ALLURA DHA Karachi</option>
+                <option value="3">ALLURA Bahadurabad Karachi</option>
+                <option value="46">ALLURA Johar Town, Lahore</option>
+                <option value="47">ALLURA Gulshan/Johar Karachi</option>
+                <option value="48">ALLURA DHA Lahore</option>
+                <option value="49">ALLURA Gulberg Lahore</option>
+                <option value="50">ALLURA Faisalabad</option>
                 
             </select>
         </div>

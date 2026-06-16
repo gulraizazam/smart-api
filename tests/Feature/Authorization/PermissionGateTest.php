@@ -31,7 +31,7 @@ class PermissionGateTest extends TestCase
     use RefreshDatabase;
     use UsesFinancialFixtures;
 
-    private const TEST_PERMISSION = 'cutera_test_resource_view';
+    private const TEST_PERMISSION = 'ALLURA_test_resource_view';
 
     private const TEST_ROUTE = '/_test/permission-gate';
 

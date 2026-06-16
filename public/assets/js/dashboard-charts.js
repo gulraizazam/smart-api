@@ -403,10 +403,10 @@
         
         if (locations && locations.length > 0) {
             if (locations.some(function(str) {
-                return str.includes('ALLURA,') || str.includes('CUTERA,');
+                return str.includes('ALLURA,') || str.includes('ALLURA,');
             })) {
                 modifiedLocations = locations.map(function(location) {
-                    return location.replace(/^(ALLURA|CUTERA), /i, '');
+                    return location.replace(/^(ALLURA|ALLURA), /i, '');
                 });
             } else {
                 modifiedLocations = locations;

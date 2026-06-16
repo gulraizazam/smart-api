@@ -778,20 +778,20 @@ class UpsellingService
     {
         // Hardcoded centre IDs
         $centreIds = [
-            2 => 'CUTERA DHA Karachi',
-            3 => 'CUTERA Bahadurabad Karachi',
+            2 => 'ALLURA DHA Karachi',
+            3 => 'ALLURA Bahadurabad Karachi',
 
-            46 => 'CUTERA Johar Town',
-            47 => 'CUTERA Johar Karachi',
-            48 => 'CUTERA DHA Lahore',
-            49 => 'CUTERA Gulberg Lahore',
-            50 => 'CUTERA Faisalabad',
-            51 => 'CUTERA F-7 Islamabad',
+            46 => 'ALLURA Johar Town',
+            47 => 'ALLURA Johar Karachi',
+            48 => 'ALLURA DHA Lahore',
+            49 => 'ALLURA Gulberg Lahore',
+            50 => 'ALLURA Faisalabad',
+            51 => 'ALLURA F-7 Islamabad',
 
-            53 => 'CUTERA Saddar Rawalpindi',
-            54 => 'CUTERA I-8 Islamabad',
-            55 => 'CUTERA Hyderabad',
-            56 => 'CUTERA Sialkot'
+            53 => 'ALLURA Saddar Rawalpindi',
+            54 => 'ALLURA I-8 Islamabad',
+            55 => 'ALLURA Hyderabad',
+            56 => 'ALLURA Sialkot'
         ];
 
         // Define date ranges

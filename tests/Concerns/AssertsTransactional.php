@@ -13,7 +13,7 @@ use Throwable;
  * Helpers for proving that a multi-statement operation rolls back cleanly
  * when one of its statements fails.
  *
- * The Cutera financial-spine audit found several controllers that wrote
+ * The ALLURA financial-spine audit found several controllers that wrote
  * cash advances + appointment updates without `DB::transaction()`, leaving
  * the database in a torn state when something later in the flow threw.
  * These helpers catch the same pattern in tests by:

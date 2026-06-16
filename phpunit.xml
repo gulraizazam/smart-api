@@ -27,7 +27,7 @@
         <!--
             DB_CONNECTION points at the mysql_testing connection defined in
             config/database.php. This connection MUST target a dedicated
-            test database (default: cutera_test) — never the production DB.
+            test database (default: ALLURA_test) — never the production DB.
             See tests/README.md for one-time setup.
         -->
         <server name="DB_CONNECTION" value="mysql_testing"/>

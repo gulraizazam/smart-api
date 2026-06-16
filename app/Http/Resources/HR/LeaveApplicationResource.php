@@ -10,7 +10,7 @@ use Illuminate\Http\Resources\Json\JsonResource;
 /**
  * API shape for a leave application.
  *
- * CUTERA-REVIEW: CLAUDE.md mandates ISO-8601 UTC for API dates. The legacy
+ * ALLURA-REVIEW: CLAUDE.md mandates ISO-8601 UTC for API dates. The legacy
  * datatable resource emits `d M Y` strings; once the mobile app ships we should
  * migrate the datatable too. Flagging rather than changing the datatable here.
  */

@@ -1,6 +1,6 @@
-# Cutera test suite
+# ALLURA test suite
 
-A layered PHPUnit test suite for the Cutera clinic management CRM. Built during the principal-QA hardening pass that followed the Laravel 12 / PHP 8.4 upgrade — see `memory/project_audit_progress.md` and `memory/project_database_audit.md` for the audit findings the suite was written to defend against.
+A layered PHPUnit test suite for the ALLURA clinic management CRM. Built during the principal-QA hardening pass that followed the Laravel 12 / PHP 8.4 upgrade — see `memory/project_audit_progress.md` and `memory/project_database_audit.md` for the audit findings the suite was written to defend against.
 
 ## Current metrics
 
@@ -88,14 +88,14 @@ The suite **must** run against a dedicated MariaDB database — never the produc
 
 ```bash
 # 1. Create the test database (any MariaDB 10.5+ / MySQL 8+ works; prod is MariaDB 11.8)
-mysql -u root -p -e "CREATE DATABASE cutera_test CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+mysql -u root -p -e "CREATE DATABASE ALLURA_test CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
 
 # 2. Configure your local .env (or copy from .env.example)
 #    Add the following lines to your .env if they aren't already there:
 #
 #       DB_TEST_HOST=127.0.0.1
 #       DB_TEST_PORT=3306
-#       DB_TEST_DATABASE=cutera_test
+#       DB_TEST_DATABASE=ALLURA_test
 #       DB_TEST_USERNAME=root
 #       DB_TEST_PASSWORD=
 
