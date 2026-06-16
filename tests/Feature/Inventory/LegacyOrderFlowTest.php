@@ -6,6 +6,8 @@ namespace Tests\Feature\Inventory;
 
 use App\Models\Brand;
 use App\Models\Inventory;
+use App\Models\Membership;
+use App\Models\MembershipType;
 use App\Models\Order;
 use App\Models\OrderDetail;
 use App\Models\Patients;
@@ -188,6 +190,68 @@ class LegacyOrderFlowTest extends TestCase
 
         // No FIFO ledger written.
         $this->assertSame(0, DB::table('order_detail_consumption')->count());
+    }
+
+    /**
+     * A patient with an ACTIVE membership gets an automatic 10% discount on a
+     * product sale (MEMBERSHIP_DISCOUNT_PERCENT), server-derived via
+     * resolveAutoDiscount/checkMembership — independent of whatever `discount`
+     * the client sends (the payload here sends 0). Pins the membership-discount
+     * invariant the order dialog relies on. Tier-agnostic: any active
+     * membership qualifies; "Gold" is just the example.
+     */
+    public function test_active_membership_patient_gets_10_percent_discount(): void
+    {
+        $loc = (int) $this->defaultLocation->id;
+        $product = $this->makeProduct(1000);
+        $invId = $this->stockAt($product->id, $loc, 10, 800);
+
+        $phone = '+92308'.random_int(1000000, 9999999);
+        $patient = Patients::create([
+            'name' => 'Gold Member',
+            'phone' => $phone,
+            'account_id' => 1,
+            'user_type_id' => (int) config('constants.patient_id'),
+            'password' => \Illuminate\Support\Facades\Hash::make('secret-test'),
+            'active' => 1,
+            'created_by' => Auth::id() ?? 1,
+        ]);
+
+        $type = MembershipType::create([
+            'name' => 'Gold Membership',
+            'period' => 12,
+            'amount' => 1000,
+            'active' => 1,
+            'created_by' => Auth::id() ?? 1,
+        ]);
+
+        Membership::create([
+            'code' => 'GOLD-'.random_int(1000, 9999),
+            'membership_type_id' => $type->id,
+            'patient_id' => $patient->id,
+            'start_date' => now()->subDay(),
+            'end_date' => now()->addYear(),
+            'active' => 1,
+            'created_by' => Auth::id() ?? 1,
+        ]);
+
+        // Sale resolves the existing patient by phone; client-sent discount is 0.
+        $order = app(OrderService::class)->createOrder(
+            $this->patientSalePayload($product->id, $invId, $loc, 2, $phone, 'Gold Member'),
+        );
+
+        // 10% off the inventory sale price (800) → 720 net per unit.
+        $detail = OrderDetail::where('order_id', $order->id)->first();
+        $this->assertSame(800.0, (float) $detail->sale_price);
+        $this->assertSame(80.0, (float) $detail->discount_price);
+        $this->assertSame(720.0, (float) $detail->sale_price_after_discount);
+        $this->assertSame(1440.0, (float) $order->total_price); // 2 × 720
+        $this->assertSame(10.0, (float) $order->discount);
+
+        // And the membership-check endpoint feed names the tier additively.
+        $check = app(OrderService::class)->checkMembership($patient->id);
+        $this->assertTrue($check['has_active_membership']);
+        $this->assertSame('Gold Membership', $check['membership_type']);
     }
 
     public function test_server_ignores_client_supplied_price(): void

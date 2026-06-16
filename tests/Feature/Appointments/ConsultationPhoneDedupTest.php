@@ -123,6 +123,44 @@ class ConsultationPhoneDedupTest extends TestCase
         $this->assertSame($patientsBefore, Patients::query()->count(), 'No duplicate for a leading-zero stored phone.');
     }
 
+    public function test_matches_even_when_the_stored_phone_is_formatted(): void
+    {
+        // The production duplicate: the patient's row (registered at Branch A)
+        // kept FORMATTING — e.g. "0311 0088 221". The clean-variant whereIn on
+        // the raw `phone` column missed it, so an FDM creating a consultation at
+        // Branch B (entering the clean number) minted a DUPLICATE. The
+        // phone_normalized match must now attach to the existing patient.
+        $branchB = Locations::factory()->create();
+        $doctor = User::factory()->doctor()->create();
+        $service = Services::factory()->create();
+        $this->allocateService($doctor->id, $branchB->id, $service->id);
+
+        $patient = Patients::factory()->create(['phone' => '0311 0088 221', 'account_id' => 1]);
+        $patientsBefore = Patients::query()->count();
+
+        $appt = app(ConsultancyService::class)->createConsultancy([
+            'appointment_type_id' => $this->consultancyTypeId(),
+            'appointment_status_id' => 1,
+            'location_id' => $branchB->id,
+            'doctor_id' => $doctor->id,
+            'service_id' => $service->id,
+            'phone' => '03110088221', // entered clean at the second branch
+            'name' => 'Repeat Visitor',
+            'gender' => 1,
+        ]);
+
+        $this->assertSame(
+            $patient->id,
+            (int) $appt->patient_id,
+            'A consultation must attach to the existing patient even when the stored phone is formatted.',
+        );
+        $this->assertSame(
+            $patientsBefore,
+            Patients::query()->count(),
+            'No duplicate patient for a formatted, already-registered phone.',
+        );
+    }
+
     public function test_still_creates_a_patient_for_an_unregistered_phone(): void
     {
         // Guard must stay additive: a genuinely new phone still spawns a patient.

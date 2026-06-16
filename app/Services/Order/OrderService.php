@@ -994,17 +994,25 @@ class OrderService
             'membership_start_date' => null,
             'membership_end_date' => null,
             'membership_type_id' => null,
+            'membership_type' => null,
         ];
 
         if (! $patientId) {
             return $default;
         }
 
+        // Join the type so callers (the order dialog badge) can name the tier
+        // — e.g. "Gold Membership" — not just the code. Left join keeps a
+        // membership with a missing/legacy type id surfacing as still-active
+        // with a null type name. Additive: the discount itself is tier-agnostic
+        // (any active membership = 10%, see resolveAutoDiscount).
         $membership = DB::table('memberships')
-            ->where('patient_id', $patientId)
-            ->where('active', 1)
-            ->where('end_date', '>=', now())
-            ->orderBy('end_date', 'desc')
+            ->leftJoin('membership_types', 'memberships.membership_type_id', '=', 'membership_types.id')
+            ->where('memberships.patient_id', $patientId)
+            ->where('memberships.active', 1)
+            ->where('memberships.end_date', '>=', now())
+            ->orderBy('memberships.end_date', 'desc')
+            ->select('memberships.*', 'membership_types.name as membership_type')
             ->first();
 
         if (! $membership) {
@@ -1018,6 +1026,7 @@ class OrderService
             'membership_start_date' => $membership->start_date,
             'membership_end_date' => $membership->end_date,
             'membership_type_id' => $membership->membership_type_id,
+            'membership_type' => $membership->membership_type,
         ];
     }
 

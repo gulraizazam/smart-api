@@ -50,6 +50,34 @@ class PhoneFormattingService
         ]));
     }
 
+    /**
+     * Digits-only equivalent forms for a `phone_normalized`-column lookup.
+     *
+     * `users.phone_normalized` is the input phone with every non-digit stripped
+     * (`preg_replace('/\D+/', '', phone)`, kept current by the model saving
+     * hook). So unlike {@see matchVariants()} — which targets the raw, often
+     * formatted `phone` column — matching here is immune to spaces, dashes and
+     * `+` in the stored value. A number stored as `"0311 0088 221"` normalises
+     * to `03110088221`, which this set covers.
+     *
+     * `+92` has no separate entry: its digits are `92`+clean, already included.
+     *
+     * @return array<int, string>
+     */
+    public static function normalizedVariants(string|int|null $phoneNumber): array
+    {
+        $clean = self::cleanNumber($phoneNumber);
+        if ($clean === '') {
+            return [];
+        }
+
+        return array_values(array_unique([
+            $clean,        // 3110088221   — canonical
+            '0' . $clean,  // 03110088221  — leading zero
+            '92' . $clean, // 923110088221 — country code (also the +92 digits)
+        ]));
+    }
+
     private static function cleanCountryCodes(string $phoneNumber): string
     {
         // Guard the index access — an empty/short string (e.g. a blank
