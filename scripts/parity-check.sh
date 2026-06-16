@@ -129,9 +129,21 @@ echo "=== migrations recorded on prod but NOT on disk (investigate) ==="
 comm -13 <(printf '%s\n' "$DISK_MIG") <(printf '%s\n' "$PROD_MIG") | sed 's/^/  ? /' | head -40
 
 echo "=== crm2 smoke ==="
-c2="$(curl -skS -o /dev/null -w '%{http_code}' "$CRM2_URL/login" 2>/dev/null)"
-echo "  $CRM2_URL/login -> $c2 (want 200)"
-[ "$c2" = 200 ] || { echo "  >> crm2 login NOT 200"; rc=1; }
+# crm2 is intentionally Basic-Auth locked for maintenance (same creds as the
+# crm3 gate). 200 (authenticated, app healthy behind the gate) or 401 (gate up =
+# box alive) both mean crm2 is fine; only an unreachable box (000/5xx) is a real
+# failure. Authenticate when the gate creds are present for the stronger check.
+CRM2_GATE_AUTH="${CRM2_GATE_AUTH:-${CRM3_GATE_AUTH:-}}"
+if [ -n "$CRM2_GATE_AUTH" ]; then
+  c2="$(curl -skS -u "$CRM2_GATE_AUTH" -o /dev/null -w '%{http_code}' "$CRM2_URL/login" 2>/dev/null)"
+else
+  c2="$(curl -skS -o /dev/null -w '%{http_code}' "$CRM2_URL/login" 2>/dev/null)"
+fi
+case "${c2:-000}" in
+  200) echo "  $CRM2_URL/login -> 200 (crm2 healthy behind the maintenance gate)" ;;
+  401) echo "  $CRM2_URL/login -> 401 (crm2 up; Basic-Auth maintenance lock — OK)" ;;
+  *)   echo "  $CRM2_URL/login -> ${c2:-000} (crm2 looks DOWN)"; rc=1 ;;
+esac
 
 echo ""
 [ "$rc" = 0 ] && echo "RESULT: PASS - no drift, no baseline gap, crm2 healthy" || echo "RESULT: FAIL - see DRIFT / MISSING / crm2 above"
