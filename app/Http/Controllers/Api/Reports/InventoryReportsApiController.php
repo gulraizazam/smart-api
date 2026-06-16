@@ -223,6 +223,7 @@ class InventoryReportsApiController extends Controller
                 'location_name' => (string) ($r['location_name'] ?? ''),
                 'order_date' => $r['order_date'] ?? null,
                 'patient_id' => $r['patient_id'] ?? null,
+                'patient_phone' => $r['patient_phone'] ?? null,
                 'purchased_by' => (string) ($r['purchased_by'] ?? ''),
                 'product_name' => (string) ($r['product_name'] ?? ''),
                 'quantity' => (string) ($r['quantity'] ?? ''),

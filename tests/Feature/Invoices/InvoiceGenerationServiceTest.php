@@ -16,7 +16,9 @@ use Tests\TestCase;
  *
  * Pins:
  *   1. Return structure has all required top-level keys.
- *   2. Working-day calculation excludes Sundays.
+ *   2. Working-day calculation excludes Sundays ONLY — business closures,
+ *      weekly off-days and forced-open exceptions are intentionally ignored
+ *      (crm2 parity; see calculateWorkingDays()).
  *   3. Pool split respects the bank_taxable / cash_percent params.
  *   4. Empty date ranges or zero-revenue periods produce safe output.
  *   5. Parameters are echoed back in the result for audit traceability.
@@ -138,12 +140,12 @@ class InvoiceGenerationServiceTest extends TestCase
             'Mon-Sun range should yield 6 operating days (Sunday default-off).');
     }
 
-    public function test_capacity_working_days_subtracts_business_closure(): void
+    public function test_capacity_working_days_ignores_business_closure(): void
     {
-        // Six revenue-active Mon-Sat days, but Wed/Thu of that week are
-        // covered by an "Eid Holidays" closure. Even though revenue exists
-        // on those days, OperatingDays must subtract them and the capacity
-        // number must drop accordingly.
+        // crm2 parity: the tax report's working-day denominator excludes
+        // Sundays ONLY. A business closure on Wed/Thu must NOT subtract those
+        // days (unlike the closure-aware OperatingDays path that was reverted
+        // for this report). Six revenue-active Mon-Sat days stay six.
         $this->seedRevenueForDates([
             '2026-01-05', '2026-01-06', '2026-01-07',
             '2026-01-08', '2026-01-09', '2026-01-10',
@@ -166,14 +168,15 @@ class InvoiceGenerationServiceTest extends TestCase
             $this->markTestSkipped('InvoiceGenerationService type mismatch — see test_return_structure test.');
         }
 
-        $this->assertSame(4, $result['capacity']['working_days'],
-            'Closure must remove Wed + Thu from the operating-day denominator.');
+        $this->assertSame(6, $result['capacity']['working_days'],
+            'crm2 parity: closures are ignored — only Sunday is dropped, so the count stays 6.');
     }
 
-    public function test_capacity_working_days_honours_forced_open_sunday_exception(): void
+    public function test_capacity_working_days_ignores_forced_open_sunday_exception(): void
     {
-        // Mon-Sun range with revenue on every day. A working_day_exception
-        // forces Sunday open. Result: all 7 days count.
+        // crm2 parity: a working_day_exception forcing Sunday open must be
+        // ignored. Sunday stays excluded, so a Mon-Sun range with revenue on
+        // every day still yields 6 (not 7).
         $this->seedRevenueForDates([
             '2026-01-05', '2026-01-06', '2026-01-07', '2026-01-08',
             '2026-01-09', '2026-01-10', '2026-01-11',
@@ -196,7 +199,8 @@ class InvoiceGenerationServiceTest extends TestCase
             $this->markTestSkipped('InvoiceGenerationService type mismatch — see test_return_structure test.');
         }
 
-        $this->assertSame(7, $result['capacity']['working_days']);
+        $this->assertSame(6, $result['capacity']['working_days'],
+            'crm2 parity: forced-open Sunday exception is ignored — Sunday stays off, count is 6.');
     }
 
     public function test_empty_revenue_period_produces_safe_output(): void
