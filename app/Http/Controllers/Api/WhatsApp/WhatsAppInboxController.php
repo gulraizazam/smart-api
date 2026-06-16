@@ -230,9 +230,48 @@ class WhatsAppInboxController extends Controller
             ->reverse()
             ->values();
 
+        // Whether older messages exist beyond this first page + the conversation's
+        // full message count — drives the SPA's "Load older (N earlier)" control
+        // and its "showing X of Y" progress.
+        $total = $conversation->messages()->count();
+        $hasMore = $messages->isNotEmpty()
+            && $conversation->messages()->where('id', '<', $messages->first()->id)->exists();
+
         return $this->successResponse('Conversation', [
             'conversation' => new WhatsappConversationResource($conversation),
             'messages' => WhatsappMessageResource::collection($messages),
+            'has_more' => $hasMore,
+            'total' => $total,
+        ]);
+    }
+
+    /**
+     * One page of OLDER messages — the messages immediately before $before (the
+     * oldest one the client currently has). Returns up to 50, oldest-first, plus
+     * has_more so the SPA knows whether to keep offering "Load older".
+     */
+    public function olderMessages(int $id, Request $request): JsonResponse
+    {
+        $conversation = WhatsappConversation::findOrFail($id);
+
+        $validated = $request->validate([
+            'before' => ['required', 'integer', 'min:1'],
+        ]);
+
+        $messages = $conversation->messages()
+            ->where('id', '<', $validated['before'])
+            ->latest('id')
+            ->limit(50)
+            ->get()
+            ->reverse()
+            ->values();
+
+        $hasMore = $messages->isNotEmpty()
+            && $conversation->messages()->where('id', '<', $messages->first()->id)->exists();
+
+        return $this->successResponse('Older messages', [
+            'messages' => WhatsappMessageResource::collection($messages),
+            'has_more' => $hasMore,
         ]);
     }
 

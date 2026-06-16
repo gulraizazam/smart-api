@@ -43,6 +43,8 @@ Route::prefix('whatsapp')->name('whatsapp.')
             ->name('conversations.unread_count');
         Route::get('conversations/{id}', [WhatsAppInboxController::class, 'show'])
             ->whereNumber('id')->name('conversations.show');
+        Route::get('conversations/{id}/older', [WhatsAppInboxController::class, 'olderMessages'])
+            ->whereNumber('id')->name('conversations.older');
         Route::get('conversations/{id}/media/{messageId}', [WhatsAppInboxController::class, 'media'])
             ->whereNumber('id')->whereNumber('messageId')->name('conversations.media');
         Route::post('conversations/{id}/read', [WhatsAppInboxController::class, 'markRead'])

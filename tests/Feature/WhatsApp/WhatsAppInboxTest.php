@@ -302,6 +302,65 @@ class WhatsAppInboxTest extends TestCase
         $this->assertSame('923001234567', $response->json('data.conversation.wa_id'));
     }
 
+    public function test_show_reports_no_more_and_the_total_for_a_short_thread(): void
+    {
+        $this->actAsAgentWith(['whatsapp.inbox.view']);
+        $conversation = $this->conversationWithInbound('923001234567', 'Hi');
+
+        $response = $this->getJson("/api/whatsapp/conversations/{$conversation->id}");
+
+        $response->assertOk();
+        $this->assertFalse($response->json('data.has_more'));
+        $this->assertSame(1, $response->json('data.total')); // the one inbound message
+    }
+
+    public function test_older_messages_returns_the_previous_page_oldest_first(): void
+    {
+        $this->actAsAgentWith(['whatsapp.inbox.view']);
+        $conversation = WhatsappConversation::create(['wa_id' => '923001234567', 'profile_name' => 'X']);
+        $ids = [];
+        foreach (range(1, 5) as $n) {
+            $ids[] = $conversation->messages()->create([
+                'wamid' => "wamid.$n", 'direction' => 'inbound', 'type' => 'text',
+                'body' => "msg $n", 'status' => 'received',
+            ])->id;
+        }
+
+        // Messages older than the 4th → the first three, oldest-first.
+        $response = $this->getJson("/api/whatsapp/conversations/{$conversation->id}/older?before={$ids[3]}");
+
+        $response->assertOk();
+        $this->assertSame(['msg 1', 'msg 2', 'msg 3'], array_column($response->json('data.messages'), 'body'));
+        $this->assertFalse($response->json('data.has_more')); // nothing before msg 1
+    }
+
+    public function test_older_messages_reports_has_more_when_a_full_page_has_older_still(): void
+    {
+        $this->actAsAgentWith(['whatsapp.inbox.view']);
+        $conversation = WhatsappConversation::create(['wa_id' => '923001234567', 'profile_name' => 'X']);
+        foreach (range(1, 55) as $n) {
+            $conversation->messages()->create([
+                'wamid' => "wamid.$n", 'direction' => 'inbound', 'type' => 'text',
+                'body' => "msg $n", 'status' => 'received',
+            ]);
+        }
+
+        // Past the newest id → the newest 50 come back, with 5 older still beyond.
+        $response = $this->getJson("/api/whatsapp/conversations/{$conversation->id}/older?before=100000");
+
+        $response->assertOk();
+        $this->assertCount(50, $response->json('data.messages'));
+        $this->assertTrue($response->json('data.has_more'));
+    }
+
+    public function test_older_messages_requires_a_before_cursor(): void
+    {
+        $this->actAsAgentWith(['whatsapp.inbox.view']);
+        $conversation = WhatsappConversation::create(['wa_id' => '923001234567', 'profile_name' => 'X']);
+
+        $this->getJson("/api/whatsapp/conversations/{$conversation->id}/older")->assertStatus(422);
+    }
+
     public function test_reaction_message_surfaces_the_emoji_as_its_body(): void
     {
         // A reaction arrives as a 'reaction' message with no body — the emoji is
