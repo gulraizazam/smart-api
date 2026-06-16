@@ -189,6 +189,39 @@ class PhoneFormattingTest extends TestCase
     }
 
     // =========================================================================
+    // normalizedVariants — digits-only forms for a phone_normalized lookup
+    // =========================================================================
+
+    public function test_normalized_variants_covers_canonical_leading_zero_and_country_code(): void
+    {
+        // Targets the digits-only `phone_normalized` column, so there is no
+        // `+92` entry (its digits are the `92`+clean form already listed).
+        $this->assertSame(
+            ['3077168463', '03077168463', '923077168463'],
+            PhoneFormattingService::normalizedVariants('03077168463'),
+        );
+    }
+
+    public function test_normalized_variants_is_input_format_agnostic(): void
+    {
+        // Every way an operator might type the number — including spaced and
+        // dashed forms — yields the SAME digit-variant set. This is what makes
+        // getByPhone immune to formatting stored in the row.
+        $expected = ['3077168463', '03077168463', '923077168463'];
+
+        $this->assertSame($expected, PhoneFormattingService::normalizedVariants('3077168463'));
+        $this->assertSame($expected, PhoneFormattingService::normalizedVariants('0307-716-8463'));
+        $this->assertSame($expected, PhoneFormattingService::normalizedVariants('+92 307 7168463'));
+        $this->assertSame($expected, PhoneFormattingService::normalizedVariants('923077168463'));
+    }
+
+    public function test_normalized_variants_returns_empty_for_a_blank_number(): void
+    {
+        $this->assertSame([], PhoneFormattingService::normalizedVariants(''));
+        $this->assertSame([], PhoneFormattingService::normalizedVariants(null));
+    }
+
+    // =========================================================================
     // clearnString — loose variant used in click-to-call paths
     // =========================================================================
 

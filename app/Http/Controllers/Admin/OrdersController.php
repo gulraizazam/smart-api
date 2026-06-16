@@ -292,7 +292,11 @@ class OrdersController extends Controller
     {
         $result = $this->orderService->checkMembership($request->input('patient_id') ? (int) $request->input('patient_id') : null);
 
-        return response()->json($result);
+        // Wrap in the standard { success, data } envelope like the sibling
+        // order lookups (getProducts/getPaymentModes). The SPA's api.ts
+        // unwraps `.data`; a bare flat body unwrapped to null, so the order
+        // dialog never saw the membership and the 10% discount stayed hidden.
+        return $this->successResponse('Record found.', $result);
     }
 
     /**
