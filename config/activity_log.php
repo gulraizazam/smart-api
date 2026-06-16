@@ -421,6 +421,7 @@ return [
         'TRMT' => 'cyan',
         'PLAN' => 'purple',
         'USER' => 'pink',
+        'CLIENT' => 'pink',
         'AUTH' => 'zinc',
         'ACCESS' => 'neutral',
         'EXPORT' => 'stone',

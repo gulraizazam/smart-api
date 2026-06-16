@@ -39,7 +39,6 @@ class WhatsappConversationResource extends JsonResource
                 ?->addHours(WhatsappConversation::SERVICE_WINDOW_HOURS)
                 ->format('Y-m-d H:i:s'),
             'opted_out' => $this->isOptedOut(),
-            'resolved' => $this->resolved_at !== null,
             'tags' => $this->whenLoaded('tags', fn () => WhatsappTagResource::collection($this->tags)),
             'muted' => $this->whenLoaded('tags', fn () => $this->isMuted()),
             'notes_count' => (int) ($this->notes_count ?? 0),

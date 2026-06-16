@@ -807,22 +807,28 @@ final class ActivityLogRenderer
             $segments[] = e($centre);
         }
 
-        return self::compose('USER', $segments, $actor);
+        // Feedback comes from the client, so its pill reads CLIENT — the line
+        // is "Client <name> rated…". Every other row here is a staff action on
+        // the patient record, which keeps the generic USER pill.
+        $tag = $type === 'feedback_added' ? 'CLIENT' : 'USER';
+
+        return self::compose($tag, $segments, $actor);
     }
 
     /**
      * Feedback line. When the originating feedback row is eager-loaded — the
      * management dashboard does this — lead with the client and the rating
-     * they gave ("Client Jane Doe rated their visit 8/10"). Without the
-     * relation loaded (e.g. the audit-log report), fall back to the plain
-     * phrasing rather than firing a per-row query.
+     * they gave ("Jane Doe rated their visit 8/10"; the CLIENT pill from
+     * renderUser supplies the "Client" label). Without the relation loaded
+     * (e.g. the audit-log report), fall back to the plain phrasing rather than
+     * firing a per-row query.
      */
     private static function feedbackPrimary(object $a, string $patient): string
     {
         $rating = self::loadedFeedbackRating($a);
 
         return $rating !== null
-            ? 'Client '.e($patient).' rated their visit '.$rating.'/10'
+            ? e($patient).' rated their visit '.$rating.'/10'
             : 'Feedback added for '.e($patient);
     }
 

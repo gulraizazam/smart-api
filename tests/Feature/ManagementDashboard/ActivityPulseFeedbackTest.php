@@ -59,7 +59,13 @@ class ActivityPulseFeedbackTest extends TestCase
 
         $this->assertNotEmpty($out['rows'], 'the feedback activity must be in the feed');
         $html = (string) $out['rows'][0]['description_html'];
-        $this->assertStringContainsString('Client Jane Doe rated their visit 8/10', $html);
+        // The pill itself reads CLIENT (the feedback came from the client) and
+        // the line is "<name> rated…" — never the generic USER pill, and never
+        // a duplicate "Client" word ("USER Client Jane Doe…" was the bug).
+        $this->assertStringContainsString('>CLIENT</span>', $html);
+        $this->assertStringNotContainsString('>USER</span>', $html);
+        $this->assertStringContainsString('Jane Doe rated their visit 8/10', $html);
+        $this->assertStringNotContainsString('Client Jane Doe', $html);
         $this->assertStringNotContainsString('Feedback added for', $html);
     }
 

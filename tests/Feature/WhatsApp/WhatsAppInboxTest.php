@@ -451,7 +451,9 @@ class WhatsAppInboxTest extends TestCase
         ]);
 
         $this->postJson("/api/whatsapp/conversations/{$conversation->id}/unread")->assertOk();
-        $row = collect($this->getJson('/api/whatsapp/conversations')->json('data'))->firstWhere('id', $conversation->id);
+        // Outbound-only → no inbound → window closed, so it lives in that view
+        // (the default "Active" list shows only open-window chats).
+        $row = collect($this->getJson('/api/whatsapp/conversations?window_closed=1')->json('data'))->firstWhere('id', $conversation->id);
         $this->assertSame(0, $row['unread_count']);
     }
 
@@ -999,30 +1001,45 @@ class WhatsAppInboxTest extends TestCase
         $this->assertSame(['923008765432'], array_column($byPhone, 'wa_id'));
     }
 
-    public function test_resolve_and_reopen_a_conversation(): void
+    public function test_default_active_view_excludes_window_closed_chats(): void
     {
         $this->actAsAgentWith(['whatsapp.inbox.view']);
-        $conversation = $this->conversationWithInbound('923001234567', 'Hi');
+        $this->conversationWithInbound('923001111111', 'recent', 5);        // open → shown
+        $this->conversationWithInbound('923002222222', 'old', 25 * 60);     // 25h ago → hidden
+        WhatsappConversation::create(['wa_id' => '923003333333', 'profile_name' => 'X']); // never messaged → hidden
 
-        $this->postJson("/api/whatsapp/conversations/{$conversation->id}/resolve", ['resolved' => true])
-            ->assertOk()->assertJsonPath('data.resolved', true);
-        $this->assertNotNull($conversation->fresh()->resolved_at);
+        $waIds = array_column($this->getJson('/api/whatsapp/conversations')->assertOk()->json('data'), 'wa_id');
 
-        $this->postJson("/api/whatsapp/conversations/{$conversation->id}/resolve", ['resolved' => false])
-            ->assertOk()->assertJsonPath('data.resolved', false);
-        $this->assertNull($conversation->fresh()->resolved_at);
+        $this->assertSame(['923001111111'], $waIds); // only the still-repliable chat
     }
 
-    public function test_resolved_filter_returns_only_resolved(): void
+    public function test_search_still_finds_a_window_closed_chat(): void
     {
         $this->actAsAgentWith(['whatsapp.inbox.view']);
-        $resolved = $this->conversationWithInbound('923001111111', 'Done');
-        $resolved->update(['resolved_at' => now()]);
-        $this->conversationWithInbound('923002222222', 'Open');
+        $closed = $this->conversationWithInbound('923002222222', 'old', 25 * 60); // window closed
+        $closed->update(['profile_name' => 'Old Customer']);
 
-        $rows = $this->getJson('/api/whatsapp/conversations?resolved=1')->assertOk()->json('data');
-        $this->assertCount(1, $rows);
-        $this->assertSame('923001111111', $rows[0]['wa_id']);
+        // The default view hides it…
+        $default = array_column($this->getJson('/api/whatsapp/conversations')->assertOk()->json('data'), 'wa_id');
+        $this->assertNotContains('923002222222', $default);
+
+        // …but a deliberate search reaches it (a known contact stays findable).
+        $found = $this->getJson('/api/whatsapp/conversations?search=Old+Customer')->assertOk()->json('data');
+        $this->assertSame(['923002222222'], array_column($found, 'wa_id'));
+    }
+
+    public function test_list_meta_carries_the_window_closed_count(): void
+    {
+        $this->actAsAgentWith(['whatsapp.inbox.view']);
+        $this->conversationWithInbound('923001111111', 'recent', 5);    // open → not counted
+        $this->conversationWithInbound('923002222222', 'old', 25 * 60); // closed → counted
+        WhatsappConversation::create(['wa_id' => '923003333333', 'profile_name' => 'X']); // never → counted
+
+        // A muted closed chat is NOT counted (it lives behind the Spam filter).
+        $spam = WhatsappTag::create(['account_id' => 1, 'name' => 'Spam', 'color' => 'danger', 'is_muting' => true]);
+        $this->conversationWithInbound('923004444444', 'spam', 25 * 60)->tags()->attach($spam->id);
+
+        $this->assertSame(2, $this->getJson('/api/whatsapp/conversations')->assertOk()->json('meta.window_closed_count'));
     }
 
     public function test_retry_resends_a_failed_text_message(): void
