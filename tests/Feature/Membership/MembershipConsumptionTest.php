@@ -138,6 +138,78 @@ class MembershipConsumptionTest extends TestCase
         ]);
     }
 
+    /**
+     * A plan row where the member discount was applied to a BUNDLE
+     * (source_type 'service_bundle' — "N× of one service"). bundle_id points at
+     * `service_bundles`; the usage view must show the UNDERLYING service prefixed
+     * by qty ("3x Laser Hair Removal"), NOT the unrelated bundles/services rows
+     * that share the same id (the collision the de-overload fixes).
+     */
+    private function seedServiceBundlePlanRow(): void
+    {
+        $sharedId = 991001;
+        // Collision bait at the SAME id in the other catalogs.
+        DB::table('bundles')->insert([
+            'id' => $sharedId, 'name' => 'WRONG Bundle Name', 'price' => 100, 'services_price' => 100,
+            'total_services' => 1, 'type' => 'single', 'active' => 1, 'tax_treatment_type_id' => 1,
+            'account_id' => 1, 'created_at' => now(), 'updated_at' => now(),
+        ]);
+        DB::table('services')->insert([
+            'id' => $sharedId, 'name' => 'WRONG Service Name', 'price' => 100, 'end_node' => 1,
+            'tax_treatment_type_id' => 1, 'account_id' => 1, 'created_at' => now(), 'updated_at' => now(),
+        ]);
+        // The underlying service the bundle is N× of (a DIFFERENT id).
+        $underlyingServiceId = 991002;
+        DB::table('services')->insert([
+            'id' => $underlyingServiceId, 'name' => 'Laser Hair Removal', 'price' => 100, 'end_node' => 1,
+            'tax_treatment_type_id' => 1, 'account_id' => 1, 'created_at' => now(), 'updated_at' => now(),
+        ]);
+        DB::table('service_bundles')->insert([
+            'id' => $sharedId, 'service_id' => $underlyingServiceId, 'sessions' => 3, 'price' => 300,
+            'account_id' => 1, 'created_at' => now(), 'updated_at' => now(),
+        ]);
+
+        $randomId = 'MCSB-'.uniqid();
+        $packageId = (int) DB::table('packages')->insertGetId([
+            'patient_id' => $this->patientId, 'location_id' => $this->locationId,
+            'name' => 'Plan', 'plan_type' => 'plan', 'total_price' => 300,
+            'account_id' => 1, 'active' => 1, 'random_id' => $randomId,
+            'created_at' => now(), 'updated_at' => now(),
+        ]);
+        $bundleRowId = (int) DB::table('package_bundles')->insertGetId([
+            'package_id' => $packageId, 'random_id' => $randomId, 'is_allocate' => 1, 'qty' => 3,
+            'service_price' => 300, 'net_amount' => 200, 'tax_exclusive_net_amount' => 200,
+            'tax_percentage' => 0, 'tax_price' => 0, 'tax_including_price' => 200,
+            'location_id' => $this->locationId, 'discount_id' => $this->discountId,
+            'discount_name' => 'Gold Member Discount', 'discount_type' => 'Percentage', 'discount_price' => 10,
+            'bundle_id' => $sharedId, 'source_type' => 'service_bundle',
+            'catalog_service_bundle_id' => $sharedId, // backfilled/mirrored typed column
+            'account_id' => 1, 'active' => 1, 'is_exclusive' => 0,
+            'created_at' => now(), 'updated_at' => now(),
+        ]);
+        DB::table('package_services')->insert([
+            'package_id' => $packageId, 'package_bundle_id' => $bundleRowId,
+            'service_id' => $underlyingServiceId, 'is_consumed' => 0, 'consumption_order' => 0,
+            'price' => 200, 'orignal_price' => 300, 'tax_including_price' => 200, 'tax_price' => 0,
+            'tax_exclusive_price' => 200, 'tax_percentage' => 0, 'random_id' => $randomId,
+            'created_at' => now(), 'updated_at' => now(),
+        ]);
+    }
+
+    public function test_service_bundle_row_shows_underlying_service_name_with_qty(): void
+    {
+        $membershipId = $this->seedMembership($this->patientId);
+        $this->seedServiceBundlePlanRow();
+
+        $data = $this->service->getConsumptionHistory($membershipId);
+
+        $this->assertSame(1, $data['total_services']);
+        // A service_bundle line shows the UNDERLYING service prefixed by qty —
+        // NOT the colliding bundles ("WRONG Bundle Name") or services
+        // ("WRONG Service Name") rows that share the same id.
+        $this->assertSame('3x Laser Hair Removal', $data['services'][0]['service_name']);
+    }
+
     public function test_returns_member_discounted_services_with_total_saved(): void
     {
         $membershipId = $this->seedMembership($this->patientId);

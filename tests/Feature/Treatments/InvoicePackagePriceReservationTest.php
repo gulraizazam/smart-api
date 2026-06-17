@@ -114,6 +114,83 @@ class InvoicePackagePriceReservationTest extends TestCase
         );
     }
 
+    public function test_service_line_dialog_ignores_an_id_colliding_multiple_bundle(): void
+    {
+        // Two identical SERVICE lines in one plan — same sold price, same catalog
+        // service. The ONLY difference: row A's bundle_id collides with a
+        // type='multiple' Package's id; row B's does not. Both are
+        // source_type='service', so the consume-dialog math MUST be identical — a
+        // service line is never gated by a Package it merely id-collides with.
+        // Before the fix, :981 resolved the colliding Package and applied
+        // bundle-math (wrong settle_amount + remaining) to the service line.
+        $plan = $this->makePlan();
+
+        $collidingBundleId = 991500;
+        DB::table('bundles')->insert([
+            'id' => $collidingBundleId, 'name' => 'Unrelated Package', 'price' => 50000,
+            'services_price' => 50000, 'total_services' => 3, 'type' => 'multiple', 'active' => 1,
+            'tax_treatment_type_id' => 1, 'account_id' => 1, 'created_at' => now(), 'updated_at' => now(),
+        ]);
+
+        $colliding = $this->serviceSession($plan, sold: 5000, bundleId: $collidingBundleId);
+        $clean = $this->serviceSession($plan, sold: 5000, bundleId: 999990);
+        // Partial payment (below the 5000 service price) so the gate math engages.
+        $this->pay($plan, 3000);
+
+        $apptId = $this->makeTreatmentAppointment();
+        $url = fn (int $psid): string => "/api/treatment/invoice/{$apptId}/package-price?package_id={$plan->id}&package_service_id={$psid}";
+
+        $a = $this->getJson($url($colliding));
+        $a->assertOk();
+        $b = $this->getJson($url($clean));
+        $b->assertOk();
+
+        foreach (['service_price', 'outstanding', 'settle_amount', 'remaining', 'balance'] as $field) {
+            $this->assertSame(
+                $b->json("data.{$field}"),
+                $a->json("data.{$field}"),
+                "Service-line `{$field}` must not change because its bundle_id collides with a type=multiple Package.",
+            );
+        }
+    }
+
+    public function test_real_package_line_still_gets_bundle_math_in_the_dialog(): void
+    {
+        // Money-safety companion to the collision test: the source_type gate must
+        // NOT disable legitimate Packages. A source_type='bundle' line and a
+        // source_type='service' line sharing the SAME real type='multiple'
+        // bundle_id must produce DIFFERENT dialog math — the Package gets
+        // bundle-math (path B, remaining = full service value), the service gets
+        // per-service (path A, remaining = 0). The OLD code wrongly applied
+        // bundle-math to BOTH, so this is red against it and green after the fix.
+        $plan = $this->makePlan();
+
+        $packageId = 991600;
+        DB::table('bundles')->insert([
+            'id' => $packageId, 'name' => 'Real Package', 'price' => 50000,
+            'services_price' => 50000, 'total_services' => 3, 'type' => 'multiple', 'active' => 1,
+            'tax_treatment_type_id' => 1, 'account_id' => 1, 'created_at' => now(), 'updated_at' => now(),
+        ]);
+
+        $bundleRow = $this->bundleSession($plan, sold: 5000, bundleId: $packageId);
+        $serviceRow = $this->serviceSession($plan, sold: 5000, bundleId: $packageId);
+        $this->pay($plan, 3000);
+
+        $apptId = $this->makeTreatmentAppointment();
+        $url = fn (int $psid): string => "/api/treatment/invoice/{$apptId}/package-price?package_id={$plan->id}&package_service_id={$psid}";
+
+        $bundle = $this->getJson($url($bundleRow));
+        $bundle->assertOk();
+        $service = $this->getJson($url($serviceRow));
+        $service->assertOk();
+
+        $this->assertNotSame(
+            (float) $service->json('data.remaining'),
+            (float) $bundle->json('data.remaining'),
+            'A source_type=bundle line must still receive bundle-math, distinct from a service line at the same id.',
+        );
+    }
+
     /* ===================== helpers ===================== */
 
     private function makePlan(): Packages
@@ -162,6 +239,42 @@ class InvoicePackagePriceReservationTest extends TestCase
     {
         $bundleRowId = (int) DB::table('package_bundles')->insertGetId([
             'account_id' => 1, 'package_id' => $plan->id, 'bundle_id' => 999990, 'qty' => 1,
+            'source_type' => 'service', 'config_group_id' => null,
+            'service_price' => $sold, 'net_amount' => $sold, 'tax_including_price' => $sold,
+            'random_id' => $plan->random_id, 'created_at' => now(), 'updated_at' => now(),
+        ]);
+
+        return (int) DB::table('package_services')->insertGetId([
+            'package_id' => $plan->id, 'package_bundle_id' => $bundleRowId, 'service_id' => $this->serviceId,
+            'price' => $sold, 'orignal_price' => $sold, 'tax_including_price' => $sold,
+            'tax_exclusive_price' => $sold, 'is_consumed' => 0, 'consumption_order' => 0,
+            'random_id' => $plan->random_id, 'created_at' => now(), 'updated_at' => now(),
+        ]);
+    }
+
+    private function bundleSession(Packages $plan, float $sold, int $bundleId): int
+    {
+        // A genuine multi-service Package line (source_type='bundle') — bundle_id
+        // is a real bundles.id. This SHOULD get the package bundle-math gate.
+        $bundleRowId = (int) DB::table('package_bundles')->insertGetId([
+            'account_id' => 1, 'package_id' => $plan->id, 'bundle_id' => $bundleId, 'qty' => 1,
+            'source_type' => 'bundle', 'config_group_id' => null,
+            'service_price' => $sold, 'net_amount' => $sold, 'tax_including_price' => $sold,
+            'random_id' => $plan->random_id, 'created_at' => now(), 'updated_at' => now(),
+        ]);
+
+        return (int) DB::table('package_services')->insertGetId([
+            'package_id' => $plan->id, 'package_bundle_id' => $bundleRowId, 'service_id' => $this->serviceId,
+            'price' => $sold, 'orignal_price' => $sold, 'tax_including_price' => $sold,
+            'tax_exclusive_price' => $sold, 'is_consumed' => 0, 'consumption_order' => 0,
+            'random_id' => $plan->random_id, 'created_at' => now(), 'updated_at' => now(),
+        ]);
+    }
+
+    private function serviceSession(Packages $plan, float $sold, int $bundleId): int
+    {
+        $bundleRowId = (int) DB::table('package_bundles')->insertGetId([
+            'account_id' => 1, 'package_id' => $plan->id, 'bundle_id' => $bundleId, 'qty' => 1,
             'source_type' => 'service', 'config_group_id' => null,
             'service_price' => $sold, 'net_amount' => $sold, 'tax_including_price' => $sold,
             'random_id' => $plan->random_id, 'created_at' => now(), 'updated_at' => now(),
