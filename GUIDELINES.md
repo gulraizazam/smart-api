@@ -181,7 +181,7 @@ pick wrong types, miss an FK, write N+1, and assert performance I never measured
 - **Transactions & integrity:** wrap multi-row money/state invariants in a transaction; lock where a race matters; financial ops idempotent (Part B).
 - **Laravel hygiene:** FormRequest validation + mass-assignment guard + parameter binding (the security angle is Part B); slow work → queues (`app/Jobs/`); no deprecated Eloquent/helper APIs (A1).
 - **Migrations own all schema** (reversible, additive; backfill separate from DDL; never ad-hoc prod SQL).
-- **Additive-only vs the shared DB (crm2) — canonical rule:** never rename/drop a shared column, route, or response shape; `scripts/coexistence-check.sh` must PASS. Destructive ops (`dropColumn`/`renameColumn`/`Schema::drop`) are **machine-flagged** by the guidelines gate — waive only if confirmed crm2-safe. PII-at-rest per `project_cnic_bank_account_no_encryption_decision`. The local `crm` DB is always ≥ prod, never behind.
+- **Additive + reversible schema — canonical rule:** prefer additive, reversible migrations (crm2 was delinked from the shared prod DB on 2026-06-16; the coexistence constraint is retired). Destructive ops (`dropColumn`/`renameColumn`/`Schema::drop`) are **machine-flagged** by the guidelines gate — waive only when confirmed safe. PII-at-rest per `project_cnic_bank_account_no_encryption_decision`. The local `crm` DB is always ≥ prod, never behind.
 
 ## C5. Permissions
 Permission checks gate behavior server-side and are the **security authority** (the SPA's
@@ -195,8 +195,7 @@ same permission rows from the shared DB (`feedback_crm3_must_not_break_crm2`).
 
 **Do:** keep controllers thin (validate → service → resource); reuse `app/Services` /
 `app/Support` / `app/Rules` / Carbon / `Number` / framework helpers; author all schema via Laravel
-migrations (reversible, additive vs the shared crm2 DB); run `scripts/coexistence-check.sh` before
-shipping any DB/permission/shared-endpoint change; keep responses on the one uniform envelope.
+migrations (reversible, additive; no ad-hoc prod SQL); keep responses on the one uniform envelope.
 
 **Don't:** put business logic in a controller or model; fork a near-duplicate route or invent a
 bespoke response shape; write string-built SQL; run an unscoped `findOrFail` (IDOR) or a bare
