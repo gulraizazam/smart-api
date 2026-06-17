@@ -70,7 +70,7 @@ scan() { # repo-relative php file
       flag "$f" "money-float" '->[[:space:]]*(float|double)\(' \
         "Don't use float/double for money -- use ->decimal() (or integer minor units). If not money, waive (GUIDELINES C4)."
       flag "$f" "migration-destructive" '->[[:space:]]*(dropColumn|renameColumn|dropForeign|dropUnique|dropIndex|dropPrimary|dropMorphs|dropConstrainedForeignId)\(|Schema::[[:space:]]*drop(IfExists)?\(' \
-        "Non-additive migration (drop/rename) -- can break crm2's reads on the shared DB. Additive-only; run coexistence-check.sh; waive ONLY if confirmed crm2-safe (GUIDELINES C4)." ;;
+        "Non-additive migration (drop/rename) on a shared/prod table -- prefer additive + a reversible down(); waive ONLY if confirmed safe (GUIDELINES C4)." ;;
     app/Http/Requests/*.php|app/Http/Controllers/*.php)
       flag "$f" "bare-exists" "['\"]exists:" \
         "Cross-tenant FK: use Rule::exists()->where('account_id', ...), not a bare exists: rule (GUIDELINES Part B: API)."

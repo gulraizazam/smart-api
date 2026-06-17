@@ -20,16 +20,16 @@ A change is **not** done — not mergeable, not deployable — until *all* of th
 2. **Red-first for bug fixes.** The reproducing test is written first and *observed to fail*, then the fix makes it pass.
 3. **Suite green.** The repo's full test suite passes (commands listed under Commands below).
 4. **Critical modules carry their test in the same change.** Touching the invariant map (pricing, permissions, money, lifecycle) has **no waiver**.
-5. **Coexistence holds.** Any DB / permission / shared-endpoint change → the coexistence check **PASSES** (never break crm2).
+5. **Permissions stay pinned.** crm2 was delinked from the shared prod DB on 2026-06-16; the coexistence constraint is retired. The legacy↔dotted permission bridge is still pinned by its CI test (see below).
 6. **Changed lines are covered.** The diff-coverage gate passes; critical modules clear the mutation bar.
 7. **No focus/rot left behind.** No focused (`.only` / `->only()`) tests committed; every skip has a reason + tracking; deleted code took its tests with it.
 <!-- TESTING-SYNC:END -->
 
 Backend specifics: the suite runs via `php -d memory_limit=-1 vendor/bin/pest`
 (`php artisan test` OOMs at 128M — see `project_backend_test_runner_memory`). Item 5's
-coexistence contract has a CI-runnable slice, `tests/Feature/Coexistence/Crm2ContractTest.php`,
+permission contract has a CI-runnable slice, `tests/Feature/Coexistence/Crm2ContractTest.php`,
 that pins the destructive-break subset (shared columns still exist + legacy umbrellas still
-declared) so it is gated on **every push**; the full HTTP/multi-app check stays local. Mutation
+declared) so it is gated on **every push**. Mutation
 (item 6) uses Infection. Exact commands: §7.
 
 ---
@@ -47,8 +47,8 @@ declared) so it is gated on **every push**; the full HTTP/multi-app check stays 
 | Model scope / accessor / cast with logic | Unit test | `tests/Unit/Models` |
 | Observer / cron / lifecycle | Feature test of the full cascade | `tests/Feature` |
 | **Pricing math** (`Bundles::calculatePrices`, `PlanDiscountService`, tax) | **Mandatory** regression test with exact numbers — **never weaken** | `tests/Feature` — **no waiver** |
-| Permission / role / grant | Feature test **and** `coexistence-check.sh` PASS | `tests/Feature/Permissions` + script |
-| Migration on a shared column/perm | `coexistence-check.sh` PASS; additive only (never drop/rename what crm2 reads) | script |
+| Permission / role / grant | Feature test | `tests/Feature/Permissions` |
+| Migration on a shared column/perm | Additive only (prefer reversible) | migration + nearest suite |
 | FormRequest validation | Rule test | `tests/Unit/Requests` or Feature |
 | Bug fix | **Failing test first** (§4) | nearest suite |
 
@@ -138,8 +138,7 @@ composer test:sync               # missing-test gate on the committed diff
 composer test:coverage           # clover coverage (needs pcov/xdebug)
 composer test:diff-cover         # changed lines must be covered (needs driver)
 composer test:mutation           # Infection on critical modules (needs driver)
-bash scripts/coexistence-check.sh   # crm2/crm3 shared-DB contract (MUST PASS)
-bash scripts/parity-check.sh        # prod parity (signature diff + crm2 200)
+bash scripts/parity-check.sh        # prod parity (signature diff + crm2 smoke)
 ```
 
 Coverage driver locally: `pecl install pcov` (then enable it). CI uses

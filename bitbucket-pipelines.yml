@@ -158,7 +158,6 @@ definitions:
         trigger: manual
         clone: { enabled: false }
         script:
-          - echo ">>> Run scripts/coexistence-check.sh LOCALLY (must PASS) before triggering this."
           - pipe: atlassian/ssh-run:0.8.1
             variables:
               SSH_USER: $DEPLOY_SSH_USER

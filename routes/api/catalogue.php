@@ -103,8 +103,9 @@ Route::prefix('doctors')->name('doctors.')->middleware('permission:doctors_manag
     Route::put('{doctor}', [DoctorController::class, 'update'])->name('update');
     Route::delete('{doctor}', [DoctorController::class, 'destroy'])->name('destroy');
     Route::post('status', [DoctorController::class, 'status'])->name('status');
-    Route::get('password/{id}', [DoctorController::class, 'changePassword'])->name('change_password');
-    Route::patch('password', [DoctorController::class, 'savePassword'])->name('save_password');
+    // Path-bound JSON password update (mirrors users' update_password) — replaces
+    // the legacy GET-then-PATCH pair; tenant-scoped + IDOR-safe in the controller.
+    Route::patch('{id}/password', [DoctorController::class, 'updatePassword'])->name('update_password')->whereNumber('id');
     Route::get('locations/{id}', [DoctorController::class, 'displayLocation'])->name('location_manage');
     Route::get('get-service', [DoctorController::class, 'getServices'])->name('get_service');
     Route::post('save_service', [DoctorController::class, 'saveServices'])->name('save_service');

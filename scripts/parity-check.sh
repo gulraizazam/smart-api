@@ -2,8 +2,8 @@
 #
 # Cutera PROD <-> LOCAL schema parity check   (committed — read-only)
 # ---------------------------------------------------------------------------
-# Sibling to scripts/coexistence-check.sh. Closes the gap that local-first
-# development can't see: that PROD actually MATCHES local after a deploy.
+# Closes the gap that local-first development can't see: that PROD actually
+# MATCHES local after a deploy.
 #
 # During cutover, several crm3 migrations were BASELINED on prod (recorded in
 # the `migrations` table) WITHOUT their schema being applied — so `migrate`

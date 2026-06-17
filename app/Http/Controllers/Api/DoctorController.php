@@ -4,13 +4,14 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Admin\ChangePasswordRequest;
 use App\Http\Requests\Admin\DoctorDatatableRequest;
 use App\Http\Requests\Admin\DoctorRequest;
 use App\Services\UserManagement\DoctorService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rules\Password;
 
 class DoctorController extends Controller
 {
@@ -181,35 +182,48 @@ class DoctorController extends Controller
         }
     }
 
-    public function changePassword(int $id): JsonResponse
+    /**
+     * Change a doctor's password — path-bound JSON, mirrors
+     * ApplicationUserController::updatePassword. Tenant scoping is server-side
+     * via getPasswordChangeData (account_id-scoped): a cross-account id returns
+     * null -> 404 (no enumeration), and that scoped check GATES the password
+     * write — closing the cross-tenant IDOR the removed GET-then-PATCH
+     * `savePassword` carried (it called the unscoped DoctorService::changePassword
+     * with the id straight from the request body).
+     */
+    public function updatePassword(Request $request, int $id): JsonResponse
     {
         try {
             if (!Gate::allows('doctors_change_password')) {
-                return $this->errorResponse('You are not authorized to access this resource.', 403);
+                return $this->errorResponse('You are not authorized to access this resource.', 401);
             }
 
-            $user = $this->doctorService->getPasswordChangeData($id);
-
-            return $user
-                ? $this->successResponse('Record found', $user)
-                : $this->errorResponse('No Record Found!', 404);
-        } catch (\Exception $e) {
-            return $this->handleException($e, 'DoctorController');
-        }
-    }
-
-    public function savePassword(ChangePasswordRequest $request): JsonResponse
-    {
-        try {
-            if (!Gate::allows('doctors_change_password')) {
-                return $this->errorResponse('You are not authorized to access this resource.', 403);
+            if (!$this->doctorService->getPasswordChangeData($id)) {
+                return $this->errorResponse('Doctor not found.', 404);
             }
 
-            $result = $this->doctorService->changePassword((int) $request->validated('id'), $request->validated('password'));
+            $validator = Validator::make($request->all(), [
+                'password' => [
+                    'required',
+                    'string',
+                    Password::min(8)->mixedCase()->numbers()->symbols(),
+                    'confirmed',
+                ],
+            ]);
+
+            if ($validator->fails()) {
+                return $this->errorResponse(
+                    $validator->errors()->first(),
+                    422,
+                    $validator->errors()->all(),
+                );
+            }
+
+            $result = $this->doctorService->changePassword($id, (string) $request->input('password'));
 
             return $result
                 ? $this->successResponse('Password has been changed successfully.')
-                : $this->errorResponse('Something went wrong, please try again.', 404);
+                : $this->errorResponse('Something went wrong, please try again.', 500);
         } catch (\Exception $e) {
             return $this->handleException($e, 'DoctorController');
         }
