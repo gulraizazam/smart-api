@@ -7,6 +7,7 @@ namespace Tests\Feature\Api;
 use App\Models\User;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
+use Laravel\Sanctum\PersonalAccessToken;
 use Tests\Concerns\RefreshTestDatabase as RefreshDatabase;
 use Tests\Concerns\UsesFinancialFixtures;
 use Tests\TestCase;
@@ -22,8 +23,10 @@ use Tests\TestCase;
  *
  * Pins:
  *   1. Missing/empty credentials produce a 422 with an envelope error.
- *   2. Valid credentials return 200, a Sanctum plain-text token, and
- *      reset the user's `failed_login_attempts` counter.
+ *   2. Valid credentials return 200 and reset `failed_login_attempts`. A
+ *      bearer PAT is minted ONLY when the client opts in with `device_name`
+ *      (mobile/stateless); the cookie-mode SPA omits it and gets NO token,
+ *      so never-used PATs no longer accumulate (576 piled up on prod).
  *   3. Wrong password returns 401 and increments the failed counter.
  *   4. Inactive accounts return 401 and are counted against the
  *      lockout policy. Returning the same 401 as "wrong password"
@@ -58,26 +61,65 @@ class ApiAuthTest extends TestCase
         $response->assertJson(['success' => false]);
     }
 
-    public function test_login_succeeds_and_returns_sanctum_token(): void
+    public function test_cookie_login_succeeds_without_minting_a_token(): void
     {
+        // Cookie-mode SPA login (no device_name): authenticates via the web
+        // session, NOT a bearer token. It must NOT mint a Sanctum PAT — those
+        // accumulated 576-strong and never-used on prod (a latent credential
+        // exposure). See AuthController::login.
         $user = User::factory()->admin()->create([
-            'email' => 'apilogin@example.test',
+            'email' => 'cookielogin@example.test',
             'password' => Hash::make('Secret123!'),
             'active' => 1,
         ]);
 
         $response = $this->postJson('/api/login', [
-            'email' => 'apilogin@example.test',
+            'email' => 'cookielogin@example.test',
             'password' => 'Secret123!',
         ]);
 
         $response->assertStatus(200);
         $response->assertJson(['success' => true]);
-        $response->assertJsonPath('data.email', 'apilogin@example.test');
+        $response->assertJsonPath('data.email', 'cookielogin@example.test');
+        $this->assertNull(
+            $response->json('data.api_token'),
+            'cookie-mode login must not return a bearer token.',
+        );
+        $this->assertSame(
+            0,
+            PersonalAccessToken::count(),
+            'cookie-mode login must not mint a never-used PAT.',
+        );
+
+        $user->refresh();
+        $this->assertSame(0, (int) $user->failed_login_attempts);
+    }
+
+    public function test_login_with_device_name_mints_a_bearer_token(): void
+    {
+        // A stateless/mobile client opts into a bearer token by sending
+        // `device_name` (the idiomatic Sanctum pattern). Only then is a PAT
+        // minted + returned, named after the device.
+        $user = User::factory()->admin()->create([
+            'email' => 'bearerlogin@example.test',
+            'password' => Hash::make('Secret123!'),
+            'active' => 1,
+        ]);
+
+        $response = $this->postJson('/api/login', [
+            'email' => 'bearerlogin@example.test',
+            'password' => 'Secret123!',
+            'device_name' => 'iphone-15',
+        ]);
+
+        $response->assertStatus(200);
+        $response->assertJson(['success' => true]);
 
         $token = $response->json('data.api_token');
         $this->assertIsString($token);
         $this->assertNotEmpty($token);
+        $this->assertSame(1, PersonalAccessToken::count(), 'a device_name login mints exactly one token.');
+        $this->assertSame('iphone-15', PersonalAccessToken::first()->name, 'token is named after the device.');
 
         $user->refresh();
         $this->assertSame(0, (int) $user->failed_login_attempts);
