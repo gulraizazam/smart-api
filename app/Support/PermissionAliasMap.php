@@ -72,7 +72,7 @@ final class PermissionAliasMap
         'packages.detail.view' => ['packages_manage'],
         'packages.create'      => ['packages_create'],
         'packages.edit'        => ['packages_edit'],
-        'packages.delete'      => ['packages_destroy'],
+        'packages.destroy'     => ['packages_destroy'],
         'packages.activate'    => ['packages_active'],
         'packages.deactivate'  => ['packages_inactive'],
 
