@@ -159,4 +159,28 @@ class PackageBundlesTypedCatalogColumnsTest extends TestCase
         $this->assertSame('COLLIDE VIP', $membership->catalogDisplayName());
         $this->assertInstanceOf(MembershipType::class, $membership->catalogItem());
     }
+
+    public function test_typed_catalog_columns_carry_fk_constraints(): void
+    {
+        // The three typed columns are FK-constrained to their catalogs. We assert
+        // the constraint DEFINITION (information_schema), not runtime rejection:
+        // the mariadb_testing connection runs `SET FOREIGN_KEY_CHECKS=0`
+        // (config/database.php) so tests can use partial fixtures, so an orphan
+        // insert can't be rejected here. Runtime enforcement is a PROD concern
+        // (real InnoDB, checks on) — proven by applying this FK migration to the
+        // 146K-row prod-shaped mirror (0 orphans, applied clean). This pins that
+        // the constraint ships in the schema.
+        $names = array_map(
+            static fn ($r): string => $r->CONSTRAINT_NAME,
+            DB::select(
+                'SELECT CONSTRAINT_NAME FROM information_schema.KEY_COLUMN_USAGE '
+                .'WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND CONSTRAINT_NAME LIKE ?',
+                ['package_bundles', 'fk_pb_catalog_%'],
+            ),
+        );
+
+        foreach (['fk_pb_catalog_service', 'fk_pb_catalog_bundle', 'fk_pb_catalog_service_bundle'] as $fk) {
+            $this->assertContains($fk, $names, "Foreign key {$fk} must constrain its typed catalog column.");
+        }
+    }
 }
