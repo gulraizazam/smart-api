@@ -643,14 +643,19 @@ final class MembershipService
         $totalDiscountAmount = 0;
 
         foreach ($usedServices as $service) {
-            // On plan service rows `bundle_id` references the SERVICES table,
-            // not `bundles` — the two tables share ids, so resolving via the
-            // `bundle` (Bundles) relation showed an unrelated service name
-            // (e.g. "CoolGlide - Underarms" instead of the plan's actual
-            // "CoolGlide - Face"). Prefer the `service` (Services) relation —
-            // the same id the plan displays — and fall back to `bundle` for
-            // true multi-service bundle rows.
-            $serviceName = $service->service?->name ?? $service->bundle?->name ?? 'Unknown Service';
+            // Resolve the display name the collision-immune way. `bundle_id` is
+            // an overloaded FK (service → services, bundle → bundles,
+            // service_bundle → service_bundles) and the id ranges collide, so the
+            // old `service ?? bundle` heuristic showed an unrelated row's name
+            // (e.g. "CoolGlide - Underarms" over the plan's "CoolGlide - Face",
+            // or a wrong name on a service_bundle row). catalogDisplayName() routes
+            // by source_type via the typed columns — service_bundle renders as
+            // "Nx <underlying service>". The legacy heuristic stays ONLY as the
+            // fallback for an un-tagged row predating the typed-column backfill.
+            $serviceName = $service->catalogDisplayName()
+                ?? $service->service?->name
+                ?? $service->bundle?->name
+                ?? 'Unknown Service';
             $discountSaved = $service->service_price - $service->tax_including_price;
             $packageService = $service->packageservice->first();
             $isConsumed = $packageService ? (bool) $packageService->is_consumed : false;

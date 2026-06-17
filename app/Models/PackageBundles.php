@@ -144,7 +144,58 @@ class PackageBundles extends Model
                     .'an untagged row silently resolves the wrong catalog.'
                 );
             }
+
+            // Mirror the just-validated (bundle_id, source_type) into the
+            // matching typed catalog column. The de-overload migration
+            // backfilled existing rows; this keeps NEW rows correct so the
+            // typed columns never go stale (and the soon-to-be repointed
+            // typed relations resolve the right catalog for new rows too).
+            self::mirrorTypedCatalogColumn($bundle);
         });
+
+        // Keep the typed catalog columns in lockstep if a row's overloaded
+        // (bundle_id, source_type) ever changes after creation (re-tagging).
+        static::updating(function (self $bundle): void {
+            if ($bundle->isDirty(['bundle_id', 'source_type', 'membership_type_id'])) {
+                self::mirrorTypedCatalogColumn($bundle);
+            }
+        });
+    }
+
+    /**
+     * Mirror the overloaded (bundle_id, source_type) pair into the matching
+     * single-purpose typed catalog column — the write-time counterpart of the
+     * de-overload migration's backfill:
+     *   source_type 'service'        -> catalog_service_id        (services.id)
+     *   source_type 'bundle'         -> catalog_bundle_id         (bundles.id)
+     *   source_type 'service_bundle' -> catalog_service_bundle_id (service_bundles.id)
+     *
+     * Membership lines key off membership_type_id and keep all three columns
+     * NULL. Service-in-child rows (bundle_id NULL) also stay NULL — they
+     * resolve via the child package_services, exactly as before. All three are
+     * reset first so a re-tagged row can't leave a stale column populated.
+     */
+    private static function mirrorTypedCatalogColumn(self $bundle): void
+    {
+        $bundle->setAttribute('catalog_service_id', null);
+        $bundle->setAttribute('catalog_bundle_id', null);
+        $bundle->setAttribute('catalog_service_bundle_id', null);
+
+        if (! empty($bundle->getAttribute('membership_type_id'))) {
+            return; // membership line — typed columns stay NULL
+        }
+
+        $bundleId = $bundle->getAttribute('bundle_id');
+        if ($bundleId === null) {
+            return; // service-in-child row — resolves via package_services
+        }
+
+        match ($bundle->getAttribute('source_type')) {
+            'service'        => $bundle->setAttribute('catalog_service_id', $bundleId),
+            'bundle'         => $bundle->setAttribute('catalog_bundle_id', $bundleId),
+            'service_bundle' => $bundle->setAttribute('catalog_service_bundle_id', $bundleId),
+            default          => null,
+        };
     }
 
     /**
@@ -211,6 +262,99 @@ class PackageBundles extends Model
     public function serviceBundle(): BelongsTo
     {
         return $this->belongsTo(ServiceBundle::class, 'bundle_id');
+    }
+
+    // ── Catalog resolution (de-overloaded) ──────────────
+    //
+    // The canonical, source_type-correct way to resolve what a plan line
+    // points at, WITHOUT the bundle_id id-collision. Reads the typed columns
+    // (catalog_service_id / catalog_bundle_id / catalog_service_bundle_id /
+    // membership_type_id) and falls back to the legacy (bundle_id, source_type)
+    // pair only for any row predating the backfill. New readers should call
+    // these instead of `Xxx::find($pb->bundle_id)`, which silently resolves the
+    // wrong catalog for non-matching rows. PURELY ADDITIVE — no existing reader
+    // is changed by introducing these.
+
+    /**
+     * The catalog this row points at: 'service' | 'bundle' | 'service_bundle'
+     * | 'membership', or null if unresolvable. Derived from the typed columns;
+     * legacy source_type is the fallback for un-backfilled rows.
+     *
+     * @return array{0: ?string, 1: ?int} [type, catalog id]
+     */
+    private function resolvedCatalogRef(): array
+    {
+        if ($this->membership_type_id !== null) {
+            return ['membership', (int) $this->membership_type_id];
+        }
+        if ($this->catalog_service_id !== null) {
+            return ['service', (int) $this->catalog_service_id];
+        }
+        if ($this->catalog_bundle_id !== null) {
+            return ['bundle', (int) $this->catalog_bundle_id];
+        }
+        if ($this->catalog_service_bundle_id !== null) {
+            return ['service_bundle', (int) $this->catalog_service_bundle_id];
+        }
+        // Fallback: a row written before the typed-column backfill. Trust the
+        // legacy discriminator only when it is one of the known catalog kinds.
+        if ($this->bundle_id !== null
+            && in_array($this->source_type, ['service', 'bundle', 'service_bundle'], true)) {
+            return [$this->source_type, (int) $this->bundle_id];
+        }
+
+        return [null, null];
+    }
+
+    /** The source_type-correct catalog kind for this row (collision-immune). */
+    public function catalogType(): ?string
+    {
+        return $this->resolvedCatalogRef()[0];
+    }
+
+    /**
+     * The source_type-correct catalog record (Services | Bundles |
+     * ServiceBundle | MembershipType), or null. withTrashed for the catalog
+     * kinds whose legacy relations were withTrashed, so a historical plan line
+     * still resolves a since-deleted catalog item for display.
+     */
+    public function catalogItem(): ?Model
+    {
+        [$type, $id] = $this->resolvedCatalogRef();
+        if ($id === null) {
+            return null;
+        }
+
+        return match ($type) {
+            'service'        => Services::withTrashed()->find($id),
+            'bundle'         => Bundles::withTrashed()->find($id),
+            'service_bundle' => ServiceBundle::withTrashed()->find($id),
+            'membership'     => MembershipType::find($id),
+            default          => null,
+        };
+    }
+
+    /**
+     * The source_type-correct display NAME for this row (collision-immune).
+     * Mirrors the long-standing display rule: a service_bundle line shows the
+     * UNDERLYING service prefixed by qty ("3x Laser"), everything else shows
+     * the catalog record's own name. Null if unresolvable (caller falls back
+     * to the child package_services, exactly as today).
+     */
+    public function catalogDisplayName(): ?string
+    {
+        [$type, $id] = $this->resolvedCatalogRef();
+        if ($id === null) {
+            return null;
+        }
+
+        if ($type === 'service_bundle') {
+            $serviceName = ServiceBundle::withTrashed()->with('service')->find($id)?->service?->name;
+
+            return $serviceName !== null ? ((int) $this->qty).'x '.$serviceName : null;
+        }
+
+        return $this->catalogItem()?->name;
     }
 
     // ── Creation ────────────────────────────────────────

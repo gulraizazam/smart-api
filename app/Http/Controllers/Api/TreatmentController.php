@@ -978,9 +978,19 @@ final class TreatmentController extends Controller
             // Bundle is only relevant when its `type === 'multiple'`
             // (the multi-service bundle math). Single bundles fall
             // through to the per-service pricing.
-            $bundle = Bundles::where('id', $packageBundle->bundle_id)
-                ->where('type', 'multiple')
-                ->first();
+            // Only a true multi-service Package (source_type='bundle') is gated by
+            // package bundle-math here. A service / service_bundle line whose
+            // OVERLOADED bundle_id merely COLLIDES with a type='multiple' bundles.id
+            // must NOT be resolved as a Package — doing so mis-applied bundle-math to
+            // the consume dialog (wrong settle_amount/remaining, which feed the
+            // recorded invoice). source_type is the authoritative discriminator — the
+            // same signal the actual consume floor (ConsumptionReservation::requiredFloor)
+            // already uses; this only aligns the dialog pre-check with it.
+            $bundle = $packageBundle->source_type === 'bundle'
+                ? Bundles::where('id', $packageBundle->bundle_id)
+                    ->where('type', 'multiple')
+                    ->first()
+                : null;
 
             $service = Services::find($packageService->service_id);
             if (!$service) {
