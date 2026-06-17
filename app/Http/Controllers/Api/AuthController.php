@@ -41,6 +41,9 @@ class AuthController extends Controller
             $rules = [
                 'email' => 'required |email',
                 'password' => 'required',
+                // Optional: a stateless/mobile client opts into a bearer PAT by
+                // naming its device. The cookie-mode SPA omits it (session auth).
+                'device_name' => 'sometimes|string|max:255',
             ];
             $message = [
                 'required' => 'Please enter :attribute',
@@ -137,14 +140,19 @@ class AuthController extends Controller
             Auth::guard('web')->login($user);
             $user->recordSuccessfulLogin();
             $this->captcha->clear($clientIp);
-            $apiToken = $user->createToken('login')->plainTextToken;
-
-            // Expose the PAT to the SPA. toAuthPayload() includes `api_token`
-            // only when it is set on the model (see User::toAuthPayload) — without
-            // this the bearer-mode SPA (VITE_AUTH_MODE=bearer) never receives the
-            // token and every subsequent request 401s. Transient: set for this
-            // response only, never persisted.
-            $user->api_token = $apiToken;
+            // Mint a bearer PAT ONLY when the client opts in with `device_name`
+            // (a stateless/mobile client; the idiomatic Sanctum pattern). The
+            // cookie-mode SPA authenticates via the web session established above
+            // (Auth::guard('web')->login) and never sends device_name, so it no
+            // longer mints a never-used token — 576 such PATs (all last_used_at
+            // = null) had piled up on prod by 2026-06, a latent credential
+            // exposure. toAuthPayload() emits `api_token` only when set on the
+            // model, so cookie logins simply omit it. Transient: this response
+            // only, never persisted on the user row.
+            $deviceName = trim((string) $request->input('device_name', ''));
+            if ($deviceName !== '') {
+                $user->api_token = $user->createToken($deviceName)->plainTextToken;
+            }
 
             $this->audit->record($request, 'api', LoginAuditLogger::OUTCOME_SUCCESS, $request->input('email'), $user);
 
