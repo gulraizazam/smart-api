@@ -16,6 +16,7 @@ use App\Models\Stock;
 use App\Services\Order\OrderService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 use Tests\Concerns\RefreshTestDatabase as RefreshDatabase;
 use Tests\Concerns\UsesFinancialFixtures;
 use Tests\TestCase;
@@ -112,9 +113,9 @@ class LegacyOrderFlowTest extends TestCase
         ];
     }
 
-    private function patientSalePayload(int $productId, int $invId, int $locationId, int $qty, string $phone, string $name = 'Walk-in Patient'): array
+    private function patientSalePayload(int $productId, int $invId, int $locationId, int $qty, string $phone, string $name = 'Walk-in Patient', ?int $patientId = null): array
     {
-        return [
+        $payload = [
             'product_id' => [$productId],
             'quantity' => [$qty],
             'product_price' => [0],
@@ -126,16 +127,25 @@ class LegacyOrderFlowTest extends TestCase
             'location_id' => $locationId,
             'discount' => 0,
         ];
+
+        // A registered patient is identified by patient_id (the live SPA always
+        // sends it). Omitting it exercises the "no registered patient" rejection.
+        if ($patientId !== null) {
+            $payload['patient_id'] = $patientId;
+        }
+
+        return $payload;
     }
 
     /**
-     * Order-only patient carve-out (project_patient_creation_rule, 2026-06-01):
-     * a product sale to a BRAND-NEW phone registers a proper, account-scoped
-     * patient on the LIVE OrderService::createOrder path. Re-pins the coverage
-     * lost when this file was renamed from FifoOrderFlowTest (the policy test
-     * only covers the legacy Order::createRecord path).
+     * Order patient rule — the 2026-06-01 order-only carve-out is REVERTED
+     * (2026-06-17, crm2 delinked): a product order must be for an
+     * ALREADY-REGISTERED patient. A patient sale with no `patient_id` is
+     * rejected (422) and registers NO patient — consultation is again the
+     * sole patient creator (project_patient_creation_rule). Pins the LIVE
+     * OrderService::createOrder path.
      */
-    public function test_order_create_registers_patient_for_new_phone(): void
+    public function test_order_rejects_new_phone_and_registers_no_patient(): void
     {
         $loc = (int) ($this->defaultLocation->id ?? 1);
         $product = $this->makeProduct(1000);
@@ -144,23 +154,22 @@ class LegacyOrderFlowTest extends TestCase
         $phone = '+92307'.random_int(1000000, 9999999);
         $before = Patients::query()->count();
 
-        $order = app(OrderService::class)->createOrder(
-            $this->patientSalePayload($product->id, $invId, $loc, 1, $phone)
-        );
+        try {
+            // name+phone but NO patient_id — the old carve-out would register a
+            // patient here; it must now be rejected.
+            app(OrderService::class)->createOrder(
+                $this->patientSalePayload($product->id, $invId, $loc, 1, $phone)
+            );
+            $this->fail('A patient sale without a registered patient_id must be rejected.');
+        } catch (HttpException $e) {
+            $this->assertSame(422, $e->getStatusCode(), 'missing patient_id must 422.');
+        }
 
-        $this->assertNotNull($order, 'patient sale should create an order.');
-        $patient = Patients::where('phone', $phone)->first();
-        $this->assertNotNull(
-            $patient,
-            'a new-phone product sale MUST register a patient (order-only carve-out, live OrderService path).',
+        $this->assertNull(
+            Patients::where('phone', $phone)->first(),
+            'an order must NOT register a patient (carve-out reverted).',
         );
-        $this->assertSame(1, (int) $patient->account_id, 'order-created patient must be account-scoped.');
-        $this->assertSame(
-            (int) config('constants.patient_id'),
-            (int) $patient->user_type_id,
-            'order-created patient must be a proper patient row (user_type_id=patient), not an orphan.',
-        );
-        $this->assertSame($before + 1, Patients::query()->count(), 'exactly one patient registered.');
+        $this->assertSame($before, Patients::query()->count(), 'no patient may be created by an order.');
     }
 
     public function test_sale_decrements_inventory_and_writes_out_ledger(): void
@@ -235,9 +244,9 @@ class LegacyOrderFlowTest extends TestCase
             'created_by' => Auth::id() ?? 1,
         ]);
 
-        // Sale resolves the existing patient by phone; client-sent discount is 0.
+        // Sale is for the pre-registered patient (patient_id); client-sent discount is 0.
         $order = app(OrderService::class)->createOrder(
-            $this->patientSalePayload($product->id, $invId, $loc, 2, $phone, 'Gold Member'),
+            $this->patientSalePayload($product->id, $invId, $loc, 2, $phone, 'Gold Member', $patient->id),
         );
 
         // 10% off the inventory sale price (800) → 720 net per unit.
