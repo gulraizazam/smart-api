@@ -247,14 +247,11 @@ class BundleHelper
     public static function getPermissions(): array
     {
         return [
-            'edit'     => Gate::allows('packages_edit'),
-            'delete'   => Gate::allows('packages_destroy'),
-            'active'   => Gate::allows('packages_active'),
-            'inactive' => Gate::allows('packages_inactive'),
-            // `packages.detail.view` is the dotted slug exposed in the role
-            // editor; `packages_manage` is the legacy admin-bundle gate. Either
-            // grants read access to the detail dialog.
-            'details'  => Gate::allows('packages.detail.view') || Gate::allows('packages_manage'),
+            'edit'     => Gate::allows('packages.edit'),
+            'delete'   => Gate::allows('packages.destroy'),
+            'active'   => Gate::allows('packages.activate'),
+            'inactive' => Gate::allows('packages.deactivate'),
+            'details'  => Gate::allows('packages.detail.view'),
         ];
     }
 }

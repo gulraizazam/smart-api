@@ -47,12 +47,12 @@ final class PackagesController extends Controller
      * bundles datatable — `name`, `price`, `total_services`, `status`,
      * `created_from`, `created_to`, `startdate`, `enddate`, `per_page`.
      *
-     * Permission: `packages_manage`. Inactive rows are hidden unless
+     * Permission: `packages.list.view`. Inactive rows are hidden unless
      * `view_inactive_packages` is granted.
      */
     public function index(Request $request): JsonResponse
     {
-        if (! Gate::allows('packages_manage')) {
+        if (! Gate::allows('packages.list.view')) {
             return $this->unauthorizedResponse();
         }
 
@@ -121,11 +121,11 @@ final class PackagesController extends Controller
     /**
      * POST /api/packages/create
      *
-     * Permission: `packages_create`.
+     * Permission: `packages.create`.
      */
     public function store(StoreBundleRequest $request): JsonResponse
     {
-        if (! Gate::allows('packages_create')) {
+        if (! Gate::allows('packages.create')) {
             return $this->unauthorizedResponse();
         }
 
@@ -144,12 +144,11 @@ final class PackagesController extends Controller
      * GET /api/packages/{id}
      *
      * Detail (bundle + bundle_services + relationships).
-     * Permission: `packages.detail.view` (new dotted slug from the role
-     * editor) OR `packages_manage` (legacy admin gate).
+     * Permission: `packages.detail.view`.
      */
     public function show(int $id): JsonResponse
     {
-        if (! Gate::allows('packages.detail.view') && ! Gate::allows('packages_manage')) {
+        if (! Gate::allows('packages.detail.view')) {
             return $this->unauthorizedResponse();
         }
 
@@ -168,11 +167,11 @@ final class PackagesController extends Controller
      * GET /api/packages/{id}/edit
      *
      * Form data for the edit screen.
-     * Permission: `packages_edit`.
+     * Permission: `packages.edit`.
      */
     public function edit(int $id): JsonResponse
     {
-        if (! Gate::allows('packages_edit')) {
+        if (! Gate::allows('packages.edit')) {
             return $this->unauthorizedResponse();
         }
 
@@ -206,11 +205,11 @@ final class PackagesController extends Controller
     /**
      * DELETE /api/packages/{id}
      *
-     * Permission: `packages_destroy`.
+     * Permission: `packages.destroy`.
      */
     public function destroy(int $id): JsonResponse
     {
-        if (! Gate::allows('packages_destroy')) {
+        if (! Gate::allows('packages.destroy')) {
             return $this->unauthorizedResponse();
         }
 
@@ -257,7 +256,7 @@ final class PackagesController extends Controller
      */
     public function sortOrderGet(): JsonResponse
     {
-        if (! Gate::allows('packages_edit')) {
+        if (! Gate::allows('packages.edit')) {
             return $this->unauthorizedResponse();
         }
 
@@ -277,7 +276,7 @@ final class PackagesController extends Controller
      */
     public function sortOrderSave(Request $request): JsonResponse
     {
-        if (! Gate::allows('packages_edit')) {
+        if (! Gate::allows('packages.edit')) {
             return $this->unauthorizedResponse();
         }
 
