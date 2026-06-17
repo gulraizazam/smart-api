@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature\Plan;
 
 use App\Models\PackageBundles;
+use App\Models\Packages;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -135,5 +136,47 @@ class PackageBundleAccountIdTest extends TestCase
         ]);
 
         $this->assertSame(1, (int) $pb->fresh()->account_id);
+    }
+
+    public function test_allocation_stamps_account_id_on_a_staging_row(): void
+    {
+        // The exact gap that left plan 50611's row NULL: a staging row created
+        // without a derivable account (package_id NULL, account_id NULL). When
+        // it is ALLOCATED to a plan, createRecord must stamp the plan's
+        // account_id. (createRecord's downstream consultancy-appointment lookup
+        // isn't seeded here and throws AFTER the allocation update under test —
+        // the stamp has already happened, so we ignore it.)
+        $pkgId = $this->makePackage('RID-ALLOC', 1);
+        $package = Packages::find($pkgId);
+        // Staging row starts with NULL account_id; allocation must stamp the plan's.
+        $bundleId = $this->rawBundle(['package_id' => null, 'random_id' => 'RID-ALLOC']);
+        $this->assertNull(DB::table('package_bundles')->where('id', $bundleId)->value('account_id'));
+
+        try {
+            PackageBundles::createRecord($package, ['package_bundles' => [$bundleId]]);
+        } catch (\Throwable $e) {
+            // downstream appointment/invoice lookups not seeded — irrelevant here
+        }
+
+        $this->assertSame(1, (int) DB::table('package_bundles')->where('id', $bundleId)->value('account_id'));
+    }
+
+    public function test_staging_backfill_fills_account_id_from_location(): void
+    {
+        // An unallocated/staged row (package_id NULL, account_id NULL) that the
+        // by-package/random_id backfill couldn't reach — but it has a location,
+        // so the new backfill derives the tenant via location -> account.
+        $pbId = $this->rawBundle([
+            'package_id' => null,
+            'random_id' => 'RID-STAGE',
+            'location_id' => $this->defaultLocation->id,
+        ]);
+        $this->assertNull(DB::table('package_bundles')->where('id', $pbId)->value('account_id'));
+
+        $this->runMigration('2026_06_17_160000_backfill_staging_package_bundles_account_id.php');
+
+        $expected = (int) DB::table('locations')->where('id', $this->defaultLocation->id)->value('account_id');
+        $this->assertGreaterThan(0, $expected, 'the test location must carry an account_id for this to be meaningful');
+        $this->assertSame($expected, (int) DB::table('package_bundles')->where('id', $pbId)->value('account_id'));
     }
 }

@@ -393,7 +393,11 @@ class PackageBundles extends Model
     public static function createRecord(self|Packages $package, array $request): bool
     {
         $parentId = $package->id;
-        $updateDetails = ['package_id' => $package->id, 'is_allocate' => 1];
+        // Stamp account_id at allocation (when the row is bound to a plan). The
+        // create-time hook can't always derive it before the plan exists, which
+        // left allocated rows with NULL account_id and broke the remove-service
+        // flow (e.g. plan 50611). The plan's account is authoritative here.
+        $updateDetails = ['package_id' => $package->id, 'is_allocate' => 1, 'account_id' => $package->account_id];
 
         foreach ($request['package_bundles'] as $bundleId) {
             self::where(['id' => $bundleId, 'random_id' => $package->random_id])
@@ -438,7 +442,11 @@ class PackageBundles extends Model
     public static function updateRecord(self|Packages $package, array $request): bool
     {
         $parentId = $package->id;
-        $updateDetails = ['package_id' => $package->id, 'is_allocate' => 1];
+        // Stamp account_id at allocation (when the row is bound to a plan). The
+        // create-time hook can't always derive it before the plan exists, which
+        // left allocated rows with NULL account_id and broke the remove-service
+        // flow (e.g. plan 50611). The plan's account is authoritative here.
+        $updateDetails = ['package_id' => $package->id, 'is_allocate' => 1, 'account_id' => $package->account_id];
 
         if (!empty($request['package_bundles'])) {
             foreach ($request['package_bundles'] as $bundleId) {
