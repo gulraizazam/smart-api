@@ -77,16 +77,13 @@ Route::prefix('users')->name('users.')->middleware('permission:users_manage')->g
     Route::put('{user}', [ApplicationUserController::class, 'update'])->name('update');
     Route::delete('{user}', [ApplicationUserController::class, 'destroy'])->name('destroy');
     Route::post('status', [ApplicationUserController::class, 'status'])->name('status');
-    Route::get('password/{id}', [ApplicationUserController::class, 'changePassword'])->name('change_password');
-    Route::patch('password', [ApplicationUserController::class, 'savePassword'])->name('save_password');
 
-    // Path-bound JSON password update — obsoletes the GET-then-PATCH
-    // dance above (the legacy SPA had to GET the Blade modal, scrape
-    // an `encrypt(id)` hidden input, and POST it back). With the user
-    // id pinned in the path the encrypt-id obfuscation is unnecessary;
-    // tenant scoping happens server-side via findByAccountId. The
-    // legacy pair stays live until Blade cutover for legacy admin's
-    // edit form.
+    // Path-bound JSON password update. The legacy GET-then-PATCH dance —
+    // GET a Blade modal, scrape an `encrypt(id)` hidden input, PATCH it
+    // back — was retired 2026-06-17 once crm2 was delinked; its decrypt
+    // path also skipped the account scope (a latent cross-tenant IDOR).
+    // The user id is pinned in the path; tenant scoping happens
+    // server-side via findByAccountId.
     Route::patch('{id}/password', [ApplicationUserController::class, 'updatePassword'])
         ->name('update_password')
         ->whereNumber('id');
