@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Permissions;
 
-use App\Support\PermissionAliasMap;
 use Tests\TestCase;
 
 /**
@@ -74,16 +73,5 @@ class PlansGatesDottedRepointTest extends TestCase
             $this->source(),
             'patient_plans is non-bridge and must be left untouched by P2.',
         );
-    }
-
-    public function test_each_repoint_target_is_the_bridges_canonical_twin(): void
-    {
-        foreach (self::REPOINTS as $dotted => $legacy) {
-            $this->assertContains(
-                $dotted,
-                PermissionAliasMap::aliasesFor($legacy),
-                "Dotted gate [{$dotted}] must be the bridge twin of legacy [{$legacy}] so legacy-only roles keep access.",
-            );
-        }
     }
 }

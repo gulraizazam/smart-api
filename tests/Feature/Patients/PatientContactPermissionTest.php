@@ -89,10 +89,9 @@ class PatientContactPermissionTest extends TestCase
 
     public function test_lead_resource_includes_phone_when_contact_granted(): void
     {
-        // Regression: the broad `contact` perm must reveal the LEAD phone, not
-        // just the patient phone. crm3 gates LeadResource on
-        // `leads.list.view_contact`; without the alias bridge a `contact` grant
-        // left the lead phone hidden even though crm2 shows it under `contact`.
+        // crm3 gates LeadResource phone on `leads.list.view_contact`; a role
+        // holding that slug sees the lead phone (Tier P P3 retired the legacy
+        // `contact` -> dotted bridge, so the dotted slug is held directly).
         $this->actingAsUserWithContact();
         $patient = Patients::factory()->create(['phone' => '3005551234']);
         $lead = Leads::factory()->create([
@@ -108,10 +107,9 @@ class PatientContactPermissionTest extends TestCase
 
     public function test_consultancy_resource_includes_phone_when_contact_granted(): void
     {
-        // Same contract as leads: the broad `contact` perm must reveal the
-        // consultation phone. ConsultancyResource gates on
-        // `consultations.list.view_contact`; the alias bridge is what lets a
-        // `contact` grant satisfy it.
+        // ConsultancyResource gates phone on `consultations.list.view_contact`;
+        // a role holding that slug sees the consultation phone (the bridge that
+        // let a bare `contact` grant satisfy it was retired in Tier P P3).
         $this->actingAsUserWithContact();
         $patient = Patients::factory()->create(['phone' => '3007778888']);
         $appointment = Appointments::factory()->create(['patient_id' => $patient->id]);
@@ -211,10 +209,17 @@ class PatientContactPermissionTest extends TestCase
 
     private function actingAsUserWithPermission(bool $contactGranted): User
     {
-        $this->createPermission('contact');
+        // Phone visibility is gated per surface on the granular dotted slugs
+        // (leads/consultations/patients .list.view_contact). A phone-seeing role
+        // holds them directly — prod roles also still hold the broad legacy
+        // `contact` — and the legacy<->dotted bridge was retired in Tier P P3.
+        $phoneSlugs = ['contact', 'leads.list.view_contact', 'consultations.list.view_contact', 'patients.list.view_contact'];
+        foreach ($phoneSlugs as $slug) {
+            $this->createPermission($slug);
+        }
         $role = $this->createRole($contactGranted ? 'ContactViewer' : 'ContactBlind');
         if ($contactGranted) {
-            $role->givePermissionTo('contact');
+            $role->givePermissionTo($phoneSlugs);
         }
 
         $user = User::factory()->create(['account_id' => 1]);

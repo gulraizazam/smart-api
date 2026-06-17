@@ -369,28 +369,6 @@ class AppServiceProvider extends ServiceProvider
 
         Gate::before(fn ($user, $ability) => $user->hasRole('Super-Admin') ? true : null);
 
-        // Permission-catalog alias bridge — translates between the legacy
-        // snake_case slugs (`plans_cash_edit_amount`) the codebase's
-        // Gate::allows checks reference and the new dotted slugs
-        // (`plans.cash.edit_amount`) the role editor surfaces. PermissionAliasMap
-        // returns every equivalent name; granting any of them satisfies the
-        // original check. Uses hasPermissionTo directly to avoid recursing
-        // back into Gate::allows. PermissionDoesNotExist is swallowed so an
-        // alias for a slug that hasn't been seeded yet is treated as "no
-        // match", not an error.
-        Gate::before(function ($user, string $ability) {
-            foreach (\App\Support\PermissionAliasMap::aliasesFor($ability) as $aliased) {
-                try {
-                    if ($user->hasPermissionTo($aliased)) {
-                        return true;
-                    }
-                } catch (\Spatie\Permission\Exceptions\PermissionDoesNotExist $e) {
-                    continue;
-                }
-            }
-            return null;
-        });
-
         // Route-group gate for the /api/management-dashboard/* endpoints.
         // Those endpoints back BOTH the Management Dashboard (overview /
         // practitioners / marketing tabs, gated by `management_dashboard.view`)
