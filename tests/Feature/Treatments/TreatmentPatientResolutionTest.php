@@ -71,6 +71,26 @@ class TreatmentPatientResolutionTest extends TestCase
         }
     }
 
+    public function test_resolves_patient_whose_phone_column_kept_formatting(): void
+    {
+        // The live bug (Ravisha): the patient row's `phone` column kept
+        // formatting — "+92 318 0275202". The old resolver matched ONLY the raw
+        // `phone` column against digits-only variants, so it missed the row and
+        // rejected the treatment as "patient not registered" — even though the
+        // SPA's phone-search (Patients::getByPhone) had just found her. The fix
+        // routes this through getByPhone, which also matches the digits-only
+        // `phone_normalized` column. Reverting to the phone-only match reds this.
+        $patient = Patients::factory()->create(['phone' => '+92 318 0275202', 'account_id' => 1]);
+
+        foreach (['3180275202', '03180275202', '923180275202', '+92 318 0275202', '0318 0275202'] as $input) {
+            $this->assertSame(
+                $patient->id,
+                $this->resolve(['phone' => $input]),
+                "Input '{$input}' must resolve the patient stored with a formatted phone.",
+            );
+        }
+    }
+
     public function test_still_rejects_a_truly_unregistered_phone(): void
     {
         Patients::factory()->create(['phone' => '3215044424', 'account_id' => 1]);

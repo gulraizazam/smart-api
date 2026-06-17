@@ -491,9 +491,20 @@ class LeadsController extends Controller
 
     public function loadLeadStatuses(): JsonResponse
     {
+        // Flags travel with each status so the SPA can lock auto-derived
+        // statuses (booked/arrived/converted) and hide junk without
+        // name-matching heuristics. Additive — existing consumers read
+        // only value/text.
         return response()->json(
             LeadStatuses::getActiveOnly()
-                ->map(fn ($status): array => ['value' => $status->id, 'text' => $status->name])
+                ->map(fn ($status): array => [
+                    'value' => $status->id,
+                    'text' => $status->name,
+                    'is_booked' => $status->is_booked,
+                    'is_arrived' => $status->is_arrived,
+                    'is_converted' => $status->is_converted,
+                    'is_junk' => $status->is_junk,
+                ])
                 ->toArray()
         );
     }
