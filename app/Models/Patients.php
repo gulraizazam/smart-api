@@ -387,32 +387,56 @@ class Patients extends BaseModel
         $variants = PhoneFormattingService::matchVariants($phone);
         $normalizedVariants = PhoneFormattingService::normalizedVariants($phone);
 
-        $query = self::where('user_type_id', self::$USER_TYPE);
-        if (empty($variants) && empty($normalizedVariants)) {
-            $query->where('phone', $phone);
-        } else {
-            $query->where(function ($q) use ($variants, $normalizedVariants): void {
-                if (! empty($normalizedVariants)) {
-                    $q->orWhereIn('phone_normalized', $normalizedVariants);
-                }
-                if (! empty($variants)) {
-                    $q->orWhereIn('phone', $variants);
-                }
-            });
-        }
-
-        // A phone maps to exactly one patient WITHIN an account. Scope to the
-        // caller's account when given — without this an identical number in a
-        // different clinic account could be returned and wrongly linked.
+        // Shared scope: patient rows, optionally pinned to an account and/or a
+        // specific patient id. A phone maps to exactly one patient WITHIN an
+        // account — scoping prevents returning an identical number from a
+        // different clinic account and wrongly linking it.
+        $scope = self::where('user_type_id', self::$USER_TYPE);
         if ($accountId !== false) {
-            $query->where('account_id', $accountId);
+            $scope->where('account_id', $accountId);
         }
-
         if ($patientId) {
-            $query->where('id', $patientId);
+            $scope->where('id', $patientId);
         }
 
-        return $query->first();
+        // Blank/unparseable phone — fall back to an exact match, nothing else
+        // to compare against.
+        if (empty($variants) && empty($normalizedVariants)) {
+            return $scope->where('phone', $phone)->first();
+        }
+
+        // Fast, index-friendly path: the digits-only `phone_normalized` column
+        // (always populated by the model saving hook) plus the raw `phone`
+        // backstop. Hits the B-tree index for every correctly-stored row.
+        $fast = (clone $scope)->where(function ($q) use ($variants, $normalizedVariants): void {
+            if (! empty($normalizedVariants)) {
+                $q->orWhereIn('phone_normalized', $normalizedVariants);
+            }
+            if (! empty($variants)) {
+                $q->orWhereIn('phone', $variants);
+            }
+        })->first();
+        if ($fast) {
+            return $fast;
+        }
+
+        // Fallback for rows whose STORED value still carries separators — e.g.
+        // a legacy/crm2 row saved as phone "+92 318 0275202" with
+        // phone_normalized "92 318 0275202". The fast path can't match those
+        // because the variants are digits-only. Collapse every non-digit out
+        // of the stored value and compare against the digits-only variants.
+        // Not index-backed, but it only runs when the fast path already missed
+        // (the rare malformed row), so the hot path stays fast.
+        if (! empty($normalizedVariants)) {
+            return (clone $scope)
+                ->whereIn(
+                    DB::raw("REGEXP_REPLACE(COALESCE(NULLIF(phone_normalized, ''), phone), '[^0-9]', '')"),
+                    $normalizedVariants,
+                )
+                ->first();
+        }
+
+        return null;
     }
 
     /*

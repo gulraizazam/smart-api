@@ -371,6 +371,20 @@ class AppointmentHelper
             $mergedData['base_appointment_status_id'] = $mergedData['appointment_status_id'];
         }
 
+        // Mirror the status's `allow_message` onto the appointment so the
+        // booking + reminder SMS crons (which gate on
+        // appointment_status_allow_message = 1) can pick it up. The column
+        // defaults to 0, so without this every API-created consultation was
+        // silently un-sendable. crm2's create controllers set this the same
+        // way. Only derived when the caller hasn't set it explicitly.
+        if (isset($mergedData['appointment_status_id']) && !isset($mergedData['appointment_status_allow_message'])) {
+            $mergedData['appointment_status_allow_message'] = (int) (
+                AppointmentStatuses::where('id', $mergedData['appointment_status_id'])
+                    ->where('account_id', $account_id)
+                    ->value('allow_message') ?? 0
+            );
+        }
+
         return $mergedData;
     }
 }

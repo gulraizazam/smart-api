@@ -161,6 +161,52 @@ class LeadStatusesEndpointsTest extends TestCase
         );
     }
 
+    public function test_lead_statuses_dropdown_carries_lock_flags(): void
+    {
+        // The SPA leads table locks the "Update status" row action for
+        // auto-derived statuses (booked/arrived/converted) by matching
+        // these flags off this dropdown payload. Pre-fix the endpoint sent
+        // only value/text, so the lock never engaged and a booked lead's
+        // status was still editable from the table.
+        $accountId = (int) Auth::user()->account_id;
+
+        $booked = LeadStatuses::create([
+            'name' => 'Booked', 'account_id' => $accountId, 'parent_id' => null,
+            'is_default' => 0, 'is_booked' => 1, 'is_arrived' => 0,
+            'is_converted' => 0, 'is_junk' => 0, 'is_comment' => 0,
+            'active' => 1, 'sort_no' => 90,
+        ]);
+        $open = LeadStatuses::create([
+            'name' => 'Open (dropdown test)', 'account_id' => $accountId, 'parent_id' => null,
+            'is_default' => 0, 'is_booked' => 0, 'is_arrived' => 0,
+            'is_converted' => 0, 'is_junk' => 0, 'is_comment' => 0,
+            'active' => 1, 'sort_no' => 91,
+        ]);
+
+        $response = $this->getJson('/api/leads/lead_statuses');
+
+        $response->assertOk();
+        $items = collect($response->json());
+
+        // Every item must carry all four lock/visibility flags.
+        foreach ($items as $item) {
+            $this->assertArrayHasKey('is_booked', $item);
+            $this->assertArrayHasKey('is_arrived', $item);
+            $this->assertArrayHasKey('is_converted', $item);
+            $this->assertArrayHasKey('is_junk', $item);
+        }
+
+        $bookedItem = $items->firstWhere('value', $booked->id);
+        $this->assertNotNull($bookedItem, 'Booked status missing from dropdown payload.');
+        $this->assertTrue((bool) $bookedItem['is_booked'], 'Booked status must report is_booked=true so the SPA can lock it.');
+
+        $openItem = $items->firstWhere('value', $open->id);
+        $this->assertNotNull($openItem);
+        $this->assertFalse((bool) $openItem['is_booked']);
+        $this->assertFalse((bool) $openItem['is_arrived']);
+        $this->assertFalse((bool) $openItem['is_converted']);
+    }
+
     public function test_datatable_response_exposes_create_and_sort_permissions(): void
     {
         $response = $this->postJson('/api/lead_statuses/datatable', [

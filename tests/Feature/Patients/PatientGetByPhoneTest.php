@@ -94,6 +94,48 @@ class PatientGetByPhoneTest extends TestCase
         }
     }
 
+    public function test_finds_patient_whose_phone_normalized_kept_separators(): void
+    {
+        // The live crm2-origin case (a DB where the 2026_06_05 autofill trigger
+        // hasn't run): a crm2 insert left BOTH columns with separators — phone
+        // "+92 318 0275202" AND phone_normalized "92 318 0275202". The
+        // digits-only variants can't match a spaced stored value, so getByPhone
+        // must digit-collapse the column; otherwise this reads as "no
+        // registered patient with this phone" on the treatment screen.
+        //
+        // The test DB ships the autofill trigger (it would re-clean
+        // phone_normalized), so drop it for this row's write, then restore it —
+        // DDL can't roll back with the transaction, so sibling tests must keep
+        // the invariant.
+        $patient = Patients::factory()->create(['phone' => '3180275202']);
+
+        DB::unprepared('DROP TRIGGER IF EXISTS users_phone_normalized_bi');
+        DB::unprepared('DROP TRIGGER IF EXISTS users_phone_normalized_bu');
+        try {
+            DB::table('users')->where('id', $patient->id)->update([
+                'phone' => '+92 318 0275202',
+                'phone_normalized' => '92 318 0275202',
+            ]);
+            $this->assertSame(
+                '92 318 0275202',
+                (string) DB::table('users')->where('id', $patient->id)->value('phone_normalized'),
+                'Setup: the malformed (spaced) phone_normalized must persist with the trigger off.',
+            );
+
+            foreach (['3180275202', '03180275202', '923180275202', '+92 318 0275202', '0318 0275202'] as $input) {
+                $this->assertSame(
+                    $patient->id,
+                    Patients::getByPhone($input)?->id,
+                    "Input '{$input}' must resolve the patient whose phone_normalized kept separators.",
+                );
+            }
+        } finally {
+            $expr = "NULLIF(REGEXP_REPLACE(COALESCE(NEW.phone, ''), '[^0-9]', ''), '')";
+            DB::unprepared("CREATE TRIGGER users_phone_normalized_bi BEFORE INSERT ON users FOR EACH ROW SET NEW.phone_normalized = {$expr}");
+            DB::unprepared("CREATE TRIGGER users_phone_normalized_bu BEFORE UPDATE ON users FOR EACH ROW SET NEW.phone_normalized = {$expr}");
+        }
+    }
+
     public function test_returns_null_for_unknown_phone(): void
     {
         Patients::factory()->create(['phone' => '3215044424']);
