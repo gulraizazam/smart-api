@@ -19,7 +19,6 @@ use App\Models\Order;
 use App\Models\OrderDetail;
 use App\Models\OrderRefund;
 use App\Models\OrderRefundDetail;
-use App\Models\Patients;
 use App\Models\Product;
 use App\Models\RoleHasUsers;
 use App\Models\Settings;
@@ -374,45 +373,17 @@ class OrderService
         $patientId = $buyerType === 'patient' ? ($data['patient_id'] ?? null) : null;
         $employeeId = $buyerType === 'employee' ? ($data['employee_id'] ?? null) : null;
 
-        // ORDER-TIME patient creation — an intentional, ORDER-ONLY exception to
-        // project_patient_creation_rule (2026-06-01): a product order for a new
-        // phone registers a patient, matching legacy crm2 so the shared patient
-        // data stays consistent across both apps during coexistence. Other entry
-        // points (treatment / appointment / drag-drop) STILL reject; consultation
-        // remains the canonical creator.
-        // NB: crm2's bare create(['name','phone']) left user_type_id/account_id
-        // NULL (orphan rows invisible to the patients_only scope). We instead
-        // register a PROPER, account-scoped patient.
-        if ($buyerType === 'patient' && empty($patientId) && !empty($data['phone'])) {
-            $existing = Patients::where('phone', $data['phone'])->first();
-            if ($existing) {
-                $patientId = $existing->id;
-            } else {
-                // Register the patient the SAME way the consultation flow does
-                // (AppointmentService::createAppointment) so order- and
-                // consultation-created patients are identical, valid rows
-                // (user_type_id=patient, account-scoped, hashed random password
-                // — `users.password` is NOT NULL on prod).
-                $newPatient = Patients::create([
-                    'name' => $data['name'] ?? null,
-                    'phone' => $data['phone'],
-                    'email' => $data['email'] ?? null,
-                    'gender' => $data['gender'] ?? 0,
-                    'account_id' => $accountId,
-                    'user_type_id' => (int) config('constants.patient_id'),
-                    'password' => \Illuminate\Support\Facades\Hash::make(\Illuminate\Support\Str::random(16)),
-                    'active' => 1,
-                    'created_by' => Auth::id(),
-                ]);
-                $patientId = $newPatient->id;
-            }
-        }
-
+        // ORDER patient rule (carve-out REVERTED 2026-06-17, crm2 delinked):
+        // a product order must be for an ALREADY-REGISTERED patient, so
+        // `patient_id` is required for a patient sale. The 2026-06-01 order-only
+        // exception that registered/resolved a patient from name+phone (crm2
+        // parity on the shared DB) is removed — consultation is again the sole
+        // patient creator (project_patient_creation_rule). Reversible: restore
+        // this block to re-enable order-time registration.
         if ($buyerType === 'patient' && empty($patientId)) {
-            // No existing patient and no phone to register one.
             throw new \Symfony\Component\HttpKernel\Exception\HttpException(
                 422,
-                'Please select a patient (or provide a name + phone) for this order.',
+                'Please select a registered patient for this order.',
             );
         }
         if ($buyerType === 'employee' && empty($employeeId)) {

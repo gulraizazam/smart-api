@@ -81,6 +81,18 @@ class SalesReportPatientPhoneTest extends TestCase
         $invId = $this->stockAt($product->id, $loc, 5, 1000);
 
         $phone = '+92307'.random_int(1000000, 9999999);
+        // Orders require an already-registered patient (carve-out reverted
+        // 2026-06-17) — register first, then sell to them by patient_id.
+        $patient = Patients::create([
+            'name' => 'Walk-in Patient',
+            'phone' => $phone,
+            'account_id' => 1,
+            'user_type_id' => (int) config('constants.patient_id'),
+            'password' => \Illuminate\Support\Facades\Hash::make('secret-test'),
+            'active' => 1,
+            'created_by' => Auth::id() ?? 1,
+        ]);
+
         app(OrderService::class)->createOrder([
             'product_id' => [$product->id],
             'quantity' => [1],
@@ -88,8 +100,7 @@ class SalesReportPatientPhoneTest extends TestCase
             'inventory_id' => [$invId],
             'payment_mode' => 1,
             'sold_to' => 'patient',
-            'name' => 'Walk-in Patient',
-            'phone' => $phone,
+            'patient_id' => $patient->id,
             'location_id' => $loc,
             'discount' => 0,
         ]);
@@ -105,7 +116,7 @@ class SalesReportPatientPhoneTest extends TestCase
         $this->assertSame($phone, $row['patient_phone'],
             'the report row must expose the patient phone for the SPA patient cell.');
 
-        // Sanity: the patient was registered with that phone.
+        // Sanity: the order is attributed to the registered patient's phone.
         $this->assertNotNull(Patients::where('phone', $phone)->first());
     }
 }

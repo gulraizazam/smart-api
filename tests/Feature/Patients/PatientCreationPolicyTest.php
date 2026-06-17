@@ -8,31 +8,32 @@ use App\Exceptions\AppointmentException;
 use App\Exceptions\TreatmentException;
 use App\Models\AppointmentTypes;
 use App\Models\Locations;
-use App\Models\Order;
 use App\Models\Patients;
 use App\Models\Services;
 use App\Models\User;
 use App\Services\Appointment\AppointmentService;
 use App\Services\Appointment\ConsultancyService;
+use App\Services\Order\OrderService;
 use App\Services\Treatment\TreatmentService;
-use Illuminate\Http\Request;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 use Tests\Concerns\RefreshTestDatabase as RefreshDatabase;
 use Tests\Concerns\UsesFinancialFixtures;
 use Tests\TestCase;
 
 /**
- * Policy (revised 2026-06-01): a patient row (`users` with `user_type_id = 3`)
- * is created by a consultation booking AND by a product ORDER (the order-only
- * carve-out, for parity with legacy crm2 during coexistence). Treatment
- * booking, generic appointment booking, and drag-drop STILL reject brand-new
- * phone numbers.
+ * Policy (order carve-out REVERTED 2026-06-17, crm2 delinked): a patient row
+ * (`users` with `user_type_id = 3`) is created ONLY by a consultation booking.
+ * Treatment booking, generic appointment booking, drag-drop, AND product ORDERS
+ * all reject brand-new phone numbers — a product order now requires an
+ * ALREADY-REGISTERED `patient_id` (the 2026-06-01 order-only carve-out for crm2
+ * parity is gone).
  *
- * This file pins the gates it exercises directly: treatment booking and generic
- * (non-consultancy) appointment booking reject an unknown phone; consultation AND
- * order register one — so a future refactor that flips any of them fails CI.
- * (Drag-drop rejects through the same non-consultancy AppointmentService gate as
- * the appointment test, so it is covered transitively, not by a separate case.)
+ * This file pins the gates it exercises directly: treatment booking, generic
+ * (non-consultancy) appointment booking, and product orders reject an unknown
+ * phone; only consultation registers one — so a future refactor that flips any
+ * of them fails CI. (Drag-drop rejects through the same non-consultancy
+ * AppointmentService gate as the appointment test, so it is covered
+ * transitively, not by a separate case.)
  */
 class PatientCreationPolicyTest extends TestCase
 {
@@ -282,84 +283,71 @@ class PatientCreationPolicyTest extends TestCase
         }
     }
 
-    public function test_order_create_record_creates_patient_for_unknown_phone(): void
+    public function test_order_with_unknown_phone_is_rejected_and_creates_no_patient(): void
     {
-        // ORDER-ONLY carve-out (2026-06-01): an order for a NEW phone registers
-        // a patient (parity with legacy crm2). Other entry points still reject;
-        // consultation remains the canonical creator.
+        // Carve-out reverted (2026-06-17): a product order for a NEW phone
+        // (name+phone, no patient_id) is rejected and registers NO patient —
+        // orders require an already-registered patient. The patient gate fires
+        // before product validation, so an empty cart still surfaces it.
         $patientCountBefore = Patients::query()->count();
         $phone = '+92303' . random_int(1000000, 9999999);
 
-        $request = new Request([
-            'name'           => 'Walk-in Customer',
-            'phone'          => $phone,
-            'product_id'     => [],
-            'quantity'       => [],
-            'product_price'  => [],
-            'sold_to'        => 'patient',
-            'payment_mode'   => 'cash',
-            'location_id'    => $this->defaultLocation->id ?? 1,
-            'location_type'  => 'location_id',
-            'doctor_id'      => null,
-            'grand_total'    => 0,
-        ]);
-
         try {
-            Order::createRecord($request, 1, []);
-        } catch (\Throwable) {
-            // Downstream order assembly may fail (no products/FKs) — out of
-            // scope; the patient is registered at the gate before that.
+            app(OrderService::class)->createOrder([
+                'name'         => 'Walk-in Customer',
+                'phone'        => $phone,
+                'product_id'   => [],
+                'quantity'     => [],
+                'sold_to'      => 'patient',
+                'payment_mode' => 'cash',
+                'location_id'  => $this->defaultLocation->id ?? 1,
+            ]);
+            $this->fail('A product order for an unregistered patient must be rejected.');
+        } catch (HttpException $e) {
+            $this->assertSame(422, $e->getStatusCode());
         }
 
-        $created = Patients::where('phone', $phone)->first();
-        $this->assertNotNull(
-            $created,
-            'Order for an unknown phone must REGISTER a proper, visible patient (order-only carve-out).',
+        $this->assertNull(
+            Patients::where('phone', $phone)->first(),
+            'A product order must NOT register a patient (carve-out reverted 2026-06-17).',
         );
-        $this->assertSame(1, (int) $created->account_id, 'order-created patient must be account-scoped (not an orphan).');
-        $this->assertSame($patientCountBefore + 1, Patients::query()->count(), 'exactly one patient registered.');
+        $this->assertSame(
+            $patientCountBefore,
+            Patients::query()->count(),
+            'No patient may be created via a product order.',
+        );
     }
 
-    public function test_order_create_record_resolves_existing_patient_by_phone(): void
+    public function test_order_with_existing_phone_but_no_patient_id_is_still_rejected(): void
     {
+        // Strict: an order no longer silently resolves a patient by phone — the
+        // operator must select the registered patient (patient_id). An existing
+        // patient's phone alone (no patient_id) is rejected, and no duplicate is
+        // ever spawned.
         $existing = Patients::factory()->create([
             'phone' => '+92304' . random_int(1000000, 9999999),
         ]);
-
         $patientCountBefore = Patients::query()->count();
 
-        $request = new Request([
-            'name'           => 'Walk-in Customer',
-            'phone'          => $existing->phone,
-            'product_id'     => [1],
-            'quantity'       => [1],
-            'product_price'  => [100],
-            'sold_to'        => 'patient',
-            'payment_mode'   => 'cash',
-        ]);
-
-        // Order::createRecord may still fail later (missing FKs, etc.)
-        // — we only care that the EXISTING patient was resolved by phone,
-        // not duplicated.
         try {
-            Order::createRecord($request, 1, []);
+            app(OrderService::class)->createOrder([
+                'name'         => 'Walk-in Customer',
+                'phone'        => $existing->phone,
+                'product_id'   => [],
+                'quantity'     => [],
+                'sold_to'      => 'patient',
+                'payment_mode' => 'cash',
+                'location_id'  => $this->defaultLocation->id ?? 1,
+            ]);
+            $this->fail('An order without an explicit patient_id must be rejected.');
         } catch (HttpException $e) {
-            // A known phone must RESOLVE to the existing patient; it must
-            // never 422 (the order-only carve-out creates only for an
-            // *unknown* phone, and an existing one is reused).
-            $this->assertNotSame(
-                422,
-                $e->getStatusCode(),
-                'Order with an existing patient phone should resolve it, not reject.',
-            );
-        } catch (\Throwable) {
-            // Other exceptions (missing FKs etc.) are fine — out of scope here.
+            $this->assertSame(422, $e->getStatusCode());
         }
 
         $this->assertSame(
             $patientCountBefore,
             Patients::query()->count(),
-            'Order::createRecord must resolve a known phone, never spawn a duplicate patient.',
+            'Order must never spawn a duplicate patient.',
         );
     }
 
