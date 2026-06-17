@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Permissions;
 
-use App\Support\PermissionAliasMap;
 use Tests\TestCase;
 
 /**
@@ -88,44 +87,6 @@ class PackagesGatesDottedRepointTest extends TestCase
             "'view_inactive_packages'",
             $this->source(),
             'view_inactive_packages is non-bridge and must be left untouched by P2.',
-        );
-    }
-
-    public function test_each_repoint_target_is_the_bridges_canonical_twin(): void
-    {
-        foreach (self::REPOINTS as $dotted => $legacy) {
-            $this->assertContains(
-                $dotted,
-                PermissionAliasMap::aliasesFor($legacy),
-                "Dotted gate [{$dotted}] must be the bridge twin of legacy [{$legacy}] so legacy-only roles keep access.",
-            );
-        }
-    }
-
-    public function test_bridge_phantom_packages_delete_is_corrected_to_packages_destroy(): void
-    {
-        // The bridge used to map the PHANTOM `packages.delete` (no catalog row)
-        // to packages_destroy. P2 corrects it to the real `packages.destroy`.
-        // This pins the fix discriminatingly: revert the map and these flip.
-        $this->assertContains(
-            'packages.destroy',
-            PermissionAliasMap::aliasesFor('packages_destroy'),
-            'packages_destroy must bridge to the real packages.destroy.',
-        );
-        $this->assertNotContains(
-            'packages.delete',
-            PermissionAliasMap::aliasesFor('packages_destroy'),
-            'The phantom packages.delete must no longer be bridged.',
-        );
-        $this->assertSame(
-            [],
-            PermissionAliasMap::aliasesFor('packages.delete'),
-            'packages.delete is a phantom — it must have no aliases now.',
-        );
-        $this->assertSame(
-            ['packages_destroy'],
-            PermissionAliasMap::aliasesFor('packages.destroy'),
-            'packages.destroy must bridge to legacy packages_destroy.',
         );
     }
 }

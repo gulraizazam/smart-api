@@ -48,10 +48,14 @@ class LeadDetailAuthorizationTest extends TestCase
         );
     }
 
-    public function test_detail_passes_the_gate_when_user_has_leads_manage(): void
+    public function test_detail_403_for_legacy_only_role_now_that_the_bridge_is_gone(): void
     {
+        // Tier P P3 removed the legacy<->dotted alias bridge. A role holding ONLY
+        // the legacy `leads_manage` slug must now 403 on the dotted-gated endpoint
+        // (`leads.detail.view`) — the behavioural pin that the bridge is truly gone:
+        // it goes red the instant any Gate::before alias hook is reintroduced.
         $perm = $this->createPermission('leads_manage');
-        $role = $this->createRole('TestLeadViewer');
+        $role = $this->createRole('TestLegacyOnlyLeadViewer');
         $role->givePermissionTo($perm);
 
         $actor = User::factory()->create(['account_id' => 1]);
@@ -61,19 +65,14 @@ class LeadDetailAuthorizationTest extends TestCase
 
         $response = $this->getJson('/api/leads/detail/999999');
 
-        // Gate passed → whatever happens next (404/500 "Lead not found",
-        // or 200) it must NOT be an auth/authz rejection.
-        $this->assertNotSame(401, $response->getStatusCode());
-        $this->assertNotSame(403, $response->getStatusCode());
+        $response->assertStatus(403);
     }
 
-    public function test_detail_passes_via_alias_bridge_with_only_the_dotted_slug(): void
+    public function test_detail_passes_with_the_dotted_slug(): void
     {
-        // §5.3 cutover bridge: 2026_05_21_130000 deletes the legacy leads_* rows
-        // and re-grants the dotted catalog, so a CSR/Consultant role ends up
-        // holding ONLY `leads.detail.view` — yet the controller still gates on
-        // legacy `leads_manage`. PermissionAliasMap + Gate::before must bridge it,
-        // or every such role 403s at cutover.
+        // crm3's catalog grants the dotted `leads.detail.view`; the controller
+        // gates on it directly (P2 repointed it, P3 removed the bridge). A role
+        // holding the dotted slug passes with no alias indirection.
         $perm = $this->createPermission('leads.detail.view');
         $role = $this->createRole('DottedOnlyLeadViewer');
         $role->givePermissionTo($perm);
@@ -89,8 +88,7 @@ class LeadDetailAuthorizationTest extends TestCase
         $this->assertNotSame(
             403,
             $response->getStatusCode(),
-            'A role holding only the dotted leads.detail.view must pass the legacy '
-            . 'leads_manage gate via the alias bridge (§5.3) — else CSR/Consultant 403 at cutover.',
+            'A role holding the dotted leads.detail.view must pass the gate directly.',
         );
     }
 }

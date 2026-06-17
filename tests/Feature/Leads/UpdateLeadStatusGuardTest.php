@@ -42,13 +42,13 @@ class UpdateLeadStatusGuardTest extends TestCase
     }
 
     /**
-     * UpdateLeadStatusRequest::authorize gates on `leads_lead_status`.
-     * Grant it via a test role so the Spatie gate passes; same shape
-     * as the password-update tests.
+     * UpdateLeadStatusRequest::authorize gates on the dotted `leads.update_status`
+     * (the legacy<->dotted alias bridge was retired in Tier P P3). Grant the dotted
+     * slug via a test role so the Spatie gate passes.
      */
     private function actingAsLeadStatusEditor(): User
     {
-        $perm = $this->createPermission('leads_lead_status');
+        $perm = $this->createPermission('leads.update_status');
         $role = $this->createRole('TestLeadStatusEditor');
         $role->givePermissionTo($perm);
 

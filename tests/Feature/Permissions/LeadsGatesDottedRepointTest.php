@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Permissions;
 
-use App\Support\PermissionAliasMap;
 use Tests\TestCase;
 
 /**
@@ -88,21 +87,6 @@ class LeadsGatesDottedRepointTest extends TestCase
                 "'{$kept}'",
                 $src,
                 "P2 must not touch [{$kept}] — it is not part of the leads repoint.",
-            );
-        }
-    }
-
-    public function test_each_repoint_target_is_the_bridges_canonical_twin(): void
-    {
-        // The P2 safety net: because every dotted gate we now use is bridge-aliased
-        // to the legacy slug it replaced, a role still holding only the OLD legacy
-        // grant keeps passing via Gate::before — zero access loss while the bridge
-        // lives. (Revisited at P3, when the bridge and this guarantee are removed.)
-        foreach (self::REPOINTS as $dotted => $legacy) {
-            $this->assertContains(
-                $dotted,
-                PermissionAliasMap::aliasesFor($legacy),
-                "Dotted gate [{$dotted}] must be the bridge twin of legacy [{$legacy}] so legacy-only roles keep access.",
             );
         }
     }

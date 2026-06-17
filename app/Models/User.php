@@ -222,23 +222,11 @@ class User extends Authenticatable
 
         $payload['role'] = $this->roles->pluck('name')->first();
 
-        // Expand permissions through PermissionAliasMap so SPA gates work
-        // for either the legacy snake_case (`plans_cash_edit_amount`) or
-        // the new dotted slug (`plans.cash.edit_amount`). The role editor
-        // only saves dotted slugs today, but most SPA call-sites still
-        // reference the legacy names — the same Gate::before bridge runs
-        // server-side, this mirrors that behaviour for the client.
-        // aliasesFor returns a list because some dotted slugs collapse two
-        // legacy gates (e.g. plans.log.view → plans_log + patients_plan_log).
-        $names = $this->getAllPermissions()->pluck('name')->all();
-        $expanded = [];
-        foreach ($names as $name) {
-            $expanded[$name] = true;
-            foreach (\App\Support\PermissionAliasMap::aliasesFor($name) as $aliased) {
-                $expanded[$aliased] = true;
-            }
-        }
-        $payload['permissions'] = array_values(array_keys($expanded));
+        // The role editor saves only the dotted catalog slugs and the SPA gates
+        // on those directly (the legacy<->dotted alias bridge was retired in
+        // Tier P P3). `contact` is the one legacy slug the SPA still reads, and
+        // every role holds it directly, so no alias expansion is needed.
+        $payload['permissions'] = $this->getAllPermissions()->pluck('name')->all();
 
         // Authoritative ACL-scoped centre assignment so the SPA can
         // auto-select + lock centre filters when the user is bound to a

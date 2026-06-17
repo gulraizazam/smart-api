@@ -39,7 +39,7 @@ class VendorTransactionAttachmentEndpointTest extends TestCase
         $this->seedFinancialFixtures();
         $this->actingAsAdmin();
         $this->grantPermissions([
-            'cashflow_vendor_transaction', 'cashflow_vendor_view', 'cashflow_vendor_deliver',
+            'cashflow.vendor.transaction.create', 'cashflow.vendor.view', 'cashflow.vendor.deliver',
         ]);
         Storage::fake('r2_invoices');
     }
@@ -241,16 +241,16 @@ class VendorTransactionAttachmentEndpointTest extends TestCase
 
     /**
      * Build a non-admin user on the admin's account holding exactly the
-     * given legacy permission slugs, and act as them.
+     * given (dotted catalog) permission slugs, and act as them.
      */
-    private function actingAsUserWith(array $legacySlugs, string $label): User
+    private function actingAsUserWith(array $slugs, string $label): User
     {
         $admin = auth()->user();
-        foreach ($legacySlugs as $slug) {
+        foreach ($slugs as $slug) {
             $this->createPermission($slug);
         }
         $role = $this->createRole($label.'-'.uniqid());
-        $role->givePermissionTo($legacySlugs);
+        $role->givePermissionTo($slugs);
 
         $user = User::factory()->create(['account_id' => $admin->account_id]);
         app(\Spatie\Permission\PermissionRegistrar::class)->forgetCachedPermissions();
@@ -282,7 +282,7 @@ class VendorTransactionAttachmentEndpointTest extends TestCase
         $attId = $this->attachInvoiceToPurchase();
 
         $this->actingAsUserWith(
-            ['cashflow_vendor_view', 'cashflow_vendor_transaction_edit'],
+            ['cashflow.vendor.view', 'cashflow.vendor.transaction.edit'],
             'vendor-editor',
         );
 
@@ -297,7 +297,7 @@ class VendorTransactionAttachmentEndpointTest extends TestCase
         // detach an invoice it doesn't own.
         $attId = $this->attachInvoiceToPurchase();
 
-        $this->actingAsUserWith(['cashflow_vendor_view'], 'vendor-viewer');
+        $this->actingAsUserWith(['cashflow.vendor.view'], 'vendor-viewer');
 
         $this->deleteJson("/api/cashflow/vendors/attachments/{$attId}")
             ->assertStatus(403);
