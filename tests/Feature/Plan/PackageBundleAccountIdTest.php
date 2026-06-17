@@ -108,6 +108,35 @@ class PackageBundleAccountIdTest extends TestCase
         $this->assertSame(1, (int) $pb->fresh()->account_id);
     }
 
+    public function test_create_fires_both_the_account_id_stamp_and_the_typed_catalog_mirror(): void
+    {
+        // Batch-C R1 pin: the account_id creating-hook stamp (this session) and
+        // the bundle_id de-overload's typed-catalog mirror (also a creating hook)
+        // BOTH run in PackageBundles' create path. A single create must satisfy
+        // both — neither hook may clobber the other. account_id is NOT supplied
+        // (so the stamp must derive it from the package), and source_type+bundle_id
+        // must mirror into catalog_service_id.
+        $pkgId = $this->makePackage('RID-BOTH', 1);
+
+        $pb = PackageBundles::create([
+            'package_id'    => $pkgId,
+            'random_id'     => 'RID-BOTH',
+            'qty'           => 1,
+            'source_type'   => 'service',
+            'bundle_id'     => 4242,
+            'service_price' => 100,
+            'net_amount'    => 100,
+            'active'        => 1,
+        ])->fresh();
+
+        // account_id stamp fired (derived from the package; no explicit account_id, no auth)
+        $this->assertSame(1, (int) $pb->account_id, 'account_id stamp must fire on create');
+        // typed-catalog mirror fired on the SAME create (service -> catalog_service_id = bundle_id)
+        $this->assertSame(4242, (int) $pb->catalog_service_id, 'typed-catalog mirror must fire on the same create');
+        $this->assertNull($pb->catalog_bundle_id);
+        $this->assertNull($pb->catalog_service_bundle_id);
+    }
+
     public function test_creating_hook_stamps_account_id_from_acting_user(): void
     {
         $userId = (int) DB::table('users')->insertGetId([
