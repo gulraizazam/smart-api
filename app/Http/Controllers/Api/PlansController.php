@@ -108,7 +108,7 @@ final class PlansController extends Controller
 
     public function planLog(int|string $planId, int|string $patientId, string $type): JsonResponse
     {
-        if (Gate::denies('patients_plan_log')) {
+        if (Gate::denies('plans.log.view')) {
             return $this->unauthorizedResponse();
         }
 
