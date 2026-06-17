@@ -7,10 +7,8 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\ApplicationUserDatatableRequest;
 use App\Http\Requests\Admin\ApplicationUserRequest;
-use App\Http\Requests\Admin\ChangePasswordRequest;
 use App\Http\Requests\Admin\ChangeUserStatusRequest;
 use App\Services\UserManagement\ApplicationUserService;
-use Illuminate\Contracts\Encryption\DecryptException;
 use Illuminate\Http\JsonResponse;
 use App\Helpers\ACL;
 use App\Models\Patients;
@@ -169,48 +167,6 @@ class ApplicationUserController extends Controller
             return $result
                 ? $this->successResponse('Status has been changed successfully.')
                 : $this->errorResponse('Resource not found.', 404);
-        } catch (\Exception $e) {
-            return $this->handleException($e, 'ApplicationUserController');
-        }
-    }
-
-    public function changePassword(int $id): JsonResponse|\Illuminate\Contracts\View\View
-    {
-        try {
-            if (!Gate::allows('users_change_password')) {
-                return $this->errorResponse('You are not authorized to access this resource.', 403);
-            }
-
-            $user = $this->userService->findByAccountId($id);
-
-            if (!$user) {
-                return $this->errorResponse('User not found.', 404);
-            }
-
-            return view('admin.users.change_password', compact('user'));
-        } catch (\Exception $e) {
-            return $this->handleException($e, 'ApplicationUserController');
-        }
-    }
-
-    public function savePassword(ChangePasswordRequest $request): JsonResponse
-    {
-        try {
-            if (!Gate::allows('users_change_password')) {
-                return $this->errorResponse('You are not authorized to access this resource.', 403);
-            }
-
-            try {
-                $id = decrypt($request->validated('id'));
-            } catch (DecryptException) {
-                return $this->errorResponse('Something went wrong, please try again.', 500);
-            }
-
-            $result = $this->userService->changePassword((int) $id, $request->validated('password'));
-
-            return $result
-                ? $this->successResponse('Password has been changed successfully.')
-                : $this->errorResponse('Something went wrong, please try again.', 500);
         } catch (\Exception $e) {
             return $this->handleException($e, 'ApplicationUserController');
         }

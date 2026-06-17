@@ -17,7 +17,7 @@ use Tests\TestCase;
  * that obsoletes the legacy GET-then-PATCH dance against the Blade
  * change-password modal.
  *
- * Old flow (still alive for legacy admin until cutover):
+ * Old flow (RETIRED 2026-06-17 — crm2 delinked; pinned gone below):
  *   GET  /api/users/password/{id}  -> Blade modal with hidden encrypted id
  *   PATCH /api/users/password      -> { id: <encrypted>, password, ... }
  *
@@ -233,5 +233,38 @@ class UpdatePasswordTest extends TestCase
             (string) $response->headers->get('Content-Type'),
             'Endpoint must always return JSON; never a Blade HTML page.',
         );
+    }
+
+    public function test_legacy_get_change_password_route_is_gone(): void
+    {
+        // The legacy GET returned a Blade modal carrying the encrypted-id
+        // hidden input the SPA used to scrape. Retired now that crm2 is
+        // delinked — it must no longer resolve, or the GET-then-PATCH dance
+        // (and its encrypt(id) obfuscation) is back. Authed as a manager so
+        // a 404 means "route gone", not "auth wall".
+        $actor = $this->actingAsUserManager();
+        $target = User::factory()->create(['account_id' => $actor->account_id]);
+
+        $this->getJson("/api/users/password/{$target->id}")->assertStatus(404);
+    }
+
+    public function test_legacy_patch_save_password_route_is_gone(): void
+    {
+        // The legacy PATCH decrypt()'d a client-supplied id and changed the
+        // password WITHOUT an account-scope check — a latent cross-tenant
+        // IDOR. Retired; only the path-bound, tenant-scoped
+        // PATCH /api/users/{id}/password remains.
+        //
+        // With the legacy route gone, `users/password` no longer has a PATCH
+        // handler — the URL now falls through to the RESTful `PUT {user}`
+        // route, so PATCH yields 405 (Method Not Allowed). Re-adding
+        // savePassword would make it 500/422 again, failing this pin.
+        $this->actingAsUserManager();
+
+        $this->patchJson('/api/users/password', [
+            'id' => 'whatever',
+            'password' => 'NewPass1!',
+            'password_confirmation' => 'NewPass1!',
+        ])->assertStatus(405);
     }
 }
