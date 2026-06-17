@@ -24,7 +24,7 @@ class AppointmentsPlansController extends Controller
      */
     public function create(int $id): \Illuminate\Http\JsonResponse
     {
-        if (! Gate::allows('patients_plan_create')) {
+        if (! Gate::allows('plans.create')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
 

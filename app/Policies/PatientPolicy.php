@@ -68,7 +68,7 @@ class PatientPolicy
      */
     public function viewPlans(User $user): bool
     {
-        return $user->can('patient_plans') || $user->can('patients_plan_create');
+        return $user->can('patient_plans') || $user->can('plans.create');
     }
 
     /**
@@ -76,7 +76,7 @@ class PatientPolicy
      */
     public function createPlan(User $user): bool
     {
-        return $user->can('patients_plan_create');
+        return $user->can('plans.create');
     }
 
     /**
