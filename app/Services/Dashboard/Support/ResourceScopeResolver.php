@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Dashboard\Support;
 
+use App\Models\DoctorHasLocations;
 use App\Models\User;
 use App\Models\UserHasLocations;
 use Illuminate\Support\Facades\Config;
@@ -21,6 +22,10 @@ use Illuminate\Support\Facades\Config;
  *                                                    location ids (the virtual
  *                                                    All Centres id is never
  *                                                    returned to callers)
+ *   - no user_has_locations row                     ⇒ fall back to the doctor's
+ *                                                    allocated clinics
+ *                                                    (doctor_has_locations);
+ *                                                    doctors are scoped there
  *
  * Per-request cache avoids re-querying the pivot on every widget.
  */
@@ -51,6 +56,14 @@ final class ResourceScopeResolver
             ->pluck('location_id')
             ->map(static fn ($id): int => (int) $id)
             ->all();
+
+        // Doctors store their clinic in doctor_has_locations, not
+        // user_has_locations. Fall back to their allocated clinics so an
+        // assigned doctor is branch-scoped like any other user instead of
+        // resolving to no branches (which locks them out of the dashboard).
+        if ($locationIds === []) {
+            $locationIds = DoctorHasLocations::allocatedLocationIds($userId);
+        }
 
         if ($allCentresId !== 0 && in_array($allCentresId, $locationIds, true)) {
             return $this->cache[$userId] = null;

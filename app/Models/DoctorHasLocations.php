@@ -26,4 +26,27 @@ class DoctorHasLocations extends Model
     {
         return $this->belongsTo(Services::class, 'service_id')->withTrashed();
     }
+
+    /**
+     * The distinct, currently-allocated clinic (location) ids for a doctor.
+     *
+     * Doctors are scoped via this table, not `user_has_locations`, so the
+     * branch resolvers (ResourceScopeResolver, CashflowHelper::getUserBranches)
+     * fall back here when a user has no `user_has_locations` row — otherwise an
+     * assigned doctor resolves to no branches and is locked out of the
+     * branch-scoped dashboard.
+     *
+     * @return list<int>
+     */
+    public static function allocatedLocationIds(int $userId): array
+    {
+        return static::query()
+            ->where('user_id', $userId)
+            ->where('is_allocated', 1)
+            ->pluck('location_id')
+            ->map(static fn ($id): int => (int) $id)
+            ->unique()
+            ->values()
+            ->all();
+    }
 }
