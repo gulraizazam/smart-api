@@ -98,7 +98,7 @@ class AppointmentsController extends Controller
      */
     public function index(): \Illuminate\View\View
     {
-        if (! Gate::allows('appointments_manage') && ! Gate::allows('consultations_manage')) {
+        if (! Gate::allows('appointments_manage') && ! Gate::allows('consultations.list.view')) {
             return abort(404);
         }
 
@@ -113,7 +113,7 @@ class AppointmentsController extends Controller
     public function treatment(): \Illuminate\View\View
     {
         
-        if (! Gate::allows('treatments_manage')) {
+        if (! Gate::allows('treatments.list.view')) {
             return abort(404);
         }
 
@@ -207,7 +207,7 @@ class AppointmentsController extends Controller
                 }
             }
         }
-        if (! Gate::allows('consultations_manage')) {
+        if (! Gate::allows('consultations.list.view')) {
             return abort(401);
         }
         if ($request->lead_id) {
@@ -325,9 +325,9 @@ class AppointmentsController extends Controller
         
         // Check if this is an arrived/converted consultation with permissions
         $isArrivedOrConverted = $appointment && in_array($appointment->appointment_status_id, [2, 16], true);
-        $hasAnyEditPermission = Gate::allows('update_consultation_service') || 
-                                Gate::allows('update_consultation_doctor') || 
-                                Gate::allows('update_consultation_schedule');
+        $hasAnyEditPermission = Gate::allows('consultations.edit.service.after_arrived') || 
+                                Gate::allows('consultations.edit.doctor.after_arrived') || 
+                                Gate::allows('consultations.edit.schedule.after_arrived');
         
         // For arrived/converted with permissions, make fields conditionally required
         if ($isArrivedOrConverted && $hasAnyEditPermission) {
@@ -1035,7 +1035,7 @@ class AppointmentsController extends Controller
         if (! Gate::allows('appointments_manage')
             && ! Gate::allows('appointments_view')
             && ! Gate::allows('appointments_consultancy')
-            && ! Gate::allows('consultations_manage')
+            && ! Gate::allows('consultations.list.view')
         ) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
@@ -1187,9 +1187,9 @@ class AppointmentsController extends Controller
             'genders' => config('constants.gender_array'),
             'permissions' => [
                 'contact' => Gate::allows('contact'),
-                'update_consultation_service' => Gate::allows('update_consultation_service'),
-                'update_consultation_doctor' => Gate::allows('update_consultation_doctor'),
-                'update_consultation_schedule' => Gate::allows('update_consultation_schedule'),
+                'update_consultation_service' => Gate::allows('consultations.edit.service.after_arrived'),
+                'update_consultation_doctor' => Gate::allows('consultations.edit.doctor.after_arrived'),
+                'update_consultation_schedule' => Gate::allows('consultations.edit.schedule.after_arrived'),
             ],
         ]);
     }
@@ -1394,7 +1394,7 @@ class AppointmentsController extends Controller
 
     public function createService(Request $request): \Illuminate\View\View|\Illuminate\Http\RedirectResponse
     {
-        if (! Gate::allows('treatments_services')) {
+        if (! Gate::allows('treatments.list.view')) {
             return abort(401);
         }
         $user = Auth::user();

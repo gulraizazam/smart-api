@@ -115,7 +115,7 @@ class PatientsController extends Controller
             'delete' => Gate::allows('patients.delete'),
             'status' => Gate::allows('appointments_status'),
             'consultancy' => Gate::allows('appointments_manage'),
-            'treatment' => Gate::allows('treatments_manage'),
+            'treatment' => Gate::allows('treatments.list.view'),
             'invoice' => Gate::allows('consultancy_invoice'),
             'invoice_display' => Gate::allows('consultancy_invoice_display'),
             'log' => Gate::allows('appointments_log'),

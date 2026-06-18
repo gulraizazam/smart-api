@@ -33,7 +33,7 @@ class AppointmentExportEndpointTest extends TestCase
             'appointments_manage', 'appointments_view',
             'appointments_export_all', 'appointments_export_today',
             'appointments_export_this_month', 'appointments_log',
-            'appointments_consultancy', 'consultations_manage', 'treatments_services',
+            'appointments_consultancy', 'consultations.list.view', 'treatments.list.view',
         ]);
     }
 

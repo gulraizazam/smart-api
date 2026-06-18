@@ -436,7 +436,7 @@ final class TreatmentService
                 'scheduled_time' => $lastTreatment->scheduled_time,
                 'has_doctor_rota' => $hasDoctorRota,
             ],
-            'can_edit_doctor' => Gate::allows('can_edit_doctor'),
+            'can_edit_doctor' => Gate::allows('treatments.edit.doctor.after_arrived'),
         ];
     }
 
@@ -488,9 +488,9 @@ final class TreatmentService
 
         $user = Auth::user();
         $permissions = [
-            'can_edit_doctor' => ! $isArrivedOrConverted || ($user?->can('can_edit_doctor') ?? false),
-            'can_edit_service' => ! $isArrivedOrConverted || ($user?->can('can_edit_service') ?? false),
-            'can_edit_schedule' => ! $isArrivedOrConverted || ($user?->can('can_edit_schedule') ?? false),
+            'can_edit_doctor' => ! $isArrivedOrConverted || ($user?->can('treatments.edit.doctor.after_arrived') ?? false),
+            'can_edit_service' => ! $isArrivedOrConverted || ($user?->can('treatments.edit.service.after_arrived') ?? false),
+            'can_edit_schedule' => ! $isArrivedOrConverted || ($user?->can('treatments.edit.schedule.after_arrived') ?? false),
         ];
 
         return [
@@ -997,7 +997,7 @@ final class TreatmentService
             'patient_card' => Gate::allows('appointments_patient_card'),
             'contact' => Gate::allows('treatments.list.view_contact'),
             'add_feedback' => $canEdit && Gate::allows('feedbacks_create'),
-            'can_edit_doctor' => $canEdit && Gate::allows('can_edit_doctor'),
+            'can_edit_doctor' => $canEdit && Gate::allows('treatments.edit.doctor.after_arrived'),
         ];
     }
 

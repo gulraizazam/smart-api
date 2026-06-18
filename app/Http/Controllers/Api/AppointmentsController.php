@@ -185,7 +185,6 @@ class AppointmentsController extends Controller
                 !Gate::allows('consultations.list.view')
                 && !Gate::allows('treatments.list.view')
                 && !Gate::allows('appointments_manage')
-                && !Gate::allows('treatments_manage')
             ) {
                 return $this->errorResponse('You are not authorized to access this resource.', 403);
             }
