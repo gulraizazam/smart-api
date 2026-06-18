@@ -48,6 +48,23 @@ class AuthPayloadCentresTest extends TestCase
         }
     }
 
+    private function attachDoctorClinic(int $userId, int $locationId, bool $allocated = true): void
+    {
+        // Doctors are scoped via doctor_has_locations, not user_has_locations.
+        DB::statement('SET FOREIGN_KEY_CHECKS=0');
+        try {
+            DB::table('doctor_has_locations')->insert([
+                'user_id' => $userId,
+                'location_id' => $locationId,
+                'service_id' => 0,
+                'end_node' => 0,
+                'is_allocated' => $allocated ? 1 : 0,
+            ]);
+        } finally {
+            DB::statement('SET FOREIGN_KEY_CHECKS=1');
+        }
+    }
+
     public function test_single_assigned_centre_yields_one_id(): void
     {
         $user = User::factory()->create();
@@ -89,5 +106,42 @@ class AuthPayloadCentresTest extends TestCase
         $payload = $user->fresh()->toAuthPayload();
 
         $this->assertNull($payload['assigned_centre_ids']);
+    }
+
+    public function test_doctor_with_only_doctor_clinic_is_branch_scoped(): void
+    {
+        // Doctors' clinics live in doctor_has_locations, never user_has_locations.
+        // Without the fallback the doctor gets [] and is locked out of the
+        // branch-scoped FDM dashboard despite being assigned to a clinic.
+        $user = User::factory()->create();
+        $this->attachDoctorClinic($user->id, 7);
+
+        $payload = $user->fresh()->toAuthPayload();
+
+        $this->assertSame([7], $payload['assigned_centre_ids']);
+    }
+
+    public function test_user_has_locations_takes_precedence_over_doctor_clinic(): void
+    {
+        // The fallback fires only when user_has_locations is empty — a user with
+        // an explicit centre assignment is never widened by their doctor clinic.
+        $user = User::factory()->create();
+        $this->attachCentre($user->id, 7);
+        $this->attachDoctorClinic($user->id, 9);
+
+        $payload = $user->fresh()->toAuthPayload();
+
+        $this->assertSame([7], $payload['assigned_centre_ids']);
+    }
+
+    public function test_unallocated_doctor_clinic_does_not_scope(): void
+    {
+        // is_allocated = 0 is not an active assignment and must not grant a branch.
+        $user = User::factory()->create();
+        $this->attachDoctorClinic($user->id, 7, allocated: false);
+
+        $payload = $user->fresh()->toAuthPayload();
+
+        $this->assertSame([], $payload['assigned_centre_ids']);
     }
 }

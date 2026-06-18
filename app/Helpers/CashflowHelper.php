@@ -8,6 +8,7 @@ use App\Models\CashFlow\CashPool;
 use App\Models\CashFlow\ExpenseCategory;
 use App\Models\CashFlow\PeriodLock;
 use App\Models\CashFlow\Vendor;
+use App\Models\DoctorHasLocations;
 use App\Models\Locations;
 use App\Models\PaymentModes;
 use App\Models\User;
@@ -45,6 +46,14 @@ class CashflowHelper
         }
 
         $locationIds = array_map('intval', $user->user_has_locations->pluck('location_id')->toArray());
+
+        // Doctors are assigned clinics via doctor_has_locations, not
+        // user_has_locations — fall back so an assigned doctor still resolves
+        // to their branch (the FDM cash view 403s on an empty branch set).
+        if ($locationIds === []) {
+            $locationIds = DoctorHasLocations::allocatedLocationIds((int) $user->id);
+        }
+
         $allCentresId = (int) Config::get('constants.all_centres_location_id');
 
         // If the pivot grants the virtual "All Centres" location, expand to
