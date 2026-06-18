@@ -25,7 +25,11 @@ class MembershipCodeController extends Controller
      */
     public function generateCodes(GenerateCodesRequest $request): \Illuminate\Http\JsonResponse
     {
-        if (!Gate::allows('memberships_create')) {
+        // Tier P-R: gate on the dotted catalog slug the rest of the memberships
+        // module uses. The legacy `memberships_create` was an orphan (held by 0
+        // roles on prod → effectively super-admin-only); `memberships.create` is
+        // the canonical create-membership permission.
+        if (!Gate::allows('memberships.create')) {
             return $this->errorResponse('You are not authorized to generate membership codes.', 403);
         }
 
