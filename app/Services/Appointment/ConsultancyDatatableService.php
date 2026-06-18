@@ -290,11 +290,11 @@ class ConsultancyDatatableService
         $appointmentStatuses = $appointmentStatuses?->pluck('name', 'id');
 
         $appointmentTypes = match (true) {
-            Gate::allows('consultations.list.view') && Gate::allows('treatments_services')
+            Gate::allows('consultations.list.view') && Gate::allows('treatments.list.view')
                 => AppointmentTypes::pluck('name', 'id'),
             Gate::allows('consultations.list.view')
                 => AppointmentTypes::where('slug', 'consultancy')->pluck('name', 'id'),
-            Gate::allows('treatments_services')
+            Gate::allows('treatments.list.view')
                 => AppointmentTypes::where('slug', 'treatment')->pluck('name', 'id'),
             default => collect(),
         };
@@ -351,7 +351,7 @@ class ConsultancyDatatableService
         return [
             'edit' => $canEdit,
             'consultancy' => Gate::allows('consultations.list.view'),
-            'treatment' => Gate::allows('treatments_manage'),
+            'treatment' => Gate::allows('treatments.list.view'),
             'delete' => Gate::allows('consultations.delete'),
             // active / inactive / create-row toggles aren't surfaced in the
             // SPA — flags retained for the admin-v1 datatable but always

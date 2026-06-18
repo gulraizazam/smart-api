@@ -19,7 +19,7 @@ class AppointmentPolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->can('consultations_manage') || $user->can('treatments_services');
+        return $user->can('consultations.list.view') || $user->can('treatments.list.view');
     }
 
     /**
@@ -59,7 +59,7 @@ class AppointmentPolicy
      */
     public function manageTreatments(User $user): bool
     {
-        return $user->can('treatments_manage');
+        return $user->can('treatments.list.view');
     }
 
     /**
@@ -67,7 +67,7 @@ class AppointmentPolicy
      */
     public function viewTreatments(User $user): bool
     {
-        return $user->can('treatments_services');
+        return $user->can('treatments.list.view');
     }
 
     /**

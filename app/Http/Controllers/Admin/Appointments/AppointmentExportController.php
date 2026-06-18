@@ -198,7 +198,7 @@ class AppointmentExportController extends AppointmentBaseController
         $treatmentslug = AppointmentTypes::where('slug', '=', 'treatment')->first();
         $records = [];
         $records['data'] = [];
-        if (Gate::allows('consultations_manage')) {
+        if (Gate::allows('consultations.list.view')) {
             $resultQuery = Appointments::join('users', function ($join) {
                 $join->on('users.id', '=', 'appointments.patient_id')
                     ->where('users.user_type_id', '=', config('constants.patient_id'));
@@ -206,7 +206,7 @@ class AppointmentExportController extends AppointmentBaseController
                 ->whereIn('appointments.city_id', ACL::getUserCities())
                 ->whereIn('appointments.location_id', ACL::getUserCentres());
         }
-        if (Gate::allows('treatments_services')) {
+        if (Gate::allows('treatments.list.view')) {
             $resultQuery = Appointments::join('users', function ($join) {
                 $join->on('users.id', '=', 'appointments.patient_id')
                     ->where('users.user_type_id', '=', config('constants.patient_id'));
@@ -214,14 +214,14 @@ class AppointmentExportController extends AppointmentBaseController
                 ->whereIn('appointments.city_id', ACL::getUserCities())
                 ->whereIn('appointments.location_id', ACL::getUserCentres());
         }
-        if (Gate::allows('consultations_manage') && Gate::allows('treatments_services')) {
+        if (Gate::allows('consultations.list.view') && Gate::allows('treatments.list.view')) {
             $resultQuery = Appointments::join('users', function ($join) {
                 $join->on('users.id', '=', 'appointments.patient_id')
                     ->where('users.user_type_id', '=', config('constants.patient_id'));
             })->whereIn('appointments.city_id', ACL::getUserCities())
                 ->whereIn('appointments.location_id', ACL::getUserCentres());
         }
-        if (! Gate::allows('consultations_manage') && ! Gate::allows('treatments_services')) {
+        if (! Gate::allows('consultations.list.view') && ! Gate::allows('treatments.list.view')) {
             $resultQuery = Appointments::join('users', function ($join) {
                 $join->on('users.id', '=', 'appointments.patient_id')
                     ->where('users.user_type_id', '=', config('constants.patient_id'));
