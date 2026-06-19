@@ -148,7 +148,11 @@ class RoleService
         $groupPermissions = $query->orderBy('sort_order')->get();
         $parentIds = $groupPermissions->pluck('id')->all();
 
+        // Children are hidden the same way groups are — status=0 drops them from
+        // the editor (parents already filter on status=1 above). Safe: no child
+        // row was status=0 before the 2026-06-20 decorative-hide migration.
         $subPermissions = Permission::whereIn('parent_id', $parentIds)
+            ->where('status', 1)
             ->orderBy('sort_order')
             ->get()
             ->groupBy('parent_id');
@@ -199,7 +203,7 @@ class RoleService
         $data['commission'] = $data['commission'] ?? 0;
 
         $role = Role::create($data);
-        $role->givePermissionTo($permissions);
+        $role->givePermissionTo($this->grantablePermissionSet($permissions, []));
 
         $this->clearCache();
 
@@ -218,8 +222,10 @@ class RoleService
             $data['commission'] = 0;
         }
 
+        $existing = $role->permissions()->pluck('name')->all();
+
         $role->update($data);
-        $role->syncPermissions($permissions);
+        $role->syncPermissions($this->grantablePermissionSet($permissions, $existing));
 
         $this->clearCache();
 
@@ -253,6 +259,34 @@ class RoleService
     public function findOrFail(int $id): Role
     {
         return Role::findOrFail($id);
+    }
+
+    /**
+     * SECURITY (privilege-escalation guard): restrict a role's saved permission
+     * set to what the CURRENT actor may grant. A non-Super-Admin can only
+     * add/remove permissions they themselves hold; any permission outside their
+     * grant set is frozen to whatever the role already had — so they can neither
+     * escalate a role beyond their own access nor strip a perm they can't see.
+     * Super-Admin (Gate::before) and system/console context (no auth) are
+     * unrestricted.
+     *
+     * @param  array<int, string>  $submitted  permission NAMES from the request
+     * @param  array<int, string>  $existing   permission NAMES the role already has
+     * @return array<int, string>
+     */
+    private function grantablePermissionSet(array $submitted, array $existing): array
+    {
+        $actor = Auth::user();
+        if ($actor === null || $actor->hasRole('Super-Admin')) {
+            return $submitted;
+        }
+
+        $grantable = $actor->getAllPermissions()->pluck('name')->all();
+
+        $frozen = array_diff($existing, $grantable);        // can't touch — keep as-is
+        $allowed = array_intersect($submitted, $grantable); // of the submission, only what they may grant
+
+        return array_values(array_unique([...$allowed, ...$frozen]));
     }
 
     private function clearCache(): void

@@ -209,6 +209,10 @@ class LeadsController extends Controller
     public function status(Request $request): JsonResponse
     {
         try {
+            if (! Gate::allows('leads.update_status')) {
+                return $this->errorResponse('You are not authorized to change a lead status.', 403);
+            }
+
             $lead = $this->leadService->toggleStatus((int) $request->id, (int) $request->status);
 
             return $this->successResponse('Status Changed Successfully', [
@@ -359,6 +363,8 @@ class LeadsController extends Controller
 
     public function exportPdf(Request $request): BinaryFileResponse|JsonResponse
     {
+        abort_unless(Gate::allows('leads.export'), 403);
+
         ini_set('memory_limit', '-1');
         set_time_limit(0);
 
@@ -376,6 +382,8 @@ class LeadsController extends Controller
 
     public function exportDocs(Request $request): BinaryFileResponse
     {
+        abort_unless(Gate::allows('leads.export'), 403);
+
         set_time_limit(0);
         ini_set('memory_limit', '-1');
 

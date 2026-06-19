@@ -37,9 +37,9 @@ use Illuminate\Support\Facades\Route;
         // /admin/invoices/{calculate-amounts,export-exempt,download-invoices-zip}
         // endpoints. Same controller methods, just an /api/ prefix so the
         // SPA can call them through the standard API client.
-        Route::post('calculate-amounts', [InvoiceGenerationController::class, 'calculateAmounts'])->name('calculate_amounts');
-        Route::post('export-exempt', [InvoiceGenerationController::class, 'exportExemptInvoices'])->name('export_exempt');
-        Route::post('download-invoices-zip', [InvoiceGenerationController::class, 'downloadInvoicesZip'])->name('download_invoices_zip');
+        Route::post('calculate-amounts', [InvoiceGenerationController::class, 'calculateAmounts'])->middleware('permission:operations_reports_operations_tax_calculation_report')->name('calculate_amounts');
+        Route::post('export-exempt', [InvoiceGenerationController::class, 'exportExemptInvoices'])->middleware('permission:operations_reports_operations_tax_calculation_report')->name('export_exempt');
+        Route::post('download-invoices-zip', [InvoiceGenerationController::class, 'downloadInvoicesZip'])->middleware('permission:operations_reports_operations_tax_calculation_report')->name('download_invoices_zip');
     });
 
     Route::post('invoices/datatable/&{id?}', [InvoicesController::class, 'datatable'])->name('invoices.datatable');
@@ -198,7 +198,7 @@ Route::get('packages/deleteplanrowtem', [PackagesController::class, 'deleteplanr
     // Non Plans Refunds API routes removed — functionality not in use
 
     // Custom User Form Feedbacks Routes
-    Route::post('custom_form_feedbacks/datatable', [CustomFormFeedbacksController::class, 'datatable'])->name('custom_form_feedbacks.datatable');
+    // custom_form_feedbacks/datatable removed 2026-06-19 (QA #21): dead, ungated PII list endpoint. Gated resource (incl. destroy) kept.
 
     Route::get('custom_form_feedbacks/{id}/export_pdf', [CustomFormFeedbacksController::class, 'exportPdf'])->name('custom_form_feedbacks.export_pdf');
     Route::post('custom_form_feedbacks/{form_id}/submit_form', [CustomFormFeedbacksController::class, 'submit_form'])->name('custom_form_feedbacks.submit_form');
@@ -279,7 +279,7 @@ Route::get('packages/deleteplanrowtem', [PackagesController::class, 'deleteplanr
     // refund/payment-delete/plan-delete paths; this list catches the
     // rest (historical rows, direct DB edits, validation criteria
     // beyond net cash).
-    Route::prefix('wrong-conversions')->name('wrong_conversions.')->group(function (): void {
+    Route::prefix('wrong-conversions')->name('wrong_conversions.')->middleware('permission:wrong_conversions_manage')->group(function (): void {
         Route::get('/', [WrongConversionsController::class, 'index'])->name('index');
         Route::post('reset-all', [WrongConversionsController::class, 'resetAll'])->name('reset_all');
         Route::post('{id}/reset', [WrongConversionsController::class, 'reset'])->name('reset')->whereNumber('id');

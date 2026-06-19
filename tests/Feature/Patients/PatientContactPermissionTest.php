@@ -60,6 +60,11 @@ class PatientContactPermissionTest extends TestCase
             $payload,
             'PatientResource must drop the phone key entirely when the caller lacks the `contact` permission — not mask, not blank.'
         );
+        $this->assertArrayNotHasKey(
+            'email',
+            $payload,
+            'PatientResource must also drop the email key (PHI) when the caller lacks the `contact` permission.'
+        );
     }
 
     public function test_patient_resource_includes_phone_when_permission_granted(): void
@@ -71,6 +76,7 @@ class PatientContactPermissionTest extends TestCase
 
         $this->assertArrayHasKey('phone', $payload);
         $this->assertSame('3001234567', $payload['phone']);
+        $this->assertArrayHasKey('email', $payload);
     }
 
     public function test_lead_resource_omits_phone_key_when_permission_denied(): void

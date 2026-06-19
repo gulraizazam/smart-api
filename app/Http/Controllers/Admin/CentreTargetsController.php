@@ -215,6 +215,10 @@ class CentreTargetsController extends Controller
     public function saveSystemTarget(Request $request): \Illuminate\Http\JsonResponse
     {
         try {
+            if (! Gate::allows('centre_targets_edit')) {
+                return $this->errorResponse('You are not authorized to save targets.', 403);
+            }
+
             $request->validate([
                 'key' => 'required|string|max:50',
                 'value' => 'required|numeric|min:0',

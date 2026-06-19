@@ -151,10 +151,13 @@ class AppointmentStatusController extends AppointmentBaseController
      */
     public function storeAppointmentStatuses(Request $request): \Illuminate\Http\JsonResponse
     {
+        if (! \Illuminate\Support\Facades\Gate::allows('appointments_manage')) {
+            return $this->errorResponse('You are not authorized to perform this action.', 403);
+        }
 
         $data = $request->all();
         $invoicestatus = InvoiceStatuses::where('slug', '=', 'paid')->first();
-        $appointment = Appointments::find($request->id);
+        $appointment = Appointments::byAccount(auth()->user()->account_id)->find($request->id);
         if (! $appointment) {
             return $this->errorResponse('Appointment not found', 200);
         }

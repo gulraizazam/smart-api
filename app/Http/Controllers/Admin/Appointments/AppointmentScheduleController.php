@@ -576,6 +576,10 @@ class AppointmentScheduleController extends AppointmentBaseController
      */
     public function serviceSchedule(Request $request): \Illuminate\Http\JsonResponse
     {
+        if (! Gate::allows('appointments_manage')) {
+            return $this->errorResponse('You are not authorized to perform this action.', 403);
+        }
+
         $appointment_checkes = AppointmentCheckesWidget::AppointmentAppointmentCheckesfromcard($request);
         if ($appointment_checkes['status']) {
             // Only check doctor availability (machine rota check removed)
@@ -589,10 +593,10 @@ class AppointmentScheduleController extends AppointmentBaseController
                     // Appointment Data
                     $data = $request->all();
                     $data['resource_id'] = $request->resourceId ?? null;
-                    $appointment = Appointments::findOrFail($request->id);
+                    $appointment = Appointments::byAccount(auth()->user()->account_id)->findOrFail($request->id);
                     $data['first_scheduled_count'] = $appointment->first_scheduled_count;
                     $data['scheduled_at_count'] = $appointment->scheduled_at_count;
-                    if ($appointment->appointment_type_id = Config::get('constants.appointment_type_service')) {
+                    if ($appointment->appointment_type_id == Config::get('constants.appointment_type_service')) {
                         // Only get doctor rota (machine rota check removed)
                         $resource_dcotor = Resources::where('external_id', '=', $data['doctor_id'])->first();
                         if ($resource_dcotor) {
@@ -665,9 +669,16 @@ class AppointmentScheduleController extends AppointmentBaseController
 
     public function updateSchedule(Request $request): \Illuminate\Http\JsonResponse
     {
+        if (! Gate::allows('appointments_manage')) {
+            return $this->errorResponse('You are not authorized to perform this action.', 403);
+        }
 
         $data = [];
-        $appointment = Appointments::find($request->appointment_id);
+        $appointment = Appointments::byAccount(auth()->user()->account_id)->find($request->appointment_id);
+
+        if (! $appointment) {
+            return $this->errorResponse('Appointment not found', 200);
+        }
 
         if ($appointment) {
             // Store old date/time for activity logging

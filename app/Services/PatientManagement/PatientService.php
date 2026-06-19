@@ -157,6 +157,17 @@ class PatientService
         $records = $this->getFiltersDataCached($records, $userId);
 
         if ($patients->isNotEmpty()) {
+            // SECURITY: phone + email are contact PII gated by `patients.list.view_contact`.
+            // The list returns raw models (not PatientResource), so without masking here the
+            // gate is decorative — a holder of patients.list.view alone would see every
+            // patient's phone and email. Mask when the caller lacks the contact slug.
+            if (! Gate::allows('patients.list.view_contact')) {
+                $patients->each(function ($p): void {
+                    $p->phone = null;
+                    $p->email = null;
+                });
+            }
+
             $records['data'] = $patients;
             $records['meta'] = [
                 'field' => $orderBy,

@@ -41,6 +41,10 @@ class SettingsController extends Controller
     public function datatable(Request $request): JsonResponse
     {
         try {
+            if (! Gate::allows('settings_manage')) {
+                return $this->errorResponse('You are not authorized to view settings.', 403);
+            }
+
             $filters = getFilters($request->all());
             $applyFilter = checkFilters($filters, 'settings');
             [$orderBy, $order] = getSortBy($request);

@@ -42,7 +42,7 @@ class ActivityLogsApiController extends Controller
 
     public function __invoke(Request $request): JsonResponse
     {
-        if (! Gate::allows('activity_logs_manage')) {
+        if (! Gate::allows('activity_logs_report')) {
             return $this->errorResponse('Unauthorized.', 403);
         }
 
@@ -96,7 +96,7 @@ class ActivityLogsApiController extends Controller
 
     public function filters(): JsonResponse
     {
-        if (! Gate::allows('activity_logs_manage')) {
+        if (! Gate::allows('activity_logs_report')) {
             return $this->errorResponse('Unauthorized.', 403);
         }
 
@@ -152,7 +152,7 @@ class ActivityLogsApiController extends Controller
 
     public function export(Request $request): SymfonyResponse
     {
-        if (! Gate::allows('activity_logs_manage')) {
+        if (! Gate::allows('activity_logs_report')) {
             abort(403, 'Unauthorized.');
         }
 

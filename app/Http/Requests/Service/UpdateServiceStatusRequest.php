@@ -11,7 +11,13 @@ final class UpdateServiceStatusRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return Gate::allows('services.activate') || Gate::allows('services.deactivate');
+        // Bind the gate to the requested direction (mirrors CityStatusRequest):
+        // a holder of only services.activate must not be able to deactivate, and
+        // vice-versa. The loose OR was an over-grant (ServicesController also only
+        // checks "either", so nothing downstream enforced the direction).
+        return (int) $this->input('status') === 1
+            ? Gate::allows('services.activate')
+            : Gate::allows('services.deactivate');
     }
 
     /**

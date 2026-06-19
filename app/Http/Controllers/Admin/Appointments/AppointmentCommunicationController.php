@@ -55,9 +55,13 @@ class AppointmentCommunicationController extends AppointmentBaseController
      */
     public function sendLogSMS(Request $request): JsonResponse
     {
+        if (! Gate::allows('appointments_manage')) {
+            return $this->errorResponse('You are not authorized to perform this action.', 403);
+        }
+
         $data = $request->all();
         $SMSLog = SMSLogs::find($request->id);
-        if (! $SMSLog) {
+        if (! $SMSLog || (int) ($SMSLog->appointments?->account_id) !== (int) auth()->user()->account_id) {
             return $this->errorResponse('Resource not found', 200);
         }
         if ($SMSLog) {

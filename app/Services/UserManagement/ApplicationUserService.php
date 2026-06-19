@@ -211,7 +211,7 @@ class ApplicationUserService
         $user = User::create($userData);
         AuditTrails::addEventLogger('users', 'create', $userData, User::$_fillable ?? [], $user);
 
-        $roles = $data['roles'] ?? [];
+        $roles = $this->assignableRoleIds($data['roles'] ?? []);
         if (! empty($roles)) {
             $user->assignRole(Role::whereIn('id', $roles)->get());
             $this->syncRoleHasUsers($user, $roles);
@@ -274,7 +274,8 @@ class ApplicationUserService
         $user->update($userData);
         AuditTrails::editEventLogger('users', 'Edit', $userData, User::$_fillable ?? [], $oldData, $id);
 
-        $roles = $data['roles'] ?? [];
+        $existingRoleIds = $user->roles->pluck('id')->all();
+        $roles = $this->assignableRoleIds($data['roles'] ?? [], $existingRoleIds);
         if (! empty($roles)) {
             $user->syncRoles(Role::whereIn('id', $roles)->get());
             $user->role_has_users()->forceDelete();
@@ -353,6 +354,43 @@ class ApplicationUserService
     public function searchPatientsOptimized(string $search, int $accountId): mixed
     {
         return Patients::getPatientSearchOptimized($search, $accountId);
+    }
+
+    /**
+     * SECURITY (privilege-escalation guard): a non-Super-Admin must never be
+     * able to ADD the Super-Admin role — its Gate::before bypass grants
+     * everything — but must also never STRIP an existing Super-Admin assignment
+     * (a routine profile edit must not silently demote a Super-Admin). So the
+     * Super-Admin role is frozen to whatever the target already had: kept if
+     * present in $existingRoleIds, otherwise removed. This mirrors
+     * RoleService::grantablePermissionSet (escalation-proof AND non-breaking).
+     * Super-Admin actors and system/console context (no auth) are unrestricted.
+     *
+     * @param  array<int, int|string>  $roleIds         requested role ids
+     * @param  array<int, int|string>  $existingRoleIds the target's current role ids
+     * @return array<int, int|string>
+     */
+    private function assignableRoleIds(array $roleIds, array $existingRoleIds = []): array
+    {
+        $actor = Auth::user();
+        if ($actor === null || $actor->hasRole('Super-Admin')) {
+            return array_values($roleIds);
+        }
+
+        $superAdminId = (int) (Role::where('name', 'Super-Admin')->value('id') ?? 0);
+
+        // Drop any attempt to ADD Super-Admin...
+        $assignable = array_values(array_filter(
+            $roleIds,
+            static fn ($id): bool => (int) $id !== $superAdminId,
+        ));
+
+        // ...but re-add it if the target already had it (freeze — don't demote).
+        if ($superAdminId > 0 && in_array($superAdminId, array_map('intval', $existingRoleIds), true)) {
+            $assignable[] = $superAdminId;
+        }
+
+        return array_values(array_unique($assignable));
     }
 
     private function syncRoleHasUsers(User $user, array $roles): void

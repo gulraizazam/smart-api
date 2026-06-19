@@ -3,7 +3,6 @@
 // Admin Appointment routes, Patients, Custom Forms Patient, Medical/Measurement, Patient Documents, Appointment Images, Plans (optimised + legacy), Finances, Invoice/Refund Patient
 
 use App\Http\Controllers\Admin\AppointmentimageController;
-use App\Http\Controllers\Admin\AppointmentMeasurementController;
 use App\Http\Controllers\Admin\Appointments\AppointmentInvoiceController;
 use App\Http\Controllers\Admin\Appointments\AppointmentLookupController;
 use App\Http\Controllers\Admin\Appointments\AppointmentScheduleController;
@@ -12,8 +11,6 @@ use App\Http\Controllers\Admin\InvoicesController;
 use App\Http\Controllers\Admin\PackageAdvancesController;
 use App\Http\Controllers\Admin\PackagesController;
 use App\Http\Controllers\Admin\Patients\CustomFormFeedbacksController as PatientCustomFormController;
-use App\Http\Controllers\Admin\Patients\MeasurementHistoryController;
-use App\Http\Controllers\Admin\Patients\MedicalHistoryController;
 use App\Http\Controllers\Admin\PatientsController;
 use App\Http\Controllers\Admin\UserVouchersController;
 use App\Http\Controllers\Api\Patient\CustomFormFeedbackController as ApiCustomFormFeedbackController;
@@ -95,18 +92,18 @@ Route::prefix('patients')->name('patients.')->group(function () {
     Route::delete('{id}/notes/{noteId}', [PatientController::class, 'deleteNote'])->name('deleteNote');
     Route::post('{id}/notes/{noteId}/toggle-pin', [PatientController::class, 'togglePinNote'])->name('togglePinNote');
 });
-Route::post('customformfeedbackspatient/datatable/&{id}', [PatientCustomFormController::class, 'datatable'])->name('customformfeedbackspatient.datatable');
+// customformfeedbackspatient/datatable removed 2026-06-19 (QA #21): dead, ungated PII list endpoint (SPA never called it; crm2 delinked).
 Route::get('customformfeedbackspatient/addnewform/{id}', [PatientCustomFormController::class, 'AddNewForm'])->name('customformfeedbackspatient.addnew');
 // Fill a custom form for a patient (mirrors web customformfeedbackspatient/fill_form)
 Route::post('customformfeedbackspatient/fill', [ApiCustomFormFeedbackController::class, 'fill'])->name('customformfeedbackspatient.fill');
 
 /* Route start for patient medical history Forms */
-Route::post('medicalhistoryform/datatable/&{id}', [MedicalHistoryController::class, 'datatable'])->name('medicalhistoryform.datatable');
+// medicalhistoryform/datatable removed 2026-06-19 (QA #21): dead, ungated PII list + unscoped bulk-delete branch. Medical model + fill route kept.
 // Fill a medical history form (mirrors web appointmentsmedical submit_form)
 Route::post('medicalhistoryform/{id}', [ApiMedicalHistoryController::class, 'fill'])->name('medicalhistoryform.fill');
 
 /* Route start for patient measurement history Forms */
-Route::post('measurementhistoryform/datatable/&{id}', [MeasurementHistoryController::class, 'datatable'])->name('measurementhistoryform.datatable');
+// measurementhistoryform/datatable removed 2026-06-19 (QA #21): dead, ungated PII list + unscoped bulk-delete branch. Measurement model + fill route kept.
 // Fill a measurement history form (mirrors web appointmentsmeasurement submit_form)
 Route::post('measurementhistoryform/{id}', [ApiMeasurementHistoryController::class, 'fill'])->name('measurementhistoryform.fill');
 
@@ -123,7 +120,7 @@ Route::post('patients/updatedocuments/{id}', [PatientsController::class, 'docume
 // Appointment Route start for images
 Route::post('appointmentsimage/datatable/{id}', [AppointmentimageController::class, 'datatable'])->name('appointmentsimage.datatable');
 
-Route::post('appointmentsmeasurement/datatable/{id}', [AppointmentMeasurementController::class, 'datatable'])->name('appointmentsmeasurement.datatable');
+// appointmentsmeasurement/datatable removed 2026-06-19 (QA #21): dead, ungated PII list endpoint.
 
 /* Route start for patient package - NEW OPTIMIZED ROUTES */
 Route::prefix('plans-optimized')->group(function () {
