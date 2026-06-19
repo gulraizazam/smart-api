@@ -119,7 +119,7 @@ return new class extends Migration
                     ->where('permission_id', $row->permission_id)
                     ->delete();
             }
-            DB::table('permission_contact_backfill_p3_backup')->truncate();
+            DB::table('permission_contact_backfill_p3_backup')->delete();
         });
 
         app(PermissionRegistrar::class)->forgetCachedPermissions();

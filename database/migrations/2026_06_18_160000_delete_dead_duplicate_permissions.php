@@ -187,9 +187,9 @@ return new class extends Migration
                     DB::table('role_has_permissions')->insert(['role_id' => $g->role_id, 'permission_id' => $g->permission_id]);
                 }
             }
-            DB::table('permission_hide_p3rd_backup')->truncate();
-            DB::table('permission_grant_delete_p3rd_backup')->truncate();
-            DB::table('permission_delete_p3rd_backup')->truncate();
+            DB::table('permission_hide_p3rd_backup')->delete();
+            DB::table('permission_grant_delete_p3rd_backup')->delete();
+            DB::table('permission_delete_p3rd_backup')->delete();
         });
 
         app(PermissionRegistrar::class)->forgetCachedPermissions();

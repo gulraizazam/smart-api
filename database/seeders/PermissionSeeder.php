@@ -68,10 +68,51 @@ class PermissionSeeder extends Seeder
      *
      * @return void
      */
+    /**
+     * Permissions physically removed by the Tier P / P-R catalog cleanup (legacy
+     * snake_case umbrellas + children whose dotted twin is now canonical, plus the
+     * treatments/consultations legacy groups). A fresh seed / `db:seed` must NOT
+     * re-create them — doing so resurrects the very duplicates the cleanup deleted.
+     * Keep in sync with the delete migrations (2026_06_18_160000, _19_100000/110000/120000).
+     *
+     * @var list<string>
+     */
+    private const RETIRED_PERMISSIONS = [
+        'cashflow_manage', 'consultations_manage', 'discounts_allocate', 'discounts_create',
+        'discounts_destroy', 'discounts_edit', 'discounts_inactive', 'discounts_manage',
+        'doctor_dashboard', 'inventory_manage', 'invoices_cancel', 'invoices_manage',
+        'leads_city', 'leads_convert', 'leads_create', 'leads_destroy', 'leads_edit',
+        'leads_export', 'leads_import', 'leads_junk', 'leads_lead_status', 'leads_manage',
+        'memberships_manage', 'membershiptypes_manage', 'packages_active', 'packages_create',
+        'packages_destroy', 'packages_edit', 'packages_inactive', 'packages_manage',
+        'patients_active', 'patients_add_referrals', 'patients_assign_membership',
+        'patients_cancel_membership', 'patients_create', 'patients_destroy',
+        'patients_document_create', 'patients_document_destroy', 'patients_document_edit',
+        'patients_document_manage', 'patients_edit', 'patients_inactive', 'patients_manage',
+        'payment_modes_active', 'payment_modes_create', 'payment_modes_destroy',
+        'payment_modes_edit', 'payment_modes_inactive', 'payment_modes_manage',
+        'payment_modes_sort', 'permissions', 'plans_active', 'plans_cash_delete',
+        'plans_cash_edit', 'plans_cash_edit_amount', 'plans_cash_edit_date',
+        'plans_cash_edit_payment_mode', 'plans_create', 'plans_destroy', 'plans_edit',
+        'plans_inactive', 'plans_manage', 'plans_sms_log', 'refunds_manage',
+        'resource_types_active', 'resource_types_create', 'resource_types_destroy',
+        'resource_types_edit', 'resource_types_inactive', 'resource_types_manage',
+        'services_active', 'services_create', 'services_destroy', 'services_detail',
+        'services_duplicate', 'services_edit', 'services_inactive', 'services_manage',
+        'services_sort', 'staff_targets_create', 'staff_targets_destroy', 'staff_targets_edit',
+        'staff_targets_manage', 'treatments_manage', 'treatments_services',
+        'update_consultation_doctor', 'update_consultation_schedule', 'update_consultation_service',
+        'voucher_types_manage', 'vouchers_manage',
+    ];
+
     public function run()
     {
         $permissions = $this->permissions();
         foreach ($permissions as $permission) {
+            // Never re-create a perm the catalog cleanup deleted (would resurrect a duplicate).
+            if (in_array($permission['name'], self::RETIRED_PERMISSIONS, true)) {
+                continue;
+            }
             $check_permission = Permission::where('name', $permission['name'])->first();
             if (is_null($check_permission)) {
                 Permission::create($permission);

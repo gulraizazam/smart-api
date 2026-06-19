@@ -142,7 +142,7 @@ return new class extends Migration
             foreach (DB::table('permission_group_retire_p3r_backup')->get() as $r) {
                 DB::table('permissions')->where('id', $r->permission_id)->update(['status' => $r->prior_status]);
             }
-            DB::table('permission_group_retire_p3r_backup')->truncate();
+            DB::table('permission_group_retire_p3r_backup')->delete();
         });
 
         app(PermissionRegistrar::class)->forgetCachedPermissions();
