@@ -30,6 +30,9 @@ class UserTypeController extends Controller
             $filters = getFilters($request->all());
 
             if (!empty($filters['delete'])) {
+                if (! Gate::allows('user_types_destroy')) {
+                    return $this->errorResponse('You are not authorized to delete these records.', 403);
+                }
                 $ids = array_filter(explode(',', $filters['delete']));
                 if (!empty($ids)) {
                     $result = $this->userTypeService->bulkDelete($ids);

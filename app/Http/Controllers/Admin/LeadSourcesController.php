@@ -42,6 +42,9 @@ class LeadSourcesController extends Controller
             $filters = getFilters($request->all());
 
             if (hasFilter($filters, 'delete')) {
+                if (! Gate::allows('lead_sources_destroy')) {
+                    return $this->errorResponse('You are not authorized to delete these records.', 403);
+                }
                 $ids = explode(',', $filters['delete']);
                 $this->service->bulkDelete($ids, $accountId);
                 return $this->successResponse('Records have been deleted successfully!');

@@ -42,6 +42,10 @@ class LocationsController extends Controller
         $accountId = Auth::user()->account_id;
         $filters = getFilters($request->all());
 
+        if (hasFilter($filters, 'delete') && ! Gate::allows('locations_destroy')) {
+            return $this->errorResponse('You are not authorized to delete locations.', 403);
+        }
+
         $records = $this->locationService->processBulkDelete($filters, $accountId);
 
         [$orderBy, $order] = getSortBy($request);

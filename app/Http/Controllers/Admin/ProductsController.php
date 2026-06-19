@@ -58,6 +58,9 @@ class ProductsController extends Controller
             }
 
             if (isset($filters['delete'])) {
+                if (! Gate::allows('product_destroy')) {
+                    return $this->errorResponse('You are not authorized to delete these records.', 403);
+                }
                 $ids = explode(',', $filters['delete']);
                 $bulkResult = $this->productService->bulkDelete($ids);
                 $records['status'] = $bulkResult['status'];

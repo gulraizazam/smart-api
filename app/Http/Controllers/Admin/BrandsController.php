@@ -43,6 +43,9 @@ class BrandsController extends Controller
             $apply_filter = checkFilters($filters, $filename);
 
             if (isset($filters['delete'])) {
+                if (! Gate::allows('brand_destroy')) {
+                    return $this->errorResponse('You are not authorized to delete these records.', 403);
+                }
                 $ids = explode(',', $filters['delete']);
                 $bulkResult = $this->brandService->bulkDelete($ids);
                 $records['status'] = $bulkResult['status'];
@@ -160,7 +163,7 @@ class BrandsController extends Controller
 
     public function status(Request $request): JsonResponse
     {
-        if (! Gate::allows('product_active')) {
+        if (! Gate::allows('brand_active')) {
             abort(401);
         }
 

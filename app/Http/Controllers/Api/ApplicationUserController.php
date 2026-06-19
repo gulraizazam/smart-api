@@ -233,6 +233,10 @@ class ApplicationUserController extends Controller
     public function getpatientOptimized(Request $request): JsonResponse
     {
         try {
+            if (! Gate::allows('patients.list.view')) {
+                return $this->errorResponse('You are not authorized to look up patients.', 403);
+            }
+
             $patients = $this->userService->searchPatientsOptimized(
                 $request->input('search', ''),
                 Auth::user()->account_id,

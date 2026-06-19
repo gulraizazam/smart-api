@@ -78,6 +78,9 @@ class InvoicesController extends Controller
             $records['data'] = [];
 
             if (hasFilter($filters, 'delete')) {
+                if (! Gate::allows('invoices.cancel')) {
+                    return $this->errorResponse('You are not authorized to delete invoices.', 403);
+                }
                 $ids = explode(',', $filters['delete']);
                 $invoices = Invoices::getBulkData($ids);
                 if ($invoices) {

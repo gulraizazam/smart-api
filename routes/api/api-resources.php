@@ -143,7 +143,7 @@ use Illuminate\Support\Facades\Route;
     Route::get('appointments/invoice-consultancy/{id}/{type?}', [\App\Http\Controllers\Admin\ConsultancyInvoiceController::class, 'invoiceconsultancy'])->name('appointments.invoice-create-consultancy');
     Route::any('appointments/viewlog/{id}/{type}', [AppointmentExportController::class, 'viewLog'])->name('appointments.viewlog');
 
-    Route::post('appointmentsmedical/datatable/{id}', [AppointmentMedicalController::class, 'datatable'])->name('appointmentsmedical.datatable');
+    // appointmentsmedical/datatable removed 2026-06-19 (QA #21): dead, ungated PII list endpoint.
 
     Route::get('appointmentsmedical/medicalcreate/{id}', [AppointmentMedicalController::class, 'create'])->name('appointmentsmedical.create');
 

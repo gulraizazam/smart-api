@@ -57,6 +57,9 @@ class MachineTypeController extends Controller
             $records['data'] = [];
 
             if (hasFilter($filters, 'delete')) {
+                if (! Gate::allows('machineType_destroy')) {
+                    return $this->errorResponse('You are not authorized to delete these records.', 403);
+                }
                 $ids = explode(',', $filters['delete']);
                 $machinetypes = MachineType::getBulkData($ids);
                 if ($machinetypes) {

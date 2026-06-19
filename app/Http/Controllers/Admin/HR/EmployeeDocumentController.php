@@ -20,6 +20,12 @@ class EmployeeDocumentController extends Controller
 
     public function store(Request $request, User $user): JsonResponse
     {
+        abort_unless(
+            Auth::id() === $user->id || Auth::user()->can('hr_documents_manage'),
+            403,
+            'Unauthorized.',
+        );
+
         try {
             $request->validate([
                 'document' => [

@@ -20,7 +20,7 @@ class PatientResource extends JsonResource
             'id' => $this->id,
             'patient_code' => "C-{$this->id}",
             'name' => $this->name,
-            'email' => $this->email,
+            'email' => $this->when($canViewContact, fn () => $this->email),
             'phone' => $this->when($canViewContact, fn () => $this->phone),
             'gender' => $this->resource->getAttributes()['gender'] ?? null,
             'gender_label' => Gender::tryFrom((int) ($this->resource->getAttributes()['gender'] ?? 0))?->label() ?? 'N/A',
