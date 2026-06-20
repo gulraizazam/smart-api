@@ -237,9 +237,16 @@ class ApplicationUserController extends Controller
                 return $this->errorResponse('You are not authorized to look up patients.', 403);
             }
 
+            // The order flow searches the whole account (a product sale isn't
+            // tied to where the patient was first seen). Only honoured for
+            // order-creating roles so the cross-centre PII relaxation can't be
+            // triggered from other surfaces; everyone else stays centre-scoped.
+            $networkWide = $request->boolean('network') && Gate::allows('order_create');
+
             $patients = $this->userService->searchPatientsOptimized(
                 $request->input('search', ''),
                 Auth::user()->account_id,
+                $networkWide,
             );
 
             return $this->successResponse('Record found.', [

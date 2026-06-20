@@ -351,9 +351,9 @@ class ApplicationUserService
             ->first();
     }
 
-    public function searchPatientsOptimized(string $search, int $accountId): mixed
+    public function searchPatientsOptimized(string $search, int $accountId, bool $networkWide = false): mixed
     {
-        return Patients::getPatientSearchOptimized($search, $accountId);
+        return Patients::getPatientSearchOptimized($search, $accountId, $networkWide);
     }
 
     /**
