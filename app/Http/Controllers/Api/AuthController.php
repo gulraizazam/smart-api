@@ -138,7 +138,7 @@ class AuthController extends Controller
             $user->api_token = $user->createToken('login')->plainTextToken;
 
             $this->audit->record($request, 'api', LoginAuditLogger::OUTCOME_SUCCESS, $request->input('email'), $user);
-            return $this->successResponse('Success', $user);
+            return $this->successResponse('Success', $user->toAuthPayload());
 
         } catch (\Exception $e) {
             \Illuminate\Support\Facades\Log::error($e->getMessage(), ['file' => $e->getFile(), 'line' => $e->getLine()]);

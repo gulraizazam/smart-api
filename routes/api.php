@@ -107,7 +107,7 @@ Route::middleware('auth.api.dual')->name('admin.')->group(function () {
 });
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
-    return $request->user();
+    return $request->user()->toAuthPayload();
 });
 
 // Meta Conversion API Routes

@@ -554,4 +554,27 @@ class User extends Authenticatable
 
         return $query;
     }
+
+    /**
+     * Auth payload consumed by the SPA: the base user attributes plus the
+     * `role` and flattened `permissions` the client needs to gate its UI.
+     *
+     * `role` collapses to the canonical 'Super-Admin' when the user holds
+     * that role so the client mirrors the server's Gate::before super-admin
+     * short-circuit (otherwise it is the user's primary role name).
+     * `permissions` is the de-duplicated list of effective gate names
+     * (direct + inherited via roles).
+     *
+     * @return array<string, mixed>
+     */
+    public function toAuthPayload(): array
+    {
+        $roles = $this->getRoleNames();
+
+        return array_merge($this->toArray(), [
+            'role' => $roles->contains('Super-Admin') ? 'Super-Admin' : $roles->first(),
+            'roles' => $roles->values()->all(),
+            'permissions' => $this->getAllPermissions()->pluck('name')->unique()->values()->all(),
+        ]);
+    }
 }
