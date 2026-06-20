@@ -255,7 +255,7 @@ class Patients extends BaseModel
         return $query->orderBy('name')->get();
     }
 
-    public static function getPatientSearchOptimized(string $name, int $accountId): array
+    public static function getPatientSearchOptimized(string $name, int $accountId, bool $networkWide = false): array
     {
         // Reject empty / single-character queries before they hit the search
         // branch. Without this, `?search=` produces wildcard scans that dump
@@ -269,8 +269,14 @@ class Patients extends BaseModel
 
         $canViewContact = Gate::allows('patients.list.view_contact');
 
-        [$scopeSql, $scopeBindings] = PatientAccessScope::rawClause('users.id');
-        $cacheKey = "patient_search_{$accountId}_".PatientAccessScope::cacheSuffix().'_'.md5($name);
+        // Orders search the whole account — a sale isn't bound to the centre
+        // where the patient was first seen — so the order flow opts out of the
+        // per-centre PatientAccessScope (gated to order-creating roles in the
+        // controller). Everyone else stays centre-scoped. The unscoped result
+        // set is identical to a full-access admin's, so it shares the 'all'
+        // cache bucket.
+        [$scopeSql, $scopeBindings] = $networkWide ? ['', []] : PatientAccessScope::rawClause('users.id');
+        $cacheKey = "patient_search_{$accountId}_".($networkWide ? 'all' : PatientAccessScope::cacheSuffix()).'_'.md5($name);
 
         $rows = Cache::remember($cacheKey, 300, function () use ($name, $accountId, $scopeSql, $scopeBindings): array {
             // Single classifier shared with PlanService::applyUnifiedSearch
