@@ -92,6 +92,21 @@ class LeadsController extends Controller
             return response()->json([
                 'data' => LeadResource::collection($leads),
                 'permissions' => $this->getPermissions(),
+                'debug_auth' => [
+                    'auth_id' => auth()->id(),
+                    'auth_check' => auth()->check(),
+                    'default_driver' => auth()->getDefaultDriver(),
+                    'sanctum_check' => auth('sanctum')->check(),
+                    'sanctum_id' => auth('sanctum')->id(),
+                    'web_check' => auth('web')->check(),
+                    'web_id' => auth('web')->id(),
+                    'user_email' => auth()->user()?->email,
+                    'user_roles' => auth()->user()?->roles->pluck('name'),
+                    'user_permissions_count' => auth()->user()?->getAllPermissions()->count(),
+                    'can_leads_create_facade' => \Illuminate\Support\Facades\Gate::allows('leads.create'),
+                    'can_leads_create_user' => auth()->user()?->can('leads.create'),
+                    'can_leads_import_user' => auth()->user()?->can('leads.import'),
+                ],
                 'active_filters' => $filterData['active_filters'],
                 'filter_values' => $filterData['filter_values'],
                 'meta' => [
