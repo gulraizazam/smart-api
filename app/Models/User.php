@@ -31,6 +31,22 @@ class User extends Authenticatable
     // without touching this model — no Passport trait required here.
     use GuardsTenantBoundary, HasApiTokens, HasFactory, HasRoles, Notifiable, SoftDeletes;
 
+    /**
+     * Pin Spatie's permission-check guard to `web`.
+     *
+     * `config('auth.defaults.guard')` is `sanctum` (API-first), so Spatie's
+     * `Guard::getDefaultName()` picks `sanctum` for this User class and looks
+     * up permissions under that guard. Every permission is seeded under
+     * `web`, so `$user->can('leads.create')` silently returns false — the
+     * SPA gets `permissions: { create: false, ... }` and hides every action
+     * button (Import / Export / Create / Edit) for any non-Super-Admin role.
+     * Overriding `guardName()` short-circuits that lookup to `web`.
+     */
+    public function guardName(): string
+    {
+        return 'web';
+    }
+
     // Audit-log policy for this model lives in config/activity_log.php
     // (tiers → User::class = 'security', whitelists → User::class = [...]).
     // No model-level trait is required for auto-observed models — the
