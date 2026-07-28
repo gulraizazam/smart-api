@@ -92,21 +92,29 @@ class LeadsController extends Controller
             return response()->json([
                 'data' => LeadResource::collection($leads),
                 'permissions' => $this->getPermissions(),
-                'debug_auth' => [
-                    'auth_id' => auth()->id(),
-                    'auth_check' => auth()->check(),
-                    'default_driver' => auth()->getDefaultDriver(),
-                    'sanctum_check' => auth('sanctum')->check(),
-                    'sanctum_id' => auth('sanctum')->id(),
-                    'web_check' => auth('web')->check(),
-                    'web_id' => auth('web')->id(),
-                    'user_email' => auth()->user()?->email,
-                    'user_roles' => auth()->user()?->roles->pluck('name'),
-                    'user_permissions_count' => auth()->user()?->getAllPermissions()->count(),
-                    'can_leads_create_facade' => \Illuminate\Support\Facades\Gate::allows('leads.create'),
-                    'can_leads_create_user' => auth()->user()?->can('leads.create'),
-                    'can_leads_import_user' => auth()->user()?->can('leads.import'),
-                ],
+                'debug_auth' => (function () {
+                    $u = auth()->user();
+                    $ref = $u ? new \ReflectionClass($u) : null;
+                    $defaultGuardMethod = null;
+                    if ($ref && $ref->hasMethod('getDefaultGuardName')) {
+                        $m = $ref->getMethod('getDefaultGuardName');
+                        $m->setAccessible(true);
+                        try { $defaultGuardMethod = $m->invoke($u); } catch (\Throwable $e) { $defaultGuardMethod = 'ERR:' . $e->getMessage(); }
+                    }
+                    $canWebExplicit = null;
+                    try { $canWebExplicit = $u?->hasPermissionTo('leads.create', 'web'); } catch (\Throwable $e) { $canWebExplicit = 'ERR:' . $e->getMessage(); }
+                    return [
+                        'default_driver' => auth()->getDefaultDriver(),
+                        'user_class' => $u ? get_class($u) : null,
+                        'user_guard_name_prop' => $u ? ($u->guard_name ?? 'NULL') : null,
+                        'spatie_get_names' => \Spatie\Permission\Guard::getNames(\App\Models\User::class)->toArray(),
+                        'spatie_default_guard' => $defaultGuardMethod,
+                        'permission_default_guard_config' => config('permission.default_guard'),
+                        'auth_defaults_guard_config' => config('auth.defaults.guard'),
+                        'can_leads_create_default' => $u?->can('leads.create'),
+                        'can_leads_create_explicit_web' => $canWebExplicit,
+                    ];
+                })(),
                 'active_filters' => $filterData['active_filters'],
                 'filter_values' => $filterData['filter_values'],
                 'meta' => [
