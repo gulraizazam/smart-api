@@ -96,8 +96,32 @@ class ApiScheduleTest extends TestCase
             'end_date' => '2026-04-07',
         ]);
 
-        // 400 is valid when no resources exist for the location.
-        $this->assertContains($response->status(), [200, 400]);
+        $response->assertOk();
+    }
+
+    /**
+     * Regression: get-shifts must return 200 with empty arrays when a location
+     * has no doctors allocated — the SPA renders a "no doctors allocated"
+     * empty state from this payload. A prior version returned 400 here, which
+     * surfaced as a red "Couldn't load schedule" banner instead. This test
+     * would fail if that 400 guard were reintroduced.
+     */
+    public function test_get_shifts_returns_empty_payload_for_location_with_no_doctors(): void
+    {
+        $location = Locations::factory()->create();
+
+        $response = $this->postJson('/api/schedule/get-shifts', [
+            'location_id' => $location->id,
+            'resource_type_id' => 2,
+            'start_date' => '2026-04-01',
+            'end_date' => '2026-04-07',
+        ]);
+
+        $response->assertOk();
+        $response->assertJsonStructure(['success', 'data' => ['resources', 'shifts', 'closures', 'time_offs']]);
+        $this->assertSame([], $response->json('data.resources'));
+        $this->assertSame([], $response->json('data.shifts'));
+        $this->assertSame([], $response->json('data.time_offs'));
     }
 
     public function test_store_time_off_validates_required_fields(): void

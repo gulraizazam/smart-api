@@ -175,18 +175,17 @@ class ScheduleController extends Controller
             return $this->errorResponse('Missing required parameters', 400);
         }
 
-        // Get active resources for the location and type
+        // Get active resources for the location and type. An empty list is a
+        // valid response, not an error — the SPA renders a "no doctors
+        // allocated to this location yet" empty state from it. Erroring here
+        // (previously 400 "No resources found") would show a red failure
+        // banner instead of that empty state.
         $resources = $this->getResourcesForLocation($locationId, $resourceTypeId);
-
-        if ($resources->isEmpty()) {
-            return $this->errorResponse('No resources found', 400);
-        }
-
-        // Get shifts for these resources in the date range
         $resourceIds = $resources->pluck('id')->toArray();
-        $shifts = $this->getShiftsForResources($resourceIds, $locationId, $startDate, $endDate);
 
-        // Get business closures for this location and date range
+        // Shifts / time-offs downstream both key off $resourceIds via whereIn,
+        // which is a no-op on an empty array — safe to skip the extra guard.
+        $shifts = $this->getShiftsForResources($resourceIds, $locationId, $startDate, $endDate);
         $closures = $this->getBusinessClosures($locationId, $startDate, $endDate);
         $timeOffs = $this->getTimeOffsForResources($resourceIds, $locationId, $startDate, $endDate);
 
