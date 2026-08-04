@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Deploy PHP files to apidemo.smartaesthetics.pk (the DEMO backend) via SFTP.
 
-Sibling of scripts/deploy-portal.py — same shape, different target:
+Sibling of scripts/deploy-backend.py — same shape, different target:
   portal.alluraesthetics.pk  →  /home/u941750079/domains/alluraesthetics.pk/public_html/portal
   apidemo.smartaesthetics.pk →  /home/u941750079/domains/smartaesthetics.pk/public_html/api_demo
 
@@ -11,18 +11,18 @@ this when you want to ship a demo-only change to apidemo without affecting
 portal.alluraesthetics.pk.
 
 Usage:
-  python scripts/deploy-demo.py                        # files from HEAD
-  python scripts/deploy-demo.py --commit HEAD~1        # files from a specific commit
-  python scripts/deploy-demo.py --files a.php b.php    # explicit list
-  python scripts/deploy-demo.py --dry-run              # show plan, don't upload
+  python scripts/deploy-demo-backend.py                        # files from HEAD
+  python scripts/deploy-demo-backend.py --commit HEAD~1        # files from a specific commit
+  python scripts/deploy-demo-backend.py --files a.php b.php    # explicit list
+  python scripts/deploy-demo-backend.py --dry-run              # show plan, don't upload
 
-Credentials are read from scripts/deploy-demo.env (git-ignored) — see
-scripts/deploy-demo.env.example. Required keys: SSH_HOST, SSH_PORT, SSH_USER,
+Credentials are read from scripts/deploy-demo-backend.env (git-ignored) — see
+scripts/deploy-demo-backend.env.example. Required keys: SSH_HOST, SSH_PORT, SSH_USER,
 SSH_PASS, REMOTE_ROOT.
 
 Requires: Python 3.8+ and `pip install paramiko`.
 
-Note on Demo* seeders: unlike deploy-portal.py (which SKIPS them because demo
+Note on Demo* seeders: unlike deploy-backend.py (which SKIPS them because demo
 data doesn't belong in prod), this script INCLUDES them — they're the point of
 the demo stack.
 """
@@ -42,13 +42,13 @@ except ImportError:
     sys.exit(2)
 
 REPO = Path(__file__).resolve().parent.parent
-ENV_FILE = REPO / "scripts" / "deploy-demo.env"
+ENV_FILE = REPO / "scripts" / "deploy-demo-backend.env"
 
 
 def load_env() -> dict[str, str]:
     if not ENV_FILE.exists():
         sys.exit(
-            f"missing {ENV_FILE} - copy scripts/deploy-demo.env.example and fill "
+            f"missing {ENV_FILE} - copy scripts/deploy-demo-backend.env.example and fill "
             "in SSH_HOST / SSH_PORT / SSH_USER / SSH_PASS / REMOTE_ROOT"
         )
     env: dict[str, str] = {}
@@ -129,7 +129,7 @@ def main() -> int:
 
     files = args.files or files_from_commit(args.commit)
     # PHP only; skip test / CI / local-deploy files.
-    # NOTE: unlike deploy-portal.py, we DO include database/seeders/Demo* here —
+    # NOTE: unlike deploy-backend.py, we DO include database/seeders/Demo* here —
     # they're the whole point of the demo stack.
     SKIP_PREFIX = ("tests/", "scripts/", ".github/")
     files = [
