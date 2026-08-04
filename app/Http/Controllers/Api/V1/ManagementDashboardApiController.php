@@ -402,6 +402,66 @@ class ManagementDashboardApiController extends Controller
         }
     }
 
+    // =====================================================================
+    // Leads-reporting dashboard (Marketing tab) — new endpoints for the
+    // panels wired into src/components/management-dashboard/sections/marketing.tsx
+    // =====================================================================
+
+    public function leadsOverview(Request $request): JsonResponse
+    {
+        return $this->handleSection($request, 'leads-overview', fn ($scope, $range) => $this->service->leadsOverview($scope, $range));
+    }
+
+    public function leadsOverTime(Request $request): JsonResponse
+    {
+        return $this->handleSection($request, 'leads-over-time', fn ($scope, $range) => $this->service->leadsOverTime($scope, $range));
+    }
+
+    public function leadsStatusSplit(Request $request): JsonResponse
+    {
+        return $this->handleSection($request, 'leads-status-split', fn ($scope, $range) => $this->service->leadStatusSplit($scope, $range));
+    }
+
+    public function leadsSourceSplit(Request $request): JsonResponse
+    {
+        return $this->handleSection($request, 'leads-source-split', fn ($scope, $range) => $this->service->leadSourceSplit($scope, $range));
+    }
+
+    public function leadsServiceSplit(Request $request): JsonResponse
+    {
+        return $this->handleSection($request, 'leads-service-split', fn ($scope, $range) => $this->service->leadServiceSplit($scope, $range));
+    }
+
+    public function leadsDepartmentSplit(Request $request): JsonResponse
+    {
+        return $this->handleSection($request, 'leads-department-split', fn ($scope, $range) => $this->service->leadDepartmentSplit($scope, $range));
+    }
+
+    public function leadsFunnel(Request $request): JsonResponse
+    {
+        return $this->handleSection($request, 'leads-funnel', fn ($scope, $range) => $this->service->leadFunnel($scope, $range));
+    }
+
+    public function leadsAgentLeaderboard(Request $request): JsonResponse
+    {
+        return $this->handleSection($request, 'leads-agent-leaderboard', fn ($scope, $range) => $this->service->leadAgentLeaderboard($scope, $range));
+    }
+
+    public function leadsTimeToConversion(Request $request): JsonResponse
+    {
+        return $this->handleSection($request, 'leads-time-to-conversion', fn ($scope, $range) => $this->service->leadTimeToConversion($scope, $range));
+    }
+
+    public function leadsResponseTime(Request $request): JsonResponse
+    {
+        return $this->handleSection($request, 'leads-response-time', fn ($scope, $range) => $this->service->leadResponseTime($scope, $range));
+    }
+
+    public function leadsRevenue(Request $request): JsonResponse
+    {
+        return $this->handleSection($request, 'leads-revenue', fn ($scope, $range) => $this->service->leadRevenue($scope, $range));
+    }
+
     /**
      * Shared wrapper: build scope/range, invoke the section closure, return a
      * consistent envelope. Validation errors return 422 with field errors;

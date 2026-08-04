@@ -16,9 +16,20 @@ use App\Services\Dashboard\Metrics\BranchFeedbackMetric;
 use App\Services\Dashboard\Metrics\BranchFeedbackTrendMetric;
 use App\Services\Dashboard\Metrics\BranchLeaderboardMetric;
 use App\Services\Dashboard\Metrics\GenderRevenueMetric;
+use App\Services\Dashboard\Metrics\LeadAgentLeaderboardMetric;
+use App\Services\Dashboard\Metrics\LeadDepartmentSplitMetric;
+use App\Services\Dashboard\Metrics\LeadFunnelMetric;
 use App\Services\Dashboard\Metrics\LeadGenderDeepDiveMetric;
 use App\Services\Dashboard\Metrics\LeadGenderFunnelMetric;
+use App\Services\Dashboard\Metrics\LeadResponseTimeMetric;
+use App\Services\Dashboard\Metrics\LeadRevenueMetric;
 use App\Services\Dashboard\Metrics\LeadServiceInterestMetric;
+use App\Services\Dashboard\Metrics\LeadServiceSplitMetric;
+use App\Services\Dashboard\Metrics\LeadSourceSplitMetric;
+use App\Services\Dashboard\Metrics\LeadStatusSplitMetric;
+use App\Services\Dashboard\Metrics\LeadsOverTimeMetric;
+use App\Services\Dashboard\Metrics\LeadsOverviewMetric;
+use App\Services\Dashboard\Metrics\LeadTimeToConversionMetric;
 use App\Services\Dashboard\Metrics\NewReturningMetric;
 use App\Services\Dashboard\Metrics\PatientCohortRetentionMetric;
 use App\Services\Dashboard\Metrics\RevenueConcentrationMetric;
@@ -65,6 +76,19 @@ final class ManagementDashboardService
         private readonly UtilizationMetric $utilization,
         private readonly ArrivalRateMetric $arrivalRate,
         private readonly AtRiskPatientsMetric $atRiskPatients,
+        // Leads-reporting dashboard (new, phase 1) — 10 metric classes
+        // consumed by the redesigned Marketing tab.
+        private readonly LeadsOverviewMetric $leadsOverview,
+        private readonly LeadsOverTimeMetric $leadsOverTime,
+        private readonly LeadStatusSplitMetric $leadStatusSplit,
+        private readonly LeadSourceSplitMetric $leadSourceSplit,
+        private readonly LeadServiceSplitMetric $leadServiceSplit,
+        private readonly LeadDepartmentSplitMetric $leadDepartmentSplit,
+        private readonly LeadFunnelMetric $leadFunnel,
+        private readonly LeadAgentLeaderboardMetric $leadAgentLeaderboard,
+        private readonly LeadTimeToConversionMetric $leadTimeToConversion,
+        private readonly LeadResponseTimeMetric $leadResponseTime,
+        private readonly LeadRevenueMetric $leadRevenue,
     ) {}
 
     /**
@@ -581,5 +605,76 @@ final class ManagementDashboardService
         $today = DateRange::fromStrings(now()->format('Y-m-d'), now()->format('Y-m-d'));
 
         return $this->pulse->fetch($scope, $today, $cursor, $limit);
+    }
+
+    // =====================================================================
+    // Leads-reporting dashboard (Marketing tab) — new in phase 1.
+    // Each method is a thin delegate; the Metric class holds the logic.
+    // =====================================================================
+
+    /** @return array<string,mixed> */
+    public function leadsOverview(MetricScope $scope, DateRange $range): array
+    {
+        return $this->leadsOverview->compute($scope, $range);
+    }
+
+    /** @return array<string,mixed> */
+    public function leadsOverTime(MetricScope $scope, DateRange $range): array
+    {
+        return $this->leadsOverTime->compute($scope, $range);
+    }
+
+    /** @return array<string,mixed> */
+    public function leadStatusSplit(MetricScope $scope, DateRange $range): array
+    {
+        return $this->leadStatusSplit->compute($scope, $range);
+    }
+
+    /** @return array<string,mixed> */
+    public function leadSourceSplit(MetricScope $scope, DateRange $range): array
+    {
+        return $this->leadSourceSplit->compute($scope, $range);
+    }
+
+    /** @return array<string,mixed> */
+    public function leadServiceSplit(MetricScope $scope, DateRange $range): array
+    {
+        return $this->leadServiceSplit->compute($scope, $range);
+    }
+
+    /** @return array<string,mixed> */
+    public function leadDepartmentSplit(MetricScope $scope, DateRange $range): array
+    {
+        return $this->leadDepartmentSplit->compute($scope, $range);
+    }
+
+    /** @return array<string,mixed> */
+    public function leadFunnel(MetricScope $scope, DateRange $range): array
+    {
+        return $this->leadFunnel->compute($scope, $range);
+    }
+
+    /** @return array<string,mixed> */
+    public function leadAgentLeaderboard(MetricScope $scope, DateRange $range): array
+    {
+        return $this->leadAgentLeaderboard->compute($scope, $range);
+    }
+
+    /** @return array<string,mixed> */
+    public function leadTimeToConversion(MetricScope $scope, DateRange $range): array
+    {
+        return $this->leadTimeToConversion->compute($scope, $range);
+    }
+
+    /** @return array<string,mixed> */
+    public function leadResponseTime(MetricScope $scope, DateRange $range): array
+    {
+        return $this->leadResponseTime->compute($scope, $range);
+    }
+
+    /** @return array<string,mixed> */
+    public function leadRevenue(MetricScope $scope, DateRange $range): array
+    {
+        return $this->leadRevenue->compute($scope, $range);
     }
 }
