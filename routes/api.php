@@ -105,3 +105,25 @@ Route::get('whatsapp/webhook', [\App\Http\Controllers\Api\WhatsAppWebhookControl
     ->name('whatsapp.webhook.verify');
 Route::post('whatsapp/webhook', [\App\Http\Controllers\Api\WhatsAppWebhookController::class, 'receive'])
     ->name('whatsapp.webhook.receive');
+
+// Plivo voice webhooks. Public — Plivo can't log in. Authenticated by the
+// `plivo.webhook` middleware which verifies X-Plivo-Signature-V3 against
+// services.plivo.auth_token. CSRF is not part of the API group flow, but
+// exempt in VerifyCsrfToken anyway for consistency with WhatsApp above.
+Route::middleware('plivo.webhook')->prefix('webhooks/plivo')->name('webhooks.plivo.')->group(function () {
+    Route::post('answer-outbound', [\App\Http\Controllers\Api\Webhooks\PlivoController::class, 'answerOutbound'])
+        ->name('answer_outbound');
+    Route::post('answer-inbound', [\App\Http\Controllers\Api\Webhooks\PlivoController::class, 'answerInbound'])
+        ->name('answer_inbound');
+    Route::post('status', [\App\Http\Controllers\Api\Webhooks\PlivoController::class, 'callStatus'])
+        ->name('status');
+    Route::post('recording', [\App\Http\Controllers\Api\Webhooks\PlivoController::class, 'recording'])
+        ->name('recording');
+});
+
+// Signed-URL streaming for lead-call recordings. No session middleware — the
+// signature (APP_KEY-HMAC + expiry) IS the authorization. Kept off the
+// auth.api.dual group so cross-origin <audio src="…"> from the SPA works
+// without CORS credentials.
+Route::get('lead-recordings/{recording}/stream', [\App\Http\Controllers\Api\LeadCallController::class, 'streamRecording'])
+    ->name('lead-recordings.stream');

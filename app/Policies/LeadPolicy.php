@@ -57,13 +57,18 @@ class LeadPolicy
     }
 
     /**
-     * Make a call to a lead (view phone number for calling). Inherits
-     * the same gate as viewing phone in the list — both are about
-     * seeing the contact number.
+     * Place a click-to-call to a lead (WebRTC softphone in the drawer).
+     * Was previously gated on `leads.list.view_contact` when "call" meant
+     * "view the phone number so the agent can dial it from their own phone".
+     * Now that the SPA has a real dialer + records the call, this is a
+     * strictly bigger surface — a role should be able to see phone numbers
+     * without being trusted to initiate outbound calls on the company's
+     * caller-ID. Gated on the dedicated `leads.call` slug seeded by
+     * 2026_08_04_120200_add_leads_call_permission.
      */
     public function call(User $user): bool
     {
-        return $user->can('leads.list.view_contact');
+        return $user->can('leads.call');
     }
 
     /**

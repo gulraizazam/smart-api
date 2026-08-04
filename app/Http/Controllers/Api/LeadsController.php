@@ -645,6 +645,10 @@ class LeadsController extends Controller
             'export'    => Gate::allows('leads.export'),
             'view_junk' => Gate::allows('leads.list.view_junk'),
             'comment'   => Gate::allows('leads.comment.create'),
+            // Click-to-call button on the lead drawer. Slug is seeded by
+            // 2026_08_04_120200_add_leads_call_permission and enforces
+            // via LeadPolicy::call() → 'leads.call'.
+            'call'      => Gate::allows('leads.call'),
         ];
     }
 }

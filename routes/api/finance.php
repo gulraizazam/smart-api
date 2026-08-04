@@ -262,6 +262,16 @@ Route::get('packages/deleteplanrowtem', [PackagesController::class, 'deleteplanr
         // POST routes with {id}
         Route::post('{id}/remove-from-junk', [LeadsController::class, 'removeFromJunk'])->name('remove_from_junk');
         
+        // Click-to-call + recordings (must come BEFORE the wildcard {id}
+        // routes below so /leads/{lead}/calls/… isn't swallowed by them).
+        Route::prefix('{lead}/calls')->name('calls.')->group(function () {
+            Route::post('token', [\App\Http\Controllers\Api\LeadCallController::class, 'token'])->name('token');
+            Route::post('initiate', [\App\Http\Controllers\Api\LeadCallController::class, 'initiate'])->name('initiate');
+            Route::get('/', [\App\Http\Controllers\Api\LeadCallController::class, 'index'])->name('index');
+            Route::get('{call}/recording-url', [\App\Http\Controllers\Api\LeadCallController::class, 'recordingUrl'])->name('recording_url');
+            Route::post('{call}/outcome', [\App\Http\Controllers\Api\LeadCallController::class, 'setOutcome'])->name('outcome');
+        });
+
         // Wildcard {id} routes - MUST be last
         Route::get('{id}', [LeadsController::class, 'detail'])->name('show');
         Route::get('{id}/edit', [LeadsController::class, 'edit'])->name('edit');

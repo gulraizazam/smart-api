@@ -26,6 +26,9 @@ class VerifyCsrfToken extends Middleware
     // (WhatsAppWebhookController::signatureIsValid).
     protected $except = [
         'api/whatsapp/webhook',
+        // Plivo posts server-to-server callbacks with no session cookie; the
+        // plivo.webhook middleware verifies X-Plivo-Signature-V3 instead.
+        'api/webhooks/plivo/*',
     ];
 
     public function handle($request, Closure $next): Response

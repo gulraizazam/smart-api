@@ -59,4 +59,24 @@ return [
         ],
     ],
 
+    // Plivo — click-to-call + auto-recording on the leads screen.
+    // See app/Services/Voice/PlivoVoiceService.php and the plan file
+    // ~/.claude/plans/yes-its-working-fine-merry-breeze.md.
+    // All values sourced from .env; NEVER commit real credentials.
+    'plivo' => [
+        'auth_id'           => env('PLIVO_AUTH_ID'),
+        'auth_token'        => env('PLIVO_AUTH_TOKEN'),
+        // A Plivo "Application" object holds the answer/hangup/recording URLs
+        // — its UUID is bound to every outbound call so Plivo posts callbacks
+        // to the right endpoints.
+        'app_id'            => env('PLIVO_APP_ID'),
+        // The real PK number bought in the Plivo console, e.g. "+922135XXXXXX".
+        // Used as caller-ID on outbound calls and the inbound routing number.
+        'caller_id'         => env('PLIVO_CALLER_ID'),
+        // Optional URL to a pre-recorded bilingual "call is being recorded"
+        // clip served from apidemo.smartaesthetics.pk/audio/recording-notice.mp3.
+        // If unset, PlivoVoiceService falls back to <Speak> TTS.
+        'record_prompt_url' => env('PLIVO_RECORD_PROMPT_URL'),
+    ],
+
 ];

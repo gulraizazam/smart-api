@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "dcd93951f750664bbbefc142375f206c",
+    "content-hash": "ee10ab810e30be171a93154f990732e3",
     "packages": [
         {
             "name": "aws/aws-crt-php",
@@ -5406,6 +5406,64 @@
                 }
             ],
             "time": "2026-04-27T07:02:15+00:00"
+        },
+        {
+            "name": "plivo/plivo-php",
+            "version": "v4.71.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/plivo/plivo-php.git",
+                "reference": "0f3296109e68bd68a4c2178761a44cc3a3979e68"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/plivo/plivo-php/zipball/0f3296109e68bd68a4c2178761a44cc3a3979e68",
+                "reference": "0f3296109e68bd68a4c2178761a44cc3a3979e68",
+                "shasum": ""
+            },
+            "require": {
+                "firebase/php-jwt": ">=5.2",
+                "guzzlehttp/guzzle": "^6.3 || ^7.0",
+                "php": ">=7.1.0"
+            },
+            "require-dev": {
+                "justinrainbow/json-schema": "^5.2",
+                "phpunit/phpunit": "^8.1.5"
+            },
+            "type": "library",
+            "autoload": {
+                "classmap": [
+                    "src/",
+                    "tests/"
+                ],
+                "exclude-from-classmap": []
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Plivo SDKs Team",
+                    "email": "sdks@plivo.com",
+                    "homepage": "https://developers.plivo.com",
+                    "role": "Developer"
+                }
+            ],
+            "description": "A PHP SDK to make voice calls & send SMS using Plivo and to generate Plivo XML",
+            "homepage": "http://github.com/plivo/plivo-php",
+            "keywords": [
+                "api",
+                "plivo",
+                "plivo xml",
+                "sms",
+                "voice calls"
+            ],
+            "support": {
+                "issues": "https://github.com/plivo/plivo-php/issues",
+                "source": "https://github.com/plivo/plivo-php"
+            },
+            "time": "2026-07-28T10:26:03+00:00"
         },
         {
             "name": "pragmarx/google2fa",
@@ -15306,5 +15364,5 @@
         "php": "^8.4"
     },
     "platform-dev": {},
-    "plugin-api-version": "2.9.0"
+    "plugin-api-version": "2.6.0"
 }

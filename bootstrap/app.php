@@ -89,6 +89,9 @@ return Application::configure(basePath: dirname(__DIR__))
             // header. See App\Http\Middleware\EnsureIdempotency for the
             // contract — and tests/Feature/Plan/IdempotencyMiddlewareTest.
             'idempotent' => \App\Http\Middleware\EnsureIdempotency::class,
+            // Plivo webhooks (voice callbacks) — verifies X-Plivo-Signature-V3
+            // against services.plivo.auth_token. See VerifyPlivoSignature.
+            'plivo.webhook' => \App\Http\Middleware\VerifyPlivoSignature::class,
         ]);
     })
     ->withSchedule(function (Schedule $schedule): void {
