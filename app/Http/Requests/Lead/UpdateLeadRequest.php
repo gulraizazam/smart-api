@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace App\Http\Requests\Lead;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\Rule;
 
 class UpdateLeadRequest extends FormRequest
 {
@@ -30,6 +32,13 @@ class UpdateLeadRequest extends FormRequest
             'old_service' => ['nullable', 'integer'],
             'location_id' => ['nullable', 'integer', 'exists:locations,id'],
             'referred_by' => ['nullable', 'integer', 'exists:users,id'],
+            // Tenant-scoped exists — see StoreLeadRequest for the rationale.
+            'department_id' => [
+                'nullable', 'integer',
+                Rule::exists('lead_departments', 'id')
+                    ->where('account_id', (int) (Auth::user()?->account_id ?? 0))
+                    ->whereNull('deleted_at'),
+            ],
         ];
     }
 

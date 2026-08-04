@@ -24,6 +24,7 @@ class Leads extends BaseModel
         'msg_count', 'active', 'created_by', 'updated_by', 'converted_by',
         'town_id', 'created_at', 'updated_at', 'account_id', 'location_id',
         'name', 'email', 'phone', 'gender', 'referred_by', 'meta_lead_id',
+        'department_id',
     ];
 
     public static array $_fillable = [
@@ -109,6 +110,15 @@ class Leads extends BaseModel
     public function location(): BelongsTo
     {
         return $this->belongsTo(Locations::class, 'location_id')->withTrashed();
+    }
+
+    /**
+     * Medical / service department (Skin / Hair / …) the lead is interested in.
+     * See {@see \App\Models\LeadDepartment} — separate from HR Department.
+     */
+    public function department(): BelongsTo
+    {
+        return $this->belongsTo(LeadDepartment::class, 'department_id')->withTrashed();
     }
 
     // =========================================================================

@@ -238,6 +238,20 @@ Route::prefix('lead_sources')->name('lead_sources.api.')->group(function () {
 });
 // Lead Sources Routes End
 
+// Lead Departments — CRUD for the medical/service department reference used
+// to segment leads on the marketing dashboard. Gated on
+// `leads.departments.manage` inside the controller; the /lookup path is
+// open to anyone who can create/edit leads (fills the form dropdown).
+Route::prefix('lead-departments')->name('lead_departments.')->group(function () {
+    Route::get('/', [\App\Http\Controllers\Api\LeadDepartmentController::class, 'index'])->name('index');
+    Route::get('lookup', [\App\Http\Controllers\Api\LeadDepartmentController::class, 'lookup'])->name('lookup');
+    Route::post('/', [\App\Http\Controllers\Api\LeadDepartmentController::class, 'store'])->name('store');
+    Route::patch('{id}', [\App\Http\Controllers\Api\LeadDepartmentController::class, 'update'])->name('update')->whereNumber('id');
+    Route::put('{id}', [\App\Http\Controllers\Api\LeadDepartmentController::class, 'update'])->name('update_put')->whereNumber('id');
+    Route::delete('{id}', [\App\Http\Controllers\Api\LeadDepartmentController::class, 'destroy'])->name('destroy')->whereNumber('id');
+});
+// Lead Departments Routes End
+
 // Locations
 Route::post('locations/verify', [LocationsController::class, 'verify'])->name('locations.verify');
 Route::put('locations/verify_edit', [LocationsController::class, 'verify_edit'])->name('locations.verify_edit');

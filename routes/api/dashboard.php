@@ -78,6 +78,19 @@ Route::prefix('management-dashboard')
         Route::get('lead-service-interest', [ManagementDashboardApiController::class, 'leadServiceInterest'])->name('lead_service_interest');
         Route::get('gender-revenue', [ManagementDashboardApiController::class, 'genderRevenue'])->name('gender_revenue');
         Route::get('today-activities', [ManagementDashboardApiController::class, 'todayActivities'])->name('today_activities');
+
+        // Leads-reporting dashboard (Marketing tab) — phase 1.
+        Route::get('leads-overview',           [ManagementDashboardApiController::class, 'leadsOverview'])->name('leads_overview');
+        Route::get('leads-over-time',          [ManagementDashboardApiController::class, 'leadsOverTime'])->name('leads_over_time');
+        Route::get('leads-status-split',       [ManagementDashboardApiController::class, 'leadsStatusSplit'])->name('leads_status_split');
+        Route::get('leads-source-split',       [ManagementDashboardApiController::class, 'leadsSourceSplit'])->name('leads_source_split');
+        Route::get('leads-service-split',      [ManagementDashboardApiController::class, 'leadsServiceSplit'])->name('leads_service_split');
+        Route::get('leads-department-split',   [ManagementDashboardApiController::class, 'leadsDepartmentSplit'])->name('leads_department_split');
+        Route::get('leads-funnel',             [ManagementDashboardApiController::class, 'leadsFunnel'])->name('leads_funnel');
+        Route::get('leads-agent-leaderboard',  [ManagementDashboardApiController::class, 'leadsAgentLeaderboard'])->name('leads_agent_leaderboard');
+        Route::get('leads-time-to-conversion', [ManagementDashboardApiController::class, 'leadsTimeToConversion'])->name('leads_time_to_conversion');
+        Route::get('leads-response-time',      [ManagementDashboardApiController::class, 'leadsResponseTime'])->name('leads_response_time');
+        Route::get('leads-revenue',            [ManagementDashboardApiController::class, 'leadsRevenue'])->name('leads_revenue');
     });
 
 // Google Reviews API Routes

@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace App\Http\Requests\Lead;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\Rule;
 
 class StoreLeadRequest extends FormRequest
 {
@@ -30,6 +32,15 @@ class StoreLeadRequest extends FormRequest
             'referred_by' => ['nullable', 'integer', 'exists:users,id'],
             'meta_lead_id' => ['nullable', 'string', 'max:255'],
             'new_lead' => ['nullable', 'in:0,1'],
+            // Medical / service department. Tenant-scoped exists rule per
+            // CLAUDE.md — a bare `exists:lead_departments,id` would let a
+            // caller in account A reference account B's dept id (IDOR-lite).
+            'department_id' => [
+                'nullable', 'integer',
+                Rule::exists('lead_departments', 'id')
+                    ->where('account_id', (int) (Auth::user()?->account_id ?? 0))
+                    ->whereNull('deleted_at'),
+            ],
         ];
     }
 
