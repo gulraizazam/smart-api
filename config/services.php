@@ -35,6 +35,26 @@ return [
         'password_client_secret' => env('PASSPORT_PASSWORD_CLIENT_SECRET'),
     ],
 
+    'telnyx' => [
+        // v2 REST API key (KEY01…). Used as Bearer on every Telnyx REST call.
+        'api_key' => env('TELNYX_API_KEY'),
+        // Base64-encoded Ed25519 public key from Portal → Developers → Public
+        // Key. Fed into sodium_crypto_sign_verify_detached() to prove each
+        // webhook body actually came from Telnyx (replay-protected via timestamp).
+        'public_key' => env('TELNYX_PUBLIC_KEY'),
+        // Numeric Call Control Application ID this integration belongs to.
+        // Bound to our PK caller-id number and our webhook_event_url.
+        'connection_id' => env('TELNYX_CONNECTION_ID'),
+        // E.164 caller-id number. Bought in the Portal and bound to
+        // connection_id above. Demo phase 1: US +14015982433 (PK number KYC
+        // in-flight; swap here + config:clear when it arrives).
+        'caller_id' => env('TELNYX_CALLER_ID'),
+        // Webhook replay-attack window. Any request whose
+        // Telnyx-Signature-Ed25519-Timestamp is older than this many seconds
+        // is rejected before signature verification even runs.
+        'signature_max_age_seconds' => (int) env('TELNYX_SIGNATURE_MAX_AGE_SECONDS', 300),
+    ],
+
     // Round 4 Auth-C1 — Cloudflare Turnstile keys for the progressive
     // login CAPTCHA gate. The gate is a no-op when either value is empty,
     // so leaving these unset in local dev means no captcha prompts.
@@ -59,24 +79,8 @@ return [
         ],
     ],
 
-    // Plivo — click-to-call + auto-recording on the leads screen.
-    // See app/Services/Voice/PlivoVoiceService.php and the plan file
-    // ~/.claude/plans/yes-its-working-fine-merry-breeze.md.
-    // All values sourced from .env; NEVER commit real credentials.
-    'plivo' => [
-        'auth_id'           => env('PLIVO_AUTH_ID'),
-        'auth_token'        => env('PLIVO_AUTH_TOKEN'),
-        // A Plivo "Application" object holds the answer/hangup/recording URLs
-        // — its UUID is bound to every outbound call so Plivo posts callbacks
-        // to the right endpoints.
-        'app_id'            => env('PLIVO_APP_ID'),
-        // The real PK number bought in the Plivo console, e.g. "+922135XXXXXX".
-        // Used as caller-ID on outbound calls and the inbound routing number.
-        'caller_id'         => env('PLIVO_CALLER_ID'),
-        // Optional URL to a pre-recorded bilingual "call is being recorded"
-        // clip served from apidemo.smartaesthetics.pk/audio/recording-notice.mp3.
-        // If unset, PlivoVoiceService falls back to <Speak> TTS.
-        'record_prompt_url' => env('PLIVO_RECORD_PROMPT_URL'),
-    ],
+    // Telnyx — click-to-call + auto-recording on the leads screen.
+    // See app/Services/Voice/TelnyxVoiceService.php. All values sourced
+    // from .env; NEVER commit real credentials.
 
 ];

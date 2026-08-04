@@ -6,7 +6,7 @@ namespace App\Jobs;
 
 use App\Models\LeadCall;
 use App\Models\LeadRecording;
-use App\Services\Voice\PlivoVoiceService;
+use App\Services\Voice\TelnyxVoiceService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -19,22 +19,22 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
 /**
- * Pull a completed recording from Plivo, hash it, store it, insert the
- * lead_recordings row.
+ * Pull a completed recording from the voice provider, hash it, store it,
+ * insert the lead_recordings row.
  *
  * Shape copied from {@see RebuildDailyMetrics}: tries/backoff/timeout +
  * WithoutOverlapping keyed on the lead_call_id so two webhook
  * re-deliveries can't race each other to write different bytes to the
  * same file. The download itself is fully streamed (no full audio blob in
  * memory), so timeout is 300s for a worst-case 30-minute call over a slow
- * hop from Plivo's CDN.
+ * hop from the provider CDN.
  *
  * Idempotent on:
  *   • lead_call_id (unique constraint — a second row per call is
  *     structurally impossible),
  *   • sha256 (same audio bytes → we reuse the file the first job wrote
  *     instead of writing duplicates),
- *   • plivo_recording_id (Plivo dedup — we've seen this recording).
+ *   • {provider}_recording_id (provider dedup — we've seen this recording).
  */
 final class DownloadLeadRecordingJob implements ShouldQueue
 {
@@ -49,8 +49,9 @@ final class DownloadLeadRecordingJob implements ShouldQueue
     public function __construct(
         public readonly int $leadCallId,
         public readonly string $recordingUrl,
-        public readonly string $plivoRecordingId,
+        public readonly string $providerRecordingId,
         public readonly int $durationSeconds,
+        public readonly string $provider = 'telnyx',
     ) {}
 
     public function middleware(): array
@@ -62,7 +63,7 @@ final class DownloadLeadRecordingJob implements ShouldQueue
         ];
     }
 
-    public function handle(PlivoVoiceService $plivo): void
+    public function handle(TelnyxVoiceService $telnyx): void
     {
         $call = LeadCall::find($this->leadCallId);
         if ($call === null) {
@@ -107,14 +108,14 @@ final class DownloadLeadRecordingJob implements ShouldQueue
         }
 
         try {
-            $stats = $plivo->downloadRecording($this->recordingUrl, $sink);
+            $stats = $telnyx->downloadRecording($this->recordingUrl, $sink);
         } finally {
             fclose($sink);
         }
 
         if ($stats['bytes'] <= 0) {
             @unlink($tmpPath);
-            throw new \RuntimeException('Plivo returned an empty recording body');
+            throw new \RuntimeException('Voice provider returned an empty recording body');
         }
 
         // Move into place atomically.
@@ -142,7 +143,10 @@ final class DownloadLeadRecordingJob implements ShouldQueue
                 'mime_type' => 'audio/mpeg',
                 'sha256' => $stats['sha256'],
                 'duration_seconds' => $this->durationSeconds > 0 ? $this->durationSeconds : 0,
-                'plivo_recording_id' => $this->plivoRecordingId !== '' ? $this->plivoRecordingId : null,
+                'provider' => $this->provider,
+                'telnyx_recording_id' => $this->provider === 'telnyx' && $this->providerRecordingId !== ''
+                    ? $this->providerRecordingId
+                    : null,
                 'uploaded_at' => Carbon::now(),
             ]);
         });

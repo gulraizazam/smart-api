@@ -9,7 +9,7 @@ use App\Models\LeadCall;
 use App\Models\LeadRecording;
 use App\Models\Leads;
 use App\Models\User;
-use App\Services\Voice\PlivoVoiceService;
+use App\Services\Voice\TelnyxVoiceService;
 use Illuminate\Support\Facades\Storage;
 use Mockery;
 use Tests\Concerns\RefreshTestDatabase as RefreshDatabase;
@@ -21,7 +21,7 @@ use Tests\TestCase;
  *
  * Two invariants:
  *
- *   1. Happy path — job pulls bytes from PlivoVoiceService::downloadRecording,
+ *   1. Happy path — job pulls bytes from TelnyxVoiceService::downloadRecording,
  *      writes them to storage/app/lead-recordings/{account}/{lead}/{call}.mp3,
  *      and inserts a lead_recordings row with the correct sha256 + size.
  *
@@ -55,7 +55,7 @@ class DownloadLeadRecordingJobTest extends TestCase
             'lead_id' => $lead->id,
             'user_id' => $agent->id,
             'direction' => 'outbound',
-            'from_number' => '+922135000000',
+            'from_number' => '+14015982433',
             'to_number' => '+923005550000',
             'status' => 'completed',
         ]);
@@ -65,20 +65,21 @@ class DownloadLeadRecordingJobTest extends TestCase
         $expectedBytes = strlen($payload);
 
         // Mock the service so we don't reach the network.
-        $mock = Mockery::mock(PlivoVoiceService::class);
+        $mock = Mockery::mock(TelnyxVoiceService::class);
         $mock->shouldReceive('downloadRecording')
             ->once()
             ->andReturnUsing(function (string $url, $sink) use ($payload, $expectedSha, $expectedBytes) {
                 fwrite($sink, $payload);
                 return ['sha256' => $expectedSha, 'bytes' => $expectedBytes];
             });
-        $this->app->instance(PlivoVoiceService::class, $mock);
+        $this->app->instance(TelnyxVoiceService::class, $mock);
 
         $job = new DownloadLeadRecordingJob(
             leadCallId: $call->id,
-            recordingUrl: 'https://plivo/rec.mp3',
-            plivoRecordingId: 'rec-1',
+            recordingUrl: 'https://telnyx-cdn/rec.mp3',
+            providerRecordingId: 'rec-1',
             durationSeconds: 42,
+            provider: 'telnyx',
         );
         $job->handle($mock);
 
@@ -95,7 +96,8 @@ class DownloadLeadRecordingJobTest extends TestCase
         $this->assertSame($expectedBytes, (int) $rec->file_size);
         $this->assertSame($expectedSha, $rec->sha256);
         $this->assertSame(42, (int) $rec->duration_seconds);
-        $this->assertSame('rec-1', $rec->plivo_recording_id);
+        $this->assertSame('rec-1', $rec->telnyx_recording_id);
+        $this->assertSame('telnyx', $rec->provider);
 
         Storage::disk('local')->delete($relPath); // tidy up
     }
@@ -114,7 +116,7 @@ class DownloadLeadRecordingJobTest extends TestCase
             'lead_id' => $lead->id,
             'user_id' => $agent->id,
             'direction' => 'outbound',
-            'from_number' => '+922135000000',
+            'from_number' => '+14015982433',
             'to_number' => '+923005550000',
             'status' => 'completed',
         ]);
@@ -127,20 +129,22 @@ class DownloadLeadRecordingJobTest extends TestCase
             'mime_type' => 'audio/mpeg',
             'sha256' => str_repeat('c', 64),
             'duration_seconds' => 10,
-            'plivo_recording_id' => 'rec-1',
+            'telnyx_recording_id' => 'rec-1',
+            'provider' => 'telnyx',
             'uploaded_at' => now(),
         ]);
 
         // Should NEVER be called on the fast-path idempotency check.
-        $mock = Mockery::mock(PlivoVoiceService::class);
+        $mock = Mockery::mock(TelnyxVoiceService::class);
         $mock->shouldNotReceive('downloadRecording');
-        $this->app->instance(PlivoVoiceService::class, $mock);
+        $this->app->instance(TelnyxVoiceService::class, $mock);
 
         $job = new DownloadLeadRecordingJob(
             leadCallId: $call->id,
-            recordingUrl: 'https://plivo/rec.mp3',
-            plivoRecordingId: 'rec-1',
+            recordingUrl: 'https://telnyx-cdn/rec.mp3',
+            providerRecordingId: 'rec-1',
             durationSeconds: 42,
+            provider: 'telnyx',
         );
         $job->handle($mock);
 
@@ -150,20 +154,21 @@ class DownloadLeadRecordingJobTest extends TestCase
 
     public function test_soft_handles_a_missing_lead_call_row(): void
     {
-        $mock = Mockery::mock(PlivoVoiceService::class);
+        $mock = Mockery::mock(TelnyxVoiceService::class);
         $mock->shouldNotReceive('downloadRecording');
-        $this->app->instance(PlivoVoiceService::class, $mock);
+        $this->app->instance(TelnyxVoiceService::class, $mock);
 
         $job = new DownloadLeadRecordingJob(
             leadCallId: 999999999,
-            recordingUrl: 'https://plivo/rec.mp3',
-            plivoRecordingId: 'rec-missing',
+            recordingUrl: 'https://telnyx-cdn/rec.mp3',
+            providerRecordingId: 'rec-missing',
             durationSeconds: 0,
+            provider: 'telnyx',
         );
         // Must not throw — the webhook may fire a race where the row was
         // deleted between webhook post and job execution.
         $job->handle($mock);
 
-        $this->assertSame(0, LeadRecording::where('plivo_recording_id', 'rec-missing')->count());
+        $this->assertSame(0, LeadRecording::where('telnyx_recording_id', 'rec-missing')->count());
     }
 }

@@ -8,9 +8,8 @@ use App\Models\LeadCall;
 use App\Models\LeadRecording;
 use App\Models\Leads;
 use App\Models\User;
-use App\Services\Voice\PlivoVoiceService;
+use App\Services\Voice\TelnyxVoiceService;
 use Illuminate\Support\Facades\Config;
-use Illuminate\Support\Facades\Storage;
 use Mockery;
 use Spatie\Permission\PermissionRegistrar;
 use Tests\Concerns\RefreshTestDatabase as RefreshDatabase;
@@ -24,11 +23,12 @@ use Tests\TestCase;
  *
  *   1. token/initiate require the `leads.call` permission — a role that
  *      can view leads but not call them must 403, not 200.
- *   2. tenant scoping — a user in account A cannot mint a Plivo token
+ *   2. tenant scoping — a user in account A cannot mint a Telnyx token
  *      for or initiate a call against a lead in account B.
- *   3. initiate writes a lead_calls row before returning, so the caller
- *      can attach the row id to Plivo's custom_params (nothing works
- *      without this — every subsequent webhook joins on the id).
+ *   3. initiate writes a lead_calls row before returning + emits a
+ *      base64 client_state carrying the row id (the ONLY join key the
+ *      Telnyx webhook has back to us — every downstream test depends on
+ *      it being present).
  */
 class LeadCallControllerTest extends TestCase
 {
@@ -39,10 +39,10 @@ class LeadCallControllerTest extends TestCase
     {
         parent::setUp();
         $this->seedFinancialFixtures();
-        Config::set('services.plivo.auth_id', 'test-auth-id');
-        Config::set('services.plivo.auth_token', 'test-auth-token');
-        Config::set('services.plivo.app_id', 'test-app-id');
-        Config::set('services.plivo.caller_id', '+922135000000');
+        Config::set('services.telnyx.api_key', 'KEY-test');
+        Config::set('services.telnyx.connection_id', '123456');
+        Config::set('services.telnyx.caller_id', '+14015982433');
+        Config::set('services.telnyx.public_key', base64_encode(str_repeat("\0", SODIUM_CRYPTO_SIGN_PUBLICKEYBYTES)));
         app(PermissionRegistrar::class)->forgetCachedPermissions();
     }
 
@@ -72,28 +72,34 @@ class LeadCallControllerTest extends TestCase
         $response->assertStatus(403);
     }
 
-    public function test_token_endpoint_mints_a_jwt_for_the_current_user(): void
+    public function test_token_endpoint_mints_a_login_token_for_the_current_user(): void
     {
         $actor = User::factory()->create(['account_id' => 1]);
         $this->grantLeadsCall($actor);
         $this->actingAs($actor);
         $lead = $this->makeLead(accountId: 1);
 
-        $fakePlivo = Mockery::mock(PlivoVoiceService::class);
-        $fakePlivo->shouldReceive('mintBrowserToken')
+        $fake = Mockery::mock(TelnyxVoiceService::class);
+        $fake->shouldReceive('mintBrowserToken')
             ->once()
             ->with(Mockery::on(fn (User $u) => $u->id === $actor->id))
-            ->andReturn('the.jwt.payload');
-        $this->app->instance(PlivoVoiceService::class, $fakePlivo);
+            ->andReturn([
+                'login_token' => 'ey.login.token',
+                'sip_username' => 'usr_abc123',
+                'expires_in' => 3600,
+            ]);
+        $this->app->instance(TelnyxVoiceService::class, $fake);
 
         $response = $this->postJson("/api/leads/{$lead->id}/calls/token");
 
         $response->assertOk();
-        $response->assertJsonPath('data.token', 'the.jwt.payload');
-        $response->assertJsonPath('data.endpoint_username', 'agent-'.$actor->id);
+        $response->assertJsonPath('data.login_token', 'ey.login.token');
+        $response->assertJsonPath('data.sip_username', 'usr_abc123');
+        $response->assertJsonPath('data.caller_number', '+14015982433');
+        $response->assertJsonPath('data.expires_in', 3600);
     }
 
-    public function test_initiate_writes_lead_calls_row_and_returns_id(): void
+    public function test_initiate_writes_lead_calls_row_and_returns_client_state(): void
     {
         $actor = User::factory()->create(['account_id' => 1]);
         $this->grantLeadsCall($actor);
@@ -112,13 +118,18 @@ class LeadCallControllerTest extends TestCase
         $this->assertSame((int) $actor->id, (int) $row->user_id);
         $this->assertSame('outbound', $row->direction);
         $this->assertSame('+923005550000', $row->to_number);
-        $this->assertSame('+922135000000', $row->from_number);
+        $this->assertSame('+14015982433', $row->from_number);
+        $this->assertSame('telnyx', $row->provider);
         $this->assertSame('initiated', $row->status);
 
-        // The custom_params round-trip is the only way the webhook joins
-        // back to this row — pin that they're present in the response.
-        $response->assertJsonPath('data.custom_params.x_lead_call_id', (string) $callId);
-        $response->assertJsonPath('data.custom_params.x_lead_id', (string) $lead->id);
+        // client_state is the ONLY join key back to this row from every
+        // Telnyx webhook — pin its shape.
+        $clientState = (string) $response->json('data.client_state');
+        $this->assertNotSame('', $clientState);
+        $decoded = json_decode((string) base64_decode($clientState, true), true);
+        $this->assertIsArray($decoded);
+        $this->assertSame($callId, $decoded['lead_call_id'] ?? null);
+        $this->assertSame((int) $lead->id, $decoded['lead_id'] ?? null);
     }
 
     public function test_initiate_403s_when_lead_has_no_phone(): void
@@ -149,7 +160,7 @@ class LeadCallControllerTest extends TestCase
             'lead_id' => $lead->id,
             'user_id' => $actorA->id,
             'direction' => 'outbound',
-            'from_number' => '+922135000000',
+            'from_number' => '+14015982433',
             'to_number' => '+923005550000',
             'status' => 'completed',
         ]);
@@ -184,7 +195,7 @@ class LeadCallControllerTest extends TestCase
             'lead_id' => $lead->id,
             'user_id' => $actor->id,
             'direction' => 'outbound',
-            'from_number' => '+922135000000',
+            'from_number' => '+14015982433',
             'to_number' => '+923005550000',
             'status' => 'completed',
         ]);
@@ -219,7 +230,7 @@ class LeadCallControllerTest extends TestCase
             'lead_id' => $lead->id,
             'user_id' => $actor->id,
             'direction' => 'outbound',
-            'from_number' => '+922135000000',
+            'from_number' => '+14015982433',
             'to_number' => '+923005550000',
             'status' => 'in_progress',
         ]);

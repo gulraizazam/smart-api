@@ -13,8 +13,8 @@ use Illuminate\Support\Facades\Auth;
  *
  * Called by the SPA the moment the agent clicks "Call" — this endpoint
  * writes the `lead_calls` intent row and returns its id, which the
- * Plivo browser SDK then attaches as a custom-param so subsequent
- * webhook callbacks can find the row.
+ * browser SDK then base64-encodes into Telnyx's client_state so
+ * subsequent webhook callbacks can find the row.
  *
  * The route model binding gives us the target lead; this request just
  * enforces "the current user can call leads for that lead's account/branch"

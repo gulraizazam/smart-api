@@ -33,6 +33,8 @@ class LeadRecording extends BaseModel
         'sha256',
         'duration_seconds',
         'plivo_recording_id',
+        'telnyx_recording_id',
+        'provider',
         'uploaded_at',
     ];
 

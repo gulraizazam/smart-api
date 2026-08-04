@@ -10,7 +10,7 @@ use App\Http\Requests\Leads\SetOutcomeRequest;
 use App\Models\LeadCall;
 use App\Models\LeadRecording;
 use App\Models\Leads;
-use App\Services\Voice\PlivoVoiceService;
+use App\Services\Voice\TelnyxVoiceService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -31,14 +31,15 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
  */
 class LeadCallController extends Controller
 {
-    public function __construct(private readonly PlivoVoiceService $plivo) {}
+    public function __construct(private readonly TelnyxVoiceService $telnyx) {}
 
     /**
      * `POST /api/leads/{lead}/calls/token`
-     * Mint a short-lived Plivo JWT for the current agent so the browser
-     * SDK can register and place/receive calls. The lead in the URL is
-     * used only for the permission scope check — the same token is used
-     * for the entire session and works for any lead the agent has access to.
+     * Mint a short-lived Telnyx login token for the current agent so the
+     * browser SDK (`@telnyx/webrtc`) can register and place/receive calls.
+     * The lead in the URL is used only for the permission scope check —
+     * the same token drives the whole session and works for any lead the
+     * agent has access to.
      */
     public function token(Leads $lead): JsonResponse
     {
@@ -54,10 +55,10 @@ class LeadCallController extends Controller
         }
 
         try {
-            $token = $this->plivo->mintBrowserToken($user);
+            $minted = $this->telnyx->mintBrowserToken($user);
         } catch (\Throwable $e) {
-            Log::error('Plivo token mint failed', [
-                'event' => 'plivo.token.error',
+            Log::error('Telnyx token mint failed', [
+                'event' => 'telnyx.token.error',
                 'user_id' => $user->id,
                 'lead_id' => $lead->id,
                 'message' => $e->getMessage(),
@@ -66,17 +67,19 @@ class LeadCallController extends Controller
         }
 
         return $this->successResponse('Token issued.', [
-            'token' => $token,
-            'endpoint_username' => PlivoVoiceService::endpointUsername($user),
-            'expires_in' => PlivoVoiceService::TOKEN_LIFETIME_SECONDS,
+            'login_token' => $minted['login_token'],
+            'sip_username' => $minted['sip_username'],
+            'caller_number' => (string) config('services.telnyx.caller_id'),
+            'expires_in' => $minted['expires_in'],
         ]);
     }
 
     /**
      * `POST /api/leads/{lead}/calls/initiate`
-     * Write the lead_calls intent row (before Plivo places the call);
-     * the returned id becomes a Plivo custom-param on the outbound
-     * dial so subsequent webhooks can find the row.
+     * Write the lead_calls intent row before the browser dials; the
+     * returned id gets base64-encoded into Telnyx's `client_state` on the
+     * outbound leg so every subsequent webhook can find the row without
+     * needing a call_control_id round-trip.
      */
     public function initiate(InitiateCallRequest $request, Leads $lead): JsonResponse
     {
@@ -87,7 +90,8 @@ class LeadCallController extends Controller
             'lead_id' => $lead->id,
             'user_id' => $user?->id,
             'direction' => 'outbound',
-            'from_number' => (string) config('services.plivo.caller_id'),
+            'provider' => 'telnyx',
+            'from_number' => (string) config('services.telnyx.caller_id'),
             'to_number' => (string) $lead->phone,
             'status' => 'initiated',
             'initiated_at' => Carbon::now(),
@@ -95,11 +99,13 @@ class LeadCallController extends Controller
 
         return $this->successResponse('Call initiated.', [
             'lead_call_id' => $call->id,
-            'custom_params' => [
-                // Plivo replays these on every webhook callback for this call.
-                'x_lead_call_id' => (string) $call->id,
-                'x_lead_id' => (string) $lead->id,
-            ],
+            // Browser SDK passes this verbatim as `clientState` on newCall();
+            // Telnyx echoes it on every webhook so TelnyxController can
+            // resolve the LeadCall row without a call_control_id round-trip.
+            'client_state' => TelnyxVoiceService::encodeClientState([
+                'lead_call_id' => $call->id,
+                'lead_id' => $lead->id,
+            ]),
         ]);
     }
 
