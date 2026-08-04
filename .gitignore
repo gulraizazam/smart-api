@@ -16,6 +16,7 @@
 .env.local
 .env.*.local
 .env.rehearsal
+/scripts/deploy-backend.env
 .phpunit.result.cache
 docker-compose.override.yml
 Homestead.json
