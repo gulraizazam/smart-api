@@ -61,41 +61,31 @@ class TelnyxController extends Controller
     // -------------------------------------------------------------------
 
     /**
-     * `call.initiated` fires as soon as the browser SDK originates a call.
-     * We use client_state (base64 JSON the SDK put on the leg) to find the
-     * lead_calls row initiate() wrote, then patch in the call_control_id
-     * so subsequent events can look it up if client_state ever drops.
+     * `call.initiated` fires as soon as the leg starts ringing. In the
+     * bridge flow we may see this event before LeadCallController::initiate
+     * has finished writing the telnyx_*_ccid columns (race between the two
+     * originate calls and Telnyx's webhook delivery), so we only touch the
+     * row's status — the ccid columns are the initiator's responsibility.
      *
      * @param  array<string,mixed>  $payload
      */
     private function onCallInitiated(array $payload): void
     {
         $call = $this->resolveCall($payload);
-        if ($call === null) {
+        if ($call === null || $call->status !== 'initiated') {
             return;
         }
-
-        $updates = [];
-        if (($call->telnyx_call_control_id ?? null) === null && isset($payload['call_control_id'])) {
-            $updates['telnyx_call_control_id'] = (string) $payload['call_control_id'];
-        }
-        if (($call->telnyx_call_leg_id ?? null) === null && isset($payload['call_leg_id'])) {
-            $updates['telnyx_call_leg_id'] = (string) $payload['call_leg_id'];
-        }
-        if ($call->status === 'initiated' && ! empty($updates)) {
-            $updates['status'] = 'ringing';
-        }
-        if ($updates !== []) {
-            $call->update($updates);
-        }
+        $call->update(['status' => 'ringing']);
     }
 
     /**
-     * `call.answered` fires when the far leg picks up. Two things happen:
-     *   1. mark our row `in_progress` + stamp answered_at,
-     *   2. fire-and-forget a `record_start` command against the leg so the
-     *      audio is captured. We do this AFTER answer (not on initiate) so
-     *      we don't record ringtone/voicemail-greeting audio we don't need.
+     * `call.answered` fires when either the customer's PSTN leg or the
+     * agent's WebRTC leg picks up. The bridge flow:
+     *   1. Mark the per-side timestamp (customer_answered_at /
+     *      agent_answered_at).
+     *   2. If BOTH are now set and we haven't bridged yet, issue the
+     *      bridge command — Telnyx joins the two legs into one call.
+     *   3. Start recording on the customer leg (single-source, joined).
      *
      * @param  array<string,mixed>  $payload
      */
@@ -105,27 +95,81 @@ class TelnyxController extends Controller
         if ($call === null) {
             return;
         }
-
-        $callControlId = (string) ($payload['call_control_id'] ?? $call->telnyx_call_control_id ?? '');
-
-        DB::transaction(function () use ($call, $payload): void {
-            $call->refresh();
+        $side = $this->sideFromPayload($payload);
+        if ($side === '') {
+            // Unlabeled leg — fall back to the pre-bridge single-leg path.
             if ($call->answered_at === null) {
                 $call->update([
                     'status' => 'in_progress',
                     'answered_at' => Carbon::now(),
-                    'telnyx_call_control_id' => (string) ($payload['call_control_id']
-                        ?? $call->telnyx_call_control_id
-                        ?? ''),
                 ]);
             }
+            return;
+        }
+
+        $ccid = (string) ($payload['call_control_id'] ?? '');
+        $bridgeReady = false;
+
+        DB::transaction(function () use ($call, $side, $ccid, &$bridgeReady): void {
+            $call->refresh();
+            $updates = [];
+            if ($side === 'customer') {
+                if ($call->customer_answered_at === null) {
+                    $updates['customer_answered_at'] = Carbon::now();
+                }
+                // Late-arriving ccid (originate response may have raced the webhook).
+                if (($call->telnyx_customer_ccid ?? '') === '' && $ccid !== '') {
+                    $updates['telnyx_customer_ccid'] = $ccid;
+                }
+            } elseif ($side === 'agent') {
+                if ($call->agent_answered_at === null) {
+                    $updates['agent_answered_at'] = Carbon::now();
+                }
+                if (($call->telnyx_agent_ccid ?? '') === '' && $ccid !== '') {
+                    $updates['telnyx_agent_ccid'] = $ccid;
+                }
+            }
+            if ($updates !== []) {
+                $call->update($updates);
+                $call->refresh();
+            }
+            $bridgeReady = $call->customer_answered_at !== null
+                && $call->agent_answered_at !== null
+                && $call->bridged_at === null
+                && ($call->telnyx_customer_ccid ?? '') !== ''
+                && ($call->telnyx_agent_ccid ?? '') !== '';
         });
 
-        if ($callControlId !== '') {
-            // Best-effort — start_recording can 4xx (e.g. leg already gone),
-            // that's logged inside the service but not fatal to the webhook.
-            $this->telnyx->startRecording($callControlId);
+        if (! $bridgeReady) {
+            return;
         }
+
+        $call->refresh();
+        $bridged = $this->telnyx->bridgeCalls(
+            (string) $call->telnyx_customer_ccid,
+            (string) $call->telnyx_agent_ccid,
+        );
+        if (! $bridged) {
+            return;
+        }
+
+        $call->update([
+            'bridged_at' => Carbon::now(),
+            'status' => 'in_progress',
+            'answered_at' => Carbon::now(),
+        ]);
+        // Recording on the customer leg captures the joined audio.
+        $this->telnyx->startRecording((string) $call->telnyx_customer_ccid);
+    }
+
+    /** Extract 'customer' or 'agent' from the leg's client_state (empty if absent). */
+    private function sideFromPayload(array $payload): string
+    {
+        $state = TelnyxVoiceService::decodeClientState(
+            isset($payload['client_state']) ? (string) $payload['client_state'] : null,
+        );
+        $side = (string) ($state['side'] ?? '');
+        return in_array($side, ['customer', 'agent'], true) ? $side : '';
     }
 
     /**
@@ -277,7 +321,15 @@ class TelnyxController extends Controller
 
         $callControlId = (string) ($payload['call_control_id'] ?? '');
         if ($callControlId !== '') {
-            $call = LeadCall::where('telnyx_call_control_id', $callControlId)->first();
+            // Bridge flow: check both leg columns AND the legacy column so
+            // an in-flight LeadCall row from either era resolves.
+            $call = LeadCall::query()
+                ->where(function ($q) use ($callControlId): void {
+                    $q->where('telnyx_customer_ccid', $callControlId)
+                      ->orWhere('telnyx_agent_ccid', $callControlId)
+                      ->orWhere('telnyx_call_control_id', $callControlId);
+                })
+                ->first();
             if ($call !== null) {
                 return $call;
             }

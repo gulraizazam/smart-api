@@ -42,12 +42,21 @@ return [
         // Key. Fed into sodium_crypto_sign_verify_detached() to prove each
         // webhook body actually came from Telnyx (replay-protected via timestamp).
         'public_key' => env('TELNYX_PUBLIC_KEY'),
-        // Numeric Call Control Application ID this integration belongs to.
-        // Bound to our PK caller-id number and our webhook_event_url.
-        'connection_id' => env('TELNYX_CONNECTION_ID'),
-        // E.164 caller-id number. Bought in the Portal and bound to
-        // connection_id above. Demo phase 1: US +14015982433 (PK number KYC
-        // in-flight; swap here + config:clear when it arrives).
+        // Credential Connection ID — used to mint telephony_credentials so
+        // the browser SDK can register via WebRTC. `connection_id` is the
+        // legacy name (kept for back-compat with early demo .env files).
+        'credential_connection_id' => env('TELNYX_CREDENTIAL_CONNECTION_ID', env('TELNYX_CONNECTION_ID')),
+        // Call Control Application ID — used by the BACKEND to originate
+        // outbound legs. Split from credential_connection_id because:
+        //   • Telephony credentials REQUIRE a Credential Connection.
+        //   • POST /v2/calls REQUIRES a Call Control App.
+        // The bridge-based flow originates both the customer's PSTN leg
+        // and the agent's SIP leg via this connection so both are Call
+        // Control legs bridgeable via /v2/calls/{ccid}/actions/bridge.
+        'call_control_app_id' => env('TELNYX_CALL_CONTROL_APP_ID'),
+        // E.164 caller-id number. Bought in the Portal and bound to the
+        // Call Control App above. Demo phase 1: US +14015982433 (PK number
+        // KYC in-flight; swap here + config:clear when it arrives).
         'caller_id' => env('TELNYX_CALLER_ID'),
         // Webhook replay-attack window. Any request whose
         // Telnyx-Signature-Ed25519-Timestamp is older than this many seconds

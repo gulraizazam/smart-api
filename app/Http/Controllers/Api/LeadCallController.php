@@ -76,14 +76,47 @@ class LeadCallController extends Controller
 
     /**
      * `POST /api/leads/{lead}/calls/initiate`
-     * Write the lead_calls intent row before the browser dials; the
-     * returned id gets base64-encoded into Telnyx's `client_state` on the
-     * outbound leg so every subsequent webhook can find the row without
-     * needing a call_control_id round-trip.
+     *
+     * Bridge-based click-to-call flow (rewritten 2026-08-05):
+     *   1. Ensure the agent's telephony credential exists so we know the
+     *      SIP URI their browser is registered at.
+     *   2. Insert a LeadCall row up-front so downstream webhooks have a
+     *      stable id to key on (`client_state`).
+     *   3. Originate BOTH outbound legs via the Call Control App:
+     *        - customer PSTN leg  (to = normalized PK number)
+     *        - agent SIP leg      (to = sip:{sip_username}@sip.telnyx.com)
+     *      Both are Call Control legs, so they're bridgeable when
+     *      TelnyxController sees both sides answer.
+     *   4. Store both call_control_ids on the LeadCall row.
+     *
+     * Return payload includes just the lead_call_id — the browser doesn't
+     * dial anything itself in this flow; it waits for the incoming SIP
+     * call Telnyx delivers as the agent leg and auto-answers.
      */
     public function initiate(InitiateCallRequest $request, Leads $lead): JsonResponse
     {
         $user = Auth::user();
+
+        $callerNumber = (string) config('services.telnyx.caller_id');
+        $customerNumber = self::normalizePkPhone((string) $lead->phone);
+        if ($customerNumber === '') {
+            return $this->errorResponse('Lead phone is invalid.', 422);
+        }
+
+        // Fetch agent SIP URI FIRST — cheaper to fail early than to write
+        // a LeadCall row we then can't dial to. Also warms the credential
+        // cache so subsequent calls are faster.
+        try {
+            $agentSipUri = $this->telnyx->agentSipUri($user);
+        } catch (\Throwable $e) {
+            Log::error('Telnyx credential fetch failed', [
+                'event' => 'telnyx.credential.error',
+                'user_id' => $user?->id,
+                'lead_id' => $lead->id,
+                'message' => $e->getMessage(),
+            ]);
+            return $this->errorResponse('Unable to initialise call session.', 502);
+        }
 
         $call = LeadCall::create([
             'account_id' => $lead->account_id,
@@ -91,22 +124,82 @@ class LeadCallController extends Controller
             'user_id' => $user?->id,
             'direction' => 'outbound',
             'provider' => 'telnyx',
-            'from_number' => (string) config('services.telnyx.caller_id'),
-            'to_number' => (string) $lead->phone,
+            'from_number' => $callerNumber,
+            'to_number' => $customerNumber,
             'status' => 'initiated',
             'initiated_at' => Carbon::now(),
         ]);
 
+        $webhookUrl = rtrim((string) config('app.url'), '/').'/api/webhooks/telnyx/voice';
+        try {
+            $customerLeg = $this->telnyx->originateOutbound(
+                to: $customerNumber,
+                from: $callerNumber,
+                clientState: ['lead_call_id' => $call->id, 'side' => 'customer'],
+                webhookUrl: $webhookUrl,
+            );
+            $agentLeg = $this->telnyx->originateOutbound(
+                to: $agentSipUri,
+                from: $callerNumber,
+                clientState: ['lead_call_id' => $call->id, 'side' => 'agent'],
+                webhookUrl: $webhookUrl,
+            );
+        } catch (\Throwable $e) {
+            $call->update(['status' => 'failed']);
+            Log::error('Telnyx bridge originate failed', [
+                'event' => 'telnyx.originate.error',
+                'lead_call_id' => $call->id,
+                'message' => $e->getMessage(),
+            ]);
+            return $this->errorResponse('Failed to place call.', 502);
+        }
+
+        $call->update([
+            'telnyx_customer_ccid' => $customerLeg['call_control_id'],
+            'telnyx_agent_ccid' => $agentLeg['call_control_id'],
+        ]);
+
         return $this->successResponse('Call initiated.', [
             'lead_call_id' => $call->id,
-            // Browser SDK passes this verbatim as `clientState` on newCall();
-            // Telnyx echoes it on every webhook so TelnyxController can
-            // resolve the LeadCall row without a call_control_id round-trip.
-            'client_state' => TelnyxVoiceService::encodeClientState([
-                'lead_call_id' => $call->id,
-                'lead_id' => $lead->id,
-            ]),
         ]);
+    }
+
+    /**
+     * Coerce a Pakistan phone number in any of the shapes our lead data
+     * actually carries into E.164. Duplicated from telnyx-call.ts because
+     * we want the server to be the authoritative source of truth for the
+     * number that lands in `lead_calls.to_number` and gets dialed.
+     *
+     * Shapes handled:
+     *   "3110022881"     10 digits, no leading zero  → +923110022881
+     *   "03110022881"    canonical local format      → +923110022881
+     *   "923110022881"   country code, no plus       → +923110022881
+     *   "+923110022881"  already E.164               → pass through
+     *   anything else                                → best-effort +digits
+     */
+    private static function normalizePkPhone(string $raw): string
+    {
+        $trimmed = trim($raw);
+        if ($trimmed === '') {
+            return '';
+        }
+        if (str_starts_with($trimmed, '+')) {
+            return $trimmed;
+        }
+        $digits = preg_replace('/\D/', '', $trimmed) ?? '';
+        if ($digits === '') {
+            return '';
+        }
+        if (str_starts_with($digits, '92') && strlen($digits) >= 11 && strlen($digits) <= 13) {
+            return '+'.$digits;
+        }
+        if (str_starts_with($digits, '0') && strlen($digits) === 11) {
+            return '+92'.substr($digits, 1);
+        }
+        if (strlen($digits) === 10 && str_starts_with($digits, '3')) {
+            return '+92'.$digits;
+        }
+        return '+'.$digits;
     }
 
     /**

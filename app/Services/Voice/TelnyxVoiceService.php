@@ -89,9 +89,10 @@ final class TelnyxVoiceService
             }
         }
 
-        // Not found — create it.
+        // Not found — create it. Telephony credentials MUST be tied to a
+        // Credential Connection; the Call Control App ID would 422.
         $created = $this->api()->post('/telephony_credentials', [
-            'connection_id' => $this->requireConfig('connection_id'),
+            'connection_id' => $this->requireConfig('credential_connection_id'),
             'name' => 'agent-'.$agent->id,
             'tag' => $tag,
         ]);
@@ -133,9 +134,90 @@ final class TelnyxVoiceService
         ];
     }
 
+    /** The SIP URI a browser SDK gets when its credential registers. */
+    public function agentSipUri(User $agent): string
+    {
+        $credential = $this->ensureCredentialForAgent($agent);
+        return "sip:{$credential['sip_username']}@sip.telnyx.com";
+    }
+
     // -------------------------------------------------------------------
     // Call Control commands
     // -------------------------------------------------------------------
+
+    /**
+     * Originate an outbound call leg via the Call Control App. Used for
+     * BOTH the customer's PSTN leg (to = +92…) and the agent's SIP leg
+     * (to = sip:username@sip.telnyx.com) — same API, different `to` shape.
+     *
+     * `clientState` is a small map ({lead_call_id, side}) that Telnyx
+     * echoes on every subsequent webhook for this leg, so we can key our
+     * lead_calls row without an extra round-trip.
+     *
+     * @param  array<string,int|string>  $clientState
+     * @return array{call_control_id:string,call_leg_id:string}
+     */
+    public function originateOutbound(
+        string $to,
+        string $from,
+        array $clientState = [],
+        string $webhookUrl = '',
+    ): array {
+        $body = [
+            'connection_id' => $this->requireConfig('call_control_app_id'),
+            'to' => $to,
+            'from' => $from,
+            'timeout_secs' => 30,
+        ];
+        if ($clientState !== []) {
+            $body['client_state'] = self::encodeClientState($clientState);
+        }
+        if ($webhookUrl !== '') {
+            $body['webhook_url'] = $webhookUrl;
+            $body['webhook_url_method'] = 'POST';
+        }
+
+        $resp = $this->api()->post('/calls', $body);
+        if (! $resp->successful()) {
+            throw new \RuntimeException(
+                'Telnyx originate failed: '.$resp->status().' '.$resp->body(),
+            );
+        }
+
+        $data = (array) $resp->json('data', []);
+        return [
+            'call_control_id' => (string) ($data['call_control_id'] ?? ''),
+            'call_leg_id' => (string) ($data['call_leg_id'] ?? ''),
+        ];
+    }
+
+    /**
+     * Bridge two active Call Control legs into a single conversation.
+     * Called from the answer webhook once BOTH the customer and agent
+     * legs are answered. Telnyx replies 200 immediately; bridge event
+     * arrives via webhook shortly after.
+     *
+     * Returns false on 4xx/5xx (logged inside) so the caller can decide
+     * whether to retry or fail the LeadCall row.
+     */
+    public function bridgeCalls(string $ccidA, string $ccidB): bool
+    {
+        $resp = $this->api()->post("/calls/{$ccidA}/actions/bridge", [
+            'call_control_id' => $ccidB,
+        ]);
+        if ($resp->successful()) {
+            return true;
+        }
+
+        Log::warning('Telnyx bridge non-2xx', [
+            'event' => 'telnyx.bridge.failed',
+            'ccid_a' => $ccidA,
+            'ccid_b' => $ccidB,
+            'status' => $resp->status(),
+            'body' => $resp->body(),
+        ]);
+        return false;
+    }
 
     /**
      * Start recording a live call. Called from the answer webhook so we

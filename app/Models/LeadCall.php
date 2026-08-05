@@ -32,6 +32,11 @@ class LeadCall extends BaseModel
         'plivo_call_uuid',
         'telnyx_call_control_id',
         'telnyx_call_leg_id',
+        'telnyx_customer_ccid',
+        'telnyx_agent_ccid',
+        'customer_answered_at',
+        'agent_answered_at',
+        'bridged_at',
         'provider',
         'from_number',
         'to_number',
@@ -51,6 +56,9 @@ class LeadCall extends BaseModel
             'initiated_at' => 'datetime',
             'answered_at' => 'datetime',
             'ended_at' => 'datetime',
+            'customer_answered_at' => 'datetime',
+            'agent_answered_at' => 'datetime',
+            'bridged_at' => 'datetime',
             'duration_seconds' => 'integer',
         ];
     }
