@@ -26,7 +26,9 @@ return [
     // You can find this in Events Manager > Test Events
     'test_event_code' => env('META_TEST_EVENT_CODE', ''),
 
-    // Enable/Disable the Conversion API
-    'enabled' => env('META_CAPI_ENABLED', true),
+    // Enable/Disable the Conversion API.
+    // Default is FALSE — CAPI is opt-in. Set META_CAPI_ENABLED=true in .env
+    // to turn it on (also requires META_PIXEL_ID + META_ACCESS_TOKEN).
+    'enabled' => env('META_CAPI_ENABLED', false),
 
 ];
