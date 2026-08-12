@@ -337,6 +337,13 @@ class ManagementDashboardApiController extends Controller
         });
     }
 
+    public function salesByServiceCategory(Request $request): JsonResponse
+    {
+        return $this->handleSection($request, 'sales-by-service-category', function ($scope, $range) {
+            return $this->service->salesByServiceCategory($scope, $range);
+        });
+    }
+
     public function serviceSalesTrend(Request $request): JsonResponse
     {
         return $this->handleSection($request, 'service-sales-trend', function ($scope, $range) use ($request) {
