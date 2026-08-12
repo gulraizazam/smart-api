@@ -33,6 +33,7 @@ use App\Services\Dashboard\Metrics\LeadTimeToConversionMetric;
 use App\Services\Dashboard\Metrics\NewReturningMetric;
 use App\Services\Dashboard\Metrics\PatientCohortRetentionMetric;
 use App\Services\Dashboard\Metrics\RevenueConcentrationMetric;
+use App\Services\Dashboard\Metrics\SalesByCategoryMetric;
 use App\Services\Dashboard\Metrics\ServiceCategoryTrendMetric;
 use App\Services\Dashboard\Metrics\ServiceSalesTrendMetric;
 use App\Services\Dashboard\Metrics\UtilizationMetric;
@@ -61,6 +62,7 @@ final class ManagementDashboardService
         private readonly PatientCohortRetentionMetric $cohorts,
         private readonly RevenueConcentrationMetric $concentration,
         private readonly ServiceCategoryTrendMetric $categoryTrend,
+        private readonly SalesByCategoryMetric $salesByCategory,
         private readonly ServiceSalesTrendMetric $serviceSalesTrend,
         private readonly ActivityPulseMetric $pulse,
         private readonly NewReturningMetric $newReturning,
@@ -577,6 +579,19 @@ final class ManagementDashboardService
     public function serviceCategoryTrend(MetricScope $scope, DateRange $range, int $months = 12): array
     {
         return $this->categoryTrend->compute($scope, $range, $months);
+    }
+
+    /**
+     * Sales by top-level service category — flat snapshot for any date
+     * range. Uses `invoices` + `invoice_details` so ALL paid services in
+     * the period are included (one-off treatments, package deliveries,
+     * memberships), not just payments tied to a `package_advance`.
+     *
+     * @return array{categories: list<array{id: int, name: string, total: float}>, total: float}
+     */
+    public function salesByServiceCategory(MetricScope $scope, DateRange $range): array
+    {
+        return $this->salesByCategory->compute($scope, $range);
     }
 
     /**

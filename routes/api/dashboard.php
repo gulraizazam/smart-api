@@ -70,6 +70,7 @@ Route::prefix('management-dashboard')
         Route::get('patients', [ManagementDashboardApiController::class, 'patients'])->name('patients');
         Route::get('new-returning', [ManagementDashboardApiController::class, 'newReturning'])->name('new_returning');
         Route::get('service-category-trend', [ManagementDashboardApiController::class, 'serviceCategoryTrend'])->name('service_category_trend');
+        Route::get('sales-by-service-category', [ManagementDashboardApiController::class, 'salesByServiceCategory'])->name('sales_by_service_category');
         Route::get('service-sales-trend', [ManagementDashboardApiController::class, 'serviceSalesTrend'])->name('service_sales_trend');
         Route::get('avg-transaction-value', [ManagementDashboardApiController::class, 'avgTransactionValue'])->name('avg_transaction_value');
         Route::get('avg-conversion-value', [ManagementDashboardApiController::class, 'avgConversionValue'])->name('avg_conversion_value');
