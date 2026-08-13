@@ -25,7 +25,7 @@ final class StoreServiceRequest extends FormRequest
             'duration'              => 'nullable|string|regex:/^\d{2}:\d{2}$/',
             'price'                 => 'nullable|numeric|min:0',
             'color'                 => 'nullable|string|max:20',
-            'description'           => 'nullable|string|max:5000',
+            'description'           => 'nullable|string|max:20000',
             'tax_treatment_type_id' => 'nullable|integer|exists:tax_treatment_type,id',
             'end_node'              => 'nullable|boolean',
             'complimentory'         => 'nullable|boolean',
