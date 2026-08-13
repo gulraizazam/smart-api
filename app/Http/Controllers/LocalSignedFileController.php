@@ -9,24 +9,21 @@ use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
- * Serves attachment files from the local `r2` / `r2_invoices` disks behind
- * a short-lived signed URL. All client documents (HR, recruitment CVs,
- * centre logos, cash-flow invoices) live on the app server — nothing goes
- * to a third-party bucket. `AppServiceProvider::configureLocalSignedDisks()`
- * teaches those disks to mint `files.serve` URLs when `->temporaryUrl()`
- * is called, and this controller re-validates the signature on the way in.
+ * Serves attachment files from the LOCAL filesystem fallback (R2_DRIVER=local /
+ * R2_INVOICES_DRIVER=local) behind a short-lived signed URL.
  *
  * Why a PHP-streamed, EXTENSIONLESS endpoint (`/files/serve?disk=…&p=…`):
- * some shared hosts (Hostinger/LiteSpeed) intercept requests whose path
- * ends in an image extension (.jpg/.png) — they strip the query string
- * and/or route them away from a freshly-stored file, so both Laravel's
- * built-in signed `serve` route AND plain static `/storage/…jpg` URLs 404
- * for new images. A path that carries no extension (the filename rides in
- * the `p` query param) is served normally with its `?signature` intact.
+ * this host (Hostinger/LiteSpeed) intercepts requests whose path ends in an
+ * image extension (.jpg/.png) — it strips the query string and/or routes them
+ * away from a freshly-stored file, so both Laravel's built-in signed `serve`
+ * route AND plain static `/storage/…jpg` URLs 404 for new images. A path that
+ * carries no extension (the filename rides in the `p` query param) is served
+ * normally with its `?signature` intact. Cloud (s3/R2) mode never reaches here
+ * — the disk mints its own presigned URLs.
  */
 class LocalSignedFileController extends Controller
 {
-    /** Only the two document disks may be served — never `local`/`public`. */
+    /** Only the two local-fallback disks may be served — never `local`/`public`. */
     private const ALLOWED_DISKS = ['r2', 'r2_invoices'];
 
     public function __invoke(Request $request): StreamedResponse

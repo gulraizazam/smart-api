@@ -8,19 +8,16 @@ use App\Services\Storage\R2DocumentService;
 use Illuminate\Database\Eloquent\Model;
 
 /**
- * Wipes stored document files when their owning DB row is *force*-deleted.
+ * Wipes R2 objects when their owning DB row is *force*-deleted.
  *
  * Soft-deletes are a deliberate no-op — the file stays so the row can be
  * restored with its content intact. A later prune job (or manual admin
- * action) that calls `forceDelete()` is what actually reclaims disk space.
+ * action) that calls `forceDelete()` is what actually reclaims R2 space.
  *
  * Models opt in with two small methods:
  *
  *   public function r2DocumentKey(): ?string;
  *   public function r2DocumentService(): \App\Services\Storage\R2DocumentService;
- *
- * (Method names retained from the R2 era for backward compatibility;
- * files now live on the local `r2` / `r2_invoices` disks.)
  *
  * Register via `Model::observe(R2CleanupObserver::class)` in
  * AppServiceProvider so the cleanup fires wherever force-delete runs

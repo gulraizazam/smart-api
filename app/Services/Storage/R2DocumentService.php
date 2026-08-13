@@ -9,14 +9,14 @@ use Illuminate\Http\UploadedFile;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
- * Service for server-hosted document storage.
+ * Service for Cloudflare R2-backed document storage.
  *
- * Consolidates the previously-inline HR / recruitment / cash-flow flows
- * behind one API. Files live on the local `r2` and `r2_invoices` disks
- * (see config/filesystems.php) — no third-party bucket is involved. The
- * class name is preserved for backward compatibility; the disk is passed
- * in, so the service itself stays storage-backend agnostic and the
- * temporary-URL wiring in AppServiceProvider handles signed downloads.
+ * Consolidates three previously-inline R2 flows (HR employee documents,
+ * HR candidate CVs, patient records) behind one API. The service itself
+ * is bucket-agnostic — AppServiceProvider wires two contextual bindings
+ * so `EmployeeDocumentController` and `RecruitmentController` receive an
+ * instance pointed at the HRM bucket, and `PatientService` receives one
+ * pointed at the clients bucket. Callers always type-hint this class.
  */
 final class R2DocumentService
 {

@@ -845,8 +845,8 @@ class Locations extends BaseModel
         $data['account_id'] = $account_id;
         // Set Region ID
         $data['region_id'] = Cities::findOrFail($data['city_id'])->region_id;
-        // Set Image — stored on the local `r2` disk under `centre_logo/`;
-        // the row stores only the object key (image_src).
+        // Set Image — uploaded to Cloudflare R2 under `centre_logo/`; the
+        // row stores only the object key (image_src).
         if ($request->file('file')) {
             $file = $request->file('file');
             $ext = strtolower($file->getClientOriginalExtension());
@@ -977,8 +977,8 @@ class Locations extends BaseModel
         } elseif ($data['is_featured'] == '') {
             $data['is_featured'] = 0;
         }
-        // Set Image — stored on the local `r2` disk under `centre_logo/`;
-        // the previous object (if any) is removed so orphans don't accumulate.
+        // Set Image — uploaded to Cloudflare R2 under `centre_logo/`; the
+        // previous object (if any) is removed so orphans don't accumulate.
         if ($request->file('file')) {
             $file = $request->file('file');
             $ext = strtolower($file->getClientOriginalExtension());

@@ -18,18 +18,17 @@ use Illuminate\Support\Facades\Storage;
 /**
  * Multi-file invoice / receipt attachments for cash-flow Payments.
  *
- * Files live on the local `r2_invoices` disk via the bucket-agnostic
- * R2DocumentService — bound contextually in AppServiceProvider. Nothing
- * leaves the app host.
+ * Uses Cloudflare R2 (private `invoices` bucket) via the bucket-agnostic
+ * R2DocumentService — bound contextually in AppServiceProvider.
  *
  * Key invariants:
- *  - Storage keys are content-addressed by SHA-256, so two uploads of
+ *  - R2 keys are content-addressed by SHA-256, so two uploads of
  *    identical bytes share one blob and the second uploader pays only
- *    an existence-check round-trip.
+ *    a HEAD round-trip.
  *  - Soft-delete via the API is the only deletion path. The blob is
  *    NEVER stripped here, even when the row is force-deleted — that
  *    work belongs to `cashflow:prune-orphan-attachments`, which knows
- *    how to skip the file delete when the SHA is still referenced by
+ *    how to skip the R2 delete when the SHA is still referenced by
  *    another live row.
  *  - Approved payments are immutable for non-admins: trying to
  *    delete an attachment from an Approved row returns 422.

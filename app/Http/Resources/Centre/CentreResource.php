@@ -47,12 +47,12 @@ class CentreResource extends JsonResource
     }
 
     /**
-     * Resolve the URL for the centre logo from the local `r2` disk.
+     * Resolve the public URL for the centre logo from Cloudflare R2.
      *
-     * The disk is private, so `->temporaryUrl()` returns a signed URL to
-     * the `files.serve` route (see AppServiceProvider::configureLocalSignedDisks).
-     * The `r2.url` branch is retained for historical config compatibility;
-     * degrades gracefully if the disk cannot produce a URL at all.
+     * Prefers a signed temporary URL when the R2 bucket is private (no
+     * `CLOUDFLARE_R2_URL` / public base configured). Falls back to the
+     * disk's configured public URL otherwise, and degrades gracefully if
+     * the disk cannot produce a URL at all.
      */
     private function resolveImageUrl(?string $filename): ?string
     {
