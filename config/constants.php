@@ -50,7 +50,7 @@ return [
     'appointment_type_service' => 2,
 
     // All Centres location ID (used for business closure scoping)
-    'all_centres_location_id' => 30,
+    'all_centres_location_id' => 2,
 
     //Constant for user type start
 
@@ -82,7 +82,7 @@ return [
 
     'resource_room_type_id' => '1',
     'resource_doctor_type_id' => '2',
-    'all_centres_location_id' => 30,
+    'all_centres_location_id' => 2,
 
     'Fixed' => 'Fixed',
     'Percentage' => 'Percentage',
