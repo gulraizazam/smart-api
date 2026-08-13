@@ -106,6 +106,7 @@ class AppServiceProvider extends ServiceProvider
             URL::forceScheme('https');
         }
 
+        $this->configureLocalAttachmentUrls();
         $this->configureRateLimiting();
         $this->configureAuthorization();
         $this->configurePassport();
@@ -115,35 +116,44 @@ class AppServiceProvider extends ServiceProvider
         $this->registerAuditEventListeners();
         $this->registerAuthEventListeners();
         $this->registerObservedModels();
-        $this->configureLocalSignedDisks();
     }
 
     /**
-     * Teach the local-backed `r2` and `r2_invoices` disks how to mint
-     * signed download URLs. Laravel's local driver has no native concept
-     * of a temporary URL — without this shim, `->temporaryUrl()` throws
-     * "This driver does not support creating temporary URLs." and every
-     * cash-flow / HR download breaks. The generated URL points at the
-     * `files.serve` route (LocalSignedFileController), which re-validates
-     * the signature and streams the file. Disk NAMES are preserved from
-     * the legacy R2 setup so callsites don't need editing.
+     * Local-fallback attachment URLs (R2_DRIVER=local / R2_INVOICES_DRIVER=local).
+     *
+     * Maps temporaryUrl() to our extensionless signed route
+     * (App\Http\Controllers\LocalSignedFileController) instead of Laravel's
+     * built-in `serve` route or a plain static `/storage/…jpg` URL. This host
+     * (Hostinger/LiteSpeed) intercepts URLs ending in an image extension and
+     * drops/mishandles them, so every fresh .jpg/.png 404s; an extensionless
+     * `/files/serve?disk=…&p=…&signature=…` is served normally. The attachment
+     * controllers call temporaryUrl(), so this is the single wiring point.
+     *
+     * In cloud (s3/R2) mode this override is skipped — the disk mints its own
+     * presigned URLs. Not a static closure: temporaryUrl() rebinds $this to the
+     * adapter via bindTo(), which a static fn rejects.
      */
-    private function configureLocalSignedDisks(): void
+    private function configureLocalAttachmentUrls(): void
     {
-        // Non-static: FilesystemAdapter::temporaryUrl rebinds the closure to
-        // the adapter instance, which is illegal for `static fn` closures.
-        $mint = fn (string $diskName): \Closure =>
-            fn (string $path, \DateTimeInterface $expiration): string =>
-                URL::temporarySignedRoute('files.serve', $expiration, [
-                    'disk' => $diskName,
-                    'p' => $path,
-                ]);
-
-        foreach (['r2', 'r2_invoices'] as $diskName) {
-            $disk = Storage::disk($diskName);
-            if (method_exists($disk, 'buildTemporaryUrlsUsing')) {
-                $disk->buildTemporaryUrlsUsing($mint($diskName));
+        foreach (['r2', 'r2_invoices'] as $name) {
+            if (config("filesystems.disks.{$name}.driver") !== 'local') {
+                continue;
             }
+
+            // Sign RELATIVELY (4th arg false) so the controller's
+            // hasValidRelativeSignature() matches regardless of the
+            // TLS-terminating proxy's scheme/host, then prepend the API origin
+            // so the SPA (different origin) can load it. Signing absolutely here
+            // would make relative validation fail — the signatures differ.
+            $base = rtrim((string) config('app.url'), '/');
+            Storage::disk($name)->buildTemporaryUrlsUsing(
+                fn (string $path, \DateTimeInterface $expiration, array $options): string => $base.URL::temporarySignedRoute(
+                    'local-files.serve',
+                    $expiration,
+                    array_merge($options, ['disk' => $name, 'p' => $path]),
+                    false,
+                ),
+            );
         }
     }
 
