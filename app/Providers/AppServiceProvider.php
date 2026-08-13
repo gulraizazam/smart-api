@@ -115,6 +115,36 @@ class AppServiceProvider extends ServiceProvider
         $this->registerAuditEventListeners();
         $this->registerAuthEventListeners();
         $this->registerObservedModels();
+        $this->configureLocalSignedDisks();
+    }
+
+    /**
+     * Teach the local-backed `r2` and `r2_invoices` disks how to mint
+     * signed download URLs. Laravel's local driver has no native concept
+     * of a temporary URL — without this shim, `->temporaryUrl()` throws
+     * "This driver does not support creating temporary URLs." and every
+     * cash-flow / HR download breaks. The generated URL points at the
+     * `files.serve` route (LocalSignedFileController), which re-validates
+     * the signature and streams the file. Disk NAMES are preserved from
+     * the legacy R2 setup so callsites don't need editing.
+     */
+    private function configureLocalSignedDisks(): void
+    {
+        // Non-static: FilesystemAdapter::temporaryUrl rebinds the closure to
+        // the adapter instance, which is illegal for `static fn` closures.
+        $mint = fn (string $diskName): \Closure =>
+            fn (string $path, \DateTimeInterface $expiration): string =>
+                URL::temporarySignedRoute('files.serve', $expiration, [
+                    'disk' => $diskName,
+                    'p' => $path,
+                ]);
+
+        foreach (['r2', 'r2_invoices'] as $diskName) {
+            $disk = Storage::disk($diskName);
+            if (method_exists($disk, 'buildTemporaryUrlsUsing')) {
+                $disk->buildTemporaryUrlsUsing($mint($diskName));
+            }
+        }
     }
 
     /**

@@ -53,34 +53,32 @@ return [
             'use_path_style_endpoint' => env('AWS_USE_PATH_STYLE_ENDPOINT', false),
         ],
 
+        /*
+         * Shared HR-documents / recruitment-CV / centre-logo store.
+         * Historically an S3-compatible (Cloudflare R2) bucket; now backed
+         * by the server's local filesystem so no client documents leave
+         * the app host. The disk NAME is preserved so every existing
+         * caller (`Storage::disk('r2')`, `$file->store(..., 'r2')`) keeps
+         * working unchanged. Downloads are fronted by the signed
+         * `files.serve` route (see LocalSignedFileController) — the
+         * temporary-URL generator is wired in AppServiceProvider::boot().
+         */
         'r2' => [
-            'driver' => 's3',
-            'key' => env('CLOUDFLARE_R2_ACCESS_KEY_ID'),
-            'secret' => env('CLOUDFLARE_R2_SECRET_ACCESS_KEY'),
-            'region' => 'auto',
-            'bucket' => env('CLOUDFLARE_R2_BUCKET'),
-            'endpoint' => env('CLOUDFLARE_R2_ENDPOINT'),
-            'url' => env('CLOUDFLARE_R2_URL'),
-            'use_path_style_endpoint' => false,
-            'visibility' => 'public',
+            'driver' => 'local',
+            'root' => storage_path('app/documents'),
+            'visibility' => 'private',
             'throw' => false,
         ],
 
         /*
-         * Cash-flow Payments attachments (invoices / receipts). Same R2
-         * account as the HRM bucket above — only the bucket name differs.
-         * Visibility is PRIVATE: every download is fronted by a
-         * short-lived signed URL minted by Laravel, so a leaked URL has
-         * a 15-minute leak window instead of forever.
+         * Cash-flow Payments attachments (invoices / receipts). Also
+         * local-only now — every download is fronted by a short-lived
+         * signed URL to `files.serve`, so a leaked link expires in
+         * minutes instead of persisting forever.
          */
         'r2_invoices' => [
-            'driver' => 's3',
-            'key' => env('CLOUDFLARE_R2_ACCESS_KEY_ID'),
-            'secret' => env('CLOUDFLARE_R2_SECRET_ACCESS_KEY'),
-            'region' => 'auto',
-            'bucket' => env('CLOUDFLARE_R2_INVOICES_BUCKET', 'invoices'),
-            'endpoint' => env('CLOUDFLARE_R2_ENDPOINT'),
-            'use_path_style_endpoint' => false,
+            'driver' => 'local',
+            'root' => storage_path('app/invoices'),
             'visibility' => 'private',
             'throw' => false,
         ],
