@@ -1,13 +1,6 @@
 <?php
 
 declare(strict_types=1);
-/**
- * Created by PhpStorm.
- * User: REDSignal
- * Date: 3/22/2018
- * Time: 3:49 PM
- */
-
 namespace App\Helpers\Widgets;
 
 use App\Models\DoctorHasLocations;
