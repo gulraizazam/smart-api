@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::post('login', [\App\Http\Controllers\Api\AuthController::class, 'login'])->middleware('throttle:10,1');
+Route::post('login', [\App\Http\Controllers\Api\AuthController::class, 'login'])->middleware('throttle:30,1');
 
 // SPA cookie/bearer-mode logout + password reset. These were always part of
 // the SPA contract (src/lib/auth.tsx, src/routes/forgot-password.tsx,
@@ -33,10 +33,10 @@ Route::post('password/reset', [\App\Http\Controllers\Api\ForgotPasswordControlle
 // during the staged migration. See app/Http/Controllers/Api/V2/AuthController.
 Route::prefix('v2/auth')->name('api.v2.auth.')->group(function (): void {
     Route::post('login', [\App\Http\Controllers\Api\V2\AuthController::class, 'login'])
-        ->middleware('throttle:5,1')
+        ->middleware('throttle:30,1')
         ->name('login');
     Route::post('refresh', [\App\Http\Controllers\Api\V2\AuthController::class, 'refresh'])
-        ->middleware('throttle:10,1')
+        ->middleware('throttle:30,1')
         ->name('refresh');
     Route::post('logout', [\App\Http\Controllers\Api\V2\AuthController::class, 'logout'])
         ->middleware('auth:api_passport')

@@ -48,6 +48,16 @@ return [
             'driver' => 'passport',
             'provider' => 'users',
         ],
+
+        // Sanctum PAT guard. Required so `auth()->guard('sanctum')->check()`
+        // in App\Http\Middleware\AuthenticateApiDual can validate bearer
+        // tokens minted by /api/login. Without this the guard throws
+        // "not defined" and the middleware's try/catch swallows it, leaving
+        // every bearer request as "Invalid Token".
+        'sanctum' => [
+            'driver' => 'sanctum',
+            'provider' => 'users',
+        ],
     ],
 
     /*

@@ -44,7 +44,7 @@ class AuthenticateApiDual
             ], 401);
         }
 
-        foreach (['api_passport', 'sanctum'] as $guard) {
+        foreach (['sanctum', 'api_passport'] as $guard) {
             // Each guard is wrapped in its own try so a misconfigured
             // adapter (e.g. Passport's `league/oauth2-server` throwing
             // "Invalid key supplied" when the OAuth keypair isn't
