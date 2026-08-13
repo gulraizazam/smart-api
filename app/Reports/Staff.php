@@ -1,13 +1,6 @@
 <?php
 
 declare(strict_types=1);
-/**
- * Created by PhpStorm.
- * User: abdullah@redsignal.biz
- * Date: 11/15/2018
- * Time: 2:49 PM
- */
-
 namespace App\Reports;
 
 use App\Helpers\ACL;

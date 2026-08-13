@@ -43,7 +43,7 @@ class ApplicationUserService
                 Config::get('constants.practitioner_id'),
                 Config::get('constants.patient_id'),
             ])
-            ->where('users.email', '!=', config('constants.super_admin_email', 'superadmin@redsignal.net'))
+            ->whereDoesntHave('roles', fn ($q) => $q->where('name', 'Super-Admin'))
             ->where('users.account_id', $user->account_id)
             ->when(! $canViewInactive, fn ($q) => $q->where('users.active', 1));
 

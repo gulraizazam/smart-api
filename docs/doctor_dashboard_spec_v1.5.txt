@@ -478,4 +478,4 @@ No — last month
 Yes (highest)
 Yes
 Yes (monthly trend)
-Cutera CRM — Doctor Dashboard Specification v1.1 | Confidential | redsignal.net
+Smart Aesthetics CRM — Doctor Dashboard Specification v1.1 | Confidential
